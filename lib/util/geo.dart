@@ -2,6 +2,12 @@ import 'package:location/location.dart';
 import 'package:latlong2/latlong.dart';
 
 
+
+LatLng locationToLatLng(LocationData location) {
+  return LatLng(location.latitude!, location.longitude!);
+}
+
+
 class Geo {
 
   static var calc = const Distance(roundResult: false);
@@ -27,7 +33,7 @@ class Geo {
     if (prev != null && prev.time < time) {
       // prefer our own calculations
       // spd = location
-      final double dist = calc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) as double;
+      final double dist = calc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
 
       // TODO: get units correct
       spd = dist / (time - prev.time) * 3600;
