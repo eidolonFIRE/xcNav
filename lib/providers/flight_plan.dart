@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:xcnav/util/waypoint.dart';
-
-
-
-
-
 
 class FlightPlan with ChangeNotifier {
   List<Waypoint> waypoints = [
@@ -18,7 +14,10 @@ class FlightPlan with ChangeNotifier {
   ];
 
   int? selectedIndex;
-  Waypoint? get selectedWp => (selectedIndex != null && selectedIndex! < waypoints.length) ? waypoints[selectedIndex!] : null;
+  Waypoint? get selectedWp =>
+      (selectedIndex != null && selectedIndex! < waypoints.length)
+          ? waypoints[selectedIndex!]
+          : null;
 
   void addWaypoint(Waypoint newPoint) {
     waypoints.add(newPoint);
@@ -37,11 +36,9 @@ class FlightPlan with ChangeNotifier {
     notifyListeners();
   }
 
-
   void removeSelectedWaypoint() {
     if (selectedIndex != null) removeWaypoint(selectedIndex!);
   }
-
 
   void removeWaypoint(int index) {
     waypoints.removeAt(index);
@@ -52,16 +49,59 @@ class FlightPlan with ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleOptional(int index) {
+    waypoints[index].isOptional = !waypoints[index].isOptional;
+    notifyListeners();
+  }
 
   void sortWaypoint(int oldIndex, int newIndex) {
     Waypoint temp = waypoints[oldIndex];
     waypoints.removeAt(oldIndex);
-    waypoints.insert(newIndex > oldIndex ? (newIndex - 1) : newIndex, temp);
+    if (newIndex > oldIndex) newIndex--;
+    waypoints.insert(newIndex, temp);
+
+    if (selectedIndex != null) {
+      if (selectedIndex == oldIndex) {
+        selectWaypoint(newIndex);
+      } else if (newIndex <= selectedIndex! && oldIndex > selectedIndex!) {
+        selectWaypoint(selectedIndex! + 1);
+      } else if (selectedIndex! <= newIndex && selectedIndex! > oldIndex) {
+        selectWaypoint(selectedIndex! - 1);
+      }
+    }
 
     // TODO: sockets message
 
     notifyListeners();
   }
 
+  Polyline _buildTripSnakeSegment(List<LatLng> points) {
+    return Polyline(
+      points: points,
+      color: Colors.black,
+      strokeWidth: 3,
+    );
+  }
 
+  List<Polyline> buildTripSnake() {
+    List<Polyline> retval = [];
+
+    List<LatLng> points = [];
+    waypoints.forEach((wp) {
+      // skip optional waypoints
+      if (wp.isOptional) return;
+
+      if (wp.latlng.length > 1) {
+        points.add(wp.latlng[0]);
+        // pinch off trip snake
+        retval.add(_buildTripSnakeSegment(points));
+        // start again at last point
+        points = [wp.latlng[wp.latlng.length - 1]];
+      } else {
+        points.add(wp.latlng[0]);
+      }
+    });
+    if (points.length > 1) retval.add(_buildTripSnakeSegment(points));
+    return retval;
+  }
 }

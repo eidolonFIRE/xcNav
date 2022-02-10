@@ -67,7 +67,7 @@ class MyApp extends StatelessWidget {
       initialRoute: "/",
       routes: {
         "/": (context) => const LoadingScreen(),
-        "/home": (context) => MyHomePage(initialLocation: LatLng(37.4, -122))
+        "/home": (context) => const MyHomePage(),
       },
     );
   }

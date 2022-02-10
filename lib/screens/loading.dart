@@ -49,11 +49,17 @@ class _LoadingScreenState extends State<LoadingScreen> {
   void initState() {
     super.initState();
 
+    // TODO: check location permissions
+
+    
+
     location.getLocation().then((location) {
       print("initial location: $location");
       Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
       Navigator.pushNamed(context, "/home");
     });
+
+    
 
   }
 
@@ -66,8 +72,14 @@ class _LoadingScreenState extends State<LoadingScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Image.asset("assets/images/android-chrome-512x512.png"),
-            Text("brought to you by the Bay Area PPG group"),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Image.asset("assets/images/android-chrome-512x512.png"),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Text("brought to you by the Bay Area PPG group"),
+            ),
           ],
         ),
       )
