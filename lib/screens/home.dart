@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 // import 'dart:math' as math;
 import 'dart:async';
+import 'dart:math';
 import 'package:collection/collection.dart';
 
 // providers
@@ -15,6 +18,8 @@ import 'package:xcnav/util/geo.dart';
 // widgets
 import 'package:xcnav/widgets/top_instrument.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
+
+import 'package:xcnav/fake_path.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -61,16 +66,21 @@ class _MyHomePageState extends State<MyHomePage> {
     // intialize the controllers
     mapController = MapController();
 
+    FakeFlight fakeFlight = FakeFlight();
+
     // --- Geo location loop
-    Timer timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
-      LocationData geo = await location.getLocation();
+    Timer timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      // LocationData geo = await location.getLocation();
+
+      LocationData geo = fakeFlight.genFakeLocationFlight();
+
       Provider.of<MyTelemetry>(context, listen: false).updateGeo(geo);
       // TODO: no null-check
       // TODO: handle group vs unlocked
       if (focusMode == FocusMode.me) {
         LatLng newCenter = LatLng(geo.latitude!, geo.longitude!);
         // TODO: take zoom level into account for unlock
-        if (calc.distance(newCenter, mapController.center) > 100) {
+        if (calc.distance(newCenter, mapController.center) > 1000) {
           mapController.move(newCenter, mapController.zoom);
         } else {
           // break focus lock
@@ -229,6 +239,10 @@ class _MyHomePageState extends State<MyHomePage> {
               center: myTelemetry.geo.latLng,
               zoom: 12.0,
               onTap: (tapPosition, point) => onMapTap(context, point),
+              allowPanningOnScrollingParent: false,
+              plugins: [
+                DragMarkerPlugin(),
+              ],
             ),
             layers: [
               TileLayerOptions(
@@ -277,24 +291,44 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
 
+              // Trip snake lines
+              PolylineLayerOptions(
+                  polylines: Provider.of<FlightPlan>(context).buildTripSnake()),
+
               // Flight plan markers
-              MarkerLayerOptions(
+              DragMarkerPluginOptions(
                 // TODO: investigate using stream<> here
                 markers: Provider.of<FlightPlan>(context)
                     .waypoints
-                    .map((e) => Marker(
+                    .mapIndexed((i, e) => DragMarker(
                         // TODO: support lines
                         point: e.latlng[0],
-                        // TODO: get this alignment correct (it's slightly off)
-                        anchorPos: AnchorPos.align(AnchorAlign.top),
-                        builder: (context) => const Icon(Icons.location_on,
-                            size: 50, color: Colors.black)))
+                        height: 60,
+                        onDragEnd: (p0, p1) => {
+                              Provider.of<FlightPlan>(context, listen: false)
+                                  .moveWaypoint(i, p1)
+                            },
+                        builder: (context) => Stack(children: [
+                              Container(
+                                transform: Matrix4.translationValues(0, -28, 0),
+                                child: Image.asset(
+                                  "assets/images/pin.png",
+                                  color: e.color == null
+                                      ? Colors.black
+                                      : Color(e.color!),
+                                ),
+                              ),
+                              Container(
+                                transform: Matrix4.translationValues(2, -12, 0),
+                                child: const Icon(
+                                  // TODO: support other icons
+                                  Icons.flight,
+                                  size: 24,
+                                ),
+                              ),
+                            ])))
                     .toList(),
               ),
-
-              // Trip snake lines
-              PolylineLayerOptions(
-                  polylines: Provider.of<FlightPlan>(context).buildTripSnake())
             ],
           ),
         ),

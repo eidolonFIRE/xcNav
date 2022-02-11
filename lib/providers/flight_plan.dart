@@ -7,10 +7,10 @@ import 'package:xcnav/util/waypoint.dart';
 class FlightPlan with ChangeNotifier {
   List<Waypoint> waypoints = [
     // TODO: remove these "test waypoints"
-    Waypoint("test1", [LatLng(37, 121)], false),
-    Waypoint("test2", [LatLng(38, 121)], true),
-    Waypoint("test3", [LatLng(36, 121), LatLng(36.5, 121)], true),
-    Waypoint("test4", [LatLng(37, 122), LatLng(37.5, 121)], false),
+    Waypoint("test1", [LatLng(37, -121)], false),
+    Waypoint("test2", [LatLng(38, -121)], true),
+    Waypoint("test3", [LatLng(37.5, -121), LatLng(36.5, -121)], true),
+    Waypoint("test4", [LatLng(37, -122), LatLng(37.5, -121)], false),
   ];
 
   int? selectedIndex;
@@ -51,6 +51,12 @@ class FlightPlan with ChangeNotifier {
 
   void toggleOptional(int index) {
     waypoints[index].isOptional = !waypoints[index].isOptional;
+    notifyListeners();
+  }
+
+  void moveWaypoint(int index, LatLng newPoint) {
+    // TODO: support polylines
+    waypoints[index].latlng = [newPoint];
     notifyListeners();
   }
 

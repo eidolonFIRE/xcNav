@@ -39,6 +39,11 @@ dependencies:
   flutter_map: any
   wakelock: ^0.6.1+1
 
+  flutter_map_dragmarker:
+    git:
+      url: git@github.com:ibrierley/flutter_map_dragmarker.git
+  sqflite: ^2.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
