@@ -7,7 +7,6 @@ import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 // import 'dart:math' as math;
 import 'dart:async';
-import 'dart:math';
 import 'package:collection/collection.dart';
 
 // providers
@@ -16,10 +15,12 @@ import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/util/geo.dart';
 
 // widgets
-import 'package:xcnav/widgets/top_instrument.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
 
 import 'package:xcnav/fake_path.dart';
+
+// utils
+import 'package:xcnav/util/eta.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -42,8 +43,12 @@ class _MyHomePageState extends State<MyHomePage> {
   FocusMode focusMode = FocusMode.me;
   FocusMode prevFocusMode = FocusMode.me;
 
-  // TODO: move this to utils
-  static var calc = const Distance(roundResult: false);
+  final TextEditingController newWaypointName = TextEditingController();
+
+  static TextStyle instrLower = const TextStyle(fontSize: 30);
+  static TextStyle instrUpper = const TextStyle(fontSize: 40);
+  static TextStyle instrLabel = const TextStyle(
+      fontSize: 14, color: Colors.grey, fontStyle: FontStyle.italic);
 
   @override
   _MyHomePageState();
@@ -80,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (focusMode == FocusMode.me) {
         LatLng newCenter = LatLng(geo.latitude!, geo.longitude!);
         // TODO: take zoom level into account for unlock
-        if (calc.distance(newCenter, mapController.center) > 1000) {
+        if (latlngCalc.distance(newCenter, mapController.center) < 1000) {
           mapController.move(newCenter, mapController.zoom);
         } else {
           // break focus lock
@@ -91,12 +96,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   setFocusMode(FocusMode mode, [LatLng? center]) {
-    prevFocusMode = focusMode;
-    focusMode = mode;
-    print("FocusMode = $mode");
-    if (mode == FocusMode.me && center != null) {
-      mapController.move(center, mapController.zoom);
-    }
+    setState(() {
+      prevFocusMode = focusMode;
+      focusMode = mode;
+      print("FocusMode = $mode");
+      if (mode == FocusMode.me && center != null) {
+        mapController.move(center, mapController.zoom);
+      }
+    });
   }
 
   beginAddWaypoint() {
@@ -113,10 +120,11 @@ class _MyHomePageState extends State<MyHomePage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("Add Waypoint"),
-          content: const TextField(
+          title: Text("Add Waypoint"),
+          content: TextField(
+            controller: newWaypointName,
             autofocus: true,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: "waypoint name",
               border: OutlineInputBorder(),
             ),
@@ -126,9 +134,14 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton.icon(
                 label: const Text("Add"),
                 onPressed: () {
-                  Provider.of<FlightPlan>(context, listen: false)
-                      .addWaypointNew("new", latlng, false);
-                  Navigator.pop(context);
+                  // TODO: marker icon and color options
+                  // TODO: validate name
+                  if (newWaypointName.text.isNotEmpty) {
+                    Provider.of<FlightPlan>(context, listen: false)
+                        .addWaypointNew(
+                            newWaypointName.text, latlng, false, null, null);
+                    Navigator.pop(context);
+                  }
                 },
                 icon: const Icon(
                   Icons.check,
@@ -219,119 +232,187 @@ class _MyHomePageState extends State<MyHomePage> {
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         automaticallyImplyLeading: false,
+        // TODO: menu
+        leading: IconButton(
+          padding: EdgeInsets.zero,
+          icon: const Icon(
+            Icons.menu,
+            color: Colors.grey,
+          ),
+          onPressed: () => {},
+        ),
         title: Consumer<MyTelemetry>(
-            builder: (context, myTelementy, child) => Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      TopInstrument(
-                          value: myTelementy.geo.spd.toStringAsFixed(0)),
-                      TopInstrument(
-                          value: myTelementy.geo.alt.toStringAsFixed(0)),
-                      TopInstrument(
-                          value: myTelementy.geo.vario.toStringAsFixed(0)),
-                    ])),
+            builder: (context, myTelementy, child) => Padding(
+                  padding: const EdgeInsets.fromLTRB(30, 2, 30, 2),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text.rich(TextSpan(children: [
+                          TextSpan(
+                            text: (myTelementy.geo.spd * 3.6 * km2Miles)
+                                .toStringAsFixed(0),
+                            style: instrUpper,
+                          ),
+                          TextSpan(
+                            text: " mph",
+                            style: instrLabel,
+                          )
+                        ])),
+                        Text.rich(TextSpan(children: [
+                          TextSpan(
+                            text: (myTelementy.geo.alt * meters2Feet)
+                                .toStringAsFixed(0),
+                            style: instrUpper,
+                          ),
+                          TextSpan(text: " ft", style: instrLabel)
+                        ])),
+                        Text(
+                          myTelementy.geo.vario.toStringAsFixed(0),
+                          style: instrUpper,
+                        ),
+                      ]),
+                )),
       ),
       body: Center(
-        child: Consumer<MyTelemetry>(
-          builder: (context, myTelemetry, child) => FlutterMap(
-            mapController: mapController,
-            options: MapOptions(
-              center: myTelemetry.geo.latLng,
-              zoom: 12.0,
-              onTap: (tapPosition, point) => onMapTap(context, point),
-              allowPanningOnScrollingParent: false,
-              plugins: [
-                DragMarkerPlugin(),
-              ],
-            ),
-            layers: [
-              TileLayerOptions(
-                // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                // subdomains: ['a', 'b', 'c'],
-                urlTemplate:
-                    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                // tileSize: 512,
-                // zoomOffset: -1,
-              ),
-              // TODO: re-enable airspace layers
-              // TileLayerOptions(
-              //   urlTemplate: 'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
-              //   maxZoom: 17,
-              //   tms: true,
-              //   subdomains: ['1','2'],
-              //   backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-              // ),
-              // TileLayerOptions(
-              //   urlTemplate: 'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
-              //   maxZoom: 17,
-              //   tms: true,
-              //   subdomains: ['1','2'],
-              //   backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-              // ),
-              // TileLayerOptions(
-              //   urlTemplate: 'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
-              //   maxZoom: 17,
-              //   tms: true,
-              //   subdomains: ['1','2'],
-              //   backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-              // ),
-
-              MarkerLayerOptions(
-                markers: [
-                  Marker(
-                    width: 40.0,
-                    height: 40.0,
-                    point: myTelemetry.geo.latLng,
-                    builder: (ctx) => Container(
-                      transformAlignment: const Alignment(0, 0),
-                      child: Image.asset("assets/images/red_arrow.png"),
-                      transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
-                    ),
-                  ),
+        child: Stack(alignment: Alignment.center, children: [
+          Consumer<MyTelemetry>(
+            builder: (context, myTelemetry, child) => FlutterMap(
+              mapController: mapController,
+              options: MapOptions(
+                center: myTelemetry.geo.latLng,
+                zoom: 12.0,
+                onTap: (tapPosition, point) => onMapTap(context, point),
+                allowPanningOnScrollingParent: false,
+                plugins: [
+                  DragMarkerPlugin(),
                 ],
               ),
+              layers: [
+                TileLayerOptions(
+                  // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  // subdomains: ['a', 'b', 'c'],
+                  urlTemplate:
+                      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                  // tileSize: 512,
+                  // zoomOffset: -1,
+                ),
+                // TODO: re-enable airspace layers
+                // TileLayerOptions(
+                //   urlTemplate: 'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                //   maxZoom: 17,
+                //   tms: true,
+                //   subdomains: ['1','2'],
+                //   backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                // ),
+                // TileLayerOptions(
+                //   urlTemplate: 'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                //   maxZoom: 17,
+                //   tms: true,
+                //   subdomains: ['1','2'],
+                //   backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                // ),
+                // TileLayerOptions(
+                //   urlTemplate: 'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                //   maxZoom: 17,
+                //   tms: true,
+                //   subdomains: ['1','2'],
+                //   backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                // ),
 
-              // Trip snake lines
-              PolylineLayerOptions(
-                  polylines: Provider.of<FlightPlan>(context).buildTripSnake()),
+                // Flight Log
+                PolylineLayerOptions(
+                    polylines: [myTelemetry.buildFlightTrace()]),
 
-              // Flight plan markers
-              DragMarkerPluginOptions(
-                // TODO: investigate using stream<> here
-                markers: Provider.of<FlightPlan>(context)
-                    .waypoints
-                    .mapIndexed((i, e) => DragMarker(
-                        // TODO: support lines
-                        point: e.latlng[0],
-                        height: 60,
-                        onDragEnd: (p0, p1) => {
-                              Provider.of<FlightPlan>(context, listen: false)
-                                  .moveWaypoint(i, p1)
-                            },
-                        builder: (context) => Stack(children: [
-                              Container(
-                                transform: Matrix4.translationValues(0, -28, 0),
-                                child: Image.asset(
-                                  "assets/images/pin.png",
-                                  color: e.color == null
-                                      ? Colors.black
-                                      : Color(e.color!),
+                // Trip snake lines
+                PolylineLayerOptions(
+                    polylines:
+                        Provider.of<FlightPlan>(context).buildTripSnake()),
+
+                PolylineLayerOptions(
+                  polylines: [
+                    Provider.of<FlightPlan>(context)
+                        .buildNextWpIndicator(myTelemetry.geo)
+                  ],
+                ),
+
+                // Flight plan markers
+                DragMarkerPluginOptions(
+                  // TODO: investigate using stream<> here
+                  markers: Provider.of<FlightPlan>(context)
+                      .waypoints
+                      .mapIndexed((i, e) => DragMarker(
+                          // TODO: support lines
+                          point: e.latlng[0],
+                          height: 60,
+                          onDragEnd: (p0, p1) => {
+                                Provider.of<FlightPlan>(context, listen: false)
+                                    .moveWaypoint(i, p1)
+                              },
+                          builder: (context) => Stack(children: [
+                                Container(
+                                  transform:
+                                      Matrix4.translationValues(0, -28, 0),
+                                  child: Image.asset(
+                                    "assets/images/pin.png",
+                                    color: e.color == null
+                                        ? Colors.black
+                                        : Color(e.color!),
+                                  ),
                                 ),
-                              ),
-                              Container(
-                                transform: Matrix4.translationValues(2, -12, 0),
-                                child: const Icon(
-                                  // TODO: support other icons
-                                  Icons.flight,
-                                  size: 24,
+                                Container(
+                                  transform:
+                                      Matrix4.translationValues(2, -13, 0),
+                                  child: const Icon(
+                                    // TODO: support other icons
+                                    Icons.circle,
+                                    size: 24,
+                                  ),
                                 ),
-                              ),
-                            ])))
-                    .toList(),
-              ),
-            ],
+                              ])))
+                      .toList(),
+                ),
+
+                // "ME" Live Location Marker
+                MarkerLayerOptions(
+                  markers: [
+                    Marker(
+                      width: 40.0,
+                      height: 40.0,
+                      point: myTelemetry.geo.latLng,
+                      builder: (ctx) => Container(
+                        transformAlignment: const Alignment(0, 0),
+                        child: Image.asset("assets/images/red_arrow.png"),
+                        transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
+
+          // --- Map overlay layers
+          if (focusMode == FocusMode.addWaypoint)
+            const Positioned(
+              bottom: 15,
+              child: Text.rich(
+                TextSpan(children: [
+                  WidgetSpan(
+                      child: Icon(
+                    Icons.touch_app,
+                    size: 40,
+                    color: Colors.black,
+                  )),
+                  TextSpan(text: "Tap to place waypoint")
+                ]),
+                style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+            ),
+        ]),
       ),
       floatingActionButton: Container(
         alignment: Alignment.centerLeft,
@@ -407,16 +488,79 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ]),
       ),
-      bottomNavigationBar: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          TopInstrument(value: "fuel"),
-          const Divider(
-            thickness: 1,
-          ),
-          TextButton(onPressed: showFlightPlan, child: Text("ETA next")),
-          TopInstrument(value: "ETA trip"),
-        ],
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(50, 2, 50, 2),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("fuel"),
+            // const Divider(
+            //   thickness: 1,
+            //   height: 80,
+            // ),
+
+            // --- ETA to next waypoint
+            GestureDetector(
+                onTap: showFlightPlan,
+                child: Consumer2<FlightPlan, MyTelemetry>(
+                    builder: (context, flightPlan, myTelemetry, child) {
+                  if (flightPlan.selectedIndex != null) {
+                    ETA eta = flightPlan.etaToWaypoint(myTelemetry.geo.latLng,
+                        myTelemetry.geo.spd, flightPlan.selectedIndex!);
+                    return Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "ETA next",
+                            style: instrLabel,
+                          ),
+                          Text(
+                            eta.hhmm(),
+                            style: instrLower,
+                          ),
+                          Text.rich(TextSpan(children: [
+                            TextSpan(text: eta.miles(), style: instrLower),
+                            TextSpan(text: " mi", style: instrLabel)
+                          ])),
+                        ]);
+                  } else {
+                    return Text(
+                      "Select\nWaypoint",
+                      style: instrLabel,
+                      textAlign: TextAlign.center,
+                    );
+                  }
+                })),
+
+            // --- Trip Time Remaining
+            Consumer2<FlightPlan, MyTelemetry>(
+                builder: (context, flightPlan, myTelemetry, child) {
+              ETA eta = flightPlan.etaToTripEnd(
+                  myTelemetry.geo.spd, flightPlan.selectedIndex ?? 0);
+              if (flightPlan.selectedIndex != null)
+                eta += flightPlan.etaToWaypoint(myTelemetry.geo.latLng,
+                    myTelemetry.geo.spd, flightPlan.selectedIndex!);
+              return Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "ETA trip",
+                      style: instrLabel,
+                    ),
+                    Text(
+                      eta.hhmm(),
+                      style: instrLower,
+                    ),
+                    Text.rich(TextSpan(children: [
+                      TextSpan(text: eta.miles(), style: instrLower),
+                      TextSpan(text: " mi", style: instrLabel)
+                    ])),
+                  ]);
+            }),
+          ],
+        ),
       ),
     );
   }

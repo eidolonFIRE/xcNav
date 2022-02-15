@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:location/location.dart';
 import 'dart:math';
 
-const meters2Feet = 3.28084;
+const _meters2Feet = 3.28084;
 
 class FakeGeo {
   FakeGeo(this.lng, this.lat, this.alt);
@@ -32,7 +32,7 @@ class FakeFlight {
   bool fake_in_flight = false;
   double fake_in_flight_timer = 10;
   double mainPhase = 0;
-  double fake_ground = 66 / meters2Feet;
+  double fake_ground = 66 / _meters2Feet;
 
   late double lat;
   late double lng;

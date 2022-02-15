@@ -35,6 +35,8 @@ class MyApp extends StatelessWidget {
         // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
         // primaryColorLight: primaryDarkColor,
         // backgroundColor: primaryDarkColor,
+        appBarTheme:
+            const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40)),
         primarySwatch: Colors.blueGrey,
         // scaffoldBackgroundColor: Colors.blueGrey[900],
         brightness: Brightness.dark,

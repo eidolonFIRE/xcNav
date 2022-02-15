@@ -42,7 +42,7 @@ dependencies:
   flutter_map_dragmarker:
     git:
       url: git@github.com:ibrierley/flutter_map_dragmarker.git
-  sqflite: ^2.0.2
+  shared_preferences: ^2.0.13
 
 dev_dependencies:
   flutter_test:

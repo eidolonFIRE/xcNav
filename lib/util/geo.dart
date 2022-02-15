@@ -10,16 +10,18 @@ LatLng locationToLatLng(LocationData location) {
   return LatLng(location.latitude!, location.longitude!);
 }
 
+Distance latlngCalc = const Distance(roundResult: false);
+
 class Geo {
   static var calc = const Distance(roundResult: false);
 
   double lat = 0;
   double lng = 0;
   double alt = 0;
-  double time = 0;
-  double hdg = 0;
-  double spd = 0;
-  double vario = 0;
+  double time = 0; // milliseconds
+  double hdg = 0; // radians
+  double spd = 0; // meters/sec
+  double vario = 0; // meters/sec
 
   Geo();
   Geo.fromValues(
@@ -37,7 +39,7 @@ class Geo {
           calc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
 
       // TODO: get units correct
-      spd = dist / (time - prev.time) * 3600 * km2Miles;
+      spd = dist / (time - prev.time) * 1000;
       if (dist < 1) {
         hdg = prev.hdg;
       } else {
@@ -46,7 +48,7 @@ class Geo {
             180;
       }
 
-      vario = (alt - prev.alt) / (time - prev.time);
+      vario = (alt - prev.alt) / (time - prev.time) * 1000;
     } else {
       spd = location.speed ?? 0;
       hdg = location.heading ?? 0;
