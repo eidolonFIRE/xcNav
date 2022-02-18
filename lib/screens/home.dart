@@ -89,7 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       prevFocusMode = focusMode;
       focusMode = mode;
-      print("FocusMode = $mode");
+      debugPrint("FocusMode = $mode");
       if (mode == FocusMode.me && center != null) {
         mapController.move(center, mapController.zoom);
       }
@@ -101,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void onMapTap(BuildContext context, LatLng latlng) {
-    print("onMapTap: $latlng");
+    debugPrint("onMapTap: $latlng");
     if (focusMode == FocusMode.addWaypoint) {
       // open "add waypoint" popup
       setFocusMode(prevFocusMode);
@@ -154,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // --- Flight Plan Menu
   showFlightPlan() {
-    print("Show flight plan");
+    debugPrint("Show flight plan");
     // TODO: move map view to see whole flight plan
     showModalBottomSheet(
         context: context,
@@ -195,7 +195,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       waypoint: flightPlan.waypoints[i],
                       index: i,
                       onSelect: () {
-                        print("Selected $i");
+                        debugPrint("Selected $i");
                         flightPlan.selectWaypoint(i);
                       },
                       onToggleOptional: () {
@@ -204,7 +204,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       isSelected: i == flightPlan.selectedIndex,
                     ),
                     onReorder: (oldIndex, newIndex) {
-                      print("WP order: $oldIndex --> $newIndex");
+                      debugPrint("WP order: $oldIndex --> $newIndex");
                       flightPlan.sortWaypoint(oldIndex, newIndex);
                     },
                   ),

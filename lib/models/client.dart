@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:js';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -32,28 +31,34 @@ class Client {
   Map<String, Pilot> pilots = {};
 
   Client(BuildContext context) {
-    // Dart client
-    IO.Socket socket = IO.io('https://xcnav-server.herokuapp.com');
-
-    socket.io.options["secure"] = true;
-    socket.io.options["withCredentials"] = true;
+    debugPrint("Building Client");
+    // socket = IO.io('https://xcnav-server.herokuapp.com');
+    // socket = IO.io('http://localhost:8081');
+    // socket = IO.io('http://192.168.1.101:8081');
+    socket = IO.io('http://192.168.1.101:8081',
+        IO.OptionBuilder().setTransports(["websocket"]).build());
+    // socket.connect();
+    //   "secure": true,
+    //   "withCredentials": true,
+    // });
+    // socket.io.options["secure"] = true;
+    // socket.io.options["withCredentials"] = true;
 
     socket.onConnect((_) {
-      print('connect');
-      socket.emit('msg', 'test');
+      debugPrint('connected');
+
+      if (Provider.of<Profile>(context, listen: false).secretID == null ||
+          Provider.of<Profile>(context, listen: false).id == null) {
+        register(Provider.of<Profile>(context, listen: false).name,
+            Provider.of<Profile>(context, listen: false).id ?? "");
+      } else {
+        login(Provider.of<Profile>(context, listen: false).secretID!,
+            Provider.of<Profile>(context, listen: false).id!);
+      }
     });
-    socket.onDisconnect((_) => print('disconnect'));
+    socket.onDisconnect((_) => debugPrint('disconnect'));
 
     setupListeners(context);
-
-    if (Provider.of<Profile>(context, listen: false).secretID == null ||
-        Provider.of<Profile>(context, listen: false).id == null) {
-      register(Provider.of<Profile>(context, listen: false).name,
-          Provider.of<Profile>(context, listen: false).id ?? "");
-    } else {
-      login(Provider.of<Profile>(context, listen: false).secretID!,
-          Provider.of<Profile>(context, listen: false).id!);
-    }
   }
 
   bool hasPilot(String pilotID) => pilots.containsKey(pilotID);
@@ -74,25 +79,25 @@ class Client {
   void setupListeners(BuildContext context) {
     // --- new text message from server
     socket.on("TextMessage", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
+      Map<String, dynamic> msg = jsonMsg;
       if (msg["group_id"] == currentGroupID) {
         // TODO: process msg
         // chat.processTextMessage(msg);
       } else {
         // getting messages from the wrong group!
-        print("Wrong group ID! $currentGroupID, ${msg["group_id"]}");
+        debugPrint("Wrong group ID! $currentGroupID, ${msg["group_id"]}");
       }
     });
 
     //--- receive location of other pilots
     socket.on("PilotTelemetry", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
+      Map<String, dynamic> msg = jsonMsg;
       // if we know this pilot, update their telemetry
       if (hasPilot(msg["pilot_id"])) {
         pilots[msg["pilot_id"]]!
             .updateTelemetry(msg["telemetry"], msg["timestamp"]);
       } else {
-        print("Unrecognized local pilot ${msg["pilot_id"]}");
+        debugPrint("Unrecognized local pilot ${msg["pilot_id"]}");
         if (currentGroupID != null) {
           requestGroupInfo(currentGroupID!);
         }
@@ -101,7 +106,7 @@ class Client {
 
     // --- new Pilot to group
     socket.on("PilotJoinedGroup", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
+      Map<String, dynamic> msg = jsonMsg;
       if (msg["pilot"].id != Provider.of<Profile>(context, listen: false).id) {
         // update pilots with new info
         processNewPilot(msg["pilot"]);
@@ -110,7 +115,7 @@ class Client {
 
     // --- Pilot left group
     socket.on("PilotLeftGroup", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
+      Map<String, dynamic> msg = jsonMsg;
       if (msg["pilot_id"] == Provider.of<Profile>(context, listen: false).id)
         return;
       pilots.remove(msg["pilot_id"]);
@@ -121,14 +126,14 @@ class Client {
 
     // --- Full flight plan sync
     socket.on("FlightPlanSync", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
+      Map<String, dynamic> msg = jsonMsg;
       // TODO: hook back up to flightPlan provider
       // planManager.plans["group"].replaceData(msg["flight_plan"]);
     });
 
     // --- Process an update to group flight plan
     socket.on("FlightPlanUpdate", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
+      Map<String, dynamic> msg = jsonMsg;
       // make backup copy of the plan
 
       // update the plan
@@ -165,7 +170,7 @@ class Client {
       if (hash != msg["hash"]) {
         // DE-SYNC ERROR
         // restore backup
-        print("Group Flightplan De-sync!  $hash  ${msg['hash']}");
+        debugPrint("Group Flightplan De-sync!  $hash  ${msg['hash']}");
 
         // we are out of sync!
         // TODO: re-enable when hashing is fixed
@@ -175,9 +180,9 @@ class Client {
 
     // --- Process Pilot Waypoint selections
     socket.on("PilotWaypointSelections", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
+      Map<String, dynamic> msg = jsonMsg;
       msg.forEach((otherPilotId, wp) {
-        print("$otherPilotId selected wp: $wp");
+        debugPrint("$otherPilotId selected wp: $wp");
         if (hasPilot(otherPilotId)) {
           pilots[otherPilotId]!.selectedWaypoint = wp;
         } else {
@@ -195,11 +200,12 @@ class Client {
     //
     // ############################################################################
     socket.on("RegisterResponse", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
-      if (msg["status"]) {
+      Map<String, dynamic> msg = jsonMsg;
+
+      if (msg["status"] != ErrorCode.success.index) {
         // TODO: handle error
         // msg["status"] (ErrorCode)
-        print("Error Registering ${msg['status']}");
+        debugPrint("Error Registering ${msg['status']}");
       } else {
         // update my ID
         Provider.of<Profile>(context, listen: false)
@@ -212,8 +218,8 @@ class Client {
     });
 
     socket.on("LoginResponse", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
-      if (msg["status"]) {
+      Map<String, dynamic> msg = jsonMsg;
+      if (msg["status"] != ErrorCode.success.index) {
         if (msg["status"] == ErrorCode.invalidSecretId ||
             msg["status"] == ErrorCode.invalidId) {
           // we aren't registered on this server
@@ -221,21 +227,21 @@ class Client {
               Provider.of<Profile>(context, listen: false).id ?? "");
           return;
         } else {
-          print("Error Logging in.");
+          debugPrint("Error Logging in.");
         }
       } else {
         // compare API version
         // TODO: should have big warning banners for this
         if (msg["api_version"] > apiVersion) {
-          print("Client is out of date!");
+          debugPrint("Client is out of date!");
         } else if (msg["api_version"] < apiVersion) {
-          print("Server is out of date!");
+          debugPrint("Server is out of date!");
         }
 
         // update profile
         if (msg["pilot_meta_hash"] !=
             Provider.of<Profile>(context, listen: false).hash) {
-          print("Server had outdate profile meta.");
+          debugPrint("Server had outdate profile meta.");
           pushProfile(Provider.of<Profile>(context, listen: false));
         }
 
@@ -248,20 +254,20 @@ class Client {
     });
 
     socket.on("UpdateProfileResponse", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
-      if (msg["status"]) {
-        print("Error Updating profile ${msg['status']}");
+      Map<String, dynamic> msg = jsonMsg;
+      if (msg["status"] != ErrorCode.success.index) {
+        debugPrint("Error Updating profile ${msg['status']}");
       }
     });
 
     socket.on("GroupInfoResponse", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
-      if (msg["status"]) {
-        print("Error getting group info ${msg['status']}");
+      Map<String, dynamic> msg = jsonMsg;
+      if (msg["status"] != ErrorCode.success.index) {
+        debugPrint("Error getting group info ${msg['status']}");
       } else {
         // ignore if it's not a group I'm in
         if (msg["group_id"] != currentGroupID) {
-          print("Received info for another group.");
+          debugPrint("Received info for another group.");
           return;
         }
 
@@ -280,9 +286,9 @@ class Client {
     });
 
     socket.on("ChatLogResponse", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
-      if (msg["status"]) {
-        print("ChatLogRequest Failed ${msg['status']}");
+      Map<String, dynamic> msg = jsonMsg;
+      if (msg["status"] != ErrorCode.success.index) {
+        debugPrint("ChatLogRequest Failed ${msg['status']}");
       } else {
         if (msg["group_id"] == currentGroupID) {
           // TODO: process chat messages
@@ -291,15 +297,15 @@ class Client {
           //     chat.processTextMessage(msg, true);
           // });
         } else {
-          print("Wrong group ID! $currentGroupID, ${msg["group_id"]}");
+          debugPrint("Wrong group ID! $currentGroupID, ${msg["group_id"]}");
         }
       }
     });
 
     socket.on("PilotsStatusResponse", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
-      if (msg["status"]) {
-        print("Error getting pilot statuses ${msg['status']}");
+      Map<String, dynamic> msg = jsonMsg;
+      if (msg["status"] != ErrorCode.success.index) {
+        debugPrint("Error getting pilot statuses ${msg['status']}");
       } else {
         // TODO: should this be throttled?
         Map<String, bool> _pilots = msg["pilots_online"];
@@ -312,12 +318,12 @@ class Client {
     });
 
     socket.on("LeaveGroupResponse", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
-      if (msg["status"]) {
+      Map<String, dynamic> msg = jsonMsg;
+      if (msg["status"] != ErrorCode.success.index) {
         if (msg["status"] == ErrorCode.noop && currentGroupID == null) {
           // It's ok, we were pretty sure we weren't in a group anyway.
         } else {
-          print("Error leaving group ${msg['status']}");
+          debugPrint("Error leaving group ${msg['status']}");
         }
       } else {
         currentGroupID = msg["group_id"];
@@ -325,17 +331,17 @@ class Client {
     });
 
     socket.on("JoinGroupResponse", (jsonMsg) {
-      dynamic msg = jsonDecode(jsonMsg);
-      if (msg["status"]) {
+      Map<String, dynamic> msg = jsonMsg;
+      if (msg["status"] != ErrorCode.success.index) {
         // not a valid group
         if (msg["status"] == ErrorCode.invalidId) {
-          print("Attempted to join invalid group ${msg["group_id"]}");
+          debugPrint("Attempted to join invalid group ${msg["group_id"]}");
         } else if (msg["status"] == ErrorCode.noop &&
             msg["group_id"] == currentGroupID) {
           // we were already in this group... update anyway
           currentGroupID = msg["group_id"];
         } else {
-          print("Error joining group ${msg['status']}");
+          debugPrint("Error joining group ${msg['status']}");
         }
       } else {
         // successfully joined group
@@ -383,7 +389,7 @@ class Client {
 
   // TODO: send flight plan changes
   // void updateWaypoint(msg: api.FlightPlanUpdate) {
-  //     print("TX waypoint update:",  msg)
+  //     debugPrint("TX waypoint update:",  msg)
   //     socket.emit("FlightPlanUpdate", msg);
   // }
 
@@ -469,7 +475,7 @@ class Client {
     socket.emit("JoinGroupRequest", {
       "target_id": reqGroupID,
     });
-    print("Requesting Join Group $reqGroupID");
+    debugPrint("Requesting Join Group $reqGroupID");
   }
 
   // ############################################################################

@@ -45,7 +45,7 @@ class MyTelemetry with ChangeNotifier {
   }
 
   void updateGeo(LocationData location) {
-    // print("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
+    // debugPrint("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
     geoPrev = geo;
     geo = Geo.fromLocationData(location, geoPrev);
 

@@ -39,7 +39,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
     // TODO: check location permissions
 
     location.getLocation().then((location) {
-      print("initial location: $location");
+      debugPrint("initial location: $location");
       // Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
       // TODO: revert to real gps
       Provider.of<MyTelemetry>(context, listen: false)

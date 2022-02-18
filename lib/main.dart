@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     Wakelock.enable();
 
+    debugPrint("Building App");
     Client client = Client(context);
 
     return MaterialApp(

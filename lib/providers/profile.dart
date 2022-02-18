@@ -1,25 +1,30 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Profile with ChangeNotifier {
-  late String name;
-  late String? id;
-  late String? secretID;
-  late Image avatar;
-  late String? _avatarRaw;
+  String name = "anonymous";
+  String? id;
+  String? secretID;
+  Image avatar = Image.asset("assets/images/default_avatar.png");
+  String? _avatarRaw;
 
   late String hash;
 
   String? get avatarRaw => _avatarRaw;
 
+  late SharedPreferences prefs;
+
   Profile() {
     load();
+    hash = _hash();
   }
 
   load() async {
-    final prefs = await SharedPreferences.getInstance();
+    prefs = await SharedPreferences.getInstance();
+
     name = prefs.getString("profile.name") ?? "anonymous";
     id = prefs.getString("profile.id");
     secretID = prefs.getString("profile.secretID");
@@ -35,9 +40,17 @@ class Profile with ChangeNotifier {
     hash = _hash();
   }
 
-  updateID(String newID, String newSecretID) async {
-    final prefs = await SharedPreferences.getInstance();
+  updateNameAvatar(String newName, Image newAvatar) {
+    name = newName;
+    avatar = newAvatar;
 
+    prefs.setString("profile.name", name);
+    // TODO: set raw
+    // _avatarRaw = base64Encode(File(newAvatar).readAsBytesSync());
+    notifyListeners();
+  }
+
+  updateID(String newID, String newSecretID) {
     id = newID;
     secretID = newSecretID;
 

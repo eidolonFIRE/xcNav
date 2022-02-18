@@ -38,7 +38,7 @@ class FlightPlan with ChangeNotifier {
           : null;
 
   void load() async {
-    print("Loading waypoints");
+    debugPrint("Loading waypoints");
     final prefs = await SharedPreferences.getInstance();
     final List<String>? items = prefs.getStringList("flightPlan.waypoints");
     if (items != null) {
@@ -51,7 +51,7 @@ class FlightPlan with ChangeNotifier {
             wp["isOptional"],
             wp["icon"],
             wp["color"]));
-        print("+ ${wp["name"]}");
+        debugPrint("+ ${wp["name"]}");
       }
     }
   }
