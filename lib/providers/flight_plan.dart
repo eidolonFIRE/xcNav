@@ -1,13 +1,14 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:xcnav/util/geo.dart';
-import 'package:xcnav/util/waypoint.dart';
-import 'package:xcnav/util/eta.dart';
+import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/models/eta.dart';
 
 class FlightPlan with ChangeNotifier {
   List<Waypoint> waypoints = [];
@@ -61,21 +62,39 @@ class FlightPlan with ChangeNotifier {
         "flightPlan.waypoints", waypoints.map((e) => e.toString()).toList());
   }
 
-  void addWaypoint(Waypoint newPoint) {
-    waypoints.add(newPoint);
-
-    notifyListeners();
-  }
-
   void selectWaypoint(int index) {
     selectedIndex = index;
     notifyListeners();
   }
 
-  void addWaypointNew(
-      String name, LatLng pos, bool? isOptional, String? icon, int? color) {
-    // TODO: insert in particular place
-    waypoints.add(Waypoint(name, [pos], isOptional ?? false, icon, color));
+  int _resolveNewWaypointIndex(int? index) {
+    if (index != null) {
+      return max(0, min(waypoints.length, index));
+    } else {
+      if (selectedIndex != null) {
+        // TODO: support reverse direction flight plan
+        return selectedIndex! + 1;
+      } else {
+        return 0;
+      }
+    }
+  }
+
+  void addWaypoint(int? index, Waypoint newPoint) {
+    waypoints.insert(_resolveNewWaypointIndex(index), newPoint);
+
+    notifyListeners();
+  }
+
+  void addWaypointNew(int? index, String name, LatLng pos, bool? isOptional,
+      String? icon, int? color) {
+    waypoints.insert(_resolveNewWaypointIndex(index),
+        Waypoint(name, [pos], isOptional ?? false, icon, color));
+    notifyListeners();
+  }
+
+  void replaceWaypoint(int index, Waypoint replacement) {
+    waypoints[index] = replacement;
     notifyListeners();
   }
 
