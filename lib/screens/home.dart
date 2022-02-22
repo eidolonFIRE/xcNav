@@ -46,10 +46,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final TextEditingController newWaypointName = TextEditingController();
 
-  static TextStyle instrLower = const TextStyle(fontSize: 40);
+  static TextStyle instrLower = const TextStyle(fontSize: 35);
   static TextStyle instrUpper = const TextStyle(fontSize: 50);
   static TextStyle instrLabel = const TextStyle(
-      fontSize: 16, color: Colors.grey, fontStyle: FontStyle.italic);
+      fontSize: 14, color: Colors.grey, fontStyle: FontStyle.italic);
 
   @override
   _MyHomePageState();
@@ -448,6 +448,8 @@ class _MyHomePageState extends State<MyHomePage> {
               builder: (context, myTelemetry, child) => FlutterMap(
                 mapController: mapController,
                 options: MapOptions(
+                  interactiveFlags:
+                      InteractiveFlag.all & ~InteractiveFlag.rotate,
                   center: myTelemetry.geo.latLng,
                   zoom: 12.0,
                   onTap: (tapPosition, point) => onMapTap(context, point),

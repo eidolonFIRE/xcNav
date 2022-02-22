@@ -30,22 +30,14 @@ class _ProfileEditorState extends State<ProfileEditor> {
   @override
   _ProfileEditorState();
 
-  @override
-  void initState() {
-    // _controller.init();
-    super.initState();
-
-    debugPrint("init: ${cropKey.currentState?.area ?? ""}");
-  }
-
   pickGallery() {
     _picker.pickImage(source: ImageSource.gallery).then((value) {
       if (value != null) {
         imageFile = value;
-
         imageFile.readAsBytes().then((value) {
           setState(() {
             imageRaw = value;
+            refreshCropped();
           });
         });
       }
@@ -56,18 +48,40 @@ class _ProfileEditorState extends State<ProfileEditor> {
     _picker.pickImage(source: ImageSource.camera).then((value) {
       if (value != null) {
         imageFile = value;
-
         imageFile.readAsBytes().then((value) {
           setState(() {
             imageRaw = value;
+            refreshCropped();
           });
         });
       }
     });
   }
 
+  refreshCropped() {
+    if (cropKey.currentState != null) {
+      ImageCrop.cropImage(
+              file: File(imageFile.path), area: cropKey.currentState!.area!)
+          .then((value) {
+        setState(() {
+          croppedImage = value;
+        });
+      });
+    }
+  }
+
+  accept(BuildContext context) {
+    // TODO: validate text correctly
+    if (nameController.text.length > 1 && croppedImage != null) {
+      croppedImage!.readAsBytes().then((value) {
+        Provider.of<Profile>(context, listen: false)
+            .updateNameAvatar(nameController.text, value);
+        Navigator.pushReplacementNamed(context, "/home");
+      });
+    }
+  }
+
   Widget _buildCropImage() {
-    debugPrint("${cropKey.currentState?.area ?? ""}");
     return Crop(
       image: MemoryImage(imageRaw!),
       key: cropKey,
@@ -95,18 +109,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
                     imageRaw != null
                         ? Listener(
                             child: _buildCropImage(),
-                            onPointerUp: (event) {
-                              if (cropKey.currentState != null) {
-                                ImageCrop.cropImage(
-                                        file: File(imageFile.path),
-                                        area: cropKey.currentState!.area!)
-                                    .then((value) {
-                                  setState(() {
-                                    croppedImage = value;
-                                  });
-                                });
-                              }
-                            },
+                            onPointerUp: (event) => refreshCropped(),
                           )
                         : Container(),
                     // --- buttons
@@ -133,9 +136,10 @@ class _ProfileEditorState extends State<ProfileEditor> {
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(10.0),
+                    padding: const EdgeInsets.all(8.0),
                     child: AvatarRound(
                         croppedImage != null
                             ? Image.file(croppedImage!)
@@ -158,7 +162,8 @@ class _ProfileEditorState extends State<ProfileEditor> {
               ),
             ),
             ElevatedButton.icon(
-                onPressed: () => {},
+                onPressed: () => accept(context),
+                // onPressed: () => {},
                 icon: const Icon(
                   Icons.check,
                   size: 24,

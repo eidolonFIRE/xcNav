@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,11 +8,11 @@ class Profile with ChangeNotifier {
   String? id;
   String? secretID;
   Image avatar = Image.asset("assets/images/default_avatar.png");
-  String? _avatarRaw;
+  Uint8List? _avatarRaw;
 
   late String hash;
 
-  String? get avatarRaw => _avatarRaw;
+  Uint8List? get avatarRaw => _avatarRaw;
 
   late SharedPreferences prefs;
 
@@ -31,10 +30,9 @@ class Profile with ChangeNotifier {
 
     debugPrint("Loaded ID: $id $secretID");
 
-    _avatarRaw = prefs.getString("profile.avatar");
+    _avatarRaw = base64Decode(prefs.getString("profile.avatar") ?? "");
     if (_avatarRaw != null) {
-      Uint8List imgBits = base64Decode(_avatarRaw!);
-      avatar = Image.memory(imgBits);
+      avatar = Image.memory(_avatarRaw!);
     } else {
       avatar = Image.asset("assets/images/default_avatar.png");
     }
@@ -42,13 +40,13 @@ class Profile with ChangeNotifier {
     hash = _hash();
   }
 
-  updateNameAvatar(String newName, Image newAvatar) {
-    name = newName;
-    avatar = newAvatar;
+  updateNameAvatar(String newName, Uint8List newRawAvatar) {
+    name = newName.trim();
+    _avatarRaw = newRawAvatar;
+    avatar = Image.memory(newRawAvatar);
 
-    prefs.setString("profile.name", newName);
-    // TODO: set raw
-    // _avatarRaw = base64Encode(File(newAvatar).readAsBytesSync());
+    prefs.setString("profile.name", newName.trim());
+    prefs.setString("profile.avatar", base64Encode(newRawAvatar));
     notifyListeners();
   }
 
@@ -68,7 +66,10 @@ class Profile with ChangeNotifier {
 
   String _hash() {
     // build long string
-    String str = "Meta" + (name ?? "") + (id ?? "") + (_avatarRaw ?? "");
+    String str = "Meta" +
+        (name ?? "") +
+        (id ?? "") +
+        (_avatarRaw != null ? base64Encode(_avatarRaw!) : "");
 
     // fold string into hash
     int hash = 0;
