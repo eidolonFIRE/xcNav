@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Profile with ChangeNotifier {
-  String name = "anonymous";
+  String? name;
   String? id;
   String? secretID;
   Image avatar = Image.asset("assets/images/default_avatar.png");
@@ -25,9 +25,11 @@ class Profile with ChangeNotifier {
   load() async {
     prefs = await SharedPreferences.getInstance();
 
-    name = prefs.getString("profile.name") ?? "anonymous";
+    name = prefs.getString("profile.name");
     id = prefs.getString("profile.id");
     secretID = prefs.getString("profile.secretID");
+
+    debugPrint("Loaded ID: $id $secretID");
 
     _avatarRaw = prefs.getString("profile.avatar");
     if (_avatarRaw != null) {
@@ -44,7 +46,7 @@ class Profile with ChangeNotifier {
     name = newName;
     avatar = newAvatar;
 
-    prefs.setString("profile.name", name);
+    prefs.setString("profile.name", newName);
     // TODO: set raw
     // _avatarRaw = base64Encode(File(newAvatar).readAsBytesSync());
     notifyListeners();
@@ -53,6 +55,8 @@ class Profile with ChangeNotifier {
   updateID(String newID, String newSecretID) {
     id = newID;
     secretID = newSecretID;
+
+    debugPrint("Profile Update: $newID $secretID");
 
     prefs.setString("profile.id", newID);
     prefs.setString("profile.secretID", newSecretID);
@@ -64,7 +68,7 @@ class Profile with ChangeNotifier {
 
   String _hash() {
     // build long string
-    String str = "Meta" + name + (id ?? "") + (_avatarRaw ?? "");
+    String str = "Meta" + (name ?? "") + (id ?? "") + (_avatarRaw ?? "");
 
     // fold string into hash
     int hash = 0;

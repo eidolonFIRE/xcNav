@@ -12,6 +12,7 @@ import 'package:xcnav/models/error_code.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/flight_plan.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/profile.dart';
 
 enum WaypointAction {
@@ -49,7 +50,7 @@ class Client {
 
       if (Provider.of<Profile>(context, listen: false).secretID == null ||
           Provider.of<Profile>(context, listen: false).id == null) {
-        register(Provider.of<Profile>(context, listen: false).name,
+        register(Provider.of<Profile>(context, listen: false).name ?? "unset",
             Provider.of<Profile>(context, listen: false).id ?? "");
       } else {
         login(Provider.of<Profile>(context, listen: false).secretID!,
@@ -59,6 +60,12 @@ class Client {
     socket.onDisconnect((_) => debugPrint('disconnect'));
 
     setupListeners(context);
+
+    // Subscribe to my geo updates
+    context.watch<MyTelemetry>().addListener(() {
+      MyTelemetry telemetry = Provider.of<MyTelemetry>(context, listen: false);
+      sendTelemetry(telemetry.geo, telemetry.fuel);
+    });
   }
 
   bool hasPilot(String pilotID) => pilots.containsKey(pilotID);
@@ -212,8 +219,7 @@ class Client {
             .updateID(msg["pilot_id"], msg["secret_id"]);
 
         // proceed to login
-        login(Provider.of<Profile>(context, listen: false).secretID!,
-            Provider.of<Profile>(context, listen: false).id!);
+        login(msg["secret_id"], msg["pilot_id"]);
       }
     });
 
@@ -223,7 +229,8 @@ class Client {
         if (msg["status"] == ErrorCode.invalidSecretId ||
             msg["status"] == ErrorCode.invalidId) {
           // we aren't registered on this server
-          register(Provider.of<Profile>(context, listen: false).name,
+          // TODO: ensure name is set
+          register(Provider.of<Profile>(context, listen: false).name!,
               Provider.of<Profile>(context, listen: false).id ?? "");
           return;
         } else {

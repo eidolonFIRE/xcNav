@@ -10,6 +10,7 @@ import 'package:xcnav/providers/profile.dart';
 // screens
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/screens/loading.dart';
+import 'package:xcnav/screens/profile_editor.dart';
 
 // Models
 import 'package:xcnav/models/client.dart';
@@ -70,6 +71,7 @@ class MyApp extends StatelessWidget {
       routes: {
         "/": (context) => const LoadingScreen(),
         "/home": (context) => const MyHomePage(),
+        "/profileEditor": (context) => const ProfileEditor(),
       },
     );
   }

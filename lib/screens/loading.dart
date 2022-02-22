@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 
 // providers
+import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/providers/profile.dart';
 
 import 'package:xcnav/fake_path.dart';
 
@@ -21,17 +22,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   _LoadingScreenState();
 
-  // void _incrementCounter() {
-  //   setState(() {
-  //     // This call to setState tells the Flutter framework that something has
-  //     // changed in this State, which causes it to rerun the build method below
-  //     // so that the display can reflect the updated values. If we changed
-  //     // _counter without calling setState(), then the build method would not be
-  //     // called again, and so nothing would appear to happen.
-  //     _counter++;
-  //   });
-  // }
-
   @override
   void initState() {
     super.initState();
@@ -44,7 +34,13 @@ class _LoadingScreenState extends State<LoadingScreen> {
       // TODO: revert to real gps
       Provider.of<MyTelemetry>(context, listen: false)
           .updateGeo(fakeGeoToLoc(FakeGeo(-121.2971, 37.6738, 20)));
-      Navigator.pushNamed(context, "/home");
+
+      // Go to next screen
+      if (Provider.of<Profile>(context, listen: false).name == null && false) {
+        Navigator.pushReplacementNamed(context, "/home");
+      } else {
+        Navigator.pushReplacementNamed(context, "/profileEditor");
+      }
     });
   }
 

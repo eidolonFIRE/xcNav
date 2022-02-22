@@ -389,6 +389,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // the App.build method, and use it to set our appbar title.
           automaticallyImplyLeading: false,
           // TODO: menu
+          leadingWidth: 30,
           leading: IconButton(
             padding: EdgeInsets.zero,
             icon: const Icon(
@@ -399,10 +400,11 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           title: Consumer<MyTelemetry>(
               builder: (context, myTelementy, child) => Padding(
-                    padding: const EdgeInsets.fromLTRB(30, 2, 30, 2),
+                    padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
                     child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
+                          // --- Speedometer
                           Text.rich(TextSpan(children: [
                             TextSpan(
                               text: (myTelementy.geo.spd * 3.6 * km2Miles)
@@ -414,6 +416,11 @@ class _MyHomePageState extends State<MyHomePage> {
                               style: instrLabel,
                             )
                           ])),
+                          const SizedBox(
+                              height: 100,
+                              child: VerticalDivider(
+                                  thickness: 2, color: Colors.black)),
+                          // --- Altimeter
                           Text.rich(TextSpan(children: [
                             TextSpan(
                               text: (myTelementy.geo.alt * meters2Feet)
@@ -422,6 +429,11 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                             TextSpan(text: " ft", style: instrLabel)
                           ])),
+                          const SizedBox(
+                              height: 100,
+                              child: VerticalDivider(
+                                  thickness: 2, color: Colors.black)),
+                          // --- Vario
                           // TODO: replace with graphic
                           Text(
                             myTelementy.geo.vario.toStringAsFixed(1),
@@ -699,6 +711,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
 
+                const SizedBox(
+                    height: 100,
+                    child: VerticalDivider(thickness: 2, color: Colors.black)),
+
                 // --- ETA to next waypoint
                 GestureDetector(
                     onTap: showFlightPlan,
@@ -726,6 +742,10 @@ class _MyHomePageState extends State<MyHomePage> {
                             style: instrLabel,
                             textAlign: TextAlign.center,
                           )),
+
+                const SizedBox(
+                    height: 100,
+                    child: VerticalDivider(thickness: 2, color: Colors.black)),
 
                 // --- Trip Time Remaining
                 Column(

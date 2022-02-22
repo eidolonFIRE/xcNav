@@ -1,0 +1,22 @@
+import 'package:flutter/material.dart';
+
+class AvatarRound extends StatelessWidget {
+  final Image avatar;
+  final double radius;
+
+  const AvatarRound(this.avatar, this.radius, {Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Colors.black,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: ClipOval(
+          child: avatar,
+        ),
+      ),
+    );
+  }
+}
