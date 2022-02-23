@@ -28,14 +28,14 @@ class Profile with ChangeNotifier {
     id = prefs.getString("profile.id");
     secretID = prefs.getString("profile.secretID");
 
-    debugPrint("Loaded ID: $id $secretID");
-
     _avatarRaw = base64Decode(prefs.getString("profile.avatar") ?? "");
     if (_avatarRaw != null) {
       avatar = Image.memory(_avatarRaw!);
     } else {
       avatar = Image.asset("assets/images/default_avatar.png");
     }
+
+    debugPrint("Loaded Profile: $name, $id, $secretID");
 
     hash = _hash();
   }
@@ -54,7 +54,7 @@ class Profile with ChangeNotifier {
     id = newID;
     secretID = newSecretID;
 
-    debugPrint("Profile Update: $newID $secretID");
+    debugPrint("Profile Update: $newID, $secretID");
 
     prefs.setString("profile.id", newID);
     prefs.setString("profile.secretID", newSecretID);

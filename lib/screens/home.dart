@@ -64,25 +64,25 @@ class _MyHomePageState extends State<MyHomePage> {
     FakeFlight fakeFlight = FakeFlight();
 
     // --- Geo location loop
-    Timer timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
-      // LocationData geo = await location.getLocation();
+    // Timer timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+    //   // LocationData geo = await location.getLocation();
 
-      LocationData geo = fakeFlight.genFakeLocationFlight();
+    //   LocationData geo = fakeFlight.genFakeLocationFlight();
 
-      Provider.of<MyTelemetry>(context, listen: false).updateGeo(geo);
-      // TODO: no null-check
-      // TODO: handle group vs unlocked
-      if (focusMode == FocusMode.me) {
-        LatLng newCenter = LatLng(geo.latitude!, geo.longitude!);
-        // TODO: take zoom level into account for unlock
-        if (latlngCalc.distance(newCenter, mapController.center) < 1000) {
-          mapController.move(newCenter, mapController.zoom);
-        } else {
-          // break focus lock
-          setFocusMode(FocusMode.unlocked);
-        }
-      }
-    });
+    //   Provider.of<MyTelemetry>(context, listen: false).updateGeo(geo);
+    //   // TODO: no null-check
+    //   // TODO: handle group vs unlocked
+    //   if (focusMode == FocusMode.me) {
+    //     LatLng newCenter = LatLng(geo.latitude!, geo.longitude!);
+    //     // TODO: take zoom level into account for unlock
+    //     if (latlngCalc.distance(newCenter, mapController.center) < 1000) {
+    //       mapController.move(newCenter, mapController.zoom);
+    //     } else {
+    //       // break focus lock
+    //       setFocusMode(FocusMode.unlocked);
+    //     }
+    //   }
+    // });
   }
 
   setFocusMode(FocusMode mode, [LatLng? center]) {
@@ -110,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text("Add Waypoint"),
+          title: const Text("Add Waypoint"),
           content: TextField(
             controller: newWaypointName,
             autofocus: true,
@@ -118,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
               hintText: "waypoint name",
               border: OutlineInputBorder(),
             ),
-            style: TextStyle(fontSize: 20),
+            style: const TextStyle(fontSize: 20),
           ),
           actions: [
             ElevatedButton.icon(
@@ -383,6 +383,7 @@ class _MyHomePageState extends State<MyHomePage> {
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   @override
   Widget build(BuildContext context) {
+    debugPrint("Build /home");
     return Scaffold(
         appBar: AppBar(
           // Here we take the value from the MyHomePage object that was created by
@@ -661,6 +662,21 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ]),
             ),
+
+            Positioned(
+                bottom: 5,
+                left: 0,
+                child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: FloatingActionButton(
+                      heroTag: "party",
+                      backgroundColor: const Color.fromARGB(50, 0, 0, 0),
+                      onPressed: () => {Navigator.pushNamed(context, "/party")},
+                      elevation: 0,
+                      child: const Icon(
+                        Icons.chat,
+                      ),
+                    )))
           ]),
         ),
 

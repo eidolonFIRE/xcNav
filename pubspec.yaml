@@ -47,6 +47,8 @@ dependencies:
   fullscreen: ^1.0.3
   image_picker: ^0.8.4+9
   image_crop: ^0.4.0
+  qr_code_scanner: ^0.7.0
+  qr_flutter: ^4.0.0
 
 dev_dependencies:
   flutter_test:

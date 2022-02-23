@@ -27,7 +27,8 @@ const double apiVersion = 3.5;
 
 class Client {
   late IO.Socket socket;
-
+  bool isRegistered = false;
+  bool isLoggedIn = false;
   String? currentGroupID;
   Map<String, Pilot> pilots = {};
 
@@ -36,8 +37,12 @@ class Client {
     // socket = IO.io('https://xcnav-server.herokuapp.com');
     // socket = IO.io('http://localhost:8081');
     // socket = IO.io('http://192.168.1.101:8081');
-    socket = IO.io('http://192.168.1.101:8081',
-        IO.OptionBuilder().setTransports(["websocket"]).build());
+    try {
+      socket = IO.io('http://192.168.1.101:8081',
+          IO.OptionBuilder().setTransports(["websocket"]).build());
+    } catch (e) {
+      debugPrint("$e");
+    }
     // socket.connect();
     //   "secure": true,
     //   "withCredentials": true,
@@ -48,18 +53,37 @@ class Client {
     socket.onConnect((_) {
       debugPrint('connected');
 
-      if (Provider.of<Profile>(context, listen: false).secretID == null ||
-          Provider.of<Profile>(context, listen: false).id == null) {
-        register(Provider.of<Profile>(context, listen: false).name ?? "unset",
-            Provider.of<Profile>(context, listen: false).id ?? "");
-      } else {
-        login(Provider.of<Profile>(context, listen: false).secretID!,
-            Provider.of<Profile>(context, listen: false).id!);
+      isLoggedIn = false;
+      isRegistered = false;
+
+      Profile profile = Provider.of<Profile>(context, listen: false);
+
+      if (profile.secretID == null && profile.name != null) {
+        // Providing public ID on register is optional
+        register(profile.name!, profile.id ?? "");
+      } else if (profile.secretID != null && profile.id != null) {
+        login(profile.secretID!, profile.id!);
       }
     });
     socket.onDisconnect((_) => debugPrint('disconnect'));
 
     setupListeners(context);
+
+    // Watch updates to Profile
+    context.watch<Profile>().addListener(() {
+      Profile profile = Provider.of<Profile>(context, listen: false);
+      if (!isRegistered && profile.secretID == null && profile.name != null) {
+        // Providing public ID on register is optional
+        register(profile.name!, profile.id ?? "");
+      } else if (!isLoggedIn &&
+          profile.secretID != null &&
+          profile.id != null) {
+        login(profile.secretID!, profile.id!);
+      } else if (isLoggedIn) {
+        // Just need to update server with new profile
+        pushProfile(profile);
+      }
+    });
 
     // Subscribe to my geo updates
     context.watch<MyTelemetry>().addListener(() {
@@ -213,10 +237,13 @@ class Client {
         // TODO: handle error
         // msg["status"] (ErrorCode)
         debugPrint("Error Registering ${msg['status']}");
+        isRegistered = false;
       } else {
         // update my ID
         Provider.of<Profile>(context, listen: false)
             .updateID(msg["pilot_id"], msg["secret_id"]);
+
+        isRegistered = true;
 
         // proceed to login
         login(msg["secret_id"], msg["pilot_id"]);
@@ -226,17 +253,22 @@ class Client {
     socket.on("LoginResponse", (jsonMsg) {
       Map<String, dynamic> msg = jsonMsg;
       if (msg["status"] != ErrorCode.success.index) {
-        if (msg["status"] == ErrorCode.invalidSecretId ||
-            msg["status"] == ErrorCode.invalidId) {
+        isLoggedIn = false;
+        if (msg["status"] == ErrorCode.invalidSecretId.index ||
+            msg["status"] == ErrorCode.invalidId.index) {
           // we aren't registered on this server
           // TODO: ensure name is set
-          register(Provider.of<Profile>(context, listen: false).name!,
-              Provider.of<Profile>(context, listen: false).id ?? "");
+          Profile profile = Provider.of<Profile>(context, listen: false);
+          if (profile.name != null) {
+            // Providing public ID is optional here
+            register(profile.name!, profile.id ?? "");
+          }
           return;
         } else {
           debugPrint("Error Logging in.");
         }
       } else {
+        isLoggedIn = true;
         // compare API version
         // TODO: should have big warning banners for this
         if (msg["api_version"] > apiVersion) {
@@ -327,7 +359,7 @@ class Client {
     socket.on("LeaveGroupResponse", (jsonMsg) {
       Map<String, dynamic> msg = jsonMsg;
       if (msg["status"] != ErrorCode.success.index) {
-        if (msg["status"] == ErrorCode.noop && currentGroupID == null) {
+        if (msg["status"] == ErrorCode.noop.index && currentGroupID == null) {
           // It's ok, we were pretty sure we weren't in a group anyway.
         } else {
           debugPrint("Error leaving group ${msg['status']}");
@@ -341,9 +373,9 @@ class Client {
       Map<String, dynamic> msg = jsonMsg;
       if (msg["status"] != ErrorCode.success.index) {
         // not a valid group
-        if (msg["status"] == ErrorCode.invalidId) {
+        if (msg["status"] == ErrorCode.invalidId.index) {
           debugPrint("Attempted to join invalid group ${msg["group_id"]}");
-        } else if (msg["status"] == ErrorCode.noop &&
+        } else if (msg["status"] == ErrorCode.noop.index &&
             msg["group_id"] == currentGroupID) {
           // we were already in this group... update anyway
           currentGroupID = msg["group_id"];
@@ -412,6 +444,7 @@ class Client {
   //
   // ############################################################################
   void register(String name, String publicID) {
+    debugPrint("Registering) $name, $publicID");
     socket.emit("RegisterRequest", {
       "pilot": {
         "id": publicID,
@@ -426,6 +459,7 @@ class Client {
   //
   // ############################################################################
   void login(String secretID, String publicID) {
+    debugPrint("Logging in) $publicID, $secretID");
     socket.emit("LoginRequest", {
       "secret_id": secretID,
       "pilot_id": publicID,

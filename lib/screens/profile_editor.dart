@@ -37,7 +37,6 @@ class _ProfileEditorState extends State<ProfileEditor> {
         imageFile.readAsBytes().then((value) {
           setState(() {
             imageRaw = value;
-            refreshCropped();
           });
         });
       }
@@ -51,7 +50,6 @@ class _ProfileEditorState extends State<ProfileEditor> {
         imageFile.readAsBytes().then((value) {
           setState(() {
             imageRaw = value;
-            refreshCropped();
           });
         });
       }
@@ -76,7 +74,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
       croppedImage!.readAsBytes().then((value) {
         Provider.of<Profile>(context, listen: false)
             .updateNameAvatar(nameController.text, value);
-        Navigator.pushReplacementNamed(context, "/home");
+        Navigator.popAndPushNamed(context, "/home");
       });
     }
   }

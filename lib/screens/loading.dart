@@ -36,7 +36,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
           .updateGeo(fakeGeoToLoc(FakeGeo(-121.2971, 37.6738, 20)));
 
       // Go to next screen
-      if (Provider.of<Profile>(context, listen: false).name == null && false) {
+      if (Provider.of<Profile>(context, listen: false).name != null) {
         Navigator.pushReplacementNamed(context, "/home");
       } else {
         Navigator.pushReplacementNamed(context, "/profileEditor");
