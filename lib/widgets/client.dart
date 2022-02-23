@@ -23,49 +23,25 @@ enum WaypointAction {
   sort,
 }
 
-const double apiVersion = 3.5;
+const double apiVersion = 3.6;
 
-class Client {
+class ClientWidget extends StatefulWidget {
+  final Widget child;
+  const ClientWidget({required this.child, Key? key}) : super(key: key);
+  @override
+  State<ClientWidget> createState() => _ClientWidgetState();
+}
+
+class _ClientWidgetState extends State<ClientWidget> {
   late IO.Socket socket;
   bool isRegistered = false;
   bool isLoggedIn = false;
   String? currentGroupID;
   Map<String, Pilot> pilots = {};
 
-  Client(BuildContext context) {
-    debugPrint("Building Client");
-    // socket = IO.io('https://xcnav-server.herokuapp.com');
-    // socket = IO.io('http://localhost:8081');
-    // socket = IO.io('http://192.168.1.101:8081');
-    try {
-      socket = IO.io('http://192.168.1.101:8081',
-          IO.OptionBuilder().setTransports(["websocket"]).build());
-    } catch (e) {
-      debugPrint("$e");
-    }
-    // socket.connect();
-    //   "secure": true,
-    //   "withCredentials": true,
-    // });
-    // socket.io.options["secure"] = true;
-    // socket.io.options["withCredentials"] = true;
-
-    socket.onConnect((_) {
-      debugPrint('connected');
-
-      isLoggedIn = false;
-      isRegistered = false;
-
-      Profile profile = Provider.of<Profile>(context, listen: false);
-
-      if (profile.secretID == null && profile.name != null) {
-        // Providing public ID on register is optional
-        register(profile.name!, profile.id ?? "");
-      } else if (profile.secretID != null && profile.id != null) {
-        login(profile.secretID!, profile.id!);
-      }
-    });
-    socket.onDisconnect((_) => debugPrint('disconnect'));
+  @override
+  Widget build(BuildContext context) {
+    debugPrint("Build Client");
 
     setupListeners(context);
 
@@ -90,6 +66,42 @@ class Client {
       MyTelemetry telemetry = Provider.of<MyTelemetry>(context, listen: false);
       sendTelemetry(telemetry.geo, telemetry.fuel);
     });
+    return widget.child;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint("Init Client");
+    // socket = IO.io('https://xcnav-server.herokuapp.com');
+    // socket = IO.io('http://localhost:8081');
+    // socket = IO.io('http://192.168.1.101:8081');
+    socket = IO.io('http://192.168.1.101:8081',
+        IO.OptionBuilder().setTransports(["websocket"]).build());
+
+    // socket.connect();
+    //   "secure": true,
+    //   "withCredentials": true,
+    // });
+    // socket.io.options["secure"] = true;
+    // socket.io.options["withCredentials"] = true;
+
+    socket.onConnect((_) {
+      debugPrint('connected');
+
+      isLoggedIn = false;
+      isRegistered = false;
+
+      Profile profile = Provider.of<Profile>(context, listen: false);
+
+      if (profile.secretID == null && profile.name != null) {
+        // Providing public ID on register is optional
+        register(profile.name!, profile.id ?? "");
+      } else if (profile.secretID != null && profile.id != null) {
+        login(profile.secretID!, profile.id!);
+      }
+    });
+    socket.onDisconnect((_) => debugPrint('disconnect'));
   }
 
   bool hasPilot(String pilotID) => pilots.containsKey(pilotID);
@@ -102,11 +114,6 @@ class Client {
   }
 
   // ############################################################################
-  //
-  //     Async Receive from Server
-  //
-  // ############################################################################
-
   void setupListeners(BuildContext context) {
     // --- new text message from server
     socket.on("TextMessage", (jsonMsg) {
@@ -365,6 +372,7 @@ class Client {
           debugPrint("Error leaving group ${msg['status']}");
         }
       } else {
+        // This is our new group now
         currentGroupID = msg["group_id"];
       }
     });
@@ -394,11 +402,9 @@ class Client {
 
   // ############################################################################
   //
-  //     Async Send to Server
+  //     Requests
   //
   // ############################################################################
-
-  // --- send a text message
   void sendTextMessage(String text, {bool? isEmergency}) {
     socket.emit("TextMessage", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
@@ -427,22 +433,6 @@ class Client {
   }
 
   // TODO: send flight plan changes
-  // void updateWaypoint(msg: api.FlightPlanUpdate) {
-  //     debugPrint("TX waypoint update:",  msg)
-  //     socket.emit("FlightPlanUpdate", msg);
-  // }
-
-  // void sendWaypointSelection() {
-  //     const msg: api.PilotWaypointSelections = {}
-  //     msg[publicID] = me.current_waypoint;
-  //     socket.emit("PilotWaypointSelections", msg);
-  // }
-
-  // ############################################################################
-  //
-  //     Register
-  //
-  // ############################################################################
   void register(String name, String publicID) {
     debugPrint("Registering) $name, $publicID");
     socket.emit("RegisterRequest", {
@@ -453,11 +443,6 @@ class Client {
     });
   }
 
-  // ############################################################################
-  //
-  //     Login
-  //
-  // ############################################################################
   void login(String secretID, String publicID) {
     debugPrint("Logging in) $publicID, $secretID");
     socket.emit("LoginRequest", {
@@ -466,36 +451,23 @@ class Client {
     });
   }
 
-  // ############################################################################
-  //
-  //     Update Profile
-  //
-  // ############################################################################
   void pushProfile(Profile profile) {
+    debugPrint("Push Profile: ${profile.name}, ${profile.id}");
     socket.emit("UpdateProfileRequest", {
       "pilot": {
         "id": profile.id,
         "name": profile.name,
-        "avatar": profile.avatarRaw,
+        "avatar":
+            profile.avatarRaw != null ? base64Encode(profile.avatarRaw!) : "",
       },
       "secret_id": profile.secretID
     });
   }
 
-  // ############################################################################
-  //
-  //     Get Group Info
-  //
-  // ############################################################################
   void requestGroupInfo(String reqGroupID) {
     socket.emit("GroupInfoRequest", {"group_id": reqGroupID});
   }
 
-  // ############################################################################
-  //
-  //     Get Chat Log
-  //
-  // ############################################################################
   void requestChatLog(String reqGroupID, int since) {
     socket.emit("ChatLogRequest", {
       "time_window": {
@@ -507,32 +479,17 @@ class Client {
     });
   }
 
-  // ############################################################################
-  //
-  //     Join a group
-  //
-  // ############################################################################
   void joinGroup(String reqGroupID) {
     socket.emit("JoinGroupRequest", {
-      "target_id": reqGroupID,
+      "group_id": reqGroupID,
     });
     debugPrint("Requesting Join Group $reqGroupID");
   }
 
-  // ############################################################################
-  //
-  //     Leave group
-  //
-  // ############################################################################
   void leaveGroup(bool promptSplit) {
     socket.emit("LeaveGroupRequest", {"prompt_split": promptSplit});
   }
 
-  // ############################################################################
-  //
-  //     Get Pilot Statuses
-  //
-  // ############################################################################
   void checkPilotsOnline(List<String> pilotIDs) {
     socket.emit("PilotsStatusRequest", {"pilot_ids": pilotIDs});
   }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:wakelock/wakelock.dart';
 
 // providers
+import 'package:xcnav/providers/client_state.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/providers/profile.dart';
@@ -14,16 +15,17 @@ import 'package:xcnav/screens/party.dart';
 import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
 
-// Models
-import 'package:xcnav/models/client.dart';
+// Widgets
+import 'package:xcnav/widgets/client.dart';
 
 void main() {
   runApp(
     MultiProvider(providers: [
+      ChangeNotifierProvider(create: (_) => ClientState()),
       ChangeNotifierProvider(create: (_) => MyTelemetry()),
       ChangeNotifierProvider(create: (_) => FlightPlan()),
       ChangeNotifierProvider(create: (_) => Profile()),
-    ], child: const MyApp()),
+    ], child: const ClientWidget(child: MyApp())),
   );
 }
 
@@ -36,7 +38,6 @@ class MyApp extends StatelessWidget {
     Wakelock.enable();
 
     debugPrint("Building App");
-    Client client = Client(context);
 
     return MaterialApp(
       title: 'xcNav',
