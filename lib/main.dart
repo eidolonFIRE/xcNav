@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:wakelock/wakelock.dart';
 
 // providers
-import 'package:xcnav/providers/client_state.dart';
+import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/providers/profile.dart';
@@ -16,16 +16,27 @@ import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
 
 // Widgets
-import 'package:xcnav/widgets/client.dart';
 
 void main() {
   runApp(
     MultiProvider(providers: [
-      ChangeNotifierProvider(create: (_) => ClientState()),
-      ChangeNotifierProvider(create: (_) => MyTelemetry()),
-      ChangeNotifierProvider(create: (_) => FlightPlan()),
-      ChangeNotifierProvider(create: (_) => Profile()),
-    ], child: const ClientWidget(child: MyApp())),
+      ChangeNotifierProvider(
+        create: (_) => MyTelemetry(),
+        lazy: false,
+      ),
+      ChangeNotifierProvider(
+        create: (_) => FlightPlan(),
+        lazy: false,
+      ),
+      ChangeNotifierProvider(
+        create: (_) => Profile(),
+        lazy: false,
+      ),
+      Provider(
+        create: (BuildContext context) => Client(context),
+        lazy: false,
+      )
+    ], child: const MyApp()),
   );
 }
 

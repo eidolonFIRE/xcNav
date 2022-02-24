@@ -23,30 +23,58 @@ enum WaypointAction {
   sort,
 }
 
-const double apiVersion = 3.6;
+const double apiVersion = 3.7;
 
-class ClientWidget extends StatefulWidget {
-  final Widget child;
-  const ClientWidget({required this.child, Key? key}) : super(key: key);
-  @override
-  State<ClientWidget> createState() => _ClientWidgetState();
-}
-
-class _ClientWidgetState extends State<ClientWidget> {
+class Client {
   late IO.Socket socket;
   bool isRegistered = false;
   bool isLoggedIn = false;
   String? currentGroupID;
   Map<String, Pilot> pilots = {};
 
-  @override
-  Widget build(BuildContext context) {
+  final BuildContext context;
+
+  Client(this.context) {
     debugPrint("Build Client");
 
-    setupListeners(context);
+    // socket = IO.io('https://xcnav-server.herokuapp.com');
+    // socket = IO.io('http://localhost:8081');
+    // socket = IO.io('http://192.168.1.101:8081');
+    socket = IO.io('http://192.168.1.101:8081',
+        IO.OptionBuilder().setTransports(["websocket"]).build());
+
+    // socket.connect();
+    //   "secure": true,
+    //   "withCredentials": true,
+    // });
+    // socket.io.options["secure"] = true;
+    // socket.io.options["withCredentials"] = true;
+
+    setupListeners();
+  }
+
+  void setupListeners() async {
+    socket.onConnect((_) {
+      debugPrint('Client Connected');
+
+      isLoggedIn = false;
+      isRegistered = false;
+
+      Profile profile = Provider.of<Profile>(context, listen: false);
+
+      if (profile.secretID == null && profile.name != null) {
+        // Providing public ID on register is optional
+        register(profile.name!, profile.id ?? "");
+      } else if (profile.secretID != null && profile.id != null) {
+        login(profile.secretID!, profile.id!);
+      }
+
+      setupSocketListeners();
+    });
+    socket.onDisconnect((_) => debugPrint('Client Disconnected'));
 
     // Watch updates to Profile
-    context.watch<Profile>().addListener(() {
+    Provider.of<Profile>(context, listen: false).addListener(() {
       Profile profile = Provider.of<Profile>(context, listen: false);
       if (!isRegistered && profile.secretID == null && profile.name != null) {
         // Providing public ID on register is optional
@@ -62,46 +90,10 @@ class _ClientWidgetState extends State<ClientWidget> {
     });
 
     // Subscribe to my geo updates
-    context.watch<MyTelemetry>().addListener(() {
+    Provider.of<MyTelemetry>(context, listen: false).addListener(() {
       MyTelemetry telemetry = Provider.of<MyTelemetry>(context, listen: false);
       sendTelemetry(telemetry.geo, telemetry.fuel);
     });
-    return widget.child;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    debugPrint("Init Client");
-    // socket = IO.io('https://xcnav-server.herokuapp.com');
-    // socket = IO.io('http://localhost:8081');
-    // socket = IO.io('http://192.168.1.101:8081');
-    socket = IO.io('http://192.168.1.101:8081',
-        IO.OptionBuilder().setTransports(["websocket"]).build());
-
-    // socket.connect();
-    //   "secure": true,
-    //   "withCredentials": true,
-    // });
-    // socket.io.options["secure"] = true;
-    // socket.io.options["withCredentials"] = true;
-
-    socket.onConnect((_) {
-      debugPrint('connected');
-
-      isLoggedIn = false;
-      isRegistered = false;
-
-      Profile profile = Provider.of<Profile>(context, listen: false);
-
-      if (profile.secretID == null && profile.name != null) {
-        // Providing public ID on register is optional
-        register(profile.name!, profile.id ?? "");
-      } else if (profile.secretID != null && profile.id != null) {
-        login(profile.secretID!, profile.id!);
-      }
-    });
-    socket.onDisconnect((_) => debugPrint('disconnect'));
   }
 
   bool hasPilot(String pilotID) => pilots.containsKey(pilotID);
@@ -114,7 +106,7 @@ class _ClientWidgetState extends State<ClientWidget> {
   }
 
   // ############################################################################
-  void setupListeners(BuildContext context) {
+  void setupSocketListeners() {
     // --- new text message from server
     socket.on("TextMessage", (jsonMsg) {
       Map<String, dynamic> msg = jsonMsg;
