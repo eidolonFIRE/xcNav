@@ -4,6 +4,7 @@ import 'package:wakelock/wakelock.dart';
 
 // providers
 import 'package:xcnav/providers/client.dart';
+import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/providers/profile.dart';
@@ -30,6 +31,10 @@ void main() {
       ),
       ChangeNotifierProvider(
         create: (_) => Profile(),
+        lazy: false,
+      ),
+      ChangeNotifierProvider(
+        create: (_) => Group(),
         lazy: false,
       ),
       Provider(
