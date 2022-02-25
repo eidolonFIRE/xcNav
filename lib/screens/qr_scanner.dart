@@ -57,20 +57,20 @@ class _QRScannerState extends State<QRScanner> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
-                      Container(
-                        margin: const EdgeInsets.all(8),
-                        child: ElevatedButton(
-                            onPressed: () async {
-                              await controller?.toggleFlash();
-                              setState(() {});
-                            },
-                            child: FutureBuilder(
-                              future: controller?.getFlashStatus(),
-                              builder: (context, snapshot) {
-                                return Text('Flash: ${snapshot.data}');
-                              },
-                            )),
-                      ),
+                      // Container(
+                      //   margin: const EdgeInsets.all(8),
+                      //   child: ElevatedButton(
+                      //       onPressed: () async {
+                      //         await controller?.toggleFlash();
+                      //         setState(() {});
+                      //       },
+                      //       child: FutureBuilder(
+                      //         future: controller?.getFlashStatus(),
+                      //         builder: (context, snapshot) {
+                      //           return Text('Flash: ${snapshot.data}');
+                      //         },
+                      //       )),
+                      // ),
                       Container(
                         margin: const EdgeInsets.all(8),
                         child: ElevatedButton(

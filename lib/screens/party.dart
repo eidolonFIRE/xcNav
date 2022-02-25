@@ -45,8 +45,8 @@ class _PartyState extends State<Party> {
                                   width: 300,
                                   height: 300,
                                   child: QrImage(
-                                    foregroundColor: Colors.white,
-                                    backgroundColor: Colors.black,
+                                    foregroundColor: Colors.black,
+                                    backgroundColor: Colors.white,
                                     // TODO: get group ID invite code
                                     data: group.currentGroupID!,
                                     version: QrVersions.auto,
