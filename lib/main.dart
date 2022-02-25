@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:xcnav/providers/chat.dart';
 
 // providers
 import 'package:xcnav/providers/client.dart';
@@ -35,6 +36,10 @@ void main() {
       ),
       ChangeNotifierProvider(
         create: (_) => Group(),
+        lazy: false,
+      ),
+      ChangeNotifierProvider(
+        create: (_) => Chat(),
         lazy: false,
       ),
       Provider(

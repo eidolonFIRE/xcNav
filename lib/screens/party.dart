@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 // Providers
 import 'package:xcnav/providers/client.dart';
+import 'package:xcnav/providers/group.dart';
+import 'package:xcnav/providers/chat.dart';
+import 'package:xcnav/providers/profile.dart';
+
+// Models
+import 'package:xcnav/models/message.dart';
+import 'package:xcnav/models/pilot.dart';
+
+// Widgets
+import 'package:xcnav/widgets/avatar_round.dart';
+import 'package:xcnav/widgets/chat_bubble.dart';
 
 class Party extends StatefulWidget {
   const Party({Key? key}) : super(key: key);
@@ -23,26 +35,38 @@ class _PartyState extends State<Party> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text("Invite Code"),
-                      SizedBox(
-                        width: 300,
-                        height: 300,
-                        child: QrImage(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.black,
-                          // TODO: get group ID invite code
-                          data: 'This is a simple QR code',
-                          version: QrVersions.auto,
-                          size: 320,
-                          gapless: true,
-                        ),
-                      ),
-                      Text("<Invite URL here>"),
-                    ],
-                  ),
+                  Consumer<Group>(builder: (context, group, child) {
+                    return (group.currentGroupID != null)
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text("Invite Code"),
+                              SizedBox(
+                                  width: 300,
+                                  height: 300,
+                                  child: QrImage(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.black,
+                                    // TODO: get group ID invite code
+                                    data: group.currentGroupID!,
+                                    version: QrVersions.auto,
+                                    size: 320,
+                                    gapless: true,
+                                  )),
+                              ElevatedButton.icon(
+                                  onPressed: () =>
+                                      {Share.share(group.currentGroupID ?? "")},
+                                  icon: const Icon(Icons.share),
+                                  label: Text(group.currentGroupID ?? "")),
+                            ],
+                          )
+                        : const Padding(
+                            padding: EdgeInsets.all(30.0),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          );
+                  }),
                   ElevatedButton.icon(
                       onPressed: () {
                         // Navigator.pop(context);
@@ -58,6 +82,8 @@ class _PartyState extends State<Party> {
                       onPressed: () {
                         Provider.of<Client>(context, listen: false)
                             .leaveGroup(false);
+                        Navigator.popUntil(
+                            context, ModalRoute.withName("/home"));
                       },
                       icon: const Icon(
                         Icons.logout,
@@ -82,18 +108,36 @@ class _PartyState extends State<Party> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          title: Row(
-            children: [
+            actions: [
               IconButton(
                   onPressed: () => {showPartyActions(context)},
-                  icon: Icon(Icons.groups)),
+                  icon: const Icon(Icons.groups)),
             ],
-          ),
-        ),
+            title: Consumer<Group>(
+                builder: (context, group, child) => Row(
+                      children: group.pilots.values
+                          .toList()
+                          .map((e) => AvatarRound(e.avatar, 10))
+                          .toList(),
+                    ))),
         body: Center(
-          child: ListView.builder(itemBuilder: (context, i) {
-            return Text("dummy");
-          }),
+          child: Consumer<Chat>(
+            builder: (context, chat, child) => ListView.builder(
+                itemCount: chat.messages.length,
+                itemBuilder: (context, i) {
+                  Message msg = chat.messages[i];
+                  Pilot? pilot = Provider.of<Group>(context, listen: false)
+                      .pilots[msg.pilotId];
+                  return ChatBubble(
+                      msg.pilotId ==
+                          Provider.of<Profile>(context, listen: false).id,
+                      msg.text,
+                      AvatarRound(
+                          pilot?.avatar ??
+                              Image.asset("assets/images/default_avatar.png"),
+                          20));
+                }),
+          ),
         ),
         bottomNavigationBar: Row(
           mainAxisSize: MainAxisSize.max,

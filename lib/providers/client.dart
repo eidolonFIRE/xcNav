@@ -16,6 +16,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/providers/chat.dart';
 
 enum WaypointAction {
   none,
@@ -119,8 +120,7 @@ class Client {
       String? currentGroupID =
           Provider.of<Group>(context, listen: false).currentGroupID;
       if (msg["group_id"] == currentGroupID) {
-        // TODO: process msg
-        // chat.processTextMessage(msg);
+        Provider.of<Chat>(context, listen: false).processMessageFromServer(msg);
       } else {
         // getting messages from the wrong group!
         debugPrint("Wrong group ID! $currentGroupID, ${msg["group_id"]}");
@@ -257,9 +257,6 @@ class Client {
             .updateID(msg["pilot_id"], msg["secret_id"]);
 
         state = ClientState.registered;
-
-        // proceed to login
-        login(msg["secret_id"], msg["pilot_id"]);
       }
     });
 
@@ -282,6 +279,11 @@ class Client {
         }
       } else {
         state = ClientState.loggedIn;
+
+        // join the provided group
+        Provider.of<Group>(context, listen: false).currentGroupID =
+            msg["group_id"];
+
         // compare API version
         // TODO: should have big warning banners for this
         if (msg["api_version"] > apiVersion) {

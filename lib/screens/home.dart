@@ -14,6 +14,8 @@ import 'package:collection/collection.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/providers/group.dart';
+import 'package:xcnav/widgets/avatar_round.dart';
 
 // widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -542,6 +544,18 @@ class _MyHomePageState extends State<MyHomePage> {
                                     ),
                                   ),
                                 ])))
+                        .toList(),
+                  ),
+
+                  // Live locations other pilots
+                  MarkerLayerOptions(
+                    markers: Provider.of<Group>(context)
+                        .pilots
+                        .values
+                        .toList()
+                        .map((pilot) => Marker(
+                            point: pilot.geo.latLng,
+                            builder: (ctx) => AvatarRound(pilot.avatar, 10)))
                         .toList(),
                   ),
 

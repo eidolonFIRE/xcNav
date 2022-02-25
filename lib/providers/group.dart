@@ -15,6 +15,7 @@ class Group with ChangeNotifier {
   String? get currentGroupID => _currentGroupID;
   set currentGroupID(String? newGroupID) {
     _currentGroupID = newGroupID;
+    debugPrint("Joined group: $newGroupID");
     notifyListeners();
   }
 

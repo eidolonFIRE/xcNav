@@ -1,9 +1,13 @@
 import 'dart:developer';
 import 'dart:io';
+import 'package:provider/provider.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
+
+// --- Providers
+import 'package:xcnav/providers/client.dart';
 
 class QRScanner extends StatefulWidget {
   const QRScanner({Key? key}) : super(key: key);
@@ -151,6 +155,13 @@ class _QRScannerState extends State<QRScanner> {
     controller.scannedDataStream.listen((scanData) {
       setState(() {
         result = scanData;
+        debugPrint("QR scanner result: ${scanData.code}");
+
+        // Follow invite link
+        if (result != null && result!.code != null) {
+          Provider.of<Client>(context, listen: false).joinGroup(result!.code!);
+          Navigator.pop(context);
+        }
       });
     });
   }
