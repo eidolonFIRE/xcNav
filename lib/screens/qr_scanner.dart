@@ -159,7 +159,8 @@ class _QRScannerState extends State<QRScanner> {
 
         // Follow invite link
         if (result != null && result!.code != null) {
-          Provider.of<Client>(context, listen: false).joinGroup(result!.code!);
+          // TODO: re-enable
+          // Provider.of<Client>(context, listen: false).joinGroup(result!.code!);
           Navigator.pop(context);
         }
       });

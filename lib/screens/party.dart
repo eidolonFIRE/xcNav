@@ -80,8 +80,9 @@ class _PartyState extends State<Party> {
                   ElevatedButton.icon(
                       // TODO: prompt split option
                       onPressed: () {
-                        Provider.of<Client>(context, listen: false)
-                            .leaveGroup(false);
+                        // TODO: re-enable
+                        // Provider.of<Client>(context, listen: false)
+                        //     .leaveGroup(false);
                         Navigator.popUntil(
                             context, ModalRoute.withName("/home"));
                       },

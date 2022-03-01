@@ -43,13 +43,13 @@ dependencies:
     git:
       url: git@github.com:ibrierley/flutter_map_dragmarker.git
   shared_preferences: ^2.0.13
-  socket_io_client: ^2.0.0-beta.4-nullsafety.0
   fullscreen: ^1.0.3
   image_picker: ^0.8.4+9
   image_crop: ^0.4.0
   qr_code_scanner: ^0.7.0
   qr_flutter: ^4.0.0
   share_plus: ^3.1.0
+  web_socket_channel: ^2.1.0
 
 dev_dependencies:
   flutter_test:
