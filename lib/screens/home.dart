@@ -5,25 +5,25 @@ import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
-// import 'dart:math' as math;
-import 'dart:async';
-import 'dart:math';
 import 'package:collection/collection.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/flight_plan.dart';
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/widgets/avatar_round.dart';
+import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/providers/client.dart';
+import 'package:xcnav/widgets/map_button.dart';
 
 // widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
+import 'package:xcnav/widgets/avatar_round.dart';
 
 import 'package:xcnav/fake_path.dart';
 
-// utils
+// models
 import 'package:xcnav/models/eta.dart';
+import 'package:xcnav/models/geo.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -87,7 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // });
   }
 
-  setFocusMode(FocusMode mode, [LatLng? center]) {
+  void setFocusMode(FocusMode mode, [LatLng? center]) {
     setState(() {
       prevFocusMode = focusMode;
       focusMode = mode;
@@ -98,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  beginAddWaypoint() {
+  void beginAddWaypoint() {
     setFocusMode(FocusMode.addWaypoint);
   }
 
@@ -155,7 +155,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // --- Flight Plan Menu
-  showFlightPlan() {
+  void showFlightPlan() {
     debugPrint("Show flight plan");
     // TODO: move map view to see whole flight plan
     showModalBottomSheet(
@@ -379,9 +379,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  ///
-  /// Main Build
-  ///
+  //
+  //
+  // Main Build
+  //
+  //
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   @override
   Widget build(BuildContext context) {
@@ -390,17 +392,17 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(
           // Here we take the value from the MyHomePage object that was created by
           // the App.build method, and use it to set our appbar title.
-          automaticallyImplyLeading: false,
+          automaticallyImplyLeading: true,
           // TODO: menu
-          leadingWidth: 30,
-          leading: IconButton(
-            padding: EdgeInsets.zero,
-            icon: const Icon(
-              Icons.menu,
-              color: Colors.grey,
-            ),
-            onPressed: () => {},
-          ),
+          leadingWidth: 35,
+          // leading: IconButton(
+          //   padding: EdgeInsets.zero,
+          //   icon: const Icon(
+          //     Icons.menu,
+          //     color: Colors.grey,
+          //   ),
+          //   onPressed: () => {},
+          // ),
           title: Consumer<MyTelemetry>(
               builder: (context, myTelementy, child) => Padding(
                     padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
@@ -445,6 +447,65 @@ class _MyHomePageState extends State<MyHomePage> {
                         ]),
                   )),
         ),
+        drawer: Drawer(
+            child: ListView(
+          children: [
+            SizedBox(
+              height: 120,
+              child: DrawerHeader(
+                  child: Stack(children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    AvatarRound(Provider.of<Profile>(context).avatar, 40),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        Provider.of<Profile>(context).name ?? "unset",
+                        style: TextStyle(fontSize: 30),
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: IconButton(
+                      iconSize: 20,
+                      icon: const Icon(
+                        Icons.edit,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, "/profileEditor");
+                      },
+                    ))
+              ])),
+            ),
+            // Map tile-layer selection
+
+            TextButton.icon(
+                onPressed: () => {},
+                icon: const Icon(
+                  Icons.flight_takeoff,
+                  size: 30,
+                ),
+                label: const Text("Flight Log")),
+            TextButton.icon(
+                onPressed: () => {},
+                icon: const Icon(
+                  Icons.settings,
+                  size: 30,
+                ),
+                label: const Text("Settings")),
+
+            // Settings
+            // - update profile
+            // - units
+            // - gps frequency?
+            // - debug controls
+          ],
+        )),
         body: Center(
           child: Stack(alignment: Alignment.center, children: [
             Consumer<MyTelemetry>(
@@ -609,88 +670,89 @@ class _MyHomePageState extends State<MyHomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(5, 20, 0, 0),
-                      child: FloatingActionButton(
-                        heroTag: "me",
-                        onPressed: () => setFocusMode(
-                            FocusMode.me,
-                            Provider.of<MyTelemetry>(context, listen: false)
-                                .geo
-                                .latLng),
-                        backgroundColor: const Color.fromARGB(20, 0, 0, 0),
-                        elevation: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(10, 8, 10, 15),
+                        padding: const EdgeInsets.fromLTRB(5, 20, 0, 0),
+                        child: MapButton(
+                          size: 60,
                           child: Image.asset(
                               "assets/images/icon_controls_centermap_me.png"),
-                        ),
-                      ),
-                    ),
+                          onPressed: () => setFocusMode(
+                              FocusMode.me,
+                              Provider.of<MyTelemetry>(context, listen: false)
+                                  .geo
+                                  .latLng),
+                        )),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(5, 30, 0, 20),
-                      child: FloatingActionButton(
-                        heroTag: "group",
+                      child: MapButton(
+                        size: 60,
                         onPressed: () => setFocusMode(FocusMode.group),
-                        backgroundColor: const Color.fromARGB(20, 0, 0, 0),
-                        elevation: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(6, 6, 6, 12),
-                          child: Image.asset(
-                              "assets/images/icon_controls_centermap_group.png"),
-                        ),
+                        child: Image.asset(
+                            "assets/images/icon_controls_centermap_group.png"),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(5, 60, 0, 0),
-                      child: FloatingActionButton(
-                        heroTag: "zoom_in",
+                      child: MapButton(
+                        size: 60,
                         onPressed: () => {
                           mapController.move(
                               mapController.center, mapController.zoom + 1)
                         },
-                        backgroundColor: const Color.fromARGB(20, 0, 0, 0),
-                        elevation: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.all(15.0),
-                          child: Image.asset(
-                              "assets/images/icon_controls_zoom_in.png"),
-                        ),
+                        child: Image.asset(
+                            "assets/images/icon_controls_zoom_in.png"),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(5, 30, 0, 20),
-                      child: FloatingActionButton(
-                        heroTag: "zoom_out",
+                      child: MapButton(
+                        size: 60,
                         onPressed: () => {
                           mapController.move(
                               mapController.center, mapController.zoom - 1)
                         },
-                        backgroundColor: const Color.fromARGB(20, 0, 0, 0),
-                        elevation: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.all(15.0),
-                          child: Image.asset(
-                              "assets/images/icon_controls_zoom_out.png"),
-                        ),
+                        child: Image.asset(
+                            "assets/images/icon_controls_zoom_out.png"),
                       ),
                     ),
                   ]),
             ),
 
             Positioned(
-                bottom: 5,
-                left: 0,
-                child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: FloatingActionButton(
-                      heroTag: "party",
-                      backgroundColor: const Color.fromARGB(50, 0, 0, 0),
-                      onPressed: () => {Navigator.pushNamed(context, "/party")},
-                      elevation: 0,
-                      child: const Icon(
-                        Icons.chat,
-                      ),
-                    )))
+                bottom: 10,
+                left: 5,
+                child: MapButton(
+                  size: 60,
+                  onPressed: () => {Navigator.pushNamed(context, "/party")},
+                  child: const Icon(
+                    Icons.chat,
+                    size: 30,
+                    color: Colors.black,
+                  ),
+                )),
+
+            Provider.of<Client>(context).state == ClientState.disconnected
+                ? const Positioned(
+                    top: 5,
+                    child: Card(
+                        color: Colors.amber,
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
+                          child: Text.rich(
+                            TextSpan(children: [
+                              WidgetSpan(
+                                  child: Icon(
+                                Icons.language,
+                                size: 20,
+                                color: Colors.black,
+                              )),
+                              TextSpan(
+                                  text: "  connecting",
+                                  style: TextStyle(
+                                      color: Colors.black, fontSize: 20)),
+                            ]),
+                          ),
+                        )))
+                : Container(),
           ]),
         ),
 

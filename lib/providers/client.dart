@@ -4,8 +4,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'package:web_socket_channel/web_socket_channel.dart';
-// import 'package:web_socket_channel/status.dart' as status;
 
 // --- Models
 import 'package:xcnav/models/error_code.dart';
@@ -30,17 +28,14 @@ enum WaypointAction {
 enum ClientState {
   disconnected,
   connected,
-  registering,
-  registered,
-  loggingIn,
-  loggedIn,
+  authenticated,
 }
 
-const double apiVersion = 3.8;
+const double apiVersion = 5.0;
 
-class Client {
+class Client with ChangeNotifier {
   WebSocket? socket;
-  ClientState state = ClientState.disconnected;
+  ClientState _state = ClientState.disconnected;
 
   final BuildContext context;
 
@@ -50,41 +45,48 @@ class Client {
   }
 
   void sendToAWS(String action, dynamic payload) {
+    debugPrint("TX: ${jsonEncode({"action": action, "body": payload})}");
     if (socket != null) {
       socket!.add(jsonEncode({"action": action, "body": payload}));
     }
   }
 
+  ClientState get state => _state;
+  set state(ClientState newState) {
+    _state = newState;
+    if (newState == ClientState.disconnected) {
+      if (socket != null) {
+        debugPrint("Reconnecting!");
+        socket!.close().then((value) => connect());
+      }
+    }
+    notifyListeners();
+  }
+
   void connect() async {
     WebSocket.connect(
             "wss://cilme82sm3.execute-api.us-west-1.amazonaws.com/production")
-        // "cilme82sm3.execute-api.us-west-1.amazonaws.com/production")
         .then((newSocket) {
       socket = newSocket;
       debugPrint("Connected!");
 
       socket!.listen(handleResponse, onError: (errorRaw) {
         debugPrint("RX-error: $errorRaw");
+        state = ClientState.disconnected;
       }, onDone: () {
         debugPrint("RX-done");
+        state = ClientState.disconnected;
       });
 
-      initConnection();
+      Profile profile = Provider.of<Profile>(context, listen: false);
+      authenticate(profile);
 
       // Watch updates to Profile
       Provider.of<Profile>(context, listen: false).addListener(() {
         Profile profile = Provider.of<Profile>(context, listen: false);
         if (state == ClientState.connected) {
-          // When client was inialized, we weren't ready... attempt initial login again
-          if (profile.secretID == null) {
-            if (profile.name != null) {
-              // Providing public ID on register is optional
-              register(profile.name!, profile.id ?? "");
-            }
-          } else if (profile.secretID != null && profile.id != null) {
-            login(profile.secretID!, profile.id!);
-          }
-        } else if (state == ClientState.loggedIn) {
+          authenticate(profile);
+        } else if (state == ClientState.authenticated && profile.name != null) {
           // Just need to update server with new profile
           pushProfile(profile);
         }
@@ -94,77 +96,69 @@ class Client {
       Provider.of<MyTelemetry>(context, listen: false).addListener(() {
         MyTelemetry telemetry =
             Provider.of<MyTelemetry>(context, listen: false);
-        sendTelemetry(telemetry.geo, telemetry.fuel);
+        if (state == ClientState.authenticated) {
+          sendTelemetry(telemetry.geo, telemetry.fuel);
+        }
       });
     });
   }
 
   void handleResponse(dynamic response) {
+    if (response == null || response == "") {
+      debugPrint("Got a blank message!");
+      return;
+    }
     final jsonMsg = json.decode(response);
     debugPrint("RX: $jsonMsg");
 
-    Map<String, dynamic> payload = jsonMsg["body"];
+    if (jsonMsg["body"] != null) {
+      Map<String, dynamic> payload = jsonMsg["body"];
 
-    switch (jsonMsg["action"]) {
-      case "registerResponse":
-        registerResponse(payload);
-        break;
-      case "loginResponse":
-        loginResponse(payload);
-        break;
-      case "updateProfileResponse":
-        updateProfileResponse(payload);
-        break;
-      case "groupInfoResponse":
-        groupInfoResponse(payload);
-        break;
-      case "chatLogResponse":
-        chatLogResponse(payload);
-        break;
-      case "pilotsStatusResponse":
-        pilotsStatusResponse(payload);
-        break;
-      case "leaveGroupResponse":
-        leaveGroupResponse(payload);
-        break;
-      case "joinGroupResponse":
-        joinGroupResponse(payload);
-        break;
-      case "chatMessage":
-        chatMessage(payload);
-        break;
-      case "pilotTelemetry":
-        pilotTelemetry(payload);
-        break;
-      case "pilotJoinedGroup":
-        pilotJoinedGroup(payload);
-        break;
-      case "pilotLeftGroup":
-        pilotLeftGroup(payload);
-        break;
-      case "flightPlanSync":
-        flightPlanSync(payload);
-        break;
-      case "flightPlanUpdate":
-        flightPlanUpdate(payload);
-        break;
-      case "pilotWaypointSelections":
-        pilotWaypointSelections(payload);
-        break;
-      default:
-        debugPrint("RX-unknown action: ${jsonMsg["action"]}");
-    }
-  }
-
-  void initConnection() async {
-    Profile profile = Provider.of<Profile>(context, listen: false);
-    if (profile.secretID == null) {
-      if (profile.name != null) {
-        // Providing public ID on register is optional
-        register(profile.name!, profile.id ?? "");
+      switch (jsonMsg["action"]) {
+        case "authResponse":
+          authResponse(payload);
+          break;
+        case "updateProfileResponse":
+          updateProfileResponse(payload);
+          break;
+        case "groupInfoResponse":
+          groupInfoResponse(payload);
+          break;
+        case "chatLogResponse":
+          chatLogResponse(payload);
+          break;
+        case "pilotsStatusResponse":
+          pilotsStatusResponse(payload);
+          break;
+        case "joinGroupResponse":
+          joinGroupResponse(payload);
+          break;
+        case "chatMessage":
+          chatMessage(payload);
+          break;
+        case "pilotTelemetry":
+          pilotTelemetry(payload);
+          break;
+        case "pilotJoinedGroup":
+          pilotJoinedGroup(payload);
+          break;
+        case "pilotLeftGroup":
+          pilotLeftGroup(payload);
+          break;
+        case "flightPlanSync":
+          flightPlanSync(payload);
+          break;
+        case "flightPlanUpdate":
+          flightPlanUpdate(payload);
+          break;
+        case "pilotSelectedWaypoint":
+          pilotSelectedWaypoint(payload);
+          break;
+        default:
+          debugPrint("RX-unknown action: ${jsonMsg["action"]}");
       }
-    } else if (profile.secretID != null && profile.id != null) {
-      login(profile.secretID!, profile.id!);
+    } else {
+      debugPrint("There was some error! ${response}");
     }
   }
 
@@ -174,29 +168,20 @@ class Client {
   //
   // ############################################################################
 
-  void register(String name, String publicID) {
-    if (state != ClientState.registering) {
-      debugPrint("Registering) $name, $publicID");
-      sendToAWS("register", {
+  void authenticate(Profile profile) {
+    if (state != ClientState.authenticated) {
+      debugPrint("Authenticating) ${profile.name}, ${profile.id}");
+      sendToAWS("authRequest", {
+        "secret_id": profile.secretID,
         "pilot": {
-          "id": publicID,
-          "name": name,
-        }
+          "id": profile.id,
+          "name": profile.name,
+          "avatar_hash": profile.avatarHash
+        },
+        "group": Provider.of<Group>(context, listen: false).loadGroup()
       });
     } else {
-      debugPrint("... already trying to register!");
-    }
-  }
-
-  void login(String secretID, String publicID) {
-    if (state != ClientState.loggingIn) {
-      debugPrint("Logging in) $publicID, $secretID");
-      sendToAWS("login", {
-        "secret_id": secretID,
-        "pilot_id": publicID,
-      });
-    } else {
-      debugPrint("... already trying to log in!");
+      debugPrint("... we are already authenticated.");
     }
   }
 
@@ -206,8 +191,7 @@ class Client {
       "pilot": {
         "id": profile.id,
         "name": profile.name,
-        "avatar":
-            profile.avatarRaw != null ? base64Encode(profile.avatarRaw!) : "",
+        "avatar_hash": profile.avatarHash
       },
       "secret_id": profile.secretID
     });
@@ -217,9 +201,8 @@ class Client {
     Group group = Provider.of<Group>(context, listen: false);
     sendToAWS("chatMessage", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
-      "index": 0, // TODO: what should index be?
-      "group_id": group.currentGroupID, // target group
-      "pilot_id": "", // sender
+      "group": group.currentGroupID, // target group
+      "pilot_id": "", // sender (filled in by backend)
       "text": text,
       "emergency": isEmergency ?? false,
     });
@@ -241,8 +224,10 @@ class Client {
     });
   }
 
-  void requestGroupInfo(String reqGroupID) {
-    sendToAWS("groupInfoRequest", {"group_id": reqGroupID});
+  void requestGroupInfo(String? reqGroupID) {
+    if (reqGroupID != null && reqGroupID != "") {
+      sendToAWS("groupInfoRequest", {"group": reqGroupID});
+    }
   }
 
   void requestChatLog(String reqGroupID, int since) {
@@ -252,19 +237,22 @@ class Client {
         "start": max(since, DateTime.now().millisecondsSinceEpoch - 6000 * 30),
         "end": DateTime.now().millisecondsSinceEpoch
       },
-      "group_id": reqGroupID
+      "group": reqGroupID
     });
   }
 
   void joinGroup(String reqGroupID) {
     sendToAWS("joinGroupRequest", {
-      "group_id": reqGroupID,
+      "group": reqGroupID,
     });
     debugPrint("Requesting Join Group $reqGroupID");
   }
 
   void leaveGroup(bool promptSplit) {
-    sendToAWS("leaveGroupRequest", {"prompt_split": promptSplit});
+    // This is just alias to joining an unknown group
+    Provider.of<Group>(context, listen: false).currentGroupID = null;
+    Provider.of<Chat>(context, listen: false).leftGroup();
+    sendToAWS("joinGroupRequest", {"prompt_split": promptSplit});
   }
 
   void checkPilotsOnline(List<String> pilotIDs) {
@@ -281,11 +269,11 @@ class Client {
   void chatMessage(Map<String, dynamic> msg) {
     String? currentGroupID =
         Provider.of<Group>(context, listen: false).currentGroupID;
-    if (msg["group_id"] == currentGroupID) {
+    if (msg["group"] == currentGroupID) {
       Provider.of<Chat>(context, listen: false).processMessageFromServer(msg);
     } else {
       // getting messages from the wrong group!
-      debugPrint("Wrong group ID! $currentGroupID, ${msg["group_id"]}");
+      debugPrint("Wrong group ID! $currentGroupID, ${msg["group"]}");
     }
   }
 
@@ -298,18 +286,17 @@ class Client {
           msg["pilot_id"], msg["telemetry"], msg["timestamp"]);
     } else {
       debugPrint("Unrecognized local pilot ${msg["pilot_id"]}");
-      if (group.currentGroupID != null) {
-        requestGroupInfo(group.currentGroupID!);
-      }
+      requestGroupInfo(group.currentGroupID);
     }
   }
 
   // --- new Pilot to group
   void pilotJoinedGroup(Map<String, dynamic> msg) {
-    if (msg["pilot"].id != Provider.of<Profile>(context, listen: false).id) {
+    Map<String, dynamic> pilot = msg["pilot"];
+    if (pilot["id"] != Provider.of<Profile>(context, listen: false).id) {
       // update pilots with new info
       Group group = Provider.of<Group>(context, listen: false);
-      group.processNewPilot(msg["pilot"]);
+      group.processNewPilot(pilot);
     }
   }
 
@@ -321,7 +308,7 @@ class Client {
     }
     Group group = Provider.of<Group>(context, listen: false);
     group.removePilot(msg["pilot_id"]);
-    if (msg["new_group_id"] != "") {
+    if (msg["new_group"] != "") {
       // TODO: prompt yes/no should we follow them to new group
     }
   }
@@ -379,58 +366,25 @@ class Client {
   }
 
   // --- Process Pilot Waypoint selections
-  void pilotWaypointSelections(Map<String, dynamic> msg) {
+  void pilotSelectedWaypoint(Map<String, dynamic> msg) {
     Group group = Provider.of<Group>(context, listen: false);
-    msg.forEach((otherPilotId, wp) {
-      debugPrint("$otherPilotId selected wp: $wp");
-      if (group.hasPilot(otherPilotId)) {
-        group.pilotSelectedWaypoint(otherPilotId, wp);
-      } else {
-        // we don't have this pilot?
-        if (group.currentGroupID != null) {
-          requestGroupInfo(group.currentGroupID!);
-        }
-      }
-    });
-  }
 
-  void registerResponse(Map<String, dynamic> msg) {
-    if (msg["status"] != ErrorCode.success.index) {
-      // TODO: handle error
-      // msg["status"] (ErrorCode)
-      debugPrint("Error Registering ${msg['status']}");
-      state = ClientState.connected;
+    debugPrint("${msg["pilot_id"]} selected wp: ${msg["index"]}");
+    if (group.hasPilot(msg["pilot_id"])) {
+      group.pilotSelectedWaypoint(msg["pilot_id"], msg["index"]);
     } else {
-      // update my ID
-      Provider.of<Profile>(context, listen: false)
-          .updateID(msg["pilot_id"], msg["secret_id"]);
-      debugPrint("Registered!");
-      state = ClientState.registered;
+      // we don't have this pilot?
+      requestGroupInfo(group.currentGroupID);
     }
   }
 
-  void loginResponse(Map<String, dynamic> msg) {
+  void authResponse(Map<String, dynamic> msg) {
     if (msg["status"] != ErrorCode.success.index) {
       state = ClientState.connected;
-      if (msg["status"] == ErrorCode.invalidSecretId.index ||
-          msg["status"] == ErrorCode.invalidId.index) {
-        // we aren't registered on this server
-        // TODO: ensure name is set
-        Profile profile = Provider.of<Profile>(context, listen: false);
-        if (profile.name != null) {
-          // Providing public ID is optional here
-          register(profile.name!, profile.id ?? "");
-        }
-        return;
-      } else {
-        debugPrint("Unhandled error while logging in.");
-      }
+      debugPrint("Error Authenticating: ${msg["status"]}");
     } else {
-      state = ClientState.loggedIn;
-
-      // join the provided group
-      Provider.of<Group>(context, listen: false).currentGroupID =
-          msg["group_id"];
+      debugPrint("Authenticated!");
+      state = ClientState.authenticated;
 
       // compare API version
       // TODO: should have big warning banners for this
@@ -440,11 +394,18 @@ class Client {
         debugPrint("Server is out of date!");
       }
 
+      Profile profile = Provider.of<Profile>(context, listen: false);
+      profile.updateID(msg["pilot_id"], msg["secret_id"]);
+
+      // join the provided group
+      Group group = Provider.of<Group>(context, listen: false);
+      group.currentGroupID = msg["group"];
+      requestGroupInfo(group.currentGroupID);
+
       // update profile
-      if (msg["pilot_meta_hash"] !=
-          Provider.of<Profile>(context, listen: false).hash) {
+      if (msg["pilot_meta_hash"] != profile.hash) {
         debugPrint("Server had outdate profile meta.");
-        pushProfile(Provider.of<Profile>(context, listen: false));
+        pushProfile(profile);
       }
     }
   }
@@ -461,19 +422,18 @@ class Client {
     } else {
       // ignore if it's not a group I'm in
       Group group = Provider.of<Group>(context, listen: false);
-      if (msg["group_id"] != group.currentGroupID) {
+      if (msg["group"] != group.currentGroupID) {
         debugPrint("Received info for another group.");
         return;
       }
 
-      // TODO: support map layers in the future
-      // update map layers from group
-      // msg["map_layers"].forEach((layer: string) => {
-      //     // TODO: handle map_layers from the group
-      // });
-
       // update pilots with new info
-      msg["pilots"].forEach((jsonPilot) => {group.processNewPilot(jsonPilot)});
+      msg["pilots"].forEach((jsonPilot) {
+        if (jsonPilot["id"] !=
+            Provider.of<Profile>(context, listen: false).id) {
+          group.processNewPilot(jsonPilot);
+        }
+      });
 
       // TODO: replace all the flightPlan data (and show prompt?)
       //  planManager.plans["group"].replaceData(msg["flight_plan"]);
@@ -485,14 +445,14 @@ class Client {
     if (msg["status"] != ErrorCode.success.index) {
       debugPrint("ChatLogRequest Failed ${msg['status']}");
     } else {
-      if (msg["group_id"] == group.currentGroupID) {
+      if (msg["group"] == group.currentGroupID) {
         // TODO: process chat messages
         // Object.values(msg["msgs"]).forEach((msg: api.chatMessage) => {
         //     // handle each message
         //     chat.processchatMessage(msg, true);
         // });
       } else {
-        debugPrint("Wrong group ID! $group.currentGroupID, ${msg["group_id"]}");
+        debugPrint("Wrong group ID! $group.currentGroupID, ${msg["group"]}");
       }
     }
   }
@@ -511,37 +471,23 @@ class Client {
     }
   }
 
-  void leaveGroupResponse(Map<String, dynamic> msg) {
-    Group group = Provider.of<Group>(context, listen: false);
-    if (msg["status"] != ErrorCode.success.index) {
-      if (msg["status"] == ErrorCode.noop.index &&
-          group.currentGroupID == null) {
-        // It's ok, we were pretty sure we weren't in a group anyway.
-      } else {
-        debugPrint("Error leaving group ${msg['status']}");
-      }
-    } else {
-      // This is our new group now
-      group.currentGroupID = msg["group_id"];
-    }
-  }
-
   void joinGroupResponse(Map<String, dynamic> msg) {
     Group group = Provider.of<Group>(context, listen: false);
     if (msg["status"] != ErrorCode.success.index) {
       // not a valid group
       if (msg["status"] == ErrorCode.invalidId.index) {
-        debugPrint("Attempted to join invalid group ${msg["group_id"]}");
+        debugPrint("Attempted to join invalid group ${msg["group"]}");
       } else if (msg["status"] == ErrorCode.noop.index &&
-          msg["group_id"] == group.currentGroupID) {
+          msg["group"] == group.currentGroupID) {
         // we were already in this group... update anyway
-        group.currentGroupID = msg["group_id"];
+        group.currentGroupID = msg["group"];
       } else {
         debugPrint("Error joining group ${msg['status']}");
       }
     } else {
       // successfully joined group
-      group.currentGroupID = msg["group_id"];
+      group.currentGroupID = msg["group"];
+      requestGroupInfo(group.currentGroupID);
 
       // TODO: get chat history?
       // requestChatLog(groupID, chat.last_msg_timestamp);

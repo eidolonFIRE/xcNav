@@ -1,5 +1,5 @@
 class Message {
-  final double timestamp;
+  final int timestamp;
 
   final String pilotId; // sender
   final String text;

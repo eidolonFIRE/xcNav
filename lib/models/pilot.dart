@@ -12,6 +12,7 @@ class Pilot {
 
   // visuals
   Image? avatar;
+  String? avatarHash;
   late Color color;
   List<Geo> flightTrace = [];
 
@@ -23,7 +24,7 @@ class Pilot {
     color = Colors.green;
   }
 
-  void updateTelemetry(dynamic telemetry, double timestamp) {
+  void updateTelemetry(dynamic telemetry, int timestamp) {
     // TODO: update geo and fuel
   }
 }

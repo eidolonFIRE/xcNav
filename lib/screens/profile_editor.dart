@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:image_crop/image_crop.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -20,7 +21,8 @@ class ProfileEditor extends StatefulWidget {
 class _ProfileEditorState extends State<ProfileEditor> {
   XFile imageFile = XFile("assets/images/default_avatar.png");
   File? croppedImage;
-  Uint8List? imageRaw;
+  Uint8List? croppedImageRaw;
+  Uint8List? inputImage;
 
   final TextEditingController nameController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
@@ -36,7 +38,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
         imageFile = value;
         imageFile.readAsBytes().then((value) {
           setState(() {
-            imageRaw = value;
+            inputImage = value;
           });
         });
       }
@@ -49,7 +51,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
         imageFile = value;
         imageFile.readAsBytes().then((value) {
           setState(() {
-            imageRaw = value;
+            inputImage = value;
           });
         });
       }
@@ -61,27 +63,45 @@ class _ProfileEditorState extends State<ProfileEditor> {
       ImageCrop.cropImage(
               file: File(imageFile.path), area: cropKey.currentState!.area!)
           .then((value) {
-        setState(() {
-          croppedImage = value;
+        // croppedImage = value;
+        path_provider.getTemporaryDirectory().then((dir) {
+          final targetPath = dir.absolute.path +
+              "/temp${cropKey.currentState!.area.toString()}.jpg";
+          FlutterImageCompress.compressAndGetFile(
+                  value.absolute.path,
+                  //  value.path,
+                  targetPath,
+                  minHeight: 128,
+                  minWidth: 128,
+                  quality: 90)
+              .then((value) => {
+                    setState(() {
+                      croppedImage = value;
+                    })
+                  });
         });
       });
     }
   }
 
-  accept(BuildContext context) {
+  accept(BuildContext contex, bool isOptional) {
     // TODO: validate text correctly
     if (nameController.text.length > 1 && croppedImage != null) {
       croppedImage!.readAsBytes().then((value) {
         Provider.of<Profile>(context, listen: false)
             .updateNameAvatar(nameController.text, value);
-        Navigator.popAndPushNamed(context, "/home");
+        if (isOptional) {
+          Navigator.pop(contex);
+        } else {
+          Navigator.popAndPushNamed(context, "/home");
+        }
       });
     }
   }
 
   Widget _buildCropImage() {
     return Crop(
-      image: MemoryImage(imageRaw!),
+      image: MemoryImage(inputImage!),
       key: cropKey,
       aspectRatio: 1,
       maximumScale: 10,
@@ -90,9 +110,13 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-        child: SafeArea(
-      child: Column(
+    String? currentName = Provider.of<Profile>(context, listen: false).name;
+    bool isOptional = currentName != null && currentName != "";
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: isOptional,
+      ),
+      body: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -104,7 +128,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
                 aspectRatio: 1,
                 child: Card(
                   child: Stack(children: [
-                    imageRaw != null
+                    inputImage != null
                         ? Listener(
                             child: _buildCropImage(),
                             onPointerUp: (event) => refreshCropped(),
@@ -160,7 +184,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
               ),
             ),
             ElevatedButton.icon(
-                onPressed: () => accept(context),
+                onPressed: () => accept(context, isOptional),
                 // onPressed: () => {},
                 icon: const Icon(
                   Icons.check,
@@ -169,6 +193,6 @@ class _ProfileEditorState extends State<ProfileEditor> {
                 ),
                 label: const Text("Continue")),
           ]),
-    ));
+    );
   }
 }

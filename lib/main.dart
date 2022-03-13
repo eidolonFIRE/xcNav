@@ -42,7 +42,7 @@ void main() {
         create: (_) => Chat(),
         lazy: false,
       ),
-      Provider(
+      ChangeNotifierProvider(
         create: (BuildContext context) => Client(context),
         lazy: false,
       )

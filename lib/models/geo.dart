@@ -18,7 +18,7 @@ class Geo {
   double lat = 0;
   double lng = 0;
   double alt = 0;
-  double time = 0; // milliseconds
+  int time = 0; // milliseconds
   double hdg = 0; // radians
   double spd = 0; // meters/sec
   double vario = 0; // meters/sec
@@ -30,7 +30,7 @@ class Geo {
     lat = location.latitude ?? 0;
     lng = location.longitude ?? 0;
     alt = location.altitude ?? 0;
-    time = location.time ?? 0;
+    time = location.time?.toInt() ?? 0;
 
     if (prev != null && prev.time < time) {
       // prefer our own calculations

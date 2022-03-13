@@ -27,6 +27,20 @@ class Party extends StatefulWidget {
 class _PartyState extends State<Party> {
   final TextEditingController chatInput = TextEditingController();
 
+  FocusNode? inputFieldNode;
+
+  @override
+  void initState() {
+    inputFieldNode = FocusNode();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    inputFieldNode?.dispose();
+    super.dispose();
+  }
+
   showPartyActions(BuildContext context) {
     showDialog(
         context: context,
@@ -40,19 +54,30 @@ class _PartyState extends State<Party> {
                         ? Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text("Invite Code"),
-                              SizedBox(
-                                  width: 300,
-                                  height: 300,
-                                  child: QrImage(
-                                    foregroundColor: Colors.black,
-                                    backgroundColor: Colors.white,
-                                    // TODO: get group ID invite code
-                                    data: group.currentGroupID!,
-                                    version: QrVersions.auto,
-                                    size: 320,
-                                    gapless: true,
-                                  )),
+                              const Text("Invite Code"),
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: ClipRRect(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(20)),
+                                  child: AspectRatio(
+                                    aspectRatio: 1,
+                                    child: Container(
+                                        // margin: const EdgeInsets.all(10),
+                                        width: 300,
+                                        height: 300,
+                                        child: QrImage(
+                                          foregroundColor: Colors.black,
+                                          backgroundColor: Colors.white,
+                                          data: group.currentGroupID!,
+                                          version: QrVersions.auto,
+                                          size: 300,
+                                          gapless: true,
+                                          padding: const EdgeInsets.all(30),
+                                        )),
+                                  ),
+                                ),
+                              ),
                               ElevatedButton.icon(
                                   onPressed: () =>
                                       {Share.share(group.currentGroupID ?? "")},
@@ -69,7 +94,6 @@ class _PartyState extends State<Party> {
                   }),
                   ElevatedButton.icon(
                       onPressed: () {
-                        // Navigator.pop(context);
                         Navigator.pushNamed(context, "/qrScanner");
                       },
                       icon: const Icon(
@@ -80,9 +104,8 @@ class _PartyState extends State<Party> {
                   ElevatedButton.icon(
                       // TODO: prompt split option
                       onPressed: () {
-                        // TODO: re-enable
-                        // Provider.of<Client>(context, listen: false)
-                        //     .leaveGroup(false);
+                        Provider.of<Client>(context, listen: false)
+                            .leaveGroup(false);
                         Navigator.popUntil(
                             context, ModalRoute.withName("/home"));
                       },
@@ -101,6 +124,20 @@ class _PartyState extends State<Party> {
             ));
   }
 
+  void sendChatMessage(String text) {
+    if (text.trim() != "") {
+      Provider.of<Client>(context, listen: false)
+          .sendchatMessage(text, isEmergency: false);
+      chatInput.clear();
+
+      Provider.of<Chat>(context, listen: false).processSentMessage(
+          DateTime.now().millisecondsSinceEpoch,
+          Provider.of<Profile>(context, listen: false).id ?? "",
+          text,
+          false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -110,23 +147,30 @@ class _PartyState extends State<Party> {
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
             actions: [
-              IconButton(
-                  onPressed: () => {showPartyActions(context)},
-                  icon: const Icon(Icons.groups)),
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: IconButton(
+                    iconSize: 35,
+                    onPressed: () => {showPartyActions(context)},
+                    icon: const Icon(Icons.groups)),
+              ),
             ],
             title: Consumer<Group>(
                 builder: (context, group, child) => Row(
                       children: group.pilots.values
                           .toList()
-                          .map((e) => AvatarRound(e.avatar, 10))
+                          .map((e) => AvatarRound(e.avatar, 20))
                           .toList(),
                     ))),
+        // --- Chat Bubble List
         body: Center(
           child: Consumer<Chat>(
             builder: (context, chat, child) => ListView.builder(
                 itemCount: chat.messages.length,
+                reverse: true,
                 itemBuilder: (context, i) {
-                  Message msg = chat.messages[i];
+                  final reversedIndex = chat.messages.length - 1 - i;
+                  Message msg = chat.messages[reversedIndex];
                   Pilot? pilot = Provider.of<Group>(context, listen: false)
                       .pilots[msg.pilotId];
                   return ChatBubble(
@@ -145,20 +189,34 @@ class _PartyState extends State<Party> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
-              child: TextField(
-                textInputAction: TextInputAction.send,
-                controller: chatInput,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: TextField(
+                  textInputAction: TextInputAction.send,
+                  controller: chatInput,
+                  autofocus: true,
+                  focusNode: inputFieldNode,
+                  decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.all(10)),
+                  onSubmitted: (value) {
+                    sendChatMessage(value);
+                    if (inputFieldNode != null) {
+                      FocusScope.of(context).requestFocus(inputFieldNode);
+                    }
+                  },
                 ),
-                onSubmitted: (value) {
-                  debugPrint("send: $value");
-                  chatInput.clear();
-                },
               ),
             ),
-            ElevatedButton(onPressed: () => {}, child: const Icon(Icons.send)),
+            ElevatedButton(
+                onPressed: () => {sendChatMessage(chatInput.text)},
+                style: ButtonStyle(
+                  side: MaterialStateProperty.resolveWith<BorderSide>(
+                      (states) => const BorderSide(color: Colors.blue)),
+                  backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                      (states) => Colors.blue),
+                ),
+                child: const Icon(Icons.send)),
           ],
         ),
       ),

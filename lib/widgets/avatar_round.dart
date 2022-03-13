@@ -14,7 +14,13 @@ class AvatarRound extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(2),
         child: ClipOval(
-          child: avatar ?? Image.asset("assets/images/default_avatar.png"),
+          child: Container(
+              width: radius * 2,
+              height: radius * 2,
+              child: FittedBox(
+                  fit: BoxFit.fill,
+                  child: avatar ??
+                      Image.asset("assets/images/default_avatar.png"))),
         ),
       ),
     );

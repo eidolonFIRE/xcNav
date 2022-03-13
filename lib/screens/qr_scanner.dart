@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
-// --- Providers
+// Providers
 import 'package:xcnav/providers/client.dart';
 
 class QRScanner extends StatefulWidget {
@@ -131,7 +131,7 @@ class _QRScannerState extends State<QRScanner> {
     // For this example we check how width or tall the device is and change the scanArea and overlay accordingly.
     var scanArea = (MediaQuery.of(context).size.width < 400 ||
             MediaQuery.of(context).size.height < 400)
-        ? 150.0
+        ? 200.0
         : 300.0;
     // To ensure the Scanner view is properly sizes after rotation
     // we need to listen for Flutter SizeChanged notification and update controller
@@ -159,9 +159,9 @@ class _QRScannerState extends State<QRScanner> {
 
         // Follow invite link
         if (result != null && result!.code != null) {
-          // TODO: re-enable
-          // Provider.of<Client>(context, listen: false).joinGroup(result!.code!);
-          Navigator.pop(context);
+          controller.pauseCamera();
+          Provider.of<Client>(context, listen: false).joinGroup(result!.code!);
+          Navigator.pop<bool>(context, true);
         }
       });
     });

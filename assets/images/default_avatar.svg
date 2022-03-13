@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
+   width="36mm"
+   height="36mm"
+   viewBox="0 0 36 36"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="default_avatar.svg">
+   sodipodi:docname="default_avatar.svg"
+   inkscape:export-filename="/home/caleb/projects/xcNav/assets/images/default_avatar.png"
+   inkscape:export-xdpi="45.155556"
+   inkscape:export-ydpi="45.155556">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,11 +28,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="5.6"
-     inkscape:cx="399.91367"
-     inkscape:cy="469.83024"
+     inkscape:zoom="3.959798"
+     inkscape:cx="89.755061"
+     inkscape:cy="30.945399"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="svg8"
      showgrid="true"
      showguides="true"
      inkscape:window-width="3840"
@@ -39,7 +42,9 @@
      inkscape:window-maximized="1">
     <inkscape:grid
        type="xygrid"
-       id="grid823" />
+       id="grid823"
+       originx="-102"
+       originy="-103" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -53,12 +58,20 @@
       </cc:Work>
     </rdf:RDF>
   </metadata>
+  <rect
+     style="opacity:1;fill:#dcdcdc;fill-opacity:0.99733336;fill-rule:nonzero;stroke:none;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+     id="rect821"
+     width="36"
+     height="36"
+     x="-1.4210855e-14"
+     y="0" />
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(-102,-158)">
     <circle
-       style="display:inline;opacity:1;fill:#c8c8c8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.70922327;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:3.4000001;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal;image-rendering:auto"
+       style="display:none;opacity:1;fill:#c8c8c8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.70922327;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:3.4000001;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal;image-rendering:auto"
        id="path815"
        cx="120"
        cy="177"
@@ -68,7 +81,7 @@
        inkscape:export-ydpi="81.280006" />
     <path
        style="fill:#787878;fill-opacity:1;stroke:#000000;stroke-width:0.40719745px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 108,192 2,-10 h 10 9 l 3,9 -5,4 -12,0 z"
+       d="m 107,195 3,-13 h 10 9 l 4,13 h -6 -12 z"
        id="path821"
        inkscape:connector-curvature="0"
        inkscape:label="fill body"
@@ -86,7 +99,7 @@
        inkscape:export-ydpi="81.280006" />
     <path
        style="fill:none;stroke:#000000;stroke-width:3.11936879;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 108,191 c 0,0 0.69941,-7.84971 3,-9 2,-1 5.99261,0.0212 8.98892,0.0258 3.00516,0.005 7.01108,-1.0258 9.01549,0.002 C 130.7112,182.90224 132,191 132,191"
+       d="m 107,196 c 0,0 1.69941,-12.84971 4,-14 2,-1 5.99261,0.0212 8.98892,0.0258 3.00516,0.005 7.01108,-1.0258 9.01549,0.002 C 130.7112,182.90224 133,196 133,196"
        id="path819"
        inkscape:connector-curvature="0"
        inkscape:label="body"
@@ -98,7 +111,7 @@
        cy="177"
        cx="120"
        id="circle4529"
-       style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.70922327;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:3.4000001;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal;image-rendering:auto"
+       style="display:none;opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.70922327;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:3.4000001;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal;image-rendering:auto"
        inkscape:label="ring"
        inkscape:export-xdpi="81.280006"
        inkscape:export-ydpi="81.280006" />

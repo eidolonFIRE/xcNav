@@ -67,8 +67,14 @@ class _LoadingScreenState extends State<LoadingScreen> {
           ),
           const Padding(
             padding: EdgeInsets.all(20.0),
-            child: Text("brought to you by the Bay Area PPG group"),
+            child: Text(" -- brought to you by our contributers --"),
           ),
+          Column(
+            children: const [
+              Text("Caleb Johnson - Founder"),
+              Text("Edwin Veelo - Designer"),
+            ],
+          )
         ],
       ),
     ));

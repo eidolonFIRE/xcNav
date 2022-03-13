@@ -50,6 +50,11 @@ dependencies:
   qr_flutter: ^4.0.0
   share_plus: ^3.1.0
   web_socket_channel: ^2.1.0
+  flutter_image_compress: ^1.1.0
+  path_provider: ^2.0.9
+  amplify_storage_s3: ^0.4.1
+  amplify_auth_cognito: ^0.4.1
+  amplify_flutter: ^0.4.1
 
 dev_dependencies:
   flutter_test:
