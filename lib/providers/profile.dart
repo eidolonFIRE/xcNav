@@ -1,15 +1,9 @@
+import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
-
-// import 'package:amplify_analytics_pinpoint/amplify_analytics_pinpoint.dart';
-import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
-import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_storage_s3/amplify_storage_s3.dart';
-
-import 'package:xcnav/secret_keys.dart';
 
 class Profile with ChangeNotifier {
   String? name;
@@ -28,28 +22,6 @@ class Profile with ChangeNotifier {
   Profile() {
     load();
     hash = _hash();
-
-    _initAmplifyFlutter();
-  }
-
-  void _initAmplifyFlutter() async {
-    AmplifyAuthCognito auth = AmplifyAuthCognito();
-    AmplifyStorageS3 storage = AmplifyStorageS3();
-    AmplifyAnalyticsPinpoint analytics = AmplifyAnalyticsPinpoint();
-
-    Amplify.addPlugins([auth, storage, analytics]);
-
-    // Initialize AmplifyFlutter
-    try {
-      await Amplify.configure(amplifyconfig);
-    } on AmplifyAlreadyConfiguredException {
-      print(
-          "Amplify was already configured. Looks like app restarted on android.");
-    }
-
-    setState(() {
-      _isAmplifyConfigured = true;
-    });
   }
 
   load() async {
@@ -87,9 +59,29 @@ class Profile with ChangeNotifier {
     avatar = Image.memory(newRawAvatar);
     updateAvatarHash();
 
+    pushAvatar();
+
     prefs.setString("profile.name", newName.trim());
     prefs.setString("profile.avatar", base64Encode(newRawAvatar));
     notifyListeners();
+  }
+
+  Future pushAvatar() async {
+    return http
+        .post(
+            Uri.parse(
+                "https://gx49w49rb4.execute-api.us-west-1.amazonaws.com/xcnav_avatar_service"),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(
+                {"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
+        .then((http.Response response) {
+      final int statusCode = response.statusCode;
+
+      if (statusCode < 200 || statusCode > 400) {
+        throw Exception("Error while pushing avatar");
+      }
+      return json.decode(response.body);
+    });
   }
 
   updateID(String newID, String newSecretID) {

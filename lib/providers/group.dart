@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
+import 'package:path_provider/path_provider.dart';
 
 // Models
 import 'package:xcnav/models/pilot.dart';
@@ -47,26 +52,65 @@ class Group with ChangeNotifier {
     return null;
   }
 
-  void processNewPilot(dynamic p) {
+  Future fetchAvatarS3(String pilotID) async {
+    Uri uri = Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com",
+        "/xcnav_avatar_service", {"pilot_id": pilotID});
+    return http
+        .get(
+      uri,
+    )
+        .then((http.Response response) {
+      final int statusCode = response.statusCode;
+
+      if (statusCode < 200 || statusCode > 400) {
+        throw Exception("Error while fetching avatar");
+      }
+      return json.decode(response.body);
+    });
+  }
+
+  void processNewPilot(dynamic p) async {
     Pilot newPilot = Pilot(p["id"], p["name"], Geo());
 
     // Make fresh local pilot
-    if (p["avatar"] != null && p["avatar"] != "") {
-      pilots[p["id"]] = newPilot;
-
+    if (p["avatar_hash"] != null && p["avatar_hash"] != "") {
       // - Check if we have locally cached file matching pilot_id
-      // - if we don't, fetch from S3
-      // - else, hash what we have and check it against the given hash
-      // - if it doesn't match, fetch from s3
+      Directory tempDir = await getTemporaryDirectory();
+      File fileAvatar = File("${tempDir.path}/avatars/${newPilot.id}.jpg");
 
-      // newPilot.avatar = Image.memory(imgBits);
-      newPilot.avatarHash = "";
+      if (await fileAvatar.exists()) {
+        // load cached file
+        Uint8List loadedBytes = await fileAvatar.readAsBytes();
+        String loadedHash = md5.convert(loadedBytes).toString();
+
+        if (loadedHash == p["avatar_hash"]) {
+          // cache hit
+          debugPrint("Loaded avatar from cache");
+          newPilot.avatar = Image.memory(loadedBytes);
+          newPilot.avatarHash = loadedHash;
+        }
+      }
+
+      if (newPilot.avatarHash == null) {
+        // - cache miss, load from S3
+        fetchAvatarS3(newPilot.id).then((value) {
+          Uint8List bytes = base64Decode(value["avatar"]);
+          newPilot.avatar = Image.memory(bytes);
+          newPilot.avatarHash = md5.convert(bytes).toString();
+
+          // save file to the temp file
+          fileAvatar
+              .create(recursive: true)
+              .then((value) => fileAvatar.writeAsBytes(bytes));
+        });
+      }
     } else {
+      // - fallback on default avatar
       newPilot.avatar = Image.asset("assets/images/default_avatar.png");
     }
 
     // Add / Replace local pilot instance
-    pilots[p] = newPilot;
+    pilots[p["id"]] = newPilot;
     notifyListeners();
   }
 
@@ -88,8 +132,8 @@ class Group with ChangeNotifier {
   void pilotSelectedWaypoint(String pilotID, int index) {
     Pilot? pilot = pilots[pilotID];
     if (pilot != null) {
-      // TODO: check index and name match
       pilot.selectedWaypoint = index;
     }
+    notifyListeners();
   }
 }

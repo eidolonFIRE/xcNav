@@ -130,7 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   // TODO: validate name
                   if (newWaypointName.text.isNotEmpty) {
                     Provider.of<FlightPlan>(context, listen: false)
-                        .addWaypointNew(null, newWaypointName.text, latlng,
+                        .insertWaypoint(null, newWaypointName.text, latlng,
                             false, null, null);
                     Navigator.pop(context);
                   }
@@ -222,14 +222,14 @@ class _MyHomePageState extends State<MyHomePage> {
     showDialog(
         context: context,
         builder: (context) {
-          TextStyle numbers = TextStyle(fontSize: 40);
+          TextStyle numbers = const TextStyle(fontSize: 40);
 
           return Consumer<MyTelemetry>(builder: (context, myTelemetry, child) {
             return AlertDialog(
               title: Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
+                children: const [
                   Text("Fuel Level"),
                   Text("Burn Rate"),
                 ],
@@ -262,12 +262,9 @@ class _MyHomePageState extends State<MyHomePage> {
                               )),
                         ],
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(1, 6, 1, 0),
-                        child: Text(
-                          ".",
-                          style: numbers,
-                        ),
+                      Text(
+                        ".",
+                        style: numbers,
                       ),
                       Column(mainAxisSize: MainAxisSize.min, children: [
                         IconButton(

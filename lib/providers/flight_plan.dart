@@ -10,9 +10,20 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/eta.dart';
 
+import 'package:xcnav/models/waypoint.dart';
+
 class FlightPlan with ChangeNotifier {
   List<Waypoint> waypoints = [];
   bool isReversed = false;
+
+  void Function(
+    WaypointAction action,
+    int index,
+    int? newIndex,
+    Waypoint? data,
+  )? onWaypointAction;
+
+  void Function(int index)? onSelectWaypoint;
 
   @override
   FlightPlan() {
@@ -48,7 +59,7 @@ class FlightPlan with ChangeNotifier {
         waypoints.add(Waypoint(
             wp["name"],
             latlng.map((e) => LatLng(e[0], e[1])).toList(),
-            wp["isOptional"],
+            wp["isOptional"] ?? false,
             wp["icon"],
             wp["color"]));
         debugPrint("+ ${wp["name"]}");
@@ -64,6 +75,17 @@ class FlightPlan with ChangeNotifier {
 
   void selectWaypoint(int index) {
     selectedIndex = index;
+    // callback
+    if (onSelectWaypoint != null) onSelectWaypoint!(index);
+    notifyListeners();
+  }
+
+  void parseFlightPlanSync(List<dynamic> planData) {
+    waypoints.clear();
+    // add back each waypoint
+    for (dynamic each in planData) {
+      waypoints.add(Waypoint.fromJson(each));
+    }
     notifyListeners();
   }
 
@@ -80,20 +102,28 @@ class FlightPlan with ChangeNotifier {
     }
   }
 
-  void addWaypoint(int? index, Waypoint newPoint) {
+  // Called from client
+  void backendInsertWaypoint(int index, Waypoint newPoint) {
     waypoints.insert(_resolveNewWaypointIndex(index), newPoint);
-
     notifyListeners();
   }
 
-  void addWaypointNew(int? index, String name, LatLng pos, bool? isOptional,
+  // Called from UI
+  void insertWaypoint(int? index, String name, LatLng pos, bool? isOptional,
       String? icon, int? color) {
-    waypoints.insert(_resolveNewWaypointIndex(index),
-        Waypoint(name, [pos], isOptional ?? false, icon, color));
+    Waypoint newWaypoint =
+        Waypoint(name, [pos], isOptional ?? false, icon, color);
+    int resolvedIndex = _resolveNewWaypointIndex(index);
+    waypoints.insert(resolvedIndex, newWaypoint);
+
+    // callback
+    if (onWaypointAction != null) {
+      onWaypointAction!(WaypointAction.add, resolvedIndex, null, newWaypoint);
+    }
     notifyListeners();
   }
 
-  void replaceWaypoint(int index, Waypoint replacement) {
+  void backendReplaceWaypoint(int index, Waypoint replacement) {
     waypoints[index] = replacement;
     notifyListeners();
   }
@@ -102,7 +132,7 @@ class FlightPlan with ChangeNotifier {
     if (selectedIndex != null) removeWaypoint(selectedIndex!);
   }
 
-  void removeWaypoint(int index) {
+  void backendRemoveWaypoint(int index) {
     waypoints.removeAt(index);
     if (waypoints.isEmpty) {
       selectedIndex = null;
@@ -110,22 +140,38 @@ class FlightPlan with ChangeNotifier {
     if (selectedIndex != null && selectedIndex! >= waypoints.length) {
       selectWaypoint(waypoints.length - 1);
     }
-    // TODO: officially update selected waypoint
     notifyListeners();
+  }
+
+  void removeWaypoint(int index) {
+    backendRemoveWaypoint(index);
+    // callback
+    if (onWaypointAction != null) {
+      onWaypointAction!(WaypointAction.delete, index, null, null);
+    }
   }
 
   void toggleOptional(int index) {
     waypoints[index].isOptional = !waypoints[index].isOptional;
+
+    // callback
+    if (onWaypointAction != null) {
+      onWaypointAction!(WaypointAction.modify, index, null, waypoints[index]);
+    }
     notifyListeners();
   }
 
   void moveWaypoint(int index, LatLng newPoint) {
     // TODO: support polylines
     waypoints[index].latlng = [newPoint];
+    // callback
+    if (onWaypointAction != null) {
+      onWaypointAction!(WaypointAction.modify, index, null, waypoints[index]);
+    }
     notifyListeners();
   }
 
-  void sortWaypoint(int oldIndex, int newIndex) {
+  void backendSortWaypoint(int oldIndex, int newIndex) {
     Waypoint temp = waypoints[oldIndex];
     waypoints.removeAt(oldIndex);
     if (newIndex > oldIndex) newIndex--;
@@ -140,10 +186,15 @@ class FlightPlan with ChangeNotifier {
         selectWaypoint(selectedIndex! - 1);
       }
     }
-
-    // TODO: sockets message
-
     notifyListeners();
+  }
+
+  void sortWaypoint(int oldIndex, int newIndex) {
+    backendSortWaypoint(oldIndex, newIndex);
+    // callback
+    if (onWaypointAction != null) {
+      onWaypointAction!(WaypointAction.sort, oldIndex, newIndex, null);
+    }
   }
 
   Polyline _buildTripSnakeSegment(List<LatLng> points) {

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/widgets/avatar_round.dart';
 
 class WaypointCard extends StatelessWidget {
   const WaypointCard(
@@ -37,12 +41,27 @@ class WaypointCard extends StatelessWidget {
               (waypoint.isOptional ? "_optional" : "") +
               ".png"),
         ),
-        title: TextButton(
-          child: Text(
-            waypoint.name,
-            style: const TextStyle(color: Colors.white, fontSize: 30),
-          ),
-          onPressed: onSelect,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            TextButton(
+              child: Text(
+                waypoint.name,
+                style: const TextStyle(color: Colors.white, fontSize: 30),
+              ),
+              onPressed: onSelect,
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: Provider.of<Group>(context)
+                  .pilots
+                  .values
+                  .where((element) => element.selectedWaypoint == index)
+                  .map((e) => AvatarRound(e.avatar, 20))
+                  .toList(),
+            )
+          ],
         ),
         trailing: ReorderableDragStartListener(
           index: index,

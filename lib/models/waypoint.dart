@@ -1,6 +1,14 @@
 import 'dart:convert';
 import 'package:latlong2/latlong.dart';
 
+enum WaypointAction {
+  none,
+  add,
+  modify,
+  delete,
+  sort,
+}
+
 // Custom high-speed dirty hash for checking flightplan changes
 String hashFlightPlanData(List<Waypoint> waypoints) {
   // build long string
@@ -11,7 +19,8 @@ String hashFlightPlanData(List<Waypoint> waypoints) {
     str += i.toString() + wp.name + (wp.isOptional ? "O" : "X");
     for (LatLng g in wp.latlng) {
       // large tolerance for floats
-      str += g.latitude.toStringAsFixed(4) + g.longitude.toStringAsFixed(4);
+      str +=
+          "${g.latitude.toStringAsFixed(4)}${g.longitude.toStringAsFixed(4)}";
     }
   }
 
@@ -19,7 +28,7 @@ String hashFlightPlanData(List<Waypoint> waypoints) {
   int hash = 0;
   for (int i = 0, len = str.length; i < len; i++) {
     hash = ((hash << 5) - hash) + str.codeUnitAt(i);
-    hash |= 0;
+    hash &= 0xffffff;
   }
   return (hash < 0 ? hash * -2 : hash).toRadixString(16);
 }
@@ -44,9 +53,9 @@ class Waypoint {
     icon = json["icon"];
     color = json["color"];
     latlng = [];
-    List<dynamic> rawList = json["geo"];
-    for (List<double> e in rawList) {
-      List<double> raw = e;
+    List<dynamic> rawList = json["latlng"];
+    for (List<dynamic> e in rawList) {
+      List<double> raw = e.cast<double>();
       latlng.add(LatLng(raw[0], raw[1]));
     }
 
@@ -55,12 +64,16 @@ class Waypoint {
 
   @override
   String toString() {
-    return jsonEncode({
+    return jsonEncode(toJson());
+  }
+
+  dynamic toJson() {
+    return {
       "name": name,
       "latlng": latlng.map((e) => [e.latitude, e.longitude]).toList(),
-      "isOptional": isOptional,
+      "optional": isOptional,
       "icon": icon,
       "color": color,
-    });
+    };
   }
 }
