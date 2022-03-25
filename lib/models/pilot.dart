@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:location/location.dart';
 import 'package:xcnav/models/geo.dart';
 
 class Pilot {
@@ -25,6 +26,26 @@ class Pilot {
   }
 
   void updateTelemetry(dynamic telemetry, int timestamp) {
-    // TODO: update geo and fuel
+    Map<String, dynamic> gps = telemetry["gps"];
+    fuel = (telemetry["fuel"] ?? 0.0) + 0.0;
+    geo = Geo.fromLocationData(
+        LocationData.fromMap({
+          'latitude': gps["lat"],
+          'longitude': gps["lng"],
+          // 'accuracy': ,
+          'altitude': gps["alt"],
+          // 'speed': ,
+          // 'speed_accuracy': ,
+          // 'heading': ,
+          'time': timestamp.toDouble(),
+          // 'isMock'] == : ,
+          // 'verticalAccuracy': ,
+          // 'headingAccuracy': ,
+          // 'elapsedRealtimeNanos': ,
+          // 'elapsedRealtimeUncertaintyNanos': ,
+          // 'satelliteNumber': ,
+          // 'provider': ,
+        }),
+        geo);
   }
 }

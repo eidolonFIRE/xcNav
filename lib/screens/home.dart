@@ -6,6 +6,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
+import 'package:xcnav/dialogs/fuel_adjustment.dart';
+import 'dart:async';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -14,6 +16,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/widgets/map_button.dart';
+import 'package:xcnav/widgets/vario_icon.dart';
 
 // widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -66,25 +69,25 @@ class _MyHomePageState extends State<MyHomePage> {
     FakeFlight fakeFlight = FakeFlight();
 
     // --- Geo location loop
-    // Timer timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
-    //   // LocationData geo = await location.getLocation();
+    Timer timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      // LocationData geo = await location.getLocation();
 
-    //   LocationData geo = fakeFlight.genFakeLocationFlight();
+      LocationData geo = fakeFlight.genFakeLocationFlight();
 
-    //   Provider.of<MyTelemetry>(context, listen: false).updateGeo(geo);
-    //   // TODO: no null-check
-    //   // TODO: handle group vs unlocked
-    //   if (focusMode == FocusMode.me) {
-    //     LatLng newCenter = LatLng(geo.latitude!, geo.longitude!);
-    //     // TODO: take zoom level into account for unlock
-    //     if (latlngCalc.distance(newCenter, mapController.center) < 1000) {
-    //       mapController.move(newCenter, mapController.zoom);
-    //     } else {
-    //       // break focus lock
-    //       setFocusMode(FocusMode.unlocked);
-    //     }
-    //   }
-    // });
+      Provider.of<MyTelemetry>(context, listen: false).updateGeo(geo);
+      // TODO: no null-check
+      // TODO: handle group vs unlocked
+      if (focusMode == FocusMode.me) {
+        LatLng newCenter = LatLng(geo.latitude!, geo.longitude!);
+        // TODO: take zoom level into account for unlock
+        if (latlngCalc.distance(newCenter, mapController.center) < 1000) {
+          mapController.move(newCenter, mapController.zoom);
+        } else {
+          // break focus lock
+          setFocusMode(FocusMode.unlocked);
+        }
+      }
+    });
   }
 
   void setFocusMode(FocusMode mode, [LatLng? center]) {
@@ -217,164 +220,6 @@ class _MyHomePageState extends State<MyHomePage> {
         });
   }
 
-  // --- Fuel Level Editor Dialog
-  void showFuelDialog() {
-    showDialog(
-        context: context,
-        builder: (context) {
-          TextStyle numbers = const TextStyle(fontSize: 40);
-
-          return Consumer<MyTelemetry>(builder: (context, myTelemetry, child) {
-            return AlertDialog(
-              title: Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: const [
-                  Text("Fuel Level"),
-                  Text("Burn Rate"),
-                ],
-              ),
-              content: Row(
-                children: [
-                  // --- Fuel Level
-                  Card(
-                    color: Colors.grey.shade700,
-                    child: Row(children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                              onPressed: () => {myTelemetry.updateFuel(1)},
-                              icon: const Icon(
-                                Icons.keyboard_arrow_up,
-                                color: Colors.lightGreen,
-                              )),
-                          Text(
-                            myTelemetry.fuel.floor().toString(),
-                            style: numbers,
-                            textAlign: TextAlign.center,
-                          ),
-                          IconButton(
-                              onPressed: () => {myTelemetry.updateFuel(-1)},
-                              icon: const Icon(
-                                Icons.keyboard_arrow_down,
-                                color: Colors.red,
-                              )),
-                        ],
-                      ),
-                      Text(
-                        ".",
-                        style: numbers,
-                      ),
-                      Column(mainAxisSize: MainAxisSize.min, children: [
-                        IconButton(
-                            onPressed: () => {myTelemetry.updateFuel(0.1)},
-                            icon: const Icon(
-                              Icons.keyboard_arrow_up,
-                              color: Colors.lightGreen,
-                            )),
-                        Text(
-                          ((myTelemetry.fuel % 1) * 10).floor().toString(),
-                          style: numbers,
-                          textAlign: TextAlign.center,
-                        ),
-                        IconButton(
-                            onPressed: () => {myTelemetry.updateFuel(-0.1)},
-                            icon: const Icon(
-                              Icons.keyboard_arrow_down,
-                              color: Colors.red,
-                            )),
-                      ])
-                    ]),
-                  ),
-
-                  // --- Burn Rate
-                  Card(
-                    color: Colors.grey.shade700,
-                    child: Row(children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                              onPressed: () =>
-                                  {myTelemetry.updateFuelBurnRate(1)},
-                              icon: const Icon(
-                                Icons.keyboard_arrow_up,
-                                color: Colors.lightGreen,
-                              )),
-                          Text(
-                            myTelemetry.fuelBurnRate.floor().toString(),
-                            style: numbers,
-                            textAlign: TextAlign.center,
-                          ),
-                          IconButton(
-                              onPressed: () =>
-                                  {myTelemetry.updateFuelBurnRate(-1)},
-                              icon: const Icon(
-                                Icons.keyboard_arrow_down,
-                                color: Colors.red,
-                              )),
-                        ],
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(1, 6, 1, 0),
-                        child: Text(
-                          ".",
-                          style: numbers,
-                        ),
-                      ),
-                      Column(mainAxisSize: MainAxisSize.min, children: [
-                        IconButton(
-                            onPressed: () =>
-                                {myTelemetry.updateFuelBurnRate(0.1)},
-                            icon: const Icon(
-                              Icons.keyboard_arrow_up,
-                              color: Colors.lightGreen,
-                            )),
-                        Text(
-                          ((myTelemetry.fuelBurnRate % 1) * 10)
-                              .floor()
-                              .toString(),
-                          style: numbers,
-                          textAlign: TextAlign.center,
-                        ),
-                        IconButton(
-                            onPressed: () =>
-                                {myTelemetry.updateFuelBurnRate(-0.1)},
-                            icon: const Icon(
-                              Icons.keyboard_arrow_down,
-                              color: Colors.red,
-                            )),
-                      ])
-                    ]),
-                  )
-                ],
-              ),
-              // actions: [
-              //   ElevatedButton.icon(
-              //       label: const Text("Update"),
-              //       onPressed: () {
-              //         Navigator.pop(context);
-              //       },
-              //       icon: const Icon(
-              //         Icons.check,
-              //         size: 20,
-              //         color: Colors.lightGreen,
-              //       )),
-              //   ElevatedButton.icon(
-              //       label: const Text("Cancel"),
-              //       onPressed: () => {Navigator.pop(context)},
-              //       icon: const Icon(
-              //         Icons.cancel,
-              //         size: 20,
-              //         color: Colors.red,
-              //       )),
-              // ],
-            );
-          });
-        });
-  }
-
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   //
   //
@@ -387,21 +232,24 @@ class _MyHomePageState extends State<MyHomePage> {
     debugPrint("Build /home");
     return Scaffold(
         appBar: AppBar(
-          // Here we take the value from the MyHomePage object that was created by
-          // the App.build method, and use it to set our appbar title.
-          automaticallyImplyLeading: true,
-          // TODO: menu
-          leadingWidth: 35,
-          // leading: IconButton(
-          //   padding: EdgeInsets.zero,
-          //   icon: const Icon(
-          //     Icons.menu,
-          //     color: Colors.grey,
-          //   ),
-          //   onPressed: () => {},
-          // ),
-          title: Consumer<MyTelemetry>(
-              builder: (context, myTelementy, child) => Padding(
+            // Here we take the value from the MyHomePage object that was created by
+            // the App.build method, and use it to set our appbar title.
+            automaticallyImplyLeading: true,
+            // TODO: menu
+            leadingWidth: 35,
+            toolbarHeight: 64,
+            // leading: IconButton(
+            //   padding: EdgeInsets.zero,
+            //   icon: const Icon(
+            //     Icons.menu,
+            //     color: Colors.grey,
+            //   ),
+            //   onPressed: () => {},
+            // ),
+            title: Container(
+              height: 64,
+              child: Consumer<MyTelemetry>(
+                builder: (context, myTelementy, child) => Padding(
                     padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -436,14 +284,17 @@ class _MyHomePageState extends State<MyHomePage> {
                               child: VerticalDivider(
                                   thickness: 2, color: Colors.black)),
                           // --- Vario
-                          // TODO: replace with graphic
-                          Text(
-                            myTelementy.geo.vario.toStringAsFixed(1),
-                            style: instrUpper,
-                          ),
-                        ]),
-                  )),
-        ),
+                          Text.rich(TextSpan(children: [
+                            TextSpan(
+                              text: (myTelementy.geo.vario * meters2Feet * 60)
+                                  .toStringAsFixed(0),
+                              style: instrUpper.merge(TextStyle(fontSize: 36)),
+                            ),
+                            TextSpan(text: " ft/m", style: instrLabel)
+                          ])),
+                        ])),
+              ),
+            )),
         drawer: Drawer(
             child: ListView(
           children: [
@@ -613,7 +464,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         .toList()
                         .map((pilot) => Marker(
                             point: pilot.geo.latLng,
-                            builder: (ctx) => AvatarRound(pilot.avatar, 10)))
+                            width: 50,
+                            height: 50,
+                            builder: (ctx) => AvatarRound(pilot.avatar, 50)))
                         .toList(),
                   ),
 
@@ -670,6 +523,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         padding: const EdgeInsets.fromLTRB(5, 20, 0, 0),
                         child: MapButton(
                           size: 60,
+                          selected: focusMode == FocusMode.me,
                           child: Image.asset(
                               "assets/images/icon_controls_centermap_me.png"),
                           onPressed: () => setFocusMode(
@@ -682,6 +536,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       padding: const EdgeInsets.fromLTRB(5, 30, 0, 20),
                       child: MapButton(
                         size: 60,
+                        selected: focusMode == FocusMode.group,
                         onPressed: () => setFocusMode(FocusMode.group),
                         child: Image.asset(
                             "assets/images/icon_controls_centermap_group.png"),
@@ -691,6 +546,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       padding: const EdgeInsets.fromLTRB(5, 60, 0, 0),
                       child: MapButton(
                         size: 60,
+                        selected: false,
                         onPressed: () => {
                           mapController.move(
                               mapController.center, mapController.zoom + 1)
@@ -703,6 +559,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       padding: const EdgeInsets.fromLTRB(5, 30, 0, 20),
                       child: MapButton(
                         size: 60,
+                        selected: false,
                         onPressed: () => {
                           mapController.move(
                               mapController.center, mapController.zoom - 1)
@@ -719,6 +576,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 left: 5,
                 child: MapButton(
                   size: 60,
+                  selected: false,
                   onPressed: () => {Navigator.pushNamed(context, "/party")},
                   child: const Icon(
                     Icons.chat,
@@ -767,36 +625,49 @@ class _MyHomePageState extends State<MyHomePage> {
                 myTelemetry.geo.spd, flightPlan.selectedIndex!);
           }
           return Padding(
-            padding: const EdgeInsets.fromLTRB(30, 2, 50, 2),
+            padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisSize: MainAxisSize.max,
               children: [
                 // --- Fuel Indicator
-                GestureDetector(
-                  onTap: showFuelDialog,
-                  child: Card(
-                    color: myTelemetry.fuelIndicatorColor(etaNext, etaTrip),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 2, 10, 0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "Fuel",
-                            style: instrLabel,
-                          ),
-                          Text.rich(TextSpan(children: [
-                            TextSpan(
-                                text: myTelemetry.fuel.toStringAsFixed(1),
-                                style: instrLower),
-                            TextSpan(text: " L", style: instrLabel)
-                          ])),
-                          Text.rich(TextSpan(children: [
-                            TextSpan(
-                                text: myTelemetry.fuelTimeRemaining(),
-                                style: instrLower)
-                          ]))
-                        ],
+                Flexible(
+                  flex: 1,
+                  fit: FlexFit.tight,
+                  child: GestureDetector(
+                    onTap: () => {showFuelDialog(context)},
+                    child: Card(
+                      color: myTelemetry.fuelIndicatorColor(etaNext, etaTrip),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Fuel",
+                              style: instrLabel,
+                            ),
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                      text: myTelemetry.fuel.toStringAsFixed(1),
+                                      style: instrLower),
+                                  TextSpan(text: " L", style: instrLabel)
+                                ],
+                              ),
+                              softWrap: false,
+                            ),
+                            Text.rich(
+                              TextSpan(children: [
+                                TextSpan(
+                                    text: myTelemetry.fuelTimeRemaining(),
+                                    style: instrLower)
+                              ]),
+                              softWrap: false,
+                            )
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -804,58 +675,81 @@ class _MyHomePageState extends State<MyHomePage> {
 
                 const SizedBox(
                     height: 100,
+                    width: 2,
                     child: VerticalDivider(thickness: 2, color: Colors.black)),
 
                 // --- ETA to next waypoint
-                GestureDetector(
-                    onTap: showFlightPlan,
-                    child: (flightPlan.selectedIndex != null)
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                                Text(
-                                  "ETA next",
-                                  style: instrLabel,
-                                ),
-                                Text.rich(TextSpan(children: [
-                                  TextSpan(
-                                      text: etaNext.miles(), style: instrLower),
-                                  TextSpan(text: " mi", style: instrLabel)
-                                ])),
-                                Text(
-                                  etaNext.hhmm(),
-                                  style: instrLower,
-                                ),
-                              ])
-                        : Text(
-                            "Select\nWaypoint",
-                            style: instrLabel,
-                            textAlign: TextAlign.center,
-                          )),
+                Flexible(
+                  fit: FlexFit.tight,
+                  flex: 2,
+                  child: GestureDetector(
+                      onTap: showFlightPlan,
+                      child: (flightPlan.selectedIndex != null)
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                  Text(
+                                    "ETA next",
+                                    style: instrLabel,
+                                  ),
+                                  Text.rich(TextSpan(children: [
+                                    TextSpan(
+                                        text: etaNext.miles(),
+                                        style: instrLower),
+                                    TextSpan(text: " mi", style: instrLabel)
+                                  ])),
+                                  myTelemetry.inFlight
+                                      ? Text(
+                                          etaNext.hhmm(),
+                                          style: instrLower,
+                                        )
+                                      : Text(
+                                          "-:--",
+                                          style: instrLower.merge(TextStyle(
+                                              color: Colors.grey[600])),
+                                        ),
+                                ])
+                          : Text(
+                              "Select\nWaypoint",
+                              style: instrLabel,
+                              textAlign: TextAlign.center,
+                            )),
+                ),
 
                 const SizedBox(
                     height: 100,
+                    width: 2,
                     child: VerticalDivider(thickness: 2, color: Colors.black)),
 
                 // --- Trip Time Remaining
-                Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "ETA trip",
-                        style: instrLabel,
-                      ),
-                      Text.rich(TextSpan(children: [
-                        TextSpan(text: etaTrip.miles(), style: instrLower),
-                        TextSpan(text: " mi", style: instrLabel)
-                      ])),
-                      Text(
-                        etaTrip.hhmm(),
-                        style: instrLower,
-                      ),
-                    ])
+                Flexible(
+                  flex: 2,
+                  fit: FlexFit.tight,
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "ETA trip",
+                          style: instrLabel,
+                        ),
+                        Text.rich(TextSpan(children: [
+                          TextSpan(text: etaTrip.miles(), style: instrLower),
+                          TextSpan(text: " mi", style: instrLabel)
+                        ])),
+                        myTelemetry.inFlight
+                            ? Text(
+                                etaTrip.hhmm(),
+                                style: instrLower,
+                              )
+                            : Text(
+                                "-:--",
+                                style: instrLower
+                                    .merge(TextStyle(color: Colors.grey[600])),
+                              ),
+                      ]),
+                )
               ],
             ),
           );

@@ -12,7 +12,7 @@ class AvatarRound extends StatelessWidget {
       radius: radius,
       backgroundColor: Colors.black,
       child: Padding(
-        padding: const EdgeInsets.all(2),
+        padding: const EdgeInsets.all(1),
         child: ClipOval(
           child: Container(
               width: radius * 2,

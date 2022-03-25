@@ -212,10 +212,10 @@ class Client with ChangeNotifier {
       "timestamp": geo.time,
       "pilot_id": "", // backend will fill this in
       "telemetry": {
-        "geoPos": {
-          "latitude": geo.lat,
-          "longitude": geo.lng,
-          "altitude": geo.alt,
+        "gps": {
+          "lat": geo.lat,
+          "lng": geo.lng,
+          "alt": geo.alt,
         },
         "fuel": fuel,
       },
