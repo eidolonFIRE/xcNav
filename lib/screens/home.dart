@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -6,8 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
-import 'package:xcnav/dialogs/fuel_adjustment.dart';
-import 'dart:async';
+import 'package:permission_handler/permission_handler.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -15,18 +16,21 @@ import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
-import 'package:xcnav/widgets/map_button.dart';
-import 'package:xcnav/widgets/vario_icon.dart';
+import 'package:xcnav/providers/settings.dart';
 
 // widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
+import 'package:xcnav/widgets/map_button.dart';
 
-import 'package:xcnav/fake_path.dart';
+// dialogs
+import 'package:xcnav/dialogs/fuel_adjustment.dart';
 
 // models
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
+
+import 'package:xcnav/fake_path.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -52,12 +56,17 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController newWaypointName = TextEditingController();
 
   static TextStyle instrLower = const TextStyle(fontSize: 35);
-  static TextStyle instrUpper = const TextStyle(fontSize: 50);
+  static TextStyle instrUpper = const TextStyle(fontSize: 40);
   static TextStyle instrLabel = const TextStyle(
       fontSize: 14, color: Colors.grey, fontStyle: FontStyle.italic);
 
   @override
   _MyHomePageState();
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -69,25 +78,57 @@ class _MyHomePageState extends State<MyHomePage> {
     FakeFlight fakeFlight = FakeFlight();
 
     // --- Geo location loop
-    Timer timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-      // LocationData geo = await location.getLocation();
+    // Timer timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+    //   LocationData geo;
 
-      LocationData geo = fakeFlight.genFakeLocationFlight();
+    //   if (Provider.of<Settings>(context, listen: false).spoofLocation) {
+    //     geo = fakeFlight.genFakeLocationFlight();
+    //   } else {
+    //     geo = await location.getLocation();
+    //   }
+    //   handleGeomUpdate(context, geo);
+    // });
+  }
 
-      Provider.of<MyTelemetry>(context, listen: false).updateGeo(geo);
-      // TODO: no null-check
-      // TODO: handle group vs unlocked
-      if (focusMode == FocusMode.me) {
-        LatLng newCenter = LatLng(geo.latitude!, geo.longitude!);
-        // TODO: take zoom level into account for unlock
-        if (latlngCalc.distance(newCenter, mapController.center) < 1000) {
-          mapController.move(newCenter, mapController.zoom);
-        } else {
-          // break focus lock
-          setFocusMode(FocusMode.unlocked);
-        }
-      }
-    });
+  Future<bool> _checkPermissions() async {
+    return (await Permission.location.isGranted) &&
+        (await Permission.locationWhenInUse.isGranted);
+  }
+
+  void handleGeomUpdate(BuildContext context, LocationData geo) {
+    Provider.of<MyTelemetry>(context, listen: false).updateGeo(geo);
+
+    CenterZoom? centerZoom;
+    if (focusMode == FocusMode.me) {
+      centerZoom = CenterZoom(
+          center: LatLng(geo.latitude!, geo.longitude!),
+          zoom: mapController.zoom);
+    } else if (focusMode == FocusMode.group) {
+      List<LatLng> points = Provider.of<Group>(context, listen: false)
+          .pilots
+          .values
+          .map((e) => e.geo.latLng)
+          .toList();
+      points.add(LatLng(geo.latitude!, geo.longitude!));
+      centerZoom = mapController.centerZoomFitBounds(
+          LatLngBounds.fromPoints(points),
+          options: FitBoundsOptions(padding: EdgeInsets.all(80), maxZoom: 13));
+    } else {
+      centerZoom =
+          CenterZoom(center: mapController.center, zoom: mapController.zoom);
+    }
+
+    // Detect unlocked map follow
+    if (latlngCalc.distance(centerZoom!.center, mapController.center) <
+            15000 / mapController.zoom ||
+        focusMode == FocusMode.group) {
+      mapController.move(centerZoom.center, centerZoom.zoom);
+    } else {
+      // break focus lock
+      setFocusMode(FocusMode.unlocked);
+    }
+
+    // debugPrint("Zoom: ${mapController.zoom}");
   }
 
   void setFocusMode(FocusMode mode, [LatLng? center]) {
@@ -235,7 +276,6 @@ class _MyHomePageState extends State<MyHomePage> {
             // Here we take the value from the MyHomePage object that was created by
             // the App.build method, and use it to set our appbar title.
             automaticallyImplyLeading: true,
-            // TODO: menu
             leadingWidth: 35,
             toolbarHeight: 64,
             // leading: IconButton(
@@ -288,7 +328,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             TextSpan(
                               text: (myTelementy.geo.vario * meters2Feet * 60)
                                   .toStringAsFixed(0),
-                              style: instrUpper.merge(TextStyle(fontSize: 36)),
+                              style: instrUpper.merge(TextStyle(fontSize: 30)),
                             ),
                             TextSpan(text: " ft/m", style: instrLabel)
                           ])),
@@ -340,18 +380,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 label: const Text("Flight Log")),
             TextButton.icon(
-                onPressed: () => {},
+                onPressed: () => {Navigator.pushNamed(context, "/settings")},
                 icon: const Icon(
                   Icons.settings,
                   size: 30,
                 ),
                 label: const Text("Settings")),
-
-            // Settings
-            // - update profile
-            // - units
-            // - gps frequency?
-            // - debug controls
           ],
         )),
         body: Center(
@@ -380,27 +414,30 @@ class _MyHomePageState extends State<MyHomePage> {
                     // zoomOffset: -1,
                   ),
                   // TODO: re-enable airspace layers
-                  // TileLayerOptions(
-                  //   urlTemplate: 'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                  //   maxZoom: 17,
-                  //   tms: true,
-                  //   subdomains: ['1','2'],
-                  //   backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                  // ),
-                  // TileLayerOptions(
-                  //   urlTemplate: 'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                  //   maxZoom: 17,
-                  //   tms: true,
-                  //   subdomains: ['1','2'],
-                  //   backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                  // ),
-                  // TileLayerOptions(
-                  //   urlTemplate: 'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                  //   maxZoom: 17,
-                  //   tms: true,
-                  //   subdomains: ['1','2'],
-                  //   backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                  // ),
+                  TileLayerOptions(
+                    urlTemplate:
+                        'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                    maxZoom: 17,
+                    tms: true,
+                    subdomains: ['1', '2'],
+                    backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                  ),
+                  TileLayerOptions(
+                    urlTemplate:
+                        'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                    maxZoom: 17,
+                    tms: true,
+                    subdomains: ['1', '2'],
+                    backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                  ),
+                  TileLayerOptions(
+                    urlTemplate:
+                        'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                    maxZoom: 17,
+                    tms: true,
+                    subdomains: ['1', '2'],
+                    backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                  ),
 
                   // Flight Log
                   PolylineLayerOptions(
@@ -632,8 +669,8 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 // --- Fuel Indicator
                 Flexible(
-                  flex: 1,
-                  fit: FlexFit.tight,
+                  flex: 2,
+                  fit: FlexFit.loose,
                   child: GestureDetector(
                     onTap: () => {showFuelDialog(context)},
                     child: Card(

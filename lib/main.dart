@@ -9,6 +9,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/providers/settings.dart';
 
 // screens
 import 'package:xcnav/screens/home.dart';
@@ -16,12 +17,17 @@ import 'package:xcnav/screens/loading.dart';
 import 'package:xcnav/screens/party.dart';
 import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
+import 'package:xcnav/screens/settings_editor.dart';
 
 // Widgets
 
 void main() {
   runApp(
     MultiProvider(providers: [
+      ChangeNotifierProvider(
+        create: (_) => Settings(),
+        lazy: false,
+      ),
       ChangeNotifierProvider(
         create: (_) => MyTelemetry(),
         lazy: false,
@@ -118,6 +124,7 @@ class MyApp extends StatelessWidget {
         "/profileEditor": (context) => const ProfileEditor(),
         "/party": (context) => const Party(),
         "/qrScanner": (context) => const QRScanner(),
+        "/settings": (context) => const SettingsEditor(),
       },
     );
   }
