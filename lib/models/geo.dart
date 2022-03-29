@@ -1,3 +1,4 @@
+import 'package:geolocator/geolocator.dart';
 import 'package:location/location.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -52,6 +53,36 @@ class Geo {
     } else {
       spd = location.speed ?? 0;
       hdg = location.heading ?? 0;
+      vario = 0;
+    }
+  }
+
+  Geo.fromPosition(Position location, Geo? prev) {
+    lat = location.latitude;
+    lng = location.longitude;
+    alt = location.altitude;
+    time = location.timestamp?.millisecondsSinceEpoch ?? 0;
+
+    if (prev != null && prev.time < time) {
+      // prefer our own calculations
+      // spd = location
+      final double dist =
+          calc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
+
+      // TODO: get units correct
+      spd = dist / (time - prev.time) * 1000;
+      if (dist < 1) {
+        hdg = prev.hdg;
+      } else {
+        hdg = calc.bearing(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) *
+            3.1415926 /
+            180;
+      }
+
+      vario = (alt - prev.alt) / (time - prev.time) * 1000;
+    } else {
+      spd = location.speed;
+      hdg = location.heading;
       vario = 0;
     }
   }

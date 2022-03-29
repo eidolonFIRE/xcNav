@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:xcnav/models/geo.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -34,7 +35,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
     location.getLocation().then((location) {
       debugPrint("initial location: $location");
-      Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
+      Provider.of<MyTelemetry>(context, listen: false).updateGeo(
+          Geo.fromLocationData(
+              location, Provider.of<MyTelemetry>(context, listen: false).geo));
 
       // Go to next screen
       if (Provider.of<Profile>(context, listen: false).name != null) {

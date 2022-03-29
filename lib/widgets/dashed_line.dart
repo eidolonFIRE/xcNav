@@ -18,13 +18,14 @@ class _LineState extends State<DashedLine> with SingleTickerProviderStateMixin {
 
   double _progress = 0.0;
   late Animation<double> animation;
+  late AnimationController controller;
 
   _LineState(this.color, this.width);
 
   @override
   void initState() {
     super.initState();
-    var controller = AnimationController(
+    controller = AnimationController(
         duration: const Duration(milliseconds: 6000), vsync: this);
 
     animation = Tween(begin: 0.0, end: 1.0).animate(controller)
@@ -41,6 +42,12 @@ class _LineState extends State<DashedLine> with SingleTickerProviderStateMixin {
     //     controller.repeat();
     //   }
     // });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override

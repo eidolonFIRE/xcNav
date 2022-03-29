@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:location/location.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart' as geoLocator;
 
 import '../models/eta.dart';
 import '../models/geo.dart';
@@ -48,10 +49,10 @@ class MyTelemetry with ChangeNotifier {
     prefs.setDouble("me.fuelBurnRate", fuelBurnRate);
   }
 
-  void updateGeo(LocationData location) {
+  void updateGeo(Geo newGeo) {
     // debugPrint("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
     geoPrev = geo;
-    geo = Geo.fromLocationData(location, geoPrev);
+    geo = newGeo;
 
     // --- In-Flight detector
     if ((geo.spd.abs() > 2.5 || geo.vario.abs() > 1.0) ^ inFlight) {
