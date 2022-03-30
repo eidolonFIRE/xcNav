@@ -45,6 +45,13 @@ class Profile with ChangeNotifier {
     hash = _hash();
   }
 
+  eraseIdentity() {
+    prefs.remove("profile.name");
+    prefs.remove("profile.id");
+    prefs.remove("profile.secretID");
+    prefs.remove("profile.avatar");
+  }
+
   updateAvatarHash() {
     if (_avatarRaw != null) {
       avatarHash = md5.convert(_avatarRaw!).toString();

@@ -497,7 +497,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             TextSpan(
                               text: (myTelementy.geo.vario * meters2Feet * 60)
                                   .toStringAsFixed(0),
-                              style: instrUpper.merge(TextStyle(fontSize: 30)),
+                              style: instrUpper
+                                  .merge(const TextStyle(fontSize: 30)),
                             ),
                             TextSpan(text: " ft/m", style: instrLabel)
                           ])),
@@ -516,10 +517,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     AvatarRound(Provider.of<Profile>(context).avatar, 40),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(10.0),
                       child: Text(
                         Provider.of<Profile>(context).name ?? "unset",
-                        style: TextStyle(fontSize: 30),
+                        style: Theme.of(context).textTheme.headline4,
                       ),
                     ),
                   ],
@@ -541,20 +542,24 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             // Map tile-layer selection
 
-            TextButton.icon(
-                onPressed: () => {},
-                icon: const Icon(
+            ListTile(
+                minVerticalPadding: 20,
+                onTap: () => {},
+                leading: const Icon(
                   Icons.flight_takeoff,
                   size: 30,
                 ),
-                label: const Text("Flight Log")),
-            TextButton.icon(
-                onPressed: () => {Navigator.pushNamed(context, "/settings")},
-                icon: const Icon(
+                title: Text("Flight Log",
+                    style: Theme.of(context).textTheme.headline5)),
+            ListTile(
+                minVerticalPadding: 20,
+                onTap: () => {Navigator.pushNamed(context, "/settings")},
+                leading: const Icon(
                   Icons.settings,
                   size: 30,
                 ),
-                label: const Text("Settings")),
+                title: Text("Settings",
+                    style: Theme.of(context).textTheme.headline5)),
           ],
         )),
         body: Center(

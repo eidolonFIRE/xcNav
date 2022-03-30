@@ -37,7 +37,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
             title: SizedBox(
               height: 32,
               child: TextField(
-                style: TextStyle(fontSize: 24),
+                style: const TextStyle(fontSize: 24),
                 controller: searchInput,
                 decoration: InputDecoration(suffixIcon: Icon(Icons.search)),
               ),
@@ -45,14 +45,29 @@ class _SettingsEditorState extends State<SettingsEditor> {
           ),
           body: SettingsList(
             sections: [
-              SettingsSection(title: Text("Debug Tools"), tiles: <SettingsTile>[
-                SettingsTile.switchTile(
-                  initialValue: settings.spoofLocation,
-                  title: Text("Spoof Location"),
-                  leading: Icon(Icons.location_off),
-                  onToggle: (value) => {settings.spoofLocation = value},
-                )
-              ])
+              SettingsSection(
+                  title: const Text("Debug Tools"),
+                  tiles: <SettingsTile>[
+                    // --- Toggle: Location Spoofing
+                    SettingsTile.switchTile(
+                      initialValue: settings.spoofLocation,
+                      title: const Text("Spoof Location"),
+                      leading: const Icon(Icons.location_off),
+                      onToggle: (value) => {settings.spoofLocation = value},
+                    ),
+                    // --- Erase Identity
+                    SettingsTile.navigation(
+                      title: const Text("Clear Identity"),
+                      leading: const Icon(
+                        Icons.warning_amber,
+                        color: Colors.red,
+                      ),
+                      onPressed: (value) => {
+                        Provider.of<Profile>(context, listen: false)
+                            .eraseIdentity()
+                      },
+                    )
+                  ])
             ],
           ));
     }));

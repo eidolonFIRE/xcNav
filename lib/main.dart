@@ -69,53 +69,54 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'xcNav',
       darkTheme: ThemeData(
-          fontFamily: "roboto-condensed",
-          // appBarTheme: AppBarTheme(backgroundColor: primaryDarkColor),
-          // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
-          // primaryColorLight: primaryDarkColor,
-          // backgroundColor: primaryDarkColor,
-          appBarTheme:
-              const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40)),
-          primarySwatch: Colors.blueGrey,
-          // scaffoldBackgroundColor: Colors.blueGrey[900],
-          brightness: Brightness.dark,
-          // primaryColorBrightness: Brightness.dark,
-          // bottomSheetTheme:
-          //     BottomSheetThemeData(backgroundColor: primaryDarkColor),
-          // bottomNavigationBarTheme:
-          //     BottomNavigationBarThemeData(backgroundColor: primaryDarkColor),
-          textTheme: const TextTheme(
-              button: TextStyle(
-            fontSize: 30,
-            color: Colors.white,
-          )),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ButtonStyle(
-              side: MaterialStateProperty.resolveWith<BorderSide>(
-                  (states) => BorderSide(color: Colors.black)),
-              backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                  (states) => Colors.black45),
-              minimumSize: MaterialStateProperty.resolveWith<Size>(
-                  (states) => Size(30, 40)),
-              padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>(
-                  (states) => EdgeInsets.all(12)),
-              // shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
-              //   return RoundedRectangleBorder(
-              //       borderRadius: BorderRadius.circular(20));
-              // }),
-              textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                  (states) => TextStyle(color: Colors.white, fontSize: 24)),
-            ),
-
-            // child: ElevatedButton(onPressed: () {}, child: Text('label')),
-          )
-          // textButtonTheme: TextButtonThemeData(
-          //   style: ButtonStyle(
-          //       textStyle: MaterialStateProperty.resolveWith((state) => const TextStyle(color: Colors.white),
-          //     ),
-          //   )
-          // )
+        fontFamily: "roboto-condensed",
+        // appBarTheme: AppBarTheme(backgroundColor: primaryDarkColor),
+        // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
+        // primaryColorLight: primaryDarkColor,
+        // backgroundColor: primaryDarkColor,
+        appBarTheme:
+            const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40)),
+        primarySwatch: Colors.blueGrey,
+        // scaffoldBackgroundColor: Colors.blueGrey[900],
+        brightness: Brightness.dark,
+        // primaryColorBrightness: Brightness.dark,
+        // bottomSheetTheme:
+        //     BottomSheetThemeData(backgroundColor: primaryDarkColor),
+        // bottomNavigationBarTheme:
+        //     BottomNavigationBarThemeData(backgroundColor: primaryDarkColor),
+        textTheme: const TextTheme(
+            button: TextStyle(
+          fontSize: 30,
+          color: Colors.white,
+        )),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+            side: MaterialStateProperty.resolveWith<BorderSide>(
+                (states) => const BorderSide(color: Colors.black)),
+            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                (states) => Colors.black45),
+            minimumSize: MaterialStateProperty.resolveWith<Size>(
+                (states) => const Size(30, 40)),
+            padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>(
+                (states) => const EdgeInsets.all(12)),
+            // shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
+            //   return RoundedRectangleBorder(
+            //       borderRadius: BorderRadius.circular(20));
+            // }),
+            textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+                (states) => TextStyle(color: Colors.white, fontSize: 24)),
           ),
+
+          // child: ElevatedButton(onPressed: () {}, child: Text('label')),
+        ),
+
+        // textButtonTheme: TextButtonThemeData(
+        //   style: ButtonStyle(
+        //       textStyle: MaterialStateProperty.resolveWith((state) => const TextStyle(color: Colors.white),
+        //     ),
+        //   )
+        // )
+      ),
       themeMode: ThemeMode.dark,
       initialRoute: "/",
       routes: {

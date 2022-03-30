@@ -1,4 +1,4 @@
-package com.example.xcnav
+package com.xcnav
 
 import io.flutter.embedding.android.FlutterActivity
 
