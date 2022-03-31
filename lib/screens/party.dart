@@ -164,8 +164,9 @@ class _PartyState extends State<Party> {
                     ))),
         // --- Chat Bubble List
         body: Center(
-          child: Consumer<Chat>(
-            builder: (context, chat, child) => ListView.builder(
+          child: Consumer<Chat>(builder: (context, chat, child) {
+            chat.chatLastOpened = DateTime.now().millisecondsSinceEpoch;
+            return ListView.builder(
                 itemCount: chat.messages.length,
                 reverse: true,
                 itemBuilder: (context, i) {
@@ -181,9 +182,10 @@ class _PartyState extends State<Party> {
                           pilot?.avatar ??
                               Image.asset("assets/images/default_avatar.png"),
                           20));
-                }),
-          ),
+                });
+          }),
         ),
+        // --- Text Input
         bottomNavigationBar: Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

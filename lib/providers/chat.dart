@@ -5,6 +5,9 @@ import 'package:xcnav/models/message.dart';
 
 class Chat with ChangeNotifier {
   List<Message> messages = [];
+  List<Message> notifyBubbles = [];
+
+  int chatLastOpened = 0;
 
   void leftGroup() {
     messages.clear();
@@ -12,8 +15,12 @@ class Chat with ChangeNotifier {
   }
 
   void processMessageFromServer(dynamic msg) {
-    messages.add(Message(
-        msg["timestamp"], msg["pilot_id"], msg["text"], msg["emergency"]));
+    // TODO: should we be using the real timestamp?
+    Message newMsg = Message(DateTime.now().millisecondsSinceEpoch,
+        msg["pilot_id"], msg["text"], msg["emergency"]);
+
+    messages.add(newMsg);
+
     notifyListeners();
   }
 
