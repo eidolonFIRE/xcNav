@@ -723,6 +723,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       // TODO: This is prolly hacky... but it works for now
                       chat.notifyListeners();
                     });
+                  } else {
+                    break;
                   }
                 }
                 return Positioned(

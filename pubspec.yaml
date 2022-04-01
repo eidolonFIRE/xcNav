@@ -56,6 +56,8 @@ dependencies:
   permission_handler: ^9.2.0
   flutter_svg: ^1.0.3
   geolocator: ^8.2.0
+  flutter_local_notifications: ^9.4.0
+  focus_detector: ^2.0.1
 
 dev_dependencies:
   flutter_test:

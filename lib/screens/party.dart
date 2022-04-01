@@ -165,6 +165,7 @@ class _PartyState extends State<Party> {
         // --- Chat Bubble List
         body: Center(
           child: Consumer<Chat>(builder: (context, chat, child) {
+            // TODO: this isn't super reliable
             chat.chatLastOpened = DateTime.now().millisecondsSinceEpoch;
             return ListView.builder(
                 itemCount: chat.messages.length,

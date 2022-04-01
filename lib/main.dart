@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock/wakelock.dart';
-import 'package:xcnav/providers/chat.dart';
+import 'package:focus_detector/focus_detector.dart';
 
 // providers
 import 'package:xcnav/providers/client.dart';
@@ -10,6 +10,7 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/providers/chat.dart';
 
 // screens
 import 'package:xcnav/screens/home.dart';
@@ -19,40 +20,46 @@ import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
 import 'package:xcnav/screens/settings_editor.dart';
 
-// Widgets
+// Misc
+import 'package:xcnav/notifications.dart';
 
 void main() {
   runApp(
-    MultiProvider(providers: [
-      ChangeNotifierProvider(
-        create: (_) => Settings(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => MyTelemetry(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => FlightPlan(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => Profile(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => Group(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => Chat(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (BuildContext context) => Client(context),
-        lazy: false,
-      )
-    ], child: const MyApp()),
+    MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => Settings(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => MyTelemetry(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => FlightPlan(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Profile(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Group(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Chat(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (BuildContext context) => Client(context),
+            lazy: false,
+          )
+        ],
+        child: FocusDetector(
+            onFocusGained: () => {setFocus(true)},
+            onFocusLost: () => {setFocus(false)},
+            child: const MyApp())),
   );
 }
 
@@ -63,6 +70,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Wakelock.enable();
+
+    configLocalNotification();
 
     debugPrint("Building App");
 

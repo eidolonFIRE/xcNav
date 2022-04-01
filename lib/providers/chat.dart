@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 // --- Models
 import 'package:xcnav/models/message.dart';
+import 'package:xcnav/notifications.dart';
 
 class Chat with ChangeNotifier {
   List<Message> messages = [];
-  List<Message> notifyBubbles = [];
 
   int chatLastOpened = 0;
 
@@ -15,11 +15,11 @@ class Chat with ChangeNotifier {
   }
 
   void processMessageFromServer(dynamic msg) {
-    // TODO: should we be using the real timestamp?
     Message newMsg = Message(DateTime.now().millisecondsSinceEpoch,
         msg["pilot_id"], msg["text"], msg["emergency"]);
-
     messages.add(newMsg);
+
+    showNotification(msg["text"]);
 
     notifyListeners();
   }
