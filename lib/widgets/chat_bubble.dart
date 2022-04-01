@@ -23,7 +23,9 @@ class ChatBubble extends StatelessWidget {
               constraints: BoxConstraints(
                   maxWidth: MediaQuery.of(context).size.width * 0.8),
               child: Card(
-                color: isMe ? Colors.blue : Colors.white60,
+                color: isMe
+                    ? Colors.blue
+                    : const Color.fromARGB(255, 230, 230, 230),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(10),
@@ -46,7 +48,9 @@ class ChatBubble extends StatelessWidget {
                 ),
               ),
             ),
-            isMe ? Container() : Positioned(right: 0, bottom: 0, child: user)
+
+            // --- Sender avatar image
+            if (!isMe) user,
           ]),
     );
   }

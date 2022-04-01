@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -18,12 +19,14 @@ import 'package:xcnav/providers/flight_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
+import 'package:xcnav/providers/chat.dart';
 import 'package:xcnav/providers/settings.dart';
 
 // widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_button.dart';
+import 'package:xcnav/widgets/chat_bubble.dart';
 
 // dialogs
 import 'package:xcnav/dialogs/fuel_adjustment.dart';
@@ -31,6 +34,7 @@ import 'package:xcnav/dialogs/fuel_adjustment.dart';
 // models
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/message.dart';
 
 import 'package:xcnav/fake_path.dart';
 
@@ -700,6 +704,53 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
 
+            // --- Chat bubbles
+            Consumer<Chat>(
+              builder: (context, chat, child) {
+                // get valid bubbles
+                const numSeconds = 10;
+                List<Message> bubbles = [];
+                for (int i = chat.messages.length - 1; i > 0; i--) {
+                  if (chat.messages[i].timestamp >
+                      max(
+                          DateTime.now().millisecondsSinceEpoch -
+                              1000 * numSeconds,
+                          chat.chatLastOpened)) {
+                    bubbles.add(chat.messages[i]);
+                    // "self destruct" the message after several seconds
+                    Timer _hideBubble =
+                        Timer(const Duration(seconds: numSeconds), () {
+                      // TODO: This is prolly hacky... but it works for now
+                      chat.notifyListeners();
+                    });
+                  } else {
+                    break;
+                  }
+                }
+                return Positioned(
+                    right: 0,
+                    bottom: 0,
+                    // left: 100,
+                    child: Column(
+                      verticalDirection: VerticalDirection.up,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: bubbles
+                          .map((e) => ChatBubble(
+                              false,
+                              e.text,
+                              AvatarRound(
+                                  Provider.of<Group>(context, listen: false)
+                                          .pilots[e.pilotId]
+                                          ?.avatar ??
+                                      Image.asset(
+                                          "assets/images/default_avatar.png"),
+                                  20)))
+                          .toList(),
+                    ));
+              },
+            ),
+
             // --- Map overlay layers
             if (focusMode == FocusMode.addWaypoint)
               const Positioned(
@@ -782,6 +833,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ]),
             ),
 
+            // --- Chat button
             Positioned(
                 bottom: 10,
                 left: 5,
@@ -796,29 +848,29 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 )),
 
-            Provider.of<Client>(context).state == ClientState.disconnected
-                ? const Positioned(
-                    top: 5,
-                    child: Card(
-                        color: Colors.amber,
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
-                          child: Text.rich(
-                            TextSpan(children: [
-                              WidgetSpan(
-                                  child: Icon(
-                                Icons.language,
-                                size: 20,
-                                color: Colors.black,
-                              )),
-                              TextSpan(
-                                  text: "  connecting",
-                                  style: TextStyle(
-                                      color: Colors.black, fontSize: 20)),
-                            ]),
-                          ),
-                        )))
-                : Container(),
+            // --- Connection status banner (along top of map)
+            if (Provider.of<Client>(context).state == ClientState.disconnected)
+              const Positioned(
+                  top: 5,
+                  child: Card(
+                      color: Colors.amber,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
+                        child: Text.rich(
+                          TextSpan(children: [
+                            WidgetSpan(
+                                child: Icon(
+                              Icons.language,
+                              size: 20,
+                              color: Colors.black,
+                            )),
+                            TextSpan(
+                                text: "  connecting",
+                                style: TextStyle(
+                                    color: Colors.black, fontSize: 20)),
+                          ]),
+                        ),
+                      )))
           ]),
         ),
 

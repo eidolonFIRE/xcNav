@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 // --- Models
 import 'package:xcnav/models/message.dart';
+import 'package:xcnav/notifications.dart';
 
 class Chat with ChangeNotifier {
   List<Message> messages = [];
+
+  int chatLastOpened = 0;
 
   void leftGroup() {
     messages.clear();
@@ -12,8 +15,12 @@ class Chat with ChangeNotifier {
   }
 
   void processMessageFromServer(dynamic msg) {
-    messages.add(Message(
-        msg["timestamp"], msg["pilot_id"], msg["text"], msg["emergency"]));
+    Message newMsg = Message(DateTime.now().millisecondsSinceEpoch,
+        msg["pilot_id"], msg["text"], msg["emergency"]);
+    messages.add(newMsg);
+
+    showNotification(msg["text"]);
+
     notifyListeners();
   }
 

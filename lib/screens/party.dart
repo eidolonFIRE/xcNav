@@ -58,11 +58,11 @@ class _PartyState extends State<Party> {
                               Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(20)),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(20)),
                                   child: AspectRatio(
                                     aspectRatio: 1,
-                                    child: Container(
+                                    child: SizedBox(
                                         // margin: const EdgeInsets.all(10),
                                         width: 300,
                                         height: 300,
@@ -164,8 +164,10 @@ class _PartyState extends State<Party> {
                     ))),
         // --- Chat Bubble List
         body: Center(
-          child: Consumer<Chat>(
-            builder: (context, chat, child) => ListView.builder(
+          child: Consumer<Chat>(builder: (context, chat, child) {
+            // TODO: this isn't super reliable
+            chat.chatLastOpened = DateTime.now().millisecondsSinceEpoch;
+            return ListView.builder(
                 itemCount: chat.messages.length,
                 reverse: true,
                 itemBuilder: (context, i) {
@@ -181,9 +183,10 @@ class _PartyState extends State<Party> {
                           pilot?.avatar ??
                               Image.asset("assets/images/default_avatar.png"),
                           20));
-                }),
-          ),
+                });
+          }),
         ),
+        // --- Text Input
         bottomNavigationBar: Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
