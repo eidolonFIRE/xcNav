@@ -730,9 +730,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 return Positioned(
                     right: 0,
                     bottom: 0,
+                    // left: 100,
                     child: Column(
                       verticalDirection: VerticalDirection.up,
                       mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: bubbles
                           .map((e) => ChatBubble(
                               false,

@@ -58,11 +58,11 @@ class _PartyState extends State<Party> {
                               Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(20)),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(20)),
                                   child: AspectRatio(
                                     aspectRatio: 1,
-                                    child: Container(
+                                    child: SizedBox(
                                         // margin: const EdgeInsets.all(10),
                                         width: 300,
                                         height: 300,

@@ -25,7 +25,7 @@ class ChatBubble extends StatelessWidget {
               child: Card(
                 color: isMe
                     ? Colors.blue
-                    : const Color.fromARGB(200, 255, 255, 255),
+                    : const Color.fromARGB(255, 230, 230, 230),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(10),
