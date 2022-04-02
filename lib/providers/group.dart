@@ -1,18 +1,16 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
-import 'dart:typed_data';
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 
 // Models
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/models/geo.dart';
-import 'package:xcnav/models/waypoint.dart';
 
 class Group with ChangeNotifier {
   String? _currentGroupID;
