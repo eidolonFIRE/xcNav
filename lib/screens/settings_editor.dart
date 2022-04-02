@@ -46,7 +46,10 @@ class _SettingsEditorState extends State<SettingsEditor> {
           body: SettingsList(
             sections: [
               SettingsSection(
-                  title: const Text("Debug Tools"),
+                  title: const Text(
+                    "Debug Tools",
+                    style: TextStyle(color: Colors.red),
+                  ),
                   tiles: <SettingsTile>[
                     // --- Toggle: Location Spoofing
                     SettingsTile.switchTile(
@@ -63,8 +66,39 @@ class _SettingsEditorState extends State<SettingsEditor> {
                         color: Colors.red,
                       ),
                       onPressed: (value) => {
-                        Provider.of<Profile>(context, listen: false)
-                            .eraseIdentity()
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext ctx) {
+                              return AlertDialog(
+                                title: const Text('Please Confirm'),
+                                content: const Text(
+                                    'Are you sure you want to clear your Identity?'),
+                                actions: [
+                                  // The "Yes" button
+                                  TextButton.icon(
+                                      onPressed: () {
+                                        // Remove the box
+                                        Provider.of<Profile>(context,
+                                                listen: false)
+                                            .eraseIdentity();
+
+                                        // Close the dialog
+                                        Navigator.of(context).pop();
+                                      },
+                                      icon: const Icon(
+                                        Icons.delete_forever,
+                                        color: Colors.red,
+                                      ),
+                                      label: const Text('Yes')),
+                                  TextButton(
+                                      onPressed: () {
+                                        // Close the dialog
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('No'))
+                                ],
+                              );
+                            }),
                       },
                     )
                   ])

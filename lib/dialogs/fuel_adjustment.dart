@@ -37,7 +37,9 @@ void showFuelDialog(BuildContext context) {
                               color: Colors.lightGreen,
                             )),
                         Text(
-                          myTelemetry.fuel.floor().toString(),
+                          ((myTelemetry.fuel * 10).round() / 10)
+                              .floor()
+                              .toString(),
                           style: numbers,
                           textAlign: TextAlign.center,
                         ),
@@ -61,7 +63,7 @@ void showFuelDialog(BuildContext context) {
                             color: Colors.lightGreen,
                           )),
                       Text(
-                        ((myTelemetry.fuel % 1) * 10).round().toString(),
+                        ((myTelemetry.fuel * 10).round() % 10).toString(),
                         style: numbers,
                         textAlign: TextAlign.center,
                       ),
@@ -90,7 +92,9 @@ void showFuelDialog(BuildContext context) {
                               color: Colors.lightGreen,
                             )),
                         Text(
-                          myTelemetry.fuelBurnRate.floor().toString(),
+                          ((myTelemetry.fuelBurnRate * 10).round() / 10)
+                              .floor()
+                              .toString(),
                           style: numbers,
                           textAlign: TextAlign.center,
                         ),
@@ -119,8 +123,7 @@ void showFuelDialog(BuildContext context) {
                             color: Colors.lightGreen,
                           )),
                       Text(
-                        ((myTelemetry.fuelBurnRate % 1) * 10)
-                            .round()
+                        ((myTelemetry.fuelBurnRate * 10).round() % 10)
                             .toString(),
                         style: numbers,
                         textAlign: TextAlign.center,
@@ -137,26 +140,6 @@ void showFuelDialog(BuildContext context) {
                 )
               ],
             ),
-            // actions: [
-            //   ElevatedButton.icon(
-            //       label: const Text("Update"),
-            //       onPressed: () {
-            //         Navigator.pop(context);
-            //       },
-            //       icon: const Icon(
-            //         Icons.check,
-            //         size: 20,
-            //         color: Colors.lightGreen,
-            //       )),
-            //   ElevatedButton.icon(
-            //       label: const Text("Cancel"),
-            //       onPressed: () => {Navigator.pop(context)},
-            //       icon: const Icon(
-            //         Icons.cancel,
-            //         size: 20,
-            //         color: Colors.red,
-            //       )),
-            // ],
           );
         });
       });

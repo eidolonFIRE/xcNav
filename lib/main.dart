@@ -19,6 +19,7 @@ import 'package:xcnav/screens/party.dart';
 import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
 import 'package:xcnav/screens/settings_editor.dart';
+import 'package:xcnav/screens/flight_log_viewer.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
@@ -135,6 +136,7 @@ class MyApp extends StatelessWidget {
         "/party": (context) => const Party(),
         "/qrScanner": (context) => const QRScanner(),
         "/settings": (context) => const SettingsEditor(),
+        "/flightLogs": (context) => const FlightLogViewer(),
       },
     );
   }

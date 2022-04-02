@@ -1,14 +1,16 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:location/location.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:geolocator/geolocator.dart' as geoLocator;
+import 'package:path_provider/path_provider.dart';
 
-import '../models/eta.dart';
-import '../models/geo.dart';
+// --- Models
+import 'package:xcnav/models/eta.dart';
+import 'package:xcnav/models/geo.dart';
 
 class MyTelemetry with ChangeNotifier {
   // Live Readings
@@ -49,6 +51,16 @@ class MyTelemetry with ChangeNotifier {
     prefs.setDouble("me.fuelBurnRate", fuelBurnRate);
   }
 
+  Future saveFlight() async {
+    Directory tempDir = await getApplicationDocumentsDirectory();
+    File logFile =
+        File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
+    debugPrint("Writing ${logFile.uri} with ${recordGeo.length} samples");
+    // TODO: save out the current flight plan as well!
+    await logFile.create(recursive: true).then((value) => logFile.writeAsString(
+        jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
+  }
+
   void updateGeo(Geo newGeo) {
     // debugPrint("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
     geoPrev = geo;
@@ -67,6 +79,12 @@ class MyTelemetry with ChangeNotifier {
         debugPrint("In Flight!!!");
       } else {
         debugPrint("Flight Ended");
+
+        // Dump current flight to log
+        saveFlight().then((value) {
+          // then clear the log
+          recordGeo.clear();
+        });
       }
     }
 

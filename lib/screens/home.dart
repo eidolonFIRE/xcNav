@@ -99,19 +99,28 @@ class _MyHomePageState extends State<MyHomePage> {
     // intialize the controllers
     mapController = MapController();
 
+    // --- Location Spoofer for debugging
     FakeFlight fakeFlight = FakeFlight();
-
-    // --- Geo location loop
-    // Timer timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-    //   LocationData geo;
-
-    //   if (Provider.of<Settings>(context, listen: false).spoofLocation) {
-    //     geo = fakeFlight.genFakeLocationFlight();
-    //   } else {
-    //     geo = await location.getLocation();
-    //   }
-    //   handleGeomUpdate(context, geo);
-    // });
+    Timer? timer;
+    Provider.of<Settings>(context, listen: false).addListener(() {
+      if (Provider.of<Settings>(context, listen: false).spoofLocation) {
+        if (timer == null) {
+          debugPrint("--- Starting Location Spoofer ---");
+          timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+            Provider.of<MyTelemetry>(context, listen: false).updateGeo(
+                Geo.fromLocationData(fakeFlight.genFakeLocationFlight(),
+                    Provider.of<MyTelemetry>(context, listen: false).geo));
+            refreshMapView(false);
+          });
+        }
+      } else {
+        if (timer != null) {
+          debugPrint("--- Stopping Location Spoofer ---");
+          timer?.cancel();
+          timer = null;
+        }
+      }
+    });
   }
 
   // We can use this later if we want to have a fixed timer
@@ -297,7 +306,8 @@ class _MyHomePageState extends State<MyHomePage> {
       points.add(LatLng(geo.lat, geo.lng));
       centerZoom = mapController.centerZoomFitBounds(
           LatLngBounds.fromPoints(points),
-          options: FitBoundsOptions(padding: EdgeInsets.all(80), maxZoom: 13));
+          options:
+              const FitBoundsOptions(padding: EdgeInsets.all(80), maxZoom: 13));
     } else {
       centerZoom =
           CenterZoom(center: mapController.center, zoom: mapController.zoom);
@@ -459,7 +469,7 @@ class _MyHomePageState extends State<MyHomePage> {
             //   ),
             //   onPressed: () => {},
             // ),
-            title: Container(
+            title: SizedBox(
               height: 64,
               child: Consumer<MyTelemetry>(
                 builder: (context, myTelementy, child) => Padding(
@@ -513,44 +523,78 @@ class _MyHomePageState extends State<MyHomePage> {
             child: ListView(
           children: [
             SizedBox(
-              height: 120,
+              height: 110,
               child: DrawerHeader(
+                  padding: EdgeInsets.zero,
                   child: Stack(children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    AvatarRound(Provider.of<Profile>(context).avatar, 40),
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Text(
-                        Provider.of<Profile>(context).name ?? "unset",
-                        style: Theme.of(context).textTheme.headline4,
-                      ),
+                    Positioned(
+                      left: 10,
+                      top: 10,
+                      child:
+                          AvatarRound(Provider.of<Profile>(context).avatar, 40),
                     ),
-                  ],
-                ),
-                Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: IconButton(
-                      iconSize: 20,
-                      icon: const Icon(
-                        Icons.edit,
-                        color: Colors.grey,
-                      ),
-                      onPressed: () {
-                        Navigator.pushNamed(context, "/profileEditor");
-                      },
-                    ))
-              ])),
+                    Positioned(
+                      left: 100,
+                      right: 10,
+                      top: 10,
+                      bottom: 10,
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Text(
+                              Provider.of<Profile>(context).name ?? "???",
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.start,
+                              style: Theme.of(context).textTheme.headline4,
+                            ),
+                          ]),
+                    ),
+                    Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: IconButton(
+                          iconSize: 20,
+                          icon: Icon(
+                            Icons.edit,
+                            color: Colors.grey[700],
+                          ),
+                          onPressed: () {
+                            Navigator.pushNamed(context, "/profileEditor");
+                          },
+                        ))
+                  ])),
             ),
+
             // Map tile-layer selection
+            ListTile(
+              minVerticalPadding: 20,
+              leading: const Icon(
+                Icons.local_airport,
+                size: 30,
+              ),
+              title: Text(" Airspace",
+                  style: Theme.of(context).textTheme.headline5),
+              trailing: Switch(
+                value: Provider.of<Settings>(context).showAirspace,
+                onChanged: (value) => {
+                  Provider.of<Settings>(context, listen: false).showAirspace =
+                      value
+                },
+              ),
+            ),
+
+            const Divider(
+              height: 2,
+            ),
 
             ListTile(
                 minVerticalPadding: 20,
-                onTap: () => {},
+                onTap: () => {Navigator.pushNamed(context, "/flightLogs")},
                 leading: const Icon(
-                  Icons.flight_takeoff,
+                  Icons.menu_book,
                   size: 30,
                 ),
                 title: Text("Flight Log",
@@ -568,8 +612,8 @@ class _MyHomePageState extends State<MyHomePage> {
         )),
         body: Center(
           child: Stack(alignment: Alignment.center, children: [
-            Consumer<MyTelemetry>(
-              builder: (context, myTelemetry, child) => FlutterMap(
+            Consumer2<MyTelemetry, Settings>(
+              builder: (context, myTelemetry, settings, child) => FlutterMap(
                 mapController: mapController,
                 options: MapOptions(
                   interactiveFlags:
@@ -591,31 +635,34 @@ class _MyHomePageState extends State<MyHomePage> {
                     // tileSize: 512,
                     // zoomOffset: -1,
                   ),
-                  // TODO: re-enable airspace layers
-                  TileLayerOptions(
-                    urlTemplate:
-                        'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                    maxZoom: 17,
-                    tms: true,
-                    subdomains: ['1', '2'],
-                    backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                  ),
-                  TileLayerOptions(
-                    urlTemplate:
-                        'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                    maxZoom: 17,
-                    tms: true,
-                    subdomains: ['1', '2'],
-                    backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                  ),
-                  TileLayerOptions(
-                    urlTemplate:
-                        'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                    maxZoom: 17,
-                    tms: true,
-                    subdomains: ['1', '2'],
-                    backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                  ),
+
+                  if (settings.showAirspace)
+                    TileLayerOptions(
+                      urlTemplate:
+                          'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                      maxZoom: 17,
+                      tms: true,
+                      subdomains: ['1', '2'],
+                      backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                    ),
+                  if (settings.showAirspace)
+                    TileLayerOptions(
+                      urlTemplate:
+                          'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                      maxZoom: 17,
+                      tms: true,
+                      subdomains: ['1', '2'],
+                      backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                    ),
+                  if (settings.showAirspace)
+                    TileLayerOptions(
+                      urlTemplate:
+                          'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                      maxZoom: 17,
+                      tms: true,
+                      subdomains: ['1', '2'],
+                      backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                    ),
 
                   // Flight Log
                   PolylineLayerOptions(

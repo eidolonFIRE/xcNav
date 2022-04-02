@@ -87,6 +87,32 @@ class Geo {
     }
   }
 
+  Geo.fromJson(dynamic data) {
+    lat = data["lat"];
+    lng = data["lng"];
+    alt = data["alt"];
+    time = data["time"];
+    hdg = data["hdg"];
+    spd = data["spd"];
+    vario = data["vario"];
+  }
+
+  double distanceTo(Geo other) {
+    return calc.distance(LatLng(other.lat, other.lng), LatLng(lat, lng));
+  }
+
+  Map<String, num> toJson() {
+    return {
+      "lat": lat,
+      "lng": lng,
+      "alt": alt,
+      "time": time,
+      "hdg": hdg,
+      "spd": spd,
+      "vario": vario,
+    };
+  }
+
   LatLng get latLng {
     return LatLng(lat, lng);
   }
