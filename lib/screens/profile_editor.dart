@@ -134,7 +134,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(30.0),
+        padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
         child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             mainAxisSize: MainAxisSize.max,
@@ -142,7 +142,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
             children: [
               // --- Image Cropper Window
               Padding(
-                padding: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.only(left: 20, bottom: 10, right: 20),
                 child: AspectRatio(
                   aspectRatio: 1,
                   child: Card(
