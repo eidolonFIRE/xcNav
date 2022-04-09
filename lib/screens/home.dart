@@ -21,6 +21,7 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat.dart';
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/widgets/map_marker.dart';
 
 // widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -660,33 +661,14 @@ class _MyHomePageState extends State<MyHomePage> {
                         .mapIndexed((i, e) => DragMarker(
                             // TODO: support lines
                             point: e.latlng[0],
-                            height: 60,
+                            height: 60 * 0.9,
+                            width: 40 * 0.9,
                             onDragEnd: (p0, p1) => {
                                   Provider.of<ActivePlan>(context,
                                           listen: false)
                                       .moveWaypoint(i, p1)
                                 },
-                            builder: (context) => Stack(children: [
-                                  Container(
-                                    transform:
-                                        Matrix4.translationValues(0, -28, 0),
-                                    child: Image.asset(
-                                      "assets/images/pin.png",
-                                      color: e.color == null
-                                          ? Colors.black
-                                          : Color(e.color!),
-                                    ),
-                                  ),
-                                  Container(
-                                    transform:
-                                        Matrix4.translationValues(2, -13, 0),
-                                    child: const Icon(
-                                      // TODO: support other icons
-                                      Icons.circle,
-                                      size: 24,
-                                    ),
-                                  ),
-                                ])))
+                            builder: (context) => MapMarker(e, 60 * 0.9)))
                         .toList(),
                   ),
 

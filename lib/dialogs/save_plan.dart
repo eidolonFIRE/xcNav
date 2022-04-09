@@ -14,10 +14,10 @@ import 'package:xcnav/providers/active_plan.dart';
 
 final TextEditingController filename = TextEditingController();
 
-void savePlan(BuildContext context) {
+Future savePlan(BuildContext context) {
   ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
 
-  showDialog(
+  return showDialog(
     context: context,
     builder: (context) => AlertDialog(
       title: const Text("Save New Plan"),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
+import 'package:xcnav/widgets/map_marker.dart';
 
 class WaypointCard extends StatelessWidget {
   const WaypointCard(
@@ -26,7 +27,7 @@ class WaypointCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: isSelected ? Colors.blue : null,
+      color: isSelected ? Colors.blue[600] : Colors.grey[800],
       key: ValueKey(waypoint),
       margin: const EdgeInsets.all(1),
       child: ListTile(
@@ -37,10 +38,13 @@ class WaypointCard extends StatelessWidget {
           onPressed: onToggleOptional,
           padding: EdgeInsets.zero,
           iconSize: 60,
-          icon: Image.asset("assets/images/wp" +
-              (waypoint.latlng.length > 1 ? "_path" : "") +
-              (waypoint.isOptional ? "_optional" : "") +
-              ".png"),
+          icon: Image.asset(
+            "assets/images/wp" +
+                (waypoint.latlng.length > 1 ? "_path" : "") +
+                (waypoint.isOptional ? "_optional" : "") +
+                ".png",
+            color: Color(waypoint.color ?? Colors.black.value),
+          ),
         ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -48,13 +52,25 @@ class WaypointCard extends StatelessWidget {
           children: [
             TextButton(
               child: Container(
-                constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width / 4),
-                child: Text(
-                  waypoint.name,
-                  style: const TextStyle(color: Colors.white, fontSize: 30),
-                ),
-              ),
+                  constraints: BoxConstraints(
+                      minWidth: MediaQuery.of(context).size.width / 4),
+                  child: Text.rich(
+                    TextSpan(children: [
+                      WidgetSpan(
+                        child: Icon(
+                          iconOptions[waypoint.icon],
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const TextSpan(text: " "),
+                      TextSpan(
+                        text: waypoint.name,
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 30),
+                      ),
+                    ]),
+                  )),
               onPressed: onSelect,
             ),
             Row(

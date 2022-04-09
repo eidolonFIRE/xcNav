@@ -67,7 +67,10 @@ class _PlansViewerState extends State<PlansViewer> {
         centerTitle: true,
         actions: [
           IconButton(
-              onPressed: () => {savePlan(context)},
+              onPressed: () => {
+                    savePlan(context)
+                        .then((value) => refreshPlansFromDirectory())
+                  },
               icon: const Icon(Icons.save_as)),
           IconButton(
               // TODO: implement import

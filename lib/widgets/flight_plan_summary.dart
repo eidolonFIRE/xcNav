@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
 import 'package:xcnav/widgets/waypoint_card_readonly.dart';
 
@@ -110,7 +111,7 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                             });
                       },
                       icon: const Icon(
-                        Icons.delete_forever,
+                        Icons.delete,
                         color: Colors.red,
                       ))
                 ],
@@ -149,32 +150,19 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                                           // TODO: support lines
                                           point: e.latlng[0],
                                           height: i == widget.selectedIndex
-                                              ? 60
-                                              : 40,
-                                          builder: (context) =>
-                                              Stack(children: [
-                                                Container(
-                                                  transform:
-                                                      Matrix4.translationValues(
-                                                          0, -28, 0),
-                                                  child: Image.asset(
-                                                    "assets/images/pin.png",
-                                                    color: e.color == null
-                                                        ? Colors.black
-                                                        : Color(e.color!),
-                                                  ),
-                                                ),
-                                                Container(
-                                                  transform:
-                                                      Matrix4.translationValues(
-                                                          2, -13, 0),
-                                                  child: const Icon(
-                                                    // TODO: support other icons
-                                                    Icons.circle,
-                                                    size: 24,
-                                                  ),
-                                                ),
-                                              ])))
+                                              ? 40
+                                              : 30,
+                                          width: (i == widget.selectedIndex
+                                                  ? 40
+                                                  : 30) *
+                                              2 /
+                                              3,
+                                          builder: (context) => Center(
+                                              child: MapMarker(
+                                                  e,
+                                                  i == widget.selectedIndex
+                                                      ? 40
+                                                      : 30))))
                                       .toList(),
                                 ),
                                 // TODO: show other things like take-off, landing, and flight plan
