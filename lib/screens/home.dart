@@ -15,7 +15,7 @@ import 'package:geolocator/geolocator.dart' as geoLocator;
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/flight_plan.dart';
+import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
@@ -30,6 +30,7 @@ import 'package:xcnav/widgets/chat_bubble.dart';
 
 // dialogs
 import 'package:xcnav/dialogs/fuel_adjustment.dart';
+import 'package:xcnav/dialogs/edit_waypoint.dart';
 
 // models
 import 'package:xcnav/models/eta.dart';
@@ -58,8 +59,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final Location location = Location();
   FocusMode focusMode = FocusMode.me;
   FocusMode prevFocusMode = FocusMode.me;
-
-  final TextEditingController newWaypointName = TextEditingController();
 
   static TextStyle instrLower = const TextStyle(fontSize: 35);
   static TextStyle instrUpper = const TextStyle(fontSize: 40);
@@ -335,86 +334,47 @@ class _MyHomePageState extends State<MyHomePage> {
       // open "add waypoint" popup
       setFocusMode(prevFocusMode);
 
-      // --- Add Waypoint Dialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Add Waypoint"),
-          content: TextField(
-            controller: newWaypointName,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: "waypoint name",
-              border: OutlineInputBorder(),
-            ),
-            style: const TextStyle(fontSize: 20),
-          ),
-          actions: [
-            ElevatedButton.icon(
-                label: const Text("Add"),
-                onPressed: () {
-                  // TODO: marker icon and color options
-                  // TODO: validate name
-                  if (newWaypointName.text.isNotEmpty) {
-                    Provider.of<FlightPlan>(context, listen: false)
-                        .insertWaypoint(null, newWaypointName.text, latlng,
-                            false, null, null);
-                    Navigator.pop(context);
-                  }
-                },
-                icon: const Icon(
-                  Icons.check,
-                  size: 20,
-                  color: Colors.lightGreen,
-                )),
-            ElevatedButton.icon(
-                label: const Text("Cancel"),
-                onPressed: () => {Navigator.pop(context)},
-                icon: const Icon(
-                  Icons.cancel,
-                  size: 20,
-                  color: Colors.red,
-                )),
-          ],
-        ),
-      );
+      editWaypoint(context, true, latlng);
     }
   }
 
   // --- Flight Plan Menu
   void showFlightPlan() {
-    debugPrint("Show flight plan");
-    // TODO: move map view to see whole flight plan
+    // TODO: move map view to see whole flight plan?
     showModalBottomSheet(
         context: context,
         elevation: 0,
         constraints: const BoxConstraints(maxHeight: 400),
         builder: (BuildContext context) {
-          return Consumer<FlightPlan>(
+          return Consumer<ActivePlan>(
             builder: (context, flightPlan, child) => Column(
               children: [
+                // Waypoint menu buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    // --- Add New Waypoint
                     IconButton(
+                        iconSize: 25,
                         onPressed: () {
                           Navigator.pop(context);
                           beginAddWaypoint();
                         },
-                        icon: const Icon(Icons.add,
-                            size: 20, color: Colors.lightGreen)),
+                        icon: const Icon(Icons.add, color: Colors.lightGreen)),
+                    // --- Edit Waypoint
                     IconButton(
-                        onPressed: () => {},
-                        icon: const Icon(
-                          Icons.upload,
-                          size: 20,
-                        )),
+                      iconSize: 25,
+                      onPressed: () => editWaypoint(context, false, null),
+                      icon: const Icon(Icons.edit),
+                    ),
+                    // --- Delete Selected Waypoint
                     IconButton(
+                        iconSize: 25,
                         onPressed: () => flightPlan.removeSelectedWaypoint(),
-                        icon: const Icon(Icons.delete,
-                            size: 20, color: Colors.red)),
+                        icon: const Icon(Icons.delete, color: Colors.red)),
                   ],
                 ),
+                // --- Waypoint list
                 SizedBox(
                   height: 300,
                   child: ReorderableListView.builder(
@@ -587,7 +547,20 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
             const Divider(
-              height: 2,
+              height: 20,
+            ),
+
+            ListTile(
+              minVerticalPadding: 20,
+              onTap: () => {Navigator.pushNamed(context, "/plans")},
+              leading: const Icon(
+                Icons.pin_drop,
+                size: 30,
+              ),
+              title: Text(
+                "Plans",
+                style: Theme.of(context).textTheme.headline5,
+              ),
             ),
 
             ListTile(
@@ -597,7 +570,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   Icons.menu_book,
                   size: 30,
                 ),
-                title: Text("Flight Log",
+                title: Text("History",
                     style: Theme.of(context).textTheme.headline5)),
             ListTile(
                 minVerticalPadding: 20,
@@ -671,26 +644,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   // Trip snake lines
                   PolylineLayerOptions(
                       polylines:
-                          Provider.of<FlightPlan>(context).buildTripSnake()),
+                          Provider.of<ActivePlan>(context).buildTripSnake()),
 
                   PolylineLayerOptions(
                     polylines: [
-                      Provider.of<FlightPlan>(context)
+                      Provider.of<ActivePlan>(context)
                           .buildNextWpIndicator(myTelemetry.geo)
                     ],
                   ),
 
                   // Flight plan markers
                   DragMarkerPluginOptions(
-                    // TODO: investigate using stream<> here
-                    markers: Provider.of<FlightPlan>(context)
+                    markers: Provider.of<ActivePlan>(context)
                         .waypoints
                         .mapIndexed((i, e) => DragMarker(
                             // TODO: support lines
                             point: e.latlng[0],
                             height: 60,
                             onDragEnd: (p0, p1) => {
-                                  Provider.of<FlightPlan>(context,
+                                  Provider.of<ActivePlan>(context,
                                           listen: false)
                                       .moveWaypoint(i, p1)
                                 },
@@ -719,6 +691,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
 
                   // Live locations other pilots
+                  // TODO: fix this icon.. it's not centered on their position
                   MarkerLayerOptions(
                     markers: Provider.of<Group>(context)
                         .pilots
@@ -726,9 +699,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         .toList()
                         .map((pilot) => Marker(
                             point: pilot.geo.latLng,
-                            width: 50,
-                            height: 50,
-                            builder: (ctx) => AvatarRound(pilot.avatar, 50)))
+                            width: 40,
+                            height: 40,
+                            builder: (ctx) => AvatarRound(pilot.avatar, 40)))
                         .toList(),
                   ),
 
@@ -783,16 +756,20 @@ class _MyHomePageState extends State<MyHomePage> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: bubbles
-                          .map((e) => ChatBubble(
-                              false,
-                              e.text,
-                              AvatarRound(
-                                  Provider.of<Group>(context, listen: false)
-                                          .pilots[e.pilotId]
-                                          ?.avatar ??
-                                      Image.asset(
-                                          "assets/images/default_avatar.png"),
-                                  20)))
+                          .map(
+                            (e) => ChatBubble(
+                                false,
+                                e.text,
+                                AvatarRound(
+                                    Provider.of<Group>(context, listen: false)
+                                            .pilots[e.pilotId]
+                                            ?.avatar ??
+                                        Image.asset(
+                                            "assets/images/default_avatar.png"),
+                                    20),
+                                null,
+                                e.timestamp),
+                          )
                           .toList(),
                     ));
               },
@@ -894,6 +871,21 @@ class _MyHomePageState extends State<MyHomePage> {
                     color: Colors.black,
                   ),
                 )),
+            if (Provider.of<Chat>(context).numUnread > 0)
+              Positioned(
+                  bottom: 10,
+                  left: 50,
+                  child: Container(
+                      decoration: const BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.all(Radius.circular(10))),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Text(
+                          "${Provider.of<Chat>(context).numUnread}",
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                      ))),
 
             // --- Connection status banner (along top of map)
             if (Provider.of<Client>(context).state == ClientState.disconnected)
@@ -922,7 +914,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
 
         // --- Bottom Instruments
-        bottomNavigationBar: Consumer2<FlightPlan, MyTelemetry>(
+        bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(
             builder: (context, flightPlan, myTelemetry, child) {
           ETA etaNext = flightPlan.selectedIndex != null
               ? flightPlan.etaToWaypoint(myTelemetry.geo.latLng,

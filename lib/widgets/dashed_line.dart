@@ -25,10 +25,12 @@ class _LineState extends State<DashedLine> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    controller = AnimationController(
-        duration: const Duration(milliseconds: 6000), vsync: this);
 
-    animation = Tween(begin: 0.0, end: 1.0).animate(controller)
+    controller = AnimationController(
+        duration: const Duration(milliseconds: 10000), vsync: this);
+    final CurvedAnimation curve =
+        CurvedAnimation(parent: controller, curve: Curves.decelerate);
+    animation = Tween(begin: 0.0, end: 1.0).animate(curve)
       ..addListener(() {
         setState(() {
           _progress = animation.value;

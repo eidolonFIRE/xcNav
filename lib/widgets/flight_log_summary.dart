@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:xcnav/models/geo.dart';
-import 'package:xcnav/models/flightLog.dart';
+import 'package:xcnav/models/flight_log.dart';
 
-class FlightLogEntry extends StatelessWidget {
+class FlightLogSummary extends StatelessWidget {
   final FlightLog log;
   final Function onDelete;
-  late LatLngBounds mapBounds;
+  late final LatLngBounds mapBounds;
 
-  FlightLogEntry(this.log, this.onDelete, {Key? key}) : super(key: key) {
+  FlightLogSummary(this.log, this.onDelete, {Key? key}) : super(key: key) {
     mapBounds =
         LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
     mapBounds.pad(0.2);
@@ -23,7 +23,7 @@ class FlightLogEntry extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Column(children: [
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             mainAxisSize: MainAxisSize.max,
@@ -31,7 +31,7 @@ class FlightLogEntry extends StatelessWidget {
               // --- Title
               Text(
                 log.title,
-                style: Theme.of(context).textTheme.headline4!.merge(
+                style: Theme.of(context).textTheme.headline5!.merge(
                     TextStyle(color: log.goodFile ? Colors.white : Colors.red)),
               ),
               // --- Action buttons
@@ -131,7 +131,7 @@ class FlightLogEntry extends StatelessWidget {
                             Polyline(
                                 points:
                                     log.samples.map((e) => e.latLng).toList(),
-                                strokeWidth: 6,
+                                strokeWidth: 4,
                                 color: Colors.red,
                                 isDotted: false)
                           ]),

@@ -7,7 +7,7 @@ import 'package:focus_detector/focus_detector.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/flight_plan.dart';
+import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/chat.dart';
@@ -20,6 +20,7 @@ import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
 import 'package:xcnav/screens/settings_editor.dart';
 import 'package:xcnav/screens/flight_log_viewer.dart';
+import 'package:xcnav/screens/plans_viewer.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
@@ -37,7 +38,7 @@ void main() {
             lazy: false,
           ),
           ChangeNotifierProvider(
-            create: (_) => FlightPlan(),
+            create: (_) => ActivePlan(),
             lazy: false,
           ),
           ChangeNotifierProvider(
@@ -137,6 +138,7 @@ class MyApp extends StatelessWidget {
         "/qrScanner": (context) => const QRScanner(),
         "/settings": (context) => const SettingsEditor(),
         "/flightLogs": (context) => const FlightLogViewer(),
+        "/plans": (context) => const PlansViewer(),
       },
     );
   }

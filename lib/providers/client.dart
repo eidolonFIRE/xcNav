@@ -12,7 +12,7 @@ import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/flight_plan.dart';
+import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat.dart';
@@ -94,9 +94,9 @@ class Client with ChangeNotifier {
       });
 
       // Register Callbacks to flightPlan
-      Provider.of<FlightPlan>(context, listen: false).onWaypointAction =
+      Provider.of<ActivePlan>(context, listen: false).onWaypointAction =
           flightPlanUpdate;
-      Provider.of<FlightPlan>(context, listen: false).onSelectWaypoint =
+      Provider.of<ActivePlan>(context, listen: false).onSelectWaypoint =
           selectWaypoint;
     });
   }
@@ -267,7 +267,7 @@ class Client with ChangeNotifier {
     sendToAWS("flightPlanUpdate", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
       "hash": hashFlightPlanData(
-          Provider.of<FlightPlan>(context, listen: false).waypoints),
+          Provider.of<ActivePlan>(context, listen: false).waypoints),
       "index": index,
       "action": action.index,
       "data": data?.toJson(),
@@ -279,7 +279,7 @@ class Client with ChangeNotifier {
   void pushFlightPlan() {
     sendToAWS("flightPlanSync", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
-      "flight_plan": Provider.of<FlightPlan>(context, listen: false)
+      "flight_plan": Provider.of<ActivePlan>(context, listen: false)
           .waypoints
           .map((e) => e.toJson())
           .toList()
@@ -349,7 +349,7 @@ class Client with ChangeNotifier {
 
   // --- Full flight plan sync
   void handleFlightPlanSync(Map<String, dynamic> msg) {
-    FlightPlan plan = Provider.of<FlightPlan>(context, listen: false);
+    ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
     plan.parseFlightPlanSync(msg["flight_plan"]);
   }
 
@@ -360,20 +360,20 @@ class Client with ChangeNotifier {
     // update the plan
     if (msg["action"] == WaypointAction.delete.index) {
       // Delete a waypoint
-      Provider.of<FlightPlan>(context, listen: false)
+      Provider.of<ActivePlan>(context, listen: false)
           .backendRemoveWaypoint(msg["index"]);
     } else if (msg["action"] == WaypointAction.add.index) {
       // insert a new waypoint
-      Provider.of<FlightPlan>(context, listen: false)
+      Provider.of<ActivePlan>(context, listen: false)
           .backendInsertWaypoint(msg["index"], Waypoint.fromJson(msg["data"]));
     } else if (msg["action"] == WaypointAction.sort.index) {
       // Reorder a waypoint
-      Provider.of<FlightPlan>(context, listen: false)
+      Provider.of<ActivePlan>(context, listen: false)
           .backendSortWaypoint(msg["index"], msg["new_index"]);
     } else if (msg["action"] == WaypointAction.modify.index) {
       // Make updates to a waypoint
       if (msg["data"] != null) {
-        Provider.of<FlightPlan>(context, listen: false).backendReplaceWaypoint(
+        Provider.of<ActivePlan>(context, listen: false).backendReplaceWaypoint(
             msg["index"], Waypoint.fromJson(msg["data"]));
       }
     } else {
@@ -382,7 +382,7 @@ class Client with ChangeNotifier {
     }
 
     String hash = hashFlightPlanData(
-        Provider.of<FlightPlan>(context, listen: false).waypoints);
+        Provider.of<ActivePlan>(context, listen: false).waypoints);
     if (hash != msg["hash"]) {
       // DE-SYNC ERROR
       // restore backup
@@ -467,7 +467,7 @@ class Client with ChangeNotifier {
       // TODO: prompt to save before replacing data?
       // Clear out waypoints
       if (msg["flight_plan"] != null && msg["flight_plan"] != []) {
-        FlightPlan plan = Provider.of<FlightPlan>(context, listen: false);
+        ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
         plan.parseFlightPlanSync(msg["flight_plan"]);
       } else {
         // Push our whole flightplan

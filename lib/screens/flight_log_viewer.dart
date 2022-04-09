@@ -3,25 +3,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
-
-// Providers
-import 'package:xcnav/providers/client.dart';
-import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/chat.dart';
-import 'package:xcnav/providers/profile.dart';
 
 // Models
-import 'package:xcnav/models/message.dart';
-import 'package:xcnav/models/pilot.dart';
-import 'package:xcnav/models/flightLog.dart';
+import 'package:xcnav/models/flight_log.dart';
 
 // Widgets
-import 'package:xcnav/widgets/avatar_round.dart';
-import 'package:xcnav/widgets/chat_bubble.dart';
-import 'package:xcnav/widgets/flight_log_entry.dart';
+import 'package:xcnav/widgets/flight_log_summary.dart';
 
 class FlightLogViewer extends StatefulWidget {
   const FlightLogViewer({Key? key}) : super(key: key);
@@ -57,8 +44,9 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
           .list(recursive: false, followLinks: false)
           .forEach((each) {
         File.fromUri(each.uri).readAsString().then((value) {
-          logs.add(FlightLog.fromJson(each.path, jsonDecode(value)));
-          setState(() {});
+          setState(() {
+            logs.add(FlightLog.fromJson(each.path, jsonDecode(value)));
+          });
         });
       });
       setState(() {});
@@ -79,7 +67,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
       ),
       body: ListView(
         children: logs
-            .map((e) => FlightLogEntry(e, refreshLogsFromDirectory))
+            .map((e) => FlightLogSummary(e, refreshLogsFromDirectory))
             .toList(),
       ),
     );

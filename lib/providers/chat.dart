@@ -8,6 +8,7 @@ class Chat with ChangeNotifier {
   List<Message> messages = [];
 
   int chatLastOpened = 0;
+  int numUnread = 0;
 
   void leftGroup() {
     messages.clear();
@@ -18,6 +19,7 @@ class Chat with ChangeNotifier {
     Message newMsg = Message(DateTime.now().millisecondsSinceEpoch,
         msg["pilot_id"], msg["text"], msg["emergency"]);
     messages.add(newMsg);
+    numUnread++;
 
     showNotification(msg["text"]);
 

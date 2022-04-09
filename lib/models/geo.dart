@@ -101,6 +101,10 @@ class Geo {
     return calc.distance(LatLng(other.lat, other.lng), LatLng(lat, lng));
   }
 
+  static distanceBetween(LatLng a, LatLng b) {
+    return calc.distance(a, b);
+  }
+
   Map<String, num> toJson() {
     return {
       "lat": lat,

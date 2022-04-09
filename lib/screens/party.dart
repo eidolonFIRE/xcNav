@@ -167,6 +167,7 @@ class _PartyState extends State<Party> {
           child: Consumer<Chat>(builder: (context, chat, child) {
             // TODO: this isn't super reliable
             chat.chatLastOpened = DateTime.now().millisecondsSinceEpoch;
+            chat.numUnread = 0;
             return ListView.builder(
                 itemCount: chat.messages.length,
                 reverse: true,
@@ -176,13 +177,18 @@ class _PartyState extends State<Party> {
                   Pilot? pilot = Provider.of<Group>(context, listen: false)
                       .pilots[msg.pilotId];
                   return ChatBubble(
-                      msg.pilotId ==
-                          Provider.of<Profile>(context, listen: false).id,
-                      msg.text,
-                      AvatarRound(
-                          pilot?.avatar ??
-                              Image.asset("assets/images/default_avatar.png"),
-                          20));
+                    msg.pilotId ==
+                        Provider.of<Profile>(context, listen: false).id,
+                    msg.text,
+                    AvatarRound(
+                        pilot?.avatar ??
+                            Image.asset("assets/images/default_avatar.png"),
+                        20),
+                    Provider.of<Group>(context, listen: false)
+                        .pilots[msg.pilotId]
+                        ?.name,
+                    msg.timestamp,
+                  );
                 });
           }),
         ),

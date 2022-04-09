@@ -7,9 +7,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/geo.dart';
 
 class FlightLog {
-  late String _filename;
+  late final String _filename;
   late List<Geo> samples;
-  late bool goodFile;
+  late final bool goodFile;
 
   static var calc = const Distance(roundResult: false);
 

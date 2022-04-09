@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
@@ -19,10 +21,16 @@ class LoadingScreen extends StatefulWidget {
   State<LoadingScreen> createState() => _LoadingScreenState();
 }
 
-class _LoadingScreenState extends State<LoadingScreen> {
+class _LoadingScreenState extends State<LoadingScreen>
+    with SingleTickerProviderStateMixin {
   final Location location = Location();
 
   final TextStyle _contributerStyle = const TextStyle(fontSize: 18);
+
+  late final Animation<Color?> animation;
+  late final AnimationController controller;
+
+  bool showWaiting = false;
 
   @override
   _LoadingScreenState();
@@ -30,6 +38,25 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Enable Blinking text
+    Future.delayed(const Duration(seconds: 10), () => showWaiting = true);
+
+    // Blinking text
+    controller = AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this);
+    final CurvedAnimation curve =
+        CurvedAnimation(parent: controller, curve: Curves.ease);
+    animation = ColorTween(begin: Colors.white, end: Colors.red).animate(curve);
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        controller.reverse();
+      } else if (status == AnimationStatus.dismissed) {
+        controller.forward();
+      }
+      setState(() {});
+    });
+    controller.forward();
 
     // TODO: check location permissions
 
@@ -49,10 +76,15 @@ class _LoadingScreenState extends State<LoadingScreen> {
   }
 
   @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Material(
         child: Container(
-      // color: Colors.blueGrey[900],
       decoration: const BoxDecoration(
           gradient: LinearGradient(
               colors: [
@@ -85,6 +117,15 @@ class _LoadingScreenState extends State<LoadingScreen> {
               height: MediaQuery.of(context).size.width / 3,
             ),
           ),
+          if (showWaiting)
+            AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) {
+                  return Text(
+                    "- Waiting for GPS -",
+                    style: TextStyle(fontSize: 30, color: animation.value),
+                  );
+                }),
           // --- Wings and Dashed lines
           Stack(clipBehavior: Clip.none, children: [
             // SizedBox(

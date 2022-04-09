@@ -10,9 +10,7 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/eta.dart';
 
-import 'package:xcnav/models/waypoint.dart';
-
-class FlightPlan with ChangeNotifier {
+class ActivePlan with ChangeNotifier {
   List<Waypoint> waypoints = [];
   bool isReversed = false;
 
@@ -26,7 +24,7 @@ class FlightPlan with ChangeNotifier {
   void Function(int index)? onSelectWaypoint;
 
   @override
-  FlightPlan() {
+  ActivePlan() {
     load();
   }
 
@@ -169,6 +167,22 @@ class FlightPlan with ChangeNotifier {
       onWaypointAction!(WaypointAction.modify, index, null, waypoints[index]);
     }
     notifyListeners();
+  }
+
+  void editWaypoint(int? index, String name, String? icon, int? color) {
+    if (index != null || selectedIndex != null) {
+      int i = index ?? selectedIndex!;
+
+      waypoints[i].name = name;
+      waypoints[i].color = color;
+      waypoints[i].icon = icon;
+
+      // callback
+      if (onWaypointAction != null) {
+        onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
+      }
+      notifyListeners();
+    }
   }
 
   void backendSortWaypoint(int oldIndex, int newIndex) {

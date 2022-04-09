@@ -35,7 +35,8 @@ class WaypointCard extends StatelessWidget {
         contentPadding: EdgeInsets.zero,
         leading: IconButton(
           onPressed: onToggleOptional,
-          padding: const EdgeInsets.all(0),
+          padding: EdgeInsets.zero,
+          iconSize: 60,
           icon: Image.asset("assets/images/wp" +
               (waypoint.latlng.length > 1 ? "_path" : "") +
               (waypoint.isOptional ? "_optional" : "") +
@@ -46,9 +47,13 @@ class WaypointCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.max,
           children: [
             TextButton(
-              child: Text(
-                waypoint.name,
-                style: const TextStyle(color: Colors.white, fontSize: 30),
+              child: Container(
+                constraints: BoxConstraints(
+                    minWidth: MediaQuery.of(context).size.width / 4),
+                child: Text(
+                  waypoint.name,
+                  style: const TextStyle(color: Colors.white, fontSize: 30),
+                ),
               ),
               onPressed: onSelect,
             ),
@@ -65,7 +70,10 @@ class WaypointCard extends StatelessWidget {
         ),
         trailing: ReorderableDragStartListener(
           index: index,
-          child: const Icon(Icons.drag_handle),
+          child: const Icon(
+            Icons.drag_handle,
+            size: 25,
+          ),
         ),
       ),
     );
