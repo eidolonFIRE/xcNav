@@ -263,7 +263,7 @@ class ActivePlan with ChangeNotifier {
   // ETA from a location to a waypoint
   // If target is a path, result is dist to nearest tangent + remaining path
   ETA etaToWaypoint(LatLng latlng, double speed, int waypointIndex) {
-    if (waypointIndex < waypoints.length && speed > 0) {
+    if (waypointIndex < waypoints.length) {
       Waypoint target = waypoints[waypointIndex];
       if (target.latlng.length > 1) {
         // TODO: support path
@@ -280,7 +280,7 @@ class ActivePlan with ChangeNotifier {
   ETA etaToTripEnd(double speed, int waypointIndex) {
     // sum up the route
     double dist = 0;
-    if (waypointIndex < waypoints.length && speed > 0) {
+    if (waypointIndex < waypoints.length) {
       int? prevIndex;
       for (int i = waypointIndex;
           isReversed ? (i >= 0) : (i < waypoints.length);

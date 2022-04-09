@@ -898,6 +898,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // --- Bottom Instruments
         bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(
             builder: (context, flightPlan, myTelemetry, child) {
+          debugPrint("Update ETA");
           ETA etaNext = flightPlan.selectedIndex != null
               ? flightPlan.etaToWaypoint(myTelemetry.geo.latLng,
                   myTelemetry.geo.spd, flightPlan.selectedIndex!)

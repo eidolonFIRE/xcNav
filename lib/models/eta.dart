@@ -8,8 +8,11 @@ class ETA {
 
   ETA(this.distance, this.time);
   ETA.fromSpeed(this.distance, double speed) {
-    // TODO: figure out the speed units
-    time = distance * 1000 ~/ speed;
+    if (speed > 0) {
+      time = distance * 1000 ~/ speed;
+    } else {
+      time = 0;
+    }
   }
 
   String miles() {

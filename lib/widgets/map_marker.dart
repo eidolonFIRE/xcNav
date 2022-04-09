@@ -20,8 +20,8 @@ const iconOptions = {
 var colorOptions = {
   "black": Colors.black,
   "red": Colors.red[700],
-  "amber": Colors.amber[800],
-  "blue": Colors.blue[700],
+  "orange": Colors.amber[900],
+  "blue": Colors.blue[800],
   "green": Colors.green[800],
   "purple": Colors.purple[700],
 };

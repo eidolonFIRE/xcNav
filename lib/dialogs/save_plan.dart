@@ -20,7 +20,7 @@ Future savePlan(BuildContext context) {
   return showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text("Save New Plan"),
+      title: const Text("Save Active Plan"),
       content: TextField(
         controller: filename,
         autofocus: true,
