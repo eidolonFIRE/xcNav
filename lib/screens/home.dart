@@ -897,17 +897,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
         // --- Bottom Instruments
         bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(
-            builder: (context, flightPlan, myTelemetry, child) {
+            builder: (context, activePlan, myTelemetry, child) {
           debugPrint("Update ETA");
-          ETA etaNext = flightPlan.selectedIndex != null
-              ? flightPlan.etaToWaypoint(myTelemetry.geo.latLng,
-                  myTelemetry.geo.spd, flightPlan.selectedIndex!)
+          ETA etaNext = activePlan.selectedIndex != null
+              ? activePlan.etaToWaypoint(myTelemetry.geo.latLng,
+                  myTelemetry.geo.spd, activePlan.selectedIndex!)
               : ETA(0, 0);
-          ETA etaTrip = flightPlan.etaToTripEnd(
-              myTelemetry.geo.spd, flightPlan.selectedIndex ?? 0);
-          if (flightPlan.selectedIndex != null) {
-            etaTrip += flightPlan.etaToWaypoint(myTelemetry.geo.latLng,
-                myTelemetry.geo.spd, flightPlan.selectedIndex!);
+          ETA etaTrip = activePlan.etaToTripEnd(
+              myTelemetry.geo.spd, activePlan.selectedIndex ?? 0);
+          if (activePlan.selectedIndex != null) {
+            etaTrip += activePlan.etaToWaypoint(myTelemetry.geo.latLng,
+                myTelemetry.geo.spd, activePlan.selectedIndex!);
           }
           return Padding(
             padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
@@ -969,7 +969,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   flex: 2,
                   child: GestureDetector(
                       onTap: showFlightPlan,
-                      child: (flightPlan.selectedIndex != null)
+                      child: (activePlan.selectedIndex != null)
                           ? Column(
                               mainAxisAlignment: MainAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
