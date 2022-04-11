@@ -52,6 +52,7 @@ enum FocusMode {
   me,
   group,
   addWaypoint,
+  addPath,
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -110,7 +111,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Provider.of<MyTelemetry>(context, listen: false).updateGeo(
                 Geo.fromLocationData(fakeFlight.genFakeLocationFlight(),
                     Provider.of<MyTelemetry>(context, listen: false).geo));
-            refreshMapView(false);
+            refreshMapView();
           });
         }
       } else {
@@ -278,7 +279,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void handleGeomUpdate(BuildContext context, geoLocator.Position geo) {
     Provider.of<MyTelemetry>(context, listen: false).updateGeo(Geo.fromPosition(
         geo, Provider.of<MyTelemetry>(context, listen: false).geo));
-    refreshMapView(false);
+    refreshMapView();
   }
 
   void setFocusMode(FocusMode mode, [LatLng? center]) {
@@ -287,10 +288,10 @@ class _MyHomePageState extends State<MyHomePage> {
       focusMode = mode;
       debugPrint("FocusMode = $mode");
     });
-    refreshMapView(true);
+    refreshMapView();
   }
 
-  void refreshMapView(bool hard) {
+  void refreshMapView() {
     // TODO: this currently only gets called when WE move, but if we stand still and party members move, we should still update.
     Geo geo = Provider.of<MyTelemetry>(context, listen: false).geo;
     CenterZoom? centerZoom;
@@ -312,32 +313,22 @@ class _MyHomePageState extends State<MyHomePage> {
       centerZoom =
           CenterZoom(center: mapController.center, zoom: mapController.zoom);
     }
-
-    // Detect unlocked map follow
-    if (hard ||
-        latlngCalc.distance(centerZoom.center, mapController.center) <
-            15000 / mapController.zoom ||
-        focusMode == FocusMode.group) {
-      mapController.move(centerZoom.center, centerZoom.zoom);
-    } else {
-      // break focus lock
-      setFocusMode(FocusMode.unlocked);
-    }
-  }
-
-  void beginAddWaypoint() {
-    setFocusMode(FocusMode.addWaypoint);
+    mapController.move(centerZoom.center, centerZoom.zoom);
   }
 
   void onMapTap(BuildContext context, LatLng latlng) {
     debugPrint("onMapTap: $latlng");
     if (focusMode == FocusMode.addWaypoint) {
-      // open "add waypoint" popup
+      // --- Finish adding waypoint pin
       setFocusMode(prevFocusMode);
-
       editWaypoint(context, true, latlng);
+    } else if (focusMode == FocusMode.addPath) {
+      // --- Add waypoint in path
+
     }
   }
+
+  void onMapLongPress(BuildContext context, LatLng latlng) {}
 
   // --- Flight Plan Menu
   void showFlightPlan() {
@@ -359,9 +350,20 @@ class _MyHomePageState extends State<MyHomePage> {
                         iconSize: 25,
                         onPressed: () {
                           Navigator.pop(context);
-                          beginAddWaypoint();
+                          setFocusMode(FocusMode.addWaypoint);
                         },
-                        icon: const Icon(Icons.add, color: Colors.lightGreen)),
+                        icon: const ImageIcon(
+                            AssetImage("assets/images/add_waypoint_pin.png"),
+                            color: Colors.lightGreen)),
+                    IconButton(
+                        iconSize: 25,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          setFocusMode(FocusMode.addPath);
+                        },
+                        icon: const ImageIcon(
+                            AssetImage("assets/images/add_waypoint_path.png"),
+                            color: Colors.yellow)),
                     // --- Edit Waypoint
                     IconButton(
                       iconSize: 25,
@@ -595,6 +597,17 @@ class _MyHomePageState extends State<MyHomePage> {
                   center: myTelemetry.geo.latLng,
                   zoom: 12.0,
                   onTap: (tapPosition, point) => onMapTap(context, point),
+                  onLongPress: (tapPosition, point) =>
+                      onMapLongPress(context, point),
+                  onPositionChanged: (mapPosition, hasGesture) {
+                    // debugPrint("$mapPosition $hasGesture");
+                    if (hasGesture &&
+                        (focusMode == FocusMode.me ||
+                            focusMode == FocusMode.group)) {
+                      // --- Unlock any focus lock
+                      setFocusMode(FocusMode.unlocked);
+                    }
+                  },
                   allowPanningOnScrollingParent: false,
                   plugins: [
                     DragMarkerPlugin(),

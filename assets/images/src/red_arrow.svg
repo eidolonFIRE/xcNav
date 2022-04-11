@@ -39,7 +39,8 @@
        y1="140.89583"
        x2="103.1875"
        y2="126.34375"
-       gradientUnits="userSpaceOnUse" />
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-0.1875,-0.34375)" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -48,9 +49,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="11.2"
-     inkscape:cx="377.0768"
-     inkscape:cy="618.85072"
+     inkscape:zoom="15.839192"
+     inkscape:cx="393.5327"
+     inkscape:cy="609.2394"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -81,12 +82,13 @@
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       style="fill:url(#linearGradient825);fill-opacity:1;stroke:#000000;stroke-width:0.665;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 95.25,142.21875 7.9375,-15.875 7.9375,15.875 c -2.64583,-1.76389 -6.61458,-3.96875 -7.9375,-3.96875 -1.32292,0 -5.291667,2.20486 -7.9375,3.96875 z"
+       style="fill:url(#linearGradient825);fill-opacity:1;stroke:#000000;stroke-width:0.66500002;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 95,142 c 1,-2 8,-16 8,-16 0,0 7,14 8,16 1,2 -5,-3 -8,-3 -3,0 -9,5 -8,3 z"
        id="path817"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccccc"
-       inkscape:export-xdpi="393.13422"
-       inkscape:export-ydpi="393.13422" />
+       sodipodi:nodetypes="zczzz"
+       inkscape:export-xdpi="192.65215"
+       inkscape:export-ydpi="192.65215"
+       inkscape:export-filename="/home/caleb/projects/xcNav/assets/images/red_arrow.png" />
   </g>
 </svg>
