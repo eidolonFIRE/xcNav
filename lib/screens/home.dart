@@ -1066,14 +1066,16 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                               softWrap: false,
                             ),
-                            Text.rich(
-                              TextSpan(children: [
-                                TextSpan(
-                                    text: myTelemetry.fuelTimeRemaining(),
-                                    style: instrLower)
-                              ]),
-                              softWrap: false,
-                            )
+                            myTelemetry.fuel > 0
+                                ? Text(
+                                    myTelemetry.fuelTimeRemaining(),
+                                    style: instrLower,
+                                  )
+                                : Text(
+                                    "-:--",
+                                    style: instrLower.merge(
+                                        TextStyle(color: Colors.grey[600])),
+                                  )
                           ],
                         ),
                       ),
