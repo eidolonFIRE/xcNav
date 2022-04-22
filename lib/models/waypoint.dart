@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/models/geo.dart';
 
 enum WaypointAction {
   none,
@@ -25,7 +26,7 @@ String hashFlightPlanData(List<Waypoint> waypoints) {
     for (LatLng g in wp.latlng) {
       // large tolerance for floats
       str +=
-          "${g.latitude.toStringAsFixed(4)}${g.longitude.toStringAsFixed(4)}";
+          "${g.latitude.toStringAsFixed(5)}${g.longitude.toStringAsFixed(5)}";
     }
   }
 
@@ -45,12 +46,9 @@ class Waypoint {
   late String? icon;
   late int? color;
 
-  // --- calculated later for polylines
-  double? length;
+  double? _length;
 
-  Waypoint(this.name, this.latlng, this.isOptional, this.icon, this.color) {
-    // TODO: calculate length
-  }
+  Waypoint(this.name, this.latlng, this.isOptional, this.icon, this.color);
 
   Waypoint.fromJson(json) {
     name = json["name"];
@@ -70,6 +68,22 @@ class Waypoint {
   @override
   String toString() {
     return jsonEncode(toJson());
+  }
+
+  /// Get waypoint length.
+  /// If waypoint is single point, length = 0
+  /// (this getter will cache)
+  double get length {
+    return _length ??= lengthFromIndex(0);
+  }
+
+  double lengthFromIndex(int index) {
+    // TODO: cache distances between all the points (vs recalculating every time)
+    double dist = 0;
+    for (int t = index; t < latlng.length - 1; t++) {
+      dist += latlngCalc.distance(latlng[t], latlng[t + 1]);
+    }
+    return dist;
   }
 
   dynamic toJson() {

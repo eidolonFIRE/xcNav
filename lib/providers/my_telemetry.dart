@@ -29,26 +29,30 @@ class MyTelemetry with ChangeNotifier {
   int triggerHyst = 0;
   bool inFlight = false;
 
+  // fuel save interval
+  double? lastSaved;
+
   @override
   void dispose() {
-    save();
+    _save();
     super.dispose();
   }
 
   MyTelemetry() {
-    load();
+    _load();
   }
 
-  void load() async {
+  void _load() async {
     final prefs = await SharedPreferences.getInstance();
     fuel = prefs.getDouble("me.fuel") ?? 0;
     fuelBurnRate = prefs.getDouble("me.fuelBurnRate") ?? 4;
   }
 
-  void save() async {
+  void _save() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setDouble("me.fuel", fuel);
     prefs.setDouble("me.fuelBurnRate", fuelBurnRate);
+    lastSaved = fuel;
   }
 
   Future saveFlight() async {
@@ -111,11 +115,14 @@ class MyTelemetry with ChangeNotifier {
 
   void updateFuel(double delta) {
     fuel = max(0, fuel + delta);
+    // every so often, save the fuel level in case the app crashes
+    if ((fuel - (lastSaved ?? fuel)).abs() > .2) _save();
     notifyListeners();
   }
 
   void updateFuelBurnRate(double delta) {
     fuelBurnRate = max(0.1, fuelBurnRate + delta);
+    _save();
     notifyListeners();
   }
 

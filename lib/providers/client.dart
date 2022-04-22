@@ -159,7 +159,7 @@ class Client with ChangeNotifier {
           debugPrint("RX-unknown action: ${jsonMsg["action"]}");
       }
     } else {
-      debugPrint("There was some error! ${response}");
+      debugPrint("There was some error! $response");
     }
   }
 

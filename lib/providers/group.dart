@@ -19,14 +19,15 @@ class Group with ChangeNotifier {
 
   // --- Get/Set current group_id
   String? get currentGroupID => _currentGroupID;
+
   set currentGroupID(String? newGroupID) {
     _currentGroupID = newGroupID;
+    pilots.clear();
     if (newGroupID != null) {
       debugPrint("Joined group: $newGroupID");
       saveGroup(newGroupID);
     } else {
       debugPrint("Left Group");
-      pilots.clear();
     }
     notifyListeners();
   }

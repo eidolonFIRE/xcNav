@@ -14,16 +14,12 @@ class Pilot {
   // visuals
   Image? avatar;
   String? avatarHash;
-  late Color color;
   List<Geo> flightTrace = [];
 
   // Flightplan
   int? selectedWaypoint;
 
-  Pilot(this.id, this.name, this.geo) {
-    // TODO: assign random colors
-    color = Colors.green;
-  }
+  Pilot(this.id, this.name, this.geo);
 
   void updateTelemetry(dynamic telemetry, int timestamp) {
     Map<String, dynamic> gps = telemetry["gps"];

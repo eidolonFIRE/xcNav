@@ -190,7 +190,6 @@ class ActivePlan with ChangeNotifier {
   void backendSortWaypoint(int oldIndex, int newIndex) {
     Waypoint temp = waypoints[oldIndex];
     waypoints.removeAt(oldIndex);
-    // if (newIndex > oldIndex) newIndex--;
     waypoints.insert(newIndex, temp);
 
     if (selectedIndex != null) {
@@ -252,35 +251,35 @@ class ActivePlan with ChangeNotifier {
       // update wp guide
       LatLng? target;
       if (selectedWp!.latlng.length > 1) {
-        // TODO: support intercept to line
-
-        // target = L.GeometryUtil.interpolateOnLine(_map, selectedWp, L.GeometryUtil.locateOnLine(_map, L.polyline(selectedWp), geoTolatlng(me.geoPos))).latLng;
+        target = geo.nearestPointOnPath(selectedWp!.latlng).latlng;
       } else {
         target = selectedWp!.latlng[0];
       }
-      if (target != null) points.add(target);
+      points.add(target);
     }
 
     return Polyline(points: points, color: Colors.red, strokeWidth: 4);
   }
 
-  // ETA from a location to a waypoint
-  // If target is a path, result is dist to nearest tangent + remaining path
-  ETA etaToWaypoint(LatLng latlng, double speed, int waypointIndex) {
+  /// ETA from a location to a waypoint
+  /// If target is a path, result is dist to nearest intercept + remaining path
+  ETA etaToWaypoint(Geo geo, double speed, int waypointIndex) {
     if (waypointIndex < waypoints.length) {
       Waypoint target = waypoints[waypointIndex];
       if (target.latlng.length > 1) {
-        // TODO: support path
-
+        final intercept = geo.nearestPointOnPath(target.latlng);
+        double dist = geo.distanceToLatlng(intercept.latlng) +
+            target.lengthFromIndex(intercept.index);
+        return ETA.fromSpeed(dist, speed);
       } else {
-        double dist = latlngCalc.distance(latlng, target.latlng[0]);
+        double dist = geo.distanceToLatlng(target.latlng[0]);
         return ETA.fromSpeed(dist, speed);
       }
     }
     return ETA(0, 0);
   }
 
-  // // ETA from a waypoint to the end of the trip
+  /// ETA from a waypoint to the end of the trip
   ETA etaToTripEnd(double speed, int waypointIndex) {
     // sum up the route
     double dist = 0;
@@ -294,7 +293,7 @@ class ActivePlan with ChangeNotifier {
         if (wp_i.isOptional) continue;
 
         if (prevIndex != null) {
-          // Will take the last point of the current waypoint, nearest point of the next
+          // Will take the last point of the current waypoint, first point of the next
           LatLng prevLatlng = isReversed
               ? waypoints[prevIndex].latlng.last
               : waypoints[prevIndex].latlng.first;
@@ -302,9 +301,7 @@ class ActivePlan with ChangeNotifier {
               isReversed ? wp_i.latlng.last : wp_i.latlng.first, prevLatlng);
 
           // add path distance
-          if (wp_i.latlng.length > 1 && wp_i.length != null) {
-            dist += wp_i.length!;
-          }
+          dist += wp_i.length;
         }
         prevIndex = i;
       }

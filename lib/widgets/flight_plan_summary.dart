@@ -1,8 +1,7 @@
 import 'dart:io';
+import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
 
@@ -11,19 +10,20 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/widgets/map_marker.dart';
-import 'package:xcnav/widgets/waypoint_card.dart';
 import 'package:xcnav/widgets/waypoint_card_readonly.dart';
 
 class FlightPlanSummary extends StatefulWidget {
   final FlightPlan plan;
   final Function onDelete;
   late final LatLngBounds mapBounds;
-  int? selectedIndex;
 
   FlightPlanSummary(this.plan, this.onDelete, {Key? key}) : super(key: key) {
-    // TODO: handle lines
-    mapBounds = LatLngBounds.fromPoints(
-        plan.waypoints.map((e) => e.latlng[0]).toList());
+    List<LatLng> points = [];
+    for (final wp in plan.waypoints) {
+      points.addAll(wp.latlng);
+    }
+
+    mapBounds = LatLngBounds.fromPoints(points);
     mapBounds.pad(0.4);
   }
 
@@ -33,6 +33,7 @@ class FlightPlanSummary extends StatefulWidget {
 
 class _FlightPlanSummaryState extends State<FlightPlanSummary> {
   bool showList = false;
+  int? selectedIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -150,18 +151,15 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                                           (value) => value.latlng.length == 1)
                                       .mapIndexed((i, e) => Marker(
                                           point: e.latlng[0],
-                                          height: i == widget.selectedIndex
-                                              ? 40
-                                              : 30,
-                                          width: (i == widget.selectedIndex
-                                                  ? 40
-                                                  : 30) *
-                                              2 /
-                                              3,
+                                          height: i == selectedIndex ? 40 : 30,
+                                          width:
+                                              (i == selectedIndex ? 40 : 30) *
+                                                  2 /
+                                                  3,
                                           builder: (context) => Center(
                                               child: MapMarker(
                                                   e,
-                                                  i == widget.selectedIndex
+                                                  i == selectedIndex
                                                       ? 40
                                                       : 30))))
                                       .toList(),
@@ -256,7 +254,7 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                   onSelect: () {
                     debugPrint("Selected $i");
                     setState(() {
-                      widget.selectedIndex = i;
+                      selectedIndex = i;
                     });
                   },
                   onAdd: () {
@@ -270,7 +268,7 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                             widget.plan.waypoints[i].icon,
                             widget.plan.waypoints[i].color);
                   },
-                  isSelected: i == widget.selectedIndex,
+                  isSelected: i == selectedIndex,
                 ),
               ),
             ),

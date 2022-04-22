@@ -115,7 +115,7 @@ class MyApp extends StatelessWidget {
             //       borderRadius: BorderRadius.circular(20));
             // }),
             textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                (states) => TextStyle(color: Colors.white, fontSize: 24)),
+                (states) => const TextStyle(color: Colors.white, fontSize: 24)),
           ),
 
           // child: ElevatedButton(onPressed: () {}, child: Text('label')),

@@ -73,7 +73,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
   void refreshCropped() {
     // use full crop in none set
-    Rect area = Rect.fromLTWH(0, 0, 1, 1);
+    Rect area = const Rect.fromLTWH(0, 0, 1, 1);
     if (cropKey.currentState != null) {
       area = cropKey.currentState!.area!;
     }
@@ -193,7 +193,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
                   Expanded(
                     child: TextField(
                       textCapitalization: TextCapitalization.words,
-                      style: TextStyle(fontSize: 20),
+                      style: const TextStyle(fontSize: 20),
                       maxLength: 20,
                       autofocus: true,
                       controller: nameController,

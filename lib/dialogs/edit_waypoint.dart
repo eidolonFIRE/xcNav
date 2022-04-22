@@ -148,8 +148,10 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                         Provider.of<ActivePlan>(context, listen: false)
                             .editWaypoint(null, newWaypointName.text,
                                 selectedIcon, selectedColor?.value);
-                        Provider.of<ActivePlan>(context, listen: false)
-                            .moveWaypoint(null, latlngs);
+                        if (latlngs.isNotEmpty) {
+                          Provider.of<ActivePlan>(context, listen: false)
+                              .moveWaypoint(null, latlngs);
+                        }
                       }
                       Navigator.pop(context);
                     }

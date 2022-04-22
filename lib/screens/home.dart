@@ -12,7 +12,7 @@ import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:permission_handler/permission_handler.dart' as perms;
-import 'package:geolocator/geolocator.dart' as geoLocator;
+import 'package:geolocator/geolocator.dart' as geo_locator;
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -72,13 +72,13 @@ class _MyHomePageState extends State<MyHomePage> {
   static const String _kLocationServicesDisabledMessage =
       'Location services are disabled.';
   static const String _kPermissionDeniedMessage = 'Permission denied.';
-  static const String _kPermissionDeniedForeverMessage =
-      'Permission denied forever.';
+  // static const String _kPermissionDeniedForeverMessage =
+  //     'Permission denied forever.';
   static const String _kPermissionGrantedMessage = 'Permission granted.';
-  final geoLocator.GeolocatorPlatform _geolocatorPlatform =
-      geoLocator.GeolocatorPlatform.instance;
-  StreamSubscription<geoLocator.Position>? _positionStreamSubscription;
-  StreamSubscription<geoLocator.ServiceStatus>?
+  final geo_locator.GeolocatorPlatform _geolocatorPlatform =
+      geo_locator.GeolocatorPlatform.instance;
+  StreamSubscription<geo_locator.Position>? _positionStreamSubscription;
+  StreamSubscription<geo_locator.ServiceStatus>?
       _serviceStatusStreamSubscription;
   bool positionStreamStarted = false;
 
@@ -163,7 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<bool> _handlePermission() async {
     bool serviceEnabled;
-    geoLocator.LocationPermission permission;
+    geo_locator.LocationPermission permission;
 
     // Test if location services are enabled.
     serviceEnabled = await _geolocatorPlatform.isLocationServiceEnabled();
@@ -176,9 +176,9 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     permission = await _geolocatorPlatform.checkPermission();
-    if (permission == geoLocator.LocationPermission.denied) {
+    if (permission == geo_locator.LocationPermission.denied) {
       permission = await _geolocatorPlatform.requestPermission();
-      if (permission == geoLocator.LocationPermission.denied) {
+      if (permission == geo_locator.LocationPermission.denied) {
         // Permissions are denied, next time you could try
         // requesting permissions again (this is also where
         // Android's shouldShowRequestPermissionRationale
@@ -189,7 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    if (permission == geoLocator.LocationPermission.deniedForever) {
+    if (permission == geo_locator.LocationPermission.deniedForever) {
       // Permissions are denied forever, handle appropriately.
       debugPrint("_kPermissionDeniedForeverMessage");
       return false;
@@ -210,7 +210,7 @@ class _MyHomePageState extends State<MyHomePage> {
         _serviceStatusStreamSubscription = null;
       }).listen((serviceStatus) {
         String serviceStatusValue;
-        if (serviceStatus == geoLocator.ServiceStatus.enabled) {
+        if (serviceStatus == geo_locator.ServiceStatus.enabled) {
           if (positionStreamStarted) {
             _toggleListening();
           }
@@ -232,17 +232,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _toggleListening() {
     if (_positionStreamSubscription == null) {
-      late geoLocator.LocationSettings locationSettings;
+      late geo_locator.LocationSettings locationSettings;
 
       if (defaultTargetPlatform == TargetPlatform.android) {
-        locationSettings = geoLocator.AndroidSettings(
-            accuracy: geoLocator.LocationAccuracy.best,
+        locationSettings = geo_locator.AndroidSettings(
+            accuracy: geo_locator.LocationAccuracy.best,
             distanceFilter: 10,
             forceLocationManager: false,
             intervalDuration: const Duration(seconds: 5),
             //(Optional) Set foreground notification config to keep the app alive
             //when going to the background
-            foregroundNotificationConfig: const geoLocator
+            foregroundNotificationConfig: const geo_locator
                     .ForegroundNotificationConfig(
                 notificationText: "Still sending your position to the group.",
                 notificationTitle: "xcNav",
@@ -251,17 +251,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 enableWakeLock: true));
       } else if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.macOS) {
-        locationSettings = geoLocator.AppleSettings(
-          accuracy: geoLocator.LocationAccuracy.best,
-          activityType: geoLocator.ActivityType.fitness,
+        locationSettings = geo_locator.AppleSettings(
+          accuracy: geo_locator.LocationAccuracy.best,
+          activityType: geo_locator.ActivityType.fitness,
           distanceFilter: 10,
           pauseLocationUpdatesAutomatically: false,
           // Only set to true if our app will be started up in the background.
           showBackgroundLocationIndicator: false,
         );
       } else {
-        locationSettings = const geoLocator.LocationSettings(
-          accuracy: geoLocator.LocationAccuracy.high,
+        locationSettings = const geo_locator.LocationSettings(
+          accuracy: geo_locator.LocationAccuracy.high,
           distanceFilter: 10,
         );
       }
@@ -298,7 +298,7 @@ class _MyHomePageState extends State<MyHomePage> {
         (await perms.Permission.locationWhenInUse.isGranted);
   }
 
-  void handleGeomUpdate(BuildContext context, geoLocator.Position geo) {
+  void handleGeomUpdate(BuildContext context, geo_locator.Position geo) {
     Provider.of<MyTelemetry>(context, listen: false).updateGeo(Geo.fromPosition(
         geo, Provider.of<MyTelemetry>(context, listen: false).geo));
     refreshMapView();
@@ -699,6 +699,17 @@ class _MyHomePageState extends State<MyHomePage> {
                     polylines: [plan.buildNextWpIndicator(myTelemetry.geo)],
                   ),
 
+                  // Flight plan paths
+                  PolylineLayerOptions(
+                    polylines: plan.waypoints
+                        .where((value) => value.latlng.length > 1)
+                        .mapIndexed((i, e) => Polyline(
+                            points: e.latlng,
+                            strokeWidth: 6,
+                            color: Color(e.color ?? Colors.black.value)))
+                        .toList(),
+                  ),
+
                   // Flight plan markers
                   DragMarkerPluginOptions(
                     markers: plan.waypoints
@@ -713,18 +724,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             builder: (context) => MapMarker(e, 60 * 0.9)))
                         .toList(),
                   ),
-                  PolylineLayerOptions(
-                    polylines: plan.waypoints
-                        .where((value) => value.latlng.length > 1)
-                        .mapIndexed((i, e) => Polyline(
-                            points: e.latlng,
-                            strokeWidth: 6,
-                            color: Color(e.color ?? Colors.black.value)))
-                        .toList(),
-                  ),
 
                   // Live locations other pilots
-                  // TODO: fix this icon.. it's not centered on their position
                   MarkerLayerOptions(
                     markers: Provider.of<Group>(context)
                         .pilots
@@ -734,7 +735,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             point: pilot.geo.latLng,
                             width: 40,
                             height: 40,
-                            builder: (ctx) => AvatarRound(pilot.avatar, 40)))
+                            builder: (ctx) => Container(
+                                transformAlignment: const Alignment(0, 0),
+                                child: AvatarRound(pilot.avatar, 40))))
                         .toList(),
                   ),
 
@@ -1023,15 +1026,13 @@ class _MyHomePageState extends State<MyHomePage> {
             builder: (context, activePlan, myTelemetry, child) {
           debugPrint("Update ETA");
           ETA etaNext = activePlan.selectedIndex != null
-              ? activePlan.etaToWaypoint(myTelemetry.geo.latLng,
-                  myTelemetry.geo.spd, activePlan.selectedIndex!)
+              ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd,
+                  activePlan.selectedIndex!)
               : ETA(0, 0);
           ETA etaTrip = activePlan.etaToTripEnd(
               myTelemetry.geo.spd, activePlan.selectedIndex ?? 0);
-          if (activePlan.selectedIndex != null) {
-            etaTrip += activePlan.etaToWaypoint(myTelemetry.geo.latLng,
-                myTelemetry.geo.spd, activePlan.selectedIndex!);
-          }
+          etaTrip += etaNext;
+
           return Padding(
             padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
             child: Row(

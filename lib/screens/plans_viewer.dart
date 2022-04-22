@@ -10,7 +10,7 @@ import 'package:xcnav/dialogs/save_plan.dart';
 import 'package:xcnav/models/flight_plan.dart';
 
 // --- Providers
-import 'package:xcnav/providers/active_plan.dart';
+// import 'package:xcnav/providers/active_plan.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/flight_plan_summary.dart';

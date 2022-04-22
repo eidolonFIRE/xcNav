@@ -25,7 +25,6 @@ class ETA {
 
   String hhmm() {
     if (time == 0) {
-      // TODO: should this return blank?
       return "-:--";
     } else {
       return hmm(time);

@@ -29,6 +29,8 @@ class Geo {
   double spd = 0; // meters/sec
   double vario = 0; // meters/sec
 
+  LatLng get latLng => LatLng(lat, lng);
+
   Geo();
   Geo.fromValues(
       this.lat, this.lng, this.alt, this.time, this.hdg, this.spd, this.vario);
@@ -44,7 +46,6 @@ class Geo {
       final double dist =
           latlngCalc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
 
-      // TODO: get units correct
       spd = dist / (time - prev.time) * 1000;
       if (dist < 1) {
         hdg = prev.hdg;
@@ -74,7 +75,6 @@ class Geo {
       final double dist =
           latlngCalc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
 
-      // TODO: get units correct
       spd = dist / (time - prev.time) * 1000;
       if (dist < 1) {
         hdg = prev.hdg;
@@ -102,14 +102,38 @@ class Geo {
     vario = data["vario"];
   }
 
+  /// Find distance to and location of the best intercept to path.
+  /// (Nearest point that doesn't have acute angle between next point and this point)
   PathIntercept nearestPointOnPath(List<LatLng> path) {
     // Scan through all line segments and find intercept
-    for (int index = 0; index < path.length; index++) {}
-    return PathIntercept(0, 0, LatLng(0, 0));
+    int matchIndex = 0;
+    double matchdist = double.infinity;
+
+    for (int index = 0; index < path.length; index++) {
+      final dist = latlngCalc.distance(latLng, path[index]);
+      double angleToNext = double.nan;
+      if (index < path.length - 1) {
+        double delta = latlngCalc.bearing(path[index], latLng) -
+            latlngCalc.bearing(path[index], path[index + 1]);
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        angleToNext = delta.abs();
+      }
+      if (dist < matchdist && (angleToNext == double.nan || angleToNext > 90)) {
+        matchdist = dist;
+        matchIndex = index;
+        // debugPrint("match: $index) $dist  $angleToNext");
+      }
+    }
+    return PathIntercept(matchIndex, matchdist, path[matchIndex]);
   }
 
   double distanceTo(Geo other) {
-    return latlngCalc.distance(LatLng(other.lat, other.lng), LatLng(lat, lng));
+    return latlngCalc.distance(other.latLng, latLng);
+  }
+
+  double distanceToLatlng(LatLng other) {
+    return latlngCalc.distance(other, latLng);
   }
 
   static double distanceBetween(LatLng a, LatLng b) {
@@ -126,9 +150,5 @@ class Geo {
       "spd": spd,
       "vario": vario,
     };
-  }
-
-  LatLng get latLng {
-    return LatLng(lat, lng);
   }
 }

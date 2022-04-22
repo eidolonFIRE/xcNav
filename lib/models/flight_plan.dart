@@ -27,18 +27,16 @@ class FlightPlan {
       int? prevIndex;
       for (int i = 0; i < waypoints.length; i++) {
         // skip optional waypoints
-        Waypoint wp_i = waypoints[i];
-        if (wp_i.isOptional) continue;
+        Waypoint wpIndex = waypoints[i];
+        if (wpIndex.isOptional) continue;
 
         if (prevIndex != null) {
           // Will take the last point of the current waypoint, nearest point of the next
           LatLng prevLatlng = waypoints[prevIndex].latlng.first;
-          _length += latlngCalc.distance(wp_i.latlng.first, prevLatlng);
+          _length += latlngCalc.distance(wpIndex.latlng.first, prevLatlng);
 
           // add path distance
-          if (wp_i.latlng.length > 1 && wp_i.length != null) {
-            _length += wp_i.length!;
-          }
+          _length += wpIndex.length;
         }
         prevIndex = i;
       }
