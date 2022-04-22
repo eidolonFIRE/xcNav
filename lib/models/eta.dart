@@ -1,6 +1,10 @@
 import 'geo.dart';
 
-RegExp hhmmFormat = RegExp("([0-9]+:[0-9]+)");
+String hmm(int milliseconds) {
+  final dur = Duration(milliseconds: milliseconds);
+  final hr = dur.inHours;
+  return "$hr:${(dur.inMinutes - hr * 60).toString().padLeft(2, "0")}";
+}
 
 class ETA {
   late double distance;
@@ -24,9 +28,7 @@ class ETA {
       // TODO: should this return blank?
       return "-:--";
     } else {
-      return hhmmFormat
-          .firstMatch(Duration(milliseconds: time).toString())!
-          .group(0)!;
+      return hmm(time);
     }
   }
 

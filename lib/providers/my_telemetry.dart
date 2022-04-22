@@ -120,11 +120,7 @@ class MyTelemetry with ChangeNotifier {
   }
 
   String fuelTimeRemaining() {
-    return hhmmFormat
-        .firstMatch(
-            Duration(milliseconds: (fuel / fuelBurnRate * 3600000).toInt())
-                .toString())!
-        .group(0)!;
+    return hmm((fuel / fuelBurnRate * 3600000).toInt());
   }
 
   Color fuelIndicatorColor(ETA next, ETA trip) {

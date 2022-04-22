@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 class MapButton extends StatelessWidget {
@@ -22,6 +20,8 @@ class MapButton extends StatelessWidget {
       width: size,
       height: size,
       child: MaterialButton(
+          minWidth: size,
+          height: size,
           onPressed: onPressed,
           shape: RoundedRectangleBorder(
             borderRadius: const BorderRadius.all(Radius.circular(30)),

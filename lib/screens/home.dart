@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
+import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
@@ -53,6 +54,7 @@ enum FocusMode {
   group,
   addWaypoint,
   addPath,
+  editPath,
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -80,6 +82,12 @@ class _MyHomePageState extends State<MyHomePage> {
       _serviceStatusStreamSubscription;
   bool positionStreamStarted = false;
 
+  late PolyEditor polyEditor;
+
+  List<Polyline> polyLines = [];
+  var editablePolyline =
+      Polyline(color: Colors.amber, points: [], strokeWidth: 5);
+
   @override
   _MyHomePageState();
 
@@ -99,6 +107,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // intialize the controllers
     mapController = MapController();
+
+    polyEditor = PolyEditor(
+      addClosePathMarker: false,
+      points: editablePolyline.points,
+      pointIcon: const Icon(
+        Icons.crop_square,
+        size: 23,
+        color: Colors.black,
+      ),
+      intermediateIcon: const Icon(Icons.lens, size: 15, color: Colors.black),
+      callbackRefresh: () => {setState(() {})},
+    );
+
+    polyLines.add(editablePolyline);
 
     // --- Location Spoofer for debugging
     FakeFlight fakeFlight = FakeFlight();
@@ -292,7 +314,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void refreshMapView() {
-    // TODO: this currently only gets called when WE move, but if we stand still and party members move, we should still update.
     Geo geo = Provider.of<MyTelemetry>(context, listen: false).geo;
     CenterZoom? centerZoom;
     if (focusMode == FocusMode.me) {
@@ -321,10 +342,11 @@ class _MyHomePageState extends State<MyHomePage> {
     if (focusMode == FocusMode.addWaypoint) {
       // --- Finish adding waypoint pin
       setFocusMode(prevFocusMode);
-      editWaypoint(context, true, latlng);
-    } else if (focusMode == FocusMode.addPath) {
+      editWaypoint(context, true, [latlng]);
+    } else if (focusMode == FocusMode.addPath ||
+        focusMode == FocusMode.editPath) {
       // --- Add waypoint in path
-
+      polyEditor.add(editablePolyline.points, latlng);
     }
   }
 
@@ -336,10 +358,10 @@ class _MyHomePageState extends State<MyHomePage> {
     showModalBottomSheet(
         context: context,
         elevation: 0,
-        constraints: const BoxConstraints(maxHeight: 400),
+        constraints: const BoxConstraints(maxHeight: 500),
         builder: (BuildContext context) {
           return Consumer<ActivePlan>(
-            builder: (context, flightPlan, child) => Column(
+            builder: (context, plan, child) => Column(
               children: [
                 // Waypoint menu buttons
                 Row(
@@ -355,9 +377,11 @@ class _MyHomePageState extends State<MyHomePage> {
                         icon: const ImageIcon(
                             AssetImage("assets/images/add_waypoint_pin.png"),
                             color: Colors.lightGreen)),
+                    // --- Add New Path
                     IconButton(
                         iconSize: 25,
                         onPressed: () {
+                          editablePolyline.points.clear();
                           Navigator.pop(context);
                           setFocusMode(FocusMode.addPath);
                         },
@@ -367,37 +391,49 @@ class _MyHomePageState extends State<MyHomePage> {
                     // --- Edit Waypoint
                     IconButton(
                       iconSize: 25,
-                      onPressed: () => editWaypoint(context, false, null),
+                      onPressed: () => editWaypoint(
+                        context,
+                        false,
+                        [],
+                        editPointsCallback: () {
+                          editablePolyline.points.clear();
+                          editablePolyline.points
+                              .addAll(plan.selectedWp?.latlng ?? []);
+                          Navigator.popUntil(
+                              context, ModalRoute.withName("/home"));
+                          setFocusMode(FocusMode.editPath);
+                        },
+                      ),
                       icon: const Icon(Icons.edit),
                     ),
                     // --- Delete Selected Waypoint
                     IconButton(
                         iconSize: 25,
-                        onPressed: () => flightPlan.removeSelectedWaypoint(),
+                        onPressed: () => plan.removeSelectedWaypoint(),
                         icon: const Icon(Icons.delete, color: Colors.red)),
                   ],
                 ),
                 // --- Waypoint list
-                SizedBox(
-                  height: 300,
+                Expanded(
+                  // height: 300,
                   child: ReorderableListView.builder(
-                    itemCount: flightPlan.waypoints.length,
+                    itemCount: plan.waypoints.length,
                     itemBuilder: (context, i) => WaypointCard(
-                      key: ValueKey(flightPlan.waypoints[i]),
-                      waypoint: flightPlan.waypoints[i],
+                      key: ValueKey(plan.waypoints[i]),
+                      waypoint: plan.waypoints[i],
                       index: i,
                       onSelect: () {
                         debugPrint("Selected $i");
-                        flightPlan.selectWaypoint(i);
+                        plan.selectWaypoint(i);
                       },
                       onToggleOptional: () {
-                        flightPlan.toggleOptional(i);
+                        plan.toggleOptional(i);
                       },
-                      isSelected: i == flightPlan.selectedIndex,
+                      isSelected: i == plan.selectedIndex,
                     ),
                     onReorder: (oldIndex, newIndex) {
                       debugPrint("WP order: $oldIndex --> $newIndex");
-                      flightPlan.sortWaypoint(oldIndex, newIndex);
+                      plan.sortWaypoint(oldIndex, newIndex);
                     },
                   ),
                 ),
@@ -588,8 +624,9 @@ class _MyHomePageState extends State<MyHomePage> {
         )),
         body: Center(
           child: Stack(alignment: Alignment.center, children: [
-            Consumer2<MyTelemetry, Settings>(
-              builder: (context, myTelemetry, settings, child) => FlutterMap(
+            Consumer3<MyTelemetry, Settings, ActivePlan>(
+              builder: (context, myTelemetry, settings, plan, child) =>
+                  FlutterMap(
                 mapController: mapController,
                 options: MapOptions(
                   interactiveFlags:
@@ -656,32 +693,33 @@ class _MyHomePageState extends State<MyHomePage> {
                       polylines: [myTelemetry.buildFlightTrace()]),
 
                   // Trip snake lines
-                  PolylineLayerOptions(
-                      polylines:
-                          Provider.of<ActivePlan>(context).buildTripSnake()),
+                  PolylineLayerOptions(polylines: plan.buildTripSnake()),
 
                   PolylineLayerOptions(
-                    polylines: [
-                      Provider.of<ActivePlan>(context)
-                          .buildNextWpIndicator(myTelemetry.geo)
-                    ],
+                    polylines: [plan.buildNextWpIndicator(myTelemetry.geo)],
                   ),
 
                   // Flight plan markers
                   DragMarkerPluginOptions(
-                    markers: Provider.of<ActivePlan>(context)
-                        .waypoints
+                    markers: plan.waypoints
+                        .where((value) => value.latlng.length == 1)
                         .mapIndexed((i, e) => DragMarker(
-                            // TODO: support lines
                             point: e.latlng[0],
                             height: 60 * 0.9,
                             width: 40 * 0.9,
                             onDragEnd: (p0, p1) => {
-                                  Provider.of<ActivePlan>(context,
-                                          listen: false)
-                                      .moveWaypoint(i, p1)
+                                  plan.moveWaypoint(i, [p1])
                                 },
                             builder: (context) => MapMarker(e, 60 * 0.9)))
+                        .toList(),
+                  ),
+                  PolylineLayerOptions(
+                    polylines: plan.waypoints
+                        .where((value) => value.latlng.length > 1)
+                        .mapIndexed((i, e) => Polyline(
+                            points: e.latlng,
+                            strokeWidth: 6,
+                            color: Color(e.color ?? Colors.black.value)))
                         .toList(),
                   ),
 
@@ -715,6 +753,14 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                   ),
+
+                  // Draggable line editor
+                  if (focusMode == FocusMode.addPath ||
+                      focusMode == FocusMode.editPath)
+                    PolylineLayerOptions(polylines: polyLines),
+                  if (focusMode == FocusMode.addPath ||
+                      focusMode == FocusMode.editPath)
+                    DragMarkerPluginOptions(markers: polyEditor.edit()),
                 ],
               ),
             ),
@@ -774,21 +820,85 @@ class _MyHomePageState extends State<MyHomePage> {
             if (focusMode == FocusMode.addWaypoint)
               const Positioned(
                 bottom: 15,
-                child: Text.rich(
-                  TextSpan(children: [
-                    WidgetSpan(
-                        child: Icon(
-                      Icons.touch_app,
-                      size: 40,
-                      color: Colors.black,
-                    )),
-                    TextSpan(text: "Tap to place waypoint")
-                  ]),
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
+                child: Card(
+                  color: Colors.amber,
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text.rich(
+                      TextSpan(children: [
+                        WidgetSpan(
+                            child: Icon(
+                          Icons.touch_app,
+                          size: 20,
+                          color: Colors.black,
+                        )),
+                        TextSpan(text: "Tap to place waypoint")
+                      ]),
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
+                      // textAlign: TextAlign.justify,
+                    ),
+                  ),
+                ),
+              ),
+            if (focusMode == FocusMode.addPath ||
+                focusMode == FocusMode.editPath)
+              Positioned(
+                bottom: 15,
+                right: 20,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Card(
+                      color: Colors.amber,
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text.rich(
+                          TextSpan(children: [
+                            WidgetSpan(
+                                child: Icon(
+                              Icons.touch_app,
+                              size: 20,
+                              color: Colors.black,
+                            )),
+                            TextSpan(text: "Tap to add to path")
+                          ]),
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold),
+                          // textAlign: TextAlign.justify,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      iconSize: 45,
+                      icon: const Icon(
+                        Icons.cancel,
+                        size: 45,
+                        color: Colors.red,
+                      ),
+                      onPressed: () => {setFocusMode(prevFocusMode)},
+                    ),
+                    if (editablePolyline.points.length > 1)
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        iconSize: 45,
+                        icon: const Icon(
+                          Icons.check_circle,
+                          size: 45,
+                          color: Colors.green,
+                        ),
+                        onPressed: () {
+                          // --- finish editing path
+                          editWaypoint(context, focusMode == FocusMode.addPath,
+                              editablePolyline.points);
+                          setFocusMode(prevFocusMode);
+                        },
+                      ),
+                  ],
                 ),
               ),
 

@@ -147,12 +147,21 @@ packages:
     source: hosted
     version: "0.14.0"
   flutter_map_dragmarker:
-    dependency: "direct main"
+    dependency: transitive
     description:
       path: "."
       ref: HEAD
       resolved-ref: "7a563570f0a14af7bd426aa32da6b2843f4721a5"
-      url: "git@github.com:ibrierley/flutter_map_dragmarker.git"
+      url: "https://github.com/ibrierley/flutter_map_dragmarker.git"
+    source: git
+    version: "1.0.0+1"
+  flutter_map_line_editor:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: "91604d66c3b3fb1c197943679cc4eb701bb82a17"
+      url: "git@github.com:ibrierley/flutter_map_line_editor.git"
     source: git
     version: "1.0.0+1"
   flutter_plugin_android_lifecycle:

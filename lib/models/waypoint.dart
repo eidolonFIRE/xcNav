@@ -16,7 +16,12 @@ String hashFlightPlanData(List<Waypoint> waypoints) {
 
   for (int i = 0; i < waypoints.length; i++) {
     Waypoint wp = waypoints[i];
-    str += i.toString() + wp.name + (wp.isOptional ? "O" : "X");
+    str += i.toString() +
+        wp.name +
+        // TODO: re-enable these and match with lambda
+        // (wp.icon ?? "") +
+        // (wp.color?.toString() ?? "") +
+        (wp.isOptional ? "O" : "X");
     for (LatLng g in wp.latlng) {
       // large tolerance for floats
       str +=
@@ -70,7 +75,13 @@ class Waypoint {
   dynamic toJson() {
     return {
       "name": name,
-      "latlng": latlng.map((e) => [e.latitude, e.longitude]).toList(),
+      "latlng": latlng
+          .map((e) => [
+                // (reduce decimals of precision to shrink message size bloat for paths)
+                ((e.latitude * 100000).round()) / 100000,
+                ((e.longitude * 100000).round()) / 100000
+              ])
+          .toList(),
       "optional": isOptional,
       "icon": icon,
       "color": color,

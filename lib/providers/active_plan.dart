@@ -93,7 +93,7 @@ class ActivePlan with ChangeNotifier {
     } else {
       if (selectedIndex != null) {
         // TODO: support reverse direction flight plan
-        return selectedIndex! + 1;
+        return min(selectedIndex! + 1, waypoints.length);
       } else {
         return 0;
       }
@@ -107,10 +107,10 @@ class ActivePlan with ChangeNotifier {
   }
 
   // Called from UI
-  void insertWaypoint(int? index, String name, LatLng pos, bool? isOptional,
-      String? icon, int? color) {
+  void insertWaypoint(int? index, String name, List<LatLng> latlngs,
+      bool? isOptional, String? icon, int? color) {
     Waypoint newWaypoint =
-        Waypoint(name, [pos], isOptional ?? false, icon, color);
+        Waypoint(name, latlngs.toList(), isOptional ?? false, icon, color);
     int resolvedIndex = _resolveNewWaypointIndex(index);
     waypoints.insert(resolvedIndex, newWaypoint);
 
@@ -159,14 +159,16 @@ class ActivePlan with ChangeNotifier {
     notifyListeners();
   }
 
-  void moveWaypoint(int index, LatLng newPoint) {
-    // TODO: support polylines
-    waypoints[index].latlng = [newPoint];
-    // callback
-    if (onWaypointAction != null) {
-      onWaypointAction!(WaypointAction.modify, index, null, waypoints[index]);
+  void moveWaypoint(int? index, List<LatLng> latlngs) {
+    if (index != null || selectedIndex != null) {
+      int i = index ?? selectedIndex!;
+      waypoints[i].latlng = latlngs;
+      // callback
+      if (onWaypointAction != null) {
+        onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
+      }
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   void editWaypoint(int? index, String name, String? icon, int? color) {
@@ -188,7 +190,7 @@ class ActivePlan with ChangeNotifier {
   void backendSortWaypoint(int oldIndex, int newIndex) {
     Waypoint temp = waypoints[oldIndex];
     waypoints.removeAt(oldIndex);
-    if (newIndex > oldIndex) newIndex--;
+    // if (newIndex > oldIndex) newIndex--;
     waypoints.insert(newIndex, temp);
 
     if (selectedIndex != null) {
@@ -204,6 +206,7 @@ class ActivePlan with ChangeNotifier {
   }
 
   void sortWaypoint(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) newIndex--;
     backendSortWaypoint(oldIndex, newIndex);
     // callback
     if (onWaypointAction != null) {
@@ -250,6 +253,7 @@ class ActivePlan with ChangeNotifier {
       LatLng? target;
       if (selectedWp!.latlng.length > 1) {
         // TODO: support intercept to line
+
         // target = L.GeometryUtil.interpolateOnLine(_map, selectedWp, L.GeometryUtil.locateOnLine(_map, L.polyline(selectedWp), geoTolatlng(me.geoPos))).latLng;
       } else {
         target = selectedWp!.latlng[0];
@@ -269,7 +273,7 @@ class ActivePlan with ChangeNotifier {
         // TODO: support path
 
       } else {
-        double dist = Geo.calc.distance(latlng, target.latlng[0]);
+        double dist = latlngCalc.distance(latlng, target.latlng[0]);
         return ETA.fromSpeed(dist, speed);
       }
     }

@@ -13,9 +13,14 @@ LatLng locationToLatLng(LocationData location) {
 
 Distance latlngCalc = const Distance(roundResult: false);
 
-class Geo {
-  static var calc = const Distance(roundResult: false);
+class PathIntercept {
+  final int index;
+  final double ratio;
+  final LatLng latlng;
+  PathIntercept(this.index, this.ratio, this.latlng);
+}
 
+class Geo {
   double lat = 0;
   double lng = 0;
   double alt = 0;
@@ -37,14 +42,14 @@ class Geo {
       // prefer our own calculations
       // spd = location
       final double dist =
-          calc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
+          latlngCalc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
 
       // TODO: get units correct
       spd = dist / (time - prev.time) * 1000;
       if (dist < 1) {
         hdg = prev.hdg;
       } else {
-        hdg = calc.bearing(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) *
+        hdg = latlngCalc.bearing(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) *
             3.1415926 /
             180;
       }
@@ -67,14 +72,14 @@ class Geo {
       // prefer our own calculations
       // spd = location
       final double dist =
-          calc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
+          latlngCalc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
 
       // TODO: get units correct
       spd = dist / (time - prev.time) * 1000;
       if (dist < 1) {
         hdg = prev.hdg;
       } else {
-        hdg = calc.bearing(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) *
+        hdg = latlngCalc.bearing(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) *
             3.1415926 /
             180;
       }
@@ -97,12 +102,18 @@ class Geo {
     vario = data["vario"];
   }
 
-  double distanceTo(Geo other) {
-    return calc.distance(LatLng(other.lat, other.lng), LatLng(lat, lng));
+  PathIntercept nearestPointOnPath(List<LatLng> path) {
+    // Scan through all line segments and find intercept
+    for (int index = 0; index < path.length; index++) {}
+    return PathIntercept(0, 0, LatLng(0, 0));
   }
 
-  static distanceBetween(LatLng a, LatLng b) {
-    return calc.distance(a, b);
+  double distanceTo(Geo other) {
+    return latlngCalc.distance(LatLng(other.lat, other.lng), LatLng(lat, lng));
+  }
+
+  static double distanceBetween(LatLng a, LatLng b) {
+    return latlngCalc.distance(a, b);
   }
 
   Map<String, num> toJson() {

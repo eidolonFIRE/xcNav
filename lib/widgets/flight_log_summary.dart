@@ -3,6 +3,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/models/eta.dart';
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/flight_log.dart';
@@ -154,7 +155,7 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.durationTime != null
                                 ? Text(
-                                    "${log.durationTime!.inHours}:${log.durationTime!.inMinutes.toString().padLeft(2, "0")}",
+                                    hmm(log.durationTime!.inMilliseconds),
                                     textAlign: TextAlign.end,
                                   )
                                 : Container())

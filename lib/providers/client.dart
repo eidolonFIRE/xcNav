@@ -56,6 +56,7 @@ class Client with ChangeNotifier {
   }
 
   void connect() async {
+    // TODO: catch errors on failure to connect
     WebSocket.connect(
             "wss://cilme82sm3.execute-api.us-west-1.amazonaws.com/production")
         .then((newSocket) {
@@ -98,6 +99,8 @@ class Client with ChangeNotifier {
           flightPlanUpdate;
       Provider.of<ActivePlan>(context, listen: false).onSelectWaypoint =
           selectWaypoint;
+    }).onError((error, stackTrace) {
+      debugPrint("Failed to connect! $error");
     });
   }
 

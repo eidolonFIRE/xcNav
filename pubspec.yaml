@@ -39,9 +39,12 @@ dependencies:
   flutter_map: any
   wakelock: ^0.6.1+1
 
-  flutter_map_dragmarker:
+  # flutter_map_dragmarker:
+  #   git:
+  #     url: git@github.com:ibrierley/flutter_map_dragmarker.git
+  flutter_map_line_editor:
     git:
-      url: git@github.com:ibrierley/flutter_map_dragmarker.git
+      url: git@github.com:ibrierley/flutter_map_line_editor.git
   shared_preferences: ^2.0.13
   fullscreen: ^1.0.3
   image_picker: ^0.8.4+9

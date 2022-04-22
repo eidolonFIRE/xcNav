@@ -146,8 +146,9 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                                 ),
                                 MarkerLayerOptions(
                                   markers: widget.plan.waypoints
+                                      .where(
+                                          (value) => value.latlng.length == 1)
                                       .mapIndexed((i, e) => Marker(
-                                          // TODO: support lines
                                           point: e.latlng[0],
                                           height: i == widget.selectedIndex
                                               ? 40
@@ -163,6 +164,18 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                                                   i == widget.selectedIndex
                                                       ? 40
                                                       : 30))))
+                                      .toList(),
+                                ),
+                                // Flight plan markers
+
+                                PolylineLayerOptions(
+                                  polylines: widget.plan.waypoints
+                                      .where((value) => value.latlng.length > 1)
+                                      .mapIndexed((i, e) => Polyline(
+                                          points: e.latlng,
+                                          strokeWidth: 6,
+                                          color: Color(
+                                              e.color ?? Colors.black.value)))
                                       .toList(),
                                 ),
                                 // TODO: show other things like take-off, landing, and flight plan
@@ -252,7 +265,7 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                         .insertWaypoint(
                             null,
                             widget.plan.waypoints[i].name,
-                            widget.plan.waypoints[i].latlng[0],
+                            widget.plan.waypoints[i].latlng,
                             widget.plan.waypoints[i].isOptional,
                             widget.plan.waypoints[i].icon,
                             widget.plan.waypoints[i].color);

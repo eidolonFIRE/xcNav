@@ -13,7 +13,8 @@ import 'package:xcnav/widgets/map_marker.dart';
 
 final TextEditingController newWaypointName = TextEditingController();
 
-void editWaypoint(BuildContext context, bool isNew, LatLng? latlng) {
+void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
+    {VoidCallback? editPointsCallback}) {
   Waypoint? currentWp =
       Provider.of<ActivePlan>(context, listen: false).selectedWp;
   if (!isNew) {
@@ -26,13 +27,17 @@ void editWaypoint(BuildContext context, bool isNew, LatLng? latlng) {
     }
   }
 
-  // TODO: alert dialog with state????
-
   showDialog(
       context: context,
       builder: (context) {
-        Color? selectedColor = Color(currentWp?.color ?? Colors.black.value);
-        String? selectedIcon = currentWp?.icon;
+        Color? selectedColor =
+            isNew ? null : Color(currentWp?.color ?? Colors.black.value);
+        String? selectedIcon = isNew ? null : currentWp?.icon;
+
+        bool showIconOptions = isNew
+            ? (latlngs.length == 1)
+            : (currentWp != null ? currentWp.latlng.length <= 1 : true);
+
         return StatefulBuilder(builder: (context, setState) {
           // --- Build color selection buttons
           List<Widget> colorWidgets = [];
@@ -48,31 +53,34 @@ void editWaypoint(BuildContext context, bool isNew, LatLng? latlng) {
 
           // --- Build icon selection buttons
           List<Widget> iconWidgets = [];
-          iconOptions.forEach((key, value) => iconWidgets.add(IconButton(
-                onPressed: () => {setState(() => selectedIcon = key)},
-                padding: const EdgeInsets.all(0),
-                iconSize: 50,
-                color: selectedIcon == key ? selectedColor : Colors.grey,
-                icon: Container(
-                  decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      border: Border.all(
-                          style: BorderStyle.solid,
-                          width: 2,
-                          color: (selectedIcon == key)
-                              ? Colors.white
-                              : Colors.transparent)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Icon(
-                      value,
-                      size: 30,
-                      color: (selectedIcon == key) ? Colors.white : Colors.grey,
+          if (showIconOptions) {
+            iconOptions.forEach((key, value) => iconWidgets.add(IconButton(
+                  onPressed: () => {setState(() => selectedIcon = key)},
+                  padding: const EdgeInsets.all(0),
+                  iconSize: 50,
+                  color: selectedIcon == key ? selectedColor : Colors.grey,
+                  icon: Container(
+                    decoration: BoxDecoration(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(20)),
+                        border: Border.all(
+                            style: BorderStyle.solid,
+                            width: 2,
+                            color: (selectedIcon == key)
+                                ? Colors.white
+                                : Colors.transparent)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Icon(
+                        value,
+                        size: 30,
+                        color:
+                            (selectedIcon == key) ? Colors.white : Colors.grey,
+                      ),
                     ),
                   ),
-                ),
-              )));
-
+                )));
+          }
           return AlertDialog(
             title: isNew
                 ? const Text("Add Waypoint")
@@ -103,11 +111,26 @@ void editWaypoint(BuildContext context, bool isNew, LatLng? latlng) {
                   height: 20,
                 ),
                 // --- Edit Icon
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  runAlignment: WrapAlignment.center,
-                  children: iconWidgets,
-                ),
+                if (showIconOptions)
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    runAlignment: WrapAlignment.center,
+                    children: iconWidgets,
+                  ),
+                if (!showIconOptions)
+                  TextButton.icon(
+                      onPressed: editPointsCallback ?? (() => {}),
+                      icon: const Icon(
+                        Icons.edit,
+                        color: Colors.white,
+                      ),
+                      label: Text(
+                        "Edit Path Points",
+                        style: Theme.of(context)
+                            .textTheme
+                            .button!
+                            .merge(const TextStyle(fontSize: 20)),
+                      ))
               ],
             ),
             actions: [
@@ -118,13 +141,15 @@ void editWaypoint(BuildContext context, bool isNew, LatLng? latlng) {
                       if (isNew) {
                         // --- Make new waypoint
                         Provider.of<ActivePlan>(context, listen: false)
-                            .insertWaypoint(null, newWaypointName.text, latlng!,
+                            .insertWaypoint(null, newWaypointName.text, latlngs,
                                 false, selectedIcon, selectedColor?.value);
                       } else {
                         // --- Update selected waypoint
                         Provider.of<ActivePlan>(context, listen: false)
                             .editWaypoint(null, newWaypointName.text,
                                 selectedIcon, selectedColor?.value);
+                        Provider.of<ActivePlan>(context, listen: false)
+                            .moveWaypoint(null, latlngs);
                       }
                       Navigator.pop(context);
                     }
