@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:collection/collection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/models/geo.dart';
@@ -187,6 +188,24 @@ class ActivePlan with ChangeNotifier {
     }
   }
 
+  void updateWaypoint(
+      int? index, String name, String? icon, int? color, List<LatLng> latlngs) {
+    if (index != null || selectedIndex != null) {
+      int i = index ?? selectedIndex!;
+
+      waypoints[i].name = name;
+      waypoints[i].color = color;
+      waypoints[i].icon = icon;
+      waypoints[i].latlng = latlngs;
+
+      // callback
+      if (onWaypointAction != null) {
+        onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
+      }
+      notifyListeners();
+    }
+  }
+
   void backendSortWaypoint(int oldIndex, int newIndex) {
     Waypoint temp = waypoints[oldIndex];
     waypoints.removeAt(oldIndex);
@@ -229,14 +248,14 @@ class ActivePlan with ChangeNotifier {
       // skip optional waypoints
       if (wp.isOptional) continue;
 
-      if (wp.latlng.length > 1) {
+      if (wp.latlng.length > 0) {
         points.add(wp.latlng[0]);
+      }
+      if (wp.latlng.length > 1) {
         // pinch off trip snake
         retval.add(_buildTripSnakeSegment(points));
         // start again at last point
         points = [wp.latlng[wp.latlng.length - 1]];
-      } else {
-        points.add(wp.latlng[0]);
       }
     }
 
@@ -252,10 +271,10 @@ class ActivePlan with ChangeNotifier {
       LatLng? target;
       if (selectedWp!.latlng.length > 1) {
         target = geo.nearestPointOnPath(selectedWp!.latlng).latlng;
-      } else {
+      } else if (selectedWp!.latlng.isNotEmpty) {
         target = selectedWp!.latlng[0];
       }
-      points.add(target);
+      if (target != null) points.add(target);
     }
 
     return Polyline(points: points, color: Colors.red, strokeWidth: 4);
@@ -272,8 +291,12 @@ class ActivePlan with ChangeNotifier {
             target.lengthFromIndex(intercept.index);
         return ETA.fromSpeed(dist, speed);
       } else {
-        double dist = geo.distanceToLatlng(target.latlng[0]);
-        return ETA.fromSpeed(dist, speed);
+        if (target.latlng.isNotEmpty) {
+          double dist = geo.distanceToLatlng(target.latlng[0]);
+          return ETA.fromSpeed(dist, speed);
+        } else {
+          return ETA.fromSpeed(0, speed);
+        }
       }
     }
     return ETA(0, 0);
@@ -289,19 +312,22 @@ class ActivePlan with ChangeNotifier {
           isReversed ? (i >= 0) : (i < waypoints.length);
           i += isReversed ? -1 : 1) {
         // skip optional waypoints
-        Waypoint wp_i = waypoints[i];
-        if (wp_i.isOptional) continue;
+        Waypoint wpIndex = waypoints[i];
+        if (wpIndex.isOptional) continue;
 
-        if (prevIndex != null) {
+        if (prevIndex != null &&
+            wpIndex.latlng.isNotEmpty &&
+            waypoints[prevIndex].latlng.isNotEmpty) {
           // Will take the last point of the current waypoint, first point of the next
           LatLng prevLatlng = isReversed
               ? waypoints[prevIndex].latlng.last
               : waypoints[prevIndex].latlng.first;
           dist += latlngCalc.distance(
-              isReversed ? wp_i.latlng.last : wp_i.latlng.first, prevLatlng);
+              isReversed ? wpIndex.latlng.last : wpIndex.latlng.first,
+              prevLatlng);
 
           // add path distance
-          dist += wp_i.length;
+          dist += wpIndex.length;
         }
         prevIndex = i;
       }

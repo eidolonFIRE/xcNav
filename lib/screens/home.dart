@@ -22,13 +22,13 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat.dart';
 import 'package:xcnav/providers/settings.dart';
-import 'package:xcnav/widgets/map_marker.dart';
 
 // widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
+import 'package:xcnav/widgets/map_marker.dart';
 
 // dialogs
 import 'package:xcnav/dialogs/fuel_adjustment.dart';
@@ -394,7 +394,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       onPressed: () => editWaypoint(
                         context,
                         false,
-                        [],
+                        plan.selectedWp?.latlng ?? [],
                         editPointsCallback: () {
                           editablePolyline.points.clear();
                           editablePolyline.points
@@ -713,15 +713,18 @@ class _MyHomePageState extends State<MyHomePage> {
                   // Flight plan markers
                   DragMarkerPluginOptions(
                     markers: plan.waypoints
-                        .where((value) => value.latlng.length == 1)
-                        .mapIndexed((i, e) => DragMarker(
-                            point: e.latlng[0],
-                            height: 60 * 0.9,
-                            width: 40 * 0.9,
-                            onDragEnd: (p0, p1) => {
-                                  plan.moveWaypoint(i, [p1])
-                                },
-                            builder: (context) => MapMarker(e, 60 * 0.9)))
+                        .mapIndexed((i, e) => e.latlng.length == 1
+                            ? DragMarker(
+                                point: e.latlng[0],
+                                height: 60 * 0.9,
+                                width: 40 * 0.9,
+                                onTap: (_) => plan.selectWaypoint(i),
+                                onDragEnd: (p0, p1) => {
+                                      plan.moveWaypoint(i, [p1])
+                                    },
+                                builder: (context) => MapMarker(e, 60 * 0.9))
+                            : null)
+                        .whereNotNull()
                         .toList(),
                   ),
 

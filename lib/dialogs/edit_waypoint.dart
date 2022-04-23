@@ -146,12 +146,8 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                       } else {
                         // --- Update selected waypoint
                         Provider.of<ActivePlan>(context, listen: false)
-                            .editWaypoint(null, newWaypointName.text,
-                                selectedIcon, selectedColor?.value);
-                        if (latlngs.isNotEmpty) {
-                          Provider.of<ActivePlan>(context, listen: false)
-                              .moveWaypoint(null, latlngs);
-                        }
+                            .updateWaypoint(null, newWaypointName.text,
+                                selectedIcon, selectedColor?.value, latlngs);
                       }
                       Navigator.pop(context);
                     }

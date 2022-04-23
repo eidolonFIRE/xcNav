@@ -19,9 +19,8 @@ String hashFlightPlanData(List<Waypoint> waypoints) {
     Waypoint wp = waypoints[i];
     str += i.toString() +
         wp.name +
-        // TODO: re-enable these and match with lambda
-        // (wp.icon ?? "") +
-        // (wp.color?.toString() ?? "") +
+        (wp.icon ?? "") +
+        (wp.color?.toString() ?? "") +
         (wp.isOptional ? "O" : "X");
     for (LatLng g in wp.latlng) {
       // large tolerance for floats

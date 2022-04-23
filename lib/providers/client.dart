@@ -23,7 +23,7 @@ enum ClientState {
   authenticated,
 }
 
-const double apiVersion = 5.0;
+const double apiVersion = 5.1;
 
 class Client with ChangeNotifier {
   WebSocket? socket;
@@ -421,9 +421,9 @@ class Client with ChangeNotifier {
       // compare API version
       // TODO: should have big warning banners for this
       if (msg["api_version"] > apiVersion) {
-        debugPrint("Client is out of date!");
+        debugPrint("---/!\\--- Client is out of date!");
       } else if (msg["api_version"] < apiVersion) {
-        debugPrint("Server is out of date!");
+        debugPrint("---/!\\--- Server is out of date!");
       }
 
       Profile profile = Provider.of<Profile>(context, listen: false);
