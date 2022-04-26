@@ -62,8 +62,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   static TextStyle instrLower = const TextStyle(fontSize: 35);
   static TextStyle instrUpper = const TextStyle(fontSize: 40);
-  static TextStyle instrLabel = const TextStyle(
-      fontSize: 14, color: Colors.grey, fontStyle: FontStyle.italic);
+  static TextStyle instrLabel = TextStyle(
+      fontSize: 14, color: Colors.grey[400], fontStyle: FontStyle.italic);
 
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -170,7 +170,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (defaultTargetPlatform == TargetPlatform.android) {
         locationSettings = AndroidSettings(
             accuracy: LocationAccuracy.best,
-            distanceFilter: 10,
+            distanceFilter: 0,
             forceLocationManager: false,
             intervalDuration: const Duration(seconds: 5),
             //(Optional) Set foreground notification config to keep the app alive
@@ -999,36 +999,55 @@ class _MyHomePageState extends State<MyHomePage> {
                       color: myTelemetry.fuelIndicatorColor(etaNext, etaTrip),
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "Fuel",
-                              style: instrLabel,
-                            ),
-                            Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                      text: myTelemetry.fuel.toStringAsFixed(1),
-                                      style: instrLower),
-                                  TextSpan(text: " L", style: instrLabel)
-                                ],
+                        child: (myTelemetry.fuel > 0)
+                            ? Builder(builder: (context) {
+                                int remMin = (myTelemetry.fuel /
+                                        myTelemetry.fuelBurnRate *
+                                        60)
+                                    .ceil();
+                                String value = (remMin >= 60)
+                                    ? (remMin / 60).toStringAsFixed(1)
+                                    : remMin.toString();
+                                String unit = (remMin >= 60) ? "hr" : "min";
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      "Fuel",
+                                      style: instrLabel,
+                                    ),
+                                    Text.rich(
+                                      TextSpan(
+                                        children: [
+                                          TextSpan(
+                                              text: myTelemetry.fuel
+                                                  .toStringAsFixed(1),
+                                              style: instrLower),
+                                          TextSpan(
+                                              text: " L", style: instrLabel)
+                                        ],
+                                      ),
+                                      softWrap: false,
+                                    ),
+                                    Text.rich(
+                                      TextSpan(
+                                        children: [
+                                          TextSpan(
+                                              text: value, style: instrLower),
+                                          TextSpan(
+                                              text: unit, style: instrLabel)
+                                        ],
+                                      ),
+                                      softWrap: false,
+                                    ),
+                                  ],
+                                );
+                              })
+                            : Text(
+                                "Set\nFuel\nLevel",
+                                style: instrLabel,
+                                textAlign: TextAlign.center,
                               ),
-                              softWrap: false,
-                            ),
-                            myTelemetry.fuel > 0
-                                ? Text(
-                                    myTelemetry.fuelTimeRemaining(),
-                                    style: instrLower,
-                                  )
-                                : Text(
-                                    "-:--",
-                                    style: instrLower.merge(
-                                        TextStyle(color: Colors.grey[600])),
-                                  )
-                          ],
-                        ),
                       ),
                     ),
                   ),

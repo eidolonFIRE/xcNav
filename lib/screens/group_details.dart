@@ -63,9 +63,13 @@ class _GroupDetailsState extends State<GroupDetails> {
                             _p.name,
                             style: Theme.of(context).textTheme.headline5,
                           ),
-                          subtitle: Text(
-                              "${(_p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo) * meters2Miles).toStringAsFixed(1)} mi away,   ${(_p.geo.alt * meters2Feet).toStringAsFixed(0)}' alt",
-                              style: Theme.of(context).textTheme.bodyMedium),
+                          subtitle: (_p.geo.time >
+                                  DateTime.now().millisecondsSinceEpoch -
+                                      5000 * 60)
+                              ? Text(
+                                  "${(_p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo) * meters2Miles).toStringAsFixed(1)} mi away,   ${(_p.geo.alt * meters2Feet).toStringAsFixed(0)}' alt",
+                                  style: Theme.of(context).textTheme.bodyMedium)
+                              : const Text("( outdated telemetry )"),
                         ))
                     .toList())));
   }

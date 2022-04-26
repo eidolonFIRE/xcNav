@@ -126,10 +126,6 @@ class MyTelemetry with ChangeNotifier {
     notifyListeners();
   }
 
-  String fuelTimeRemaining() {
-    return hmm((fuel / fuelBurnRate * 3600000).toInt());
-  }
-
   Color fuelIndicatorColor(ETA next, ETA trip) {
     double fuelTime = fuel / fuelBurnRate;
     if (fuelTime > 0.0001 && inFlight) {
