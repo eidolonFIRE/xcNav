@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:location/location.dart';
 import 'dart:math';
+
+import 'package:geolocator/geolocator.dart';
 
 const _meters2Feet = 3.28084;
 
@@ -12,13 +12,17 @@ class FakeGeo {
   double alt;
 }
 
-LocationData fakeGeoToLoc(FakeGeo geo) {
-  return LocationData.fromMap({
-    "latitude": geo.lat,
-    "longitude": geo.lng,
-    "altitude": geo.alt,
-    "time": DateTime.now().millisecondsSinceEpoch.toDouble()
-  });
+Position fakeGeoToLoc(FakeGeo geo) {
+  return Position(
+    latitude: geo.lat,
+    longitude: geo.lng,
+    altitude: geo.alt,
+    timestamp: DateTime.now(),
+    accuracy: 1,
+    speed: 0,
+    speedAccuracy: 0,
+    heading: 0,
+  );
 }
 
 class FakeFlight {
@@ -52,7 +56,7 @@ class FakeFlight {
     return rand.nextDouble() * 2 - 1;
   }
 
-  LocationData genFakeLocationFlight() {
+  Position genFakeLocationFlight() {
     fake_in_flight_timer -= 1;
     if (fake_in_flight_timer <= 0) {
       fake_in_flight = !fake_in_flight;

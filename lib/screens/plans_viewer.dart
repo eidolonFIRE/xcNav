@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
 
 // --- Dialogs
 import 'package:xcnav/dialogs/save_plan.dart';
@@ -49,13 +50,33 @@ class _PlansViewerState extends State<PlansViewer> {
           .list(recursive: false, followLinks: false)
           .forEach((each) {
         File.fromUri(each.uri).readAsString().then((value) {
-          plans.add(FlightPlan.fromJson(each.path, jsonDecode(value)));
-          setState(() {});
+          setState(() {
+            plans.add(FlightPlan.fromJson(each.path, jsonDecode(value)));
+          });
         });
       });
       setState(() {});
     } else {
       debugPrint('"flight_plans" directory doesn\'t exist yet!');
+    }
+  }
+
+  void selectKmlImport() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      File file = File(result.files.single.path!);
+      file.readAsString().then((data) {
+        var newPlan = FlightPlan.fromKml(result.files.single.path!, data);
+        // TODO: notify if broken file
+        if (newPlan.goodFile) {
+          setState(() {
+            plans.add(newPlan);
+          });
+        }
+      });
+    } else {
+      // User canceled the picker
     }
   }
 
@@ -73,8 +94,7 @@ class _PlansViewerState extends State<PlansViewer> {
                   },
               icon: const Icon(Icons.save_as)),
           IconButton(
-              // TODO: implement import
-              onPressed: () => {},
+              onPressed: () => {selectKmlImport()},
               icon: const Icon(Icons.file_upload_outlined))
         ],
       ),

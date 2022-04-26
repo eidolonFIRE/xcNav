@@ -89,7 +89,8 @@ class Client with ChangeNotifier {
       Provider.of<MyTelemetry>(context, listen: false).addListener(() {
         MyTelemetry telemetry =
             Provider.of<MyTelemetry>(context, listen: false);
-        if (state == ClientState.authenticated) {
+        if (state == ClientState.authenticated &&
+            (telemetry.geo.lat != 0.0 || telemetry.geo.lng != 0.0)) {
           sendTelemetry(telemetry.geo, telemetry.fuel);
         }
       });

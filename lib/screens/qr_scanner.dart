@@ -1,13 +1,15 @@
 import 'dart:developer';
 import 'dart:io';
 import 'package:provider/provider.dart';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
+import 'package:qr_flutter/qr_flutter.dart';
+// import 'package:share_plus/share_plus.dart';
+
 // Providers
 import 'package:xcnav/providers/client.dart';
+import 'package:xcnav/providers/group.dart';
 
 class QRScanner extends StatefulWidget {
   const QRScanner({Key? key}) : super(key: key);
@@ -17,9 +19,6 @@ class QRScanner extends StatefulWidget {
 }
 
 class _QRScannerState extends State<QRScanner> {
-  final TextEditingController chatInput = TextEditingController();
-
-  Barcode? result;
   QRViewController? controller;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
 
@@ -39,112 +38,67 @@ class _QRScannerState extends State<QRScanner> {
     return Scaffold(
       appBar: AppBar(),
       body: Column(
+        // direction: Axis.vertical,
+        // crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Expanded(flex: 4, child: _buildQrView(context)),
           Expanded(
-            flex: 1,
-            child: FittedBox(
-              fit: BoxFit.contain,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  if (result != null)
-                    Text(
-                        'Barcode Type: ${describeEnum(result!.format)}   Data: ${result!.code}')
-                  else
-                    const Text('Scan a code'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      // Container(
-                      //   margin: const EdgeInsets.all(8),
-                      //   child: ElevatedButton(
-                      //       onPressed: () async {
-                      //         await controller?.toggleFlash();
-                      //         setState(() {});
-                      //       },
-                      //       child: FutureBuilder(
-                      //         future: controller?.getFlashStatus(),
-                      //         builder: (context, snapshot) {
-                      //           return Text('Flash: ${snapshot.data}');
-                      //         },
-                      //       )),
-                      // ),
-                      Container(
-                        margin: const EdgeInsets.all(8),
-                        child: ElevatedButton(
-                            onPressed: () async {
-                              await controller?.flipCamera();
-                              setState(() {});
-                            },
-                            child: FutureBuilder(
-                              future: controller?.getCameraInfo(),
-                              builder: (context, snapshot) {
-                                if (snapshot.data != null) {
-                                  return Text(
-                                      'Camera facing ${describeEnum(snapshot.data!)}');
-                                } else {
-                                  return const Text('loading');
-                                }
-                              },
-                            )),
-                      )
-                    ],
-                  ),
-                  // Row(
-                  //   mainAxisAlignment: MainAxisAlignment.center,
-                  //   crossAxisAlignment: CrossAxisAlignment.center,
-                  //   children: <Widget>[
-                  //     Container(
-                  //       margin: const EdgeInsets.all(8),
-                  //       child: ElevatedButton(
-                  //         onPressed: () async {
-                  //           await controller?.pauseCamera();
-                  //         },
-                  //         child: const Text('pause',
-                  //             style: TextStyle(fontSize: 20)),
-                  //       ),
-                  //     ),
-                  //     Container(
-                  //       margin: const EdgeInsets.all(8),
-                  //       child: ElevatedButton(
-                  //         onPressed: () async {
-                  //           await controller?.resumeCamera();
-                  //         },
-                  //         child: const Text('resume',
-                  //             style: TextStyle(fontSize: 20)),
-                  //       ),
-                  //     )
-                  //   ],
-                  // ),
-                ],
-              ),
+            child: Stack(
+              children: [
+                QRView(
+                  key: qrKey,
+                  onQRViewCreated: _onQRViewCreated,
+                  overlay: QrScannerOverlayShape(
+                      borderColor: Colors.red,
+                      borderRadius: 10,
+                      borderLength: 30,
+                      borderWidth: 10,
+                      cutOutSize: MediaQuery.of(context).size.width / 2),
+                  onPermissionSet: (ctrl, p) =>
+                      _onPermissionSet(context, ctrl, p),
+                ),
+                Positioned(
+                    right: 10,
+                    bottom: 10,
+                    child: IconButton(
+                      onPressed: () async {
+                        await controller?.flipCamera();
+                        setState(() {});
+                      },
+                      iconSize: 30,
+                      icon: const Icon(
+                        Icons.flip_camera_ios,
+                        color: Colors.white,
+                      ),
+                    ))
+              ],
             ),
-          )
+          ),
+          Expanded(
+              child: Container(
+            color: Colors.white,
+            child: (Provider.of<Group>(context).currentGroupID != null)
+                ? Center(
+                    child: QrImage(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white,
+                      data: Provider.of<Group>(context).currentGroupID!,
+                      version: QrVersions.auto,
+                      gapless: true,
+                      padding: const EdgeInsets.all(50),
+                    ),
+                  )
+                : const Center(
+                    child: SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+          ))
         ],
       ),
-    );
-  }
-
-  Widget _buildQrView(BuildContext context) {
-    // For this example we check how width or tall the device is and change the scanArea and overlay accordingly.
-    var scanArea = (MediaQuery.of(context).size.width < 400 ||
-            MediaQuery.of(context).size.height < 400)
-        ? 200.0
-        : 300.0;
-    // To ensure the Scanner view is properly sizes after rotation
-    // we need to listen for Flutter SizeChanged notification and update controller
-    return QRView(
-      key: qrKey,
-      onQRViewCreated: _onQRViewCreated,
-      overlay: QrScannerOverlayShape(
-          borderColor: Colors.red,
-          borderRadius: 10,
-          borderLength: 30,
-          borderWidth: 10,
-          cutOutSize: scanArea),
-      onPermissionSet: (ctrl, p) => _onPermissionSet(context, ctrl, p),
     );
   }
 
@@ -153,17 +107,14 @@ class _QRScannerState extends State<QRScanner> {
       this.controller = controller;
     });
     controller.scannedDataStream.listen((scanData) {
-      setState(() {
-        result = scanData;
-        debugPrint("QR scanner result: ${scanData.code}");
-
-        // Follow invite link
-        if (result != null && result!.code != null) {
-          controller.pauseCamera();
-          Provider.of<Client>(context, listen: false).joinGroup(result!.code!);
+      debugPrint("QR scanner scanData: ${scanData.code}");
+      // Follow invite link
+      if (scanData.code != null) {
+        controller.pauseCamera().then((value) {
+          Provider.of<Client>(context, listen: false).joinGroup(scanData.code!);
           Navigator.pop<bool>(context, true);
-        }
-      });
+        });
+      }
     });
   }
 

@@ -212,9 +212,9 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                             TableRow(children: [
                               const TableCell(child: Text("Total Length")),
                               TableCell(
-                                  child: widget.plan.length > 1
+                                  child: (widget.plan.length ?? 0) > 1
                                       ? Text(
-                                          "${(widget.plan.length * meter2Mile).toStringAsFixed(1)} mi",
+                                          "${(widget.plan.length! * meters2Miles).toStringAsFixed(1)} mi",
                                           textAlign: TextAlign.end,
                                         )
                                       : Container()),

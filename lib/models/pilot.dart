@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:xcnav/models/geo.dart';
 
 class Pilot {
@@ -24,24 +24,22 @@ class Pilot {
   void updateTelemetry(dynamic telemetry, int timestamp) {
     Map<String, dynamic> gps = telemetry["gps"];
     fuel = (telemetry["fuel"] ?? 0.0) + 0.0;
-    geo = Geo.fromLocationData(
-        LocationData.fromMap({
-          'latitude': gps["lat"],
-          'longitude': gps["lng"],
-          // 'accuracy': ,
-          'altitude': gps["alt"],
-          // 'speed': ,
-          // 'speed_accuracy': ,
-          // 'heading': ,
-          'time': timestamp.toDouble(),
-          // 'isMock'] == : ,
-          // 'verticalAccuracy': ,
-          // 'headingAccuracy': ,
-          // 'elapsedRealtimeNanos': ,
-          // 'elapsedRealtimeUncertaintyNanos': ,
-          // 'satelliteNumber': ,
-          // 'provider': ,
-        }),
-        geo);
+    // Don't use LatLng(0,0)
+    if (gps["lat"] != 0.0 || gps["lng"] != 0.0) {
+      geo = Geo.fromPosition(
+          Position(
+            longitude: gps["lng"],
+            latitude: gps["lat"],
+            timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp),
+            accuracy: 1,
+            altitude: gps["alt"],
+            heading: 0,
+            speed: 0,
+            speedAccuracy: 1,
+          ),
+          geo);
+    } else {
+      debugPrint("skipped");
+    }
   }
 }

@@ -57,7 +57,7 @@ class WaypointCardReadOnly extends StatelessWidget {
                           WidgetSpan(
                             child: Icon(
                               iconOptions[waypoint.icon],
-                              size: 30,
+                              size: 20,
                               color: Colors.white,
                             ),
                           ),
@@ -65,29 +65,20 @@ class WaypointCardReadOnly extends StatelessWidget {
                           TextSpan(
                             text: waypoint.name,
                             style: const TextStyle(
-                                color: Colors.white, fontSize: 30),
+                                color: Colors.white, fontSize: 20),
                           ),
                         ]),
                       )),
                   onPressed: onSelect,
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: Provider.of<Group>(context)
-                    .pilots
-                    .values
-                    .where((element) => element.selectedWaypoint == index)
-                    .map((e) => AvatarRound(e.avatar, 20))
-                    .toList(),
-              )
             ],
           ),
           trailing: IconButton(
             onPressed: onAdd,
             icon: const Icon(
               Icons.add_circle,
-              size: 30,
+              size: 24,
               color: Colors.green,
             ),
           )),

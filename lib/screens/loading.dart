@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:xcnav/models/geo.dart';
+// import 'package:permission_handler/permission_handler.dart' as perms;
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -22,14 +23,18 @@ class LoadingScreen extends StatefulWidget {
 
 class _LoadingScreenState extends State<LoadingScreen>
     with SingleTickerProviderStateMixin {
-  final Location location = Location();
-
   final TextStyle _contributerStyle = const TextStyle(fontSize: 18);
 
   late final Animation<Color?> animation;
   late final AnimationController controller;
 
   bool showWaiting = false;
+
+  final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
+  static const String _kLocationServicesDisabledMessage =
+      'Location services are disabled.';
+  static const String _kPermissionDeniedMessage = 'Permission denied.';
+  static const String _kPermissionGrantedMessage = 'Permission granted.';
 
   @override
   _LoadingScreenState();
@@ -57,12 +62,11 @@ class _LoadingScreenState extends State<LoadingScreen>
     });
     controller.forward();
 
-    // TODO: check location permissions
-
-    location.getLocation().then((location) {
+    // get initial location
+    _getCurrentPosition().then((location) {
       debugPrint("initial location: $location");
       Provider.of<MyTelemetry>(context, listen: false).updateGeo(
-          Geo.fromLocationData(
+          Geo.fromPosition(
               location, Provider.of<MyTelemetry>(context, listen: false).geo));
 
       // Go to next screen
@@ -72,6 +76,69 @@ class _LoadingScreenState extends State<LoadingScreen>
         Navigator.pushReplacementNamed(context, "/profileEditor");
       }
     });
+  }
+
+  //   Future<bool> _checkPermissions() async {
+  //   return (await perms.Permission.location.isGranted) &&
+  //       (await perms.Permission.locationWhenInUse.isGranted);
+  // }
+
+  Future<Position> _getCurrentPosition() async {
+    final hasPermission = await _handlePermission();
+
+    if (!hasPermission) {
+      return Position(
+          accuracy: 0,
+          longitude: 0,
+          latitude: 0,
+          altitude: 0,
+          speed: 0,
+          speedAccuracy: 0,
+          heading: 0,
+          timestamp: DateTime.now());
+    }
+
+    return await _geolocatorPlatform.getCurrentPosition();
+  }
+
+  Future<bool> _handlePermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await _geolocatorPlatform.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      debugPrint("$_kLocationServicesDisabledMessage");
+      return false;
+    }
+
+    permission = await _geolocatorPlatform.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await _geolocatorPlatform.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try
+        // requesting permissions again (this is also where
+        // Android's shouldShowRequestPermissionRationale
+        // returned true. According to Android guidelines
+        // your App should show an explanatory UI now.
+        debugPrint(_kPermissionDeniedMessage);
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      debugPrint("_kPermissionDeniedForeverMessage");
+      return false;
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    debugPrint(_kPermissionGrantedMessage);
+    return true;
   }
 
   @override

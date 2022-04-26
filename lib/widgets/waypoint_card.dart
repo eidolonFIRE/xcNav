@@ -37,7 +37,7 @@ class WaypointCard extends StatelessWidget {
         leading: IconButton(
           onPressed: onToggleOptional,
           padding: EdgeInsets.zero,
-          iconSize: 60,
+          iconSize: 55,
           icon: Image.asset(
             "assets/images/wp" +
                 (waypoint.latlng.length > 1 ? "_path" : "") +
@@ -49,17 +49,20 @@ class WaypointCard extends StatelessWidget {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             TextButton(
               child: Container(
                   constraints: BoxConstraints(
-                      minWidth: MediaQuery.of(context).size.width / 4),
+                    minWidth: MediaQuery.of(context).size.width / 4,
+                    maxWidth: MediaQuery.of(context).size.width / 2,
+                  ),
                   child: Text.rich(
                     TextSpan(children: [
                       WidgetSpan(
                         child: Icon(
                           iconOptions[waypoint.icon],
-                          size: 30,
+                          size: 24,
                           color: Colors.white,
                         ),
                       ),
@@ -67,9 +70,12 @@ class WaypointCard extends StatelessWidget {
                       TextSpan(
                         text: waypoint.name,
                         style:
-                            const TextStyle(color: Colors.white, fontSize: 30),
+                            const TextStyle(color: Colors.white, fontSize: 24),
                       ),
                     ]),
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.start,
                   )),
               onPressed: onSelect,
             ),
@@ -79,7 +85,7 @@ class WaypointCard extends StatelessWidget {
                   .pilots
                   .values
                   .where((element) => element.selectedWaypoint == index)
-                  .map((e) => AvatarRound(e.avatar, 20))
+                  .map((e) => AvatarRound(e.avatar, 24))
                   .toList(),
             )
           ],
@@ -88,7 +94,7 @@ class WaypointCard extends StatelessWidget {
           index: index,
           child: const Icon(
             Icons.drag_handle,
-            size: 25,
+            size: 24,
           ),
         ),
       ),

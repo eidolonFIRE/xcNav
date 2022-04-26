@@ -41,11 +41,12 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
         return StatefulBuilder(builder: (context, setState) {
           // --- Build color selection buttons
           List<Widget> colorWidgets = [];
-          colorOptions.forEach((key, value) => colorWidgets.add(SizedBox(
-                width: 40,
-                height: value == selectedColor ? 60 : 40,
+          colorOptions.forEach((key, value) => colorWidgets.add(Expanded(
+                // width: 40,
+
                 child: MaterialButton(
                   onPressed: () => {setState(() => selectedColor = value)},
+                  height: value == selectedColor ? 60 : 40,
                   color: value,
                   // child: Container(),
                 ),
@@ -82,9 +83,12 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                 )));
           }
           return AlertDialog(
-            title: isNew
-                ? const Text("Add Waypoint")
-                : const Text("Edit Waypoint"),
+            title: Text(
+              isNew ? "Add Waypoint" : "Edit Waypoint",
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            titlePadding: const EdgeInsets.all(10),
+            contentPadding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -102,9 +106,8 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                   height: 20,
                 ),
                 // --- Edit Color
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  runAlignment: WrapAlignment.center,
+                Flex(
+                  direction: Axis.horizontal,
                   children: colorWidgets,
                 ),
                 const Divider(
@@ -112,11 +115,19 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                 ),
                 // --- Edit Icon
                 if (showIconOptions)
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    runAlignment: WrapAlignment.center,
-                    children: iconWidgets,
+                  Expanded(
+                    child: SizedBox(
+                      width: double.maxFinite,
+                      child: Card(
+                        color: Colors.grey[900],
+                        child: GridView.count(
+                          crossAxisCount: 5,
+                          children: iconWidgets,
+                        ),
+                      ),
+                    ),
                   ),
+
                 if (!showIconOptions)
                   TextButton.icon(
                       onPressed: editPointsCallback ?? (() => {}),

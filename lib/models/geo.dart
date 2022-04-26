@@ -1,15 +1,10 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:location/location.dart';
 import 'package:latlong2/latlong.dart';
 
 // --- Constant unit converters
 const km2Miles = 0.621371;
 const meters2Feet = 3.28084;
-const meter2Mile = km2Miles / 1000;
-
-LatLng locationToLatLng(LocationData location) {
-  return LatLng(location.latitude!, location.longitude!);
-}
+const meters2Miles = km2Miles / 1000;
 
 Distance latlngCalc = const Distance(roundResult: false);
 
@@ -34,34 +29,6 @@ class Geo {
   Geo();
   Geo.fromValues(
       this.lat, this.lng, this.alt, this.time, this.hdg, this.spd, this.vario);
-  Geo.fromLocationData(LocationData location, Geo? prev) {
-    lat = location.latitude ?? 0;
-    lng = location.longitude ?? 0;
-    alt = location.altitude ?? 0;
-    time = location.time?.toInt() ?? 0;
-
-    if (prev != null && prev.time < time) {
-      // prefer our own calculations
-      // spd = location
-      final double dist =
-          latlngCalc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
-
-      spd = dist / (time - prev.time) * 1000;
-      if (dist < 1) {
-        hdg = prev.hdg;
-      } else {
-        hdg = latlngCalc.bearing(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) *
-            3.1415926 /
-            180;
-      }
-
-      vario = (alt - prev.alt) / (time - prev.time) * 1000;
-    } else {
-      spd = location.speed ?? 0;
-      hdg = location.heading ?? 0;
-      vario = 0;
-    }
-  }
 
   Geo.fromPosition(Position location, Geo? prev) {
     lat = location.latitude;
@@ -71,7 +38,6 @@ class Geo {
 
     if (prev != null && prev.time < time) {
       // prefer our own calculations
-      // spd = location
       final double dist =
           latlngCalc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
 

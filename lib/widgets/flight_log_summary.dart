@@ -165,7 +165,7 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.durationDist != null
                                 ? Text(
-                                    "${(log.durationDist! * meter2Mile).toStringAsFixed(1)} mi",
+                                    "${(log.durationDist! * meters2Miles).toStringAsFixed(1)} mi",
                                     textAlign: TextAlign.end,
                                   )
                                 : Container()),

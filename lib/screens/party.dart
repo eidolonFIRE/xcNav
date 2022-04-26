@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 // Providers
 import 'package:xcnav/providers/client.dart';
@@ -41,89 +39,6 @@ class _PartyState extends State<Party> {
     super.dispose();
   }
 
-  showPartyActions(BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              // title: Text("Group Actions"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Consumer<Group>(builder: (context, group, child) {
-                    return (group.currentGroupID != null)
-                        ? Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text("Invite Code"),
-                              Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(20)),
-                                  child: AspectRatio(
-                                    aspectRatio: 1,
-                                    child: SizedBox(
-                                        // margin: const EdgeInsets.all(10),
-                                        width: 300,
-                                        height: 300,
-                                        child: QrImage(
-                                          foregroundColor: Colors.black,
-                                          backgroundColor: Colors.white,
-                                          data: group.currentGroupID!,
-                                          version: QrVersions.auto,
-                                          size: 300,
-                                          gapless: true,
-                                          padding: const EdgeInsets.all(30),
-                                        )),
-                                  ),
-                                ),
-                              ),
-                              ElevatedButton.icon(
-                                  onPressed: () =>
-                                      {Share.share(group.currentGroupID ?? "")},
-                                  icon: const Icon(Icons.share),
-                                  label: Text(group.currentGroupID ?? "")),
-                            ],
-                          )
-                        : const Padding(
-                            padding: EdgeInsets.all(30.0),
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          );
-                  }),
-                  ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(context, "/qrScanner");
-                      },
-                      icon: const Icon(
-                        Icons.qr_code_scanner,
-                        color: Colors.lightBlue,
-                      ),
-                      label: const Text("Scan Code")),
-                  ElevatedButton.icon(
-                      // TODO: prompt split option
-                      onPressed: () {
-                        Provider.of<Client>(context, listen: false)
-                            .leaveGroup(false);
-                        Navigator.popUntil(
-                            context, ModalRoute.withName("/home"));
-                      },
-                      icon: const Icon(
-                        Icons.logout,
-                        color: Colors.red,
-                      ),
-                      label: const Text("Leave")),
-                ]
-                    .map((e) => Padding(
-                          child: e,
-                          padding: const EdgeInsets.all(5),
-                        ))
-                    .toList(),
-              ),
-            ));
-  }
-
   void sendChatMessage(String text) {
     if (text.trim() != "") {
       Provider.of<Client>(context, listen: false)
@@ -146,15 +61,15 @@ class _PartyState extends State<Party> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: IconButton(
-                    iconSize: 35,
-                    onPressed: () => {showPartyActions(context)},
-                    icon: const Icon(Icons.groups)),
-              ),
-            ],
+            // actions: [
+            //   IconButton(
+            //       iconSize: 30,
+            //       onPressed: () => {Navigator.pushNamed(context, "/qrScanner")},
+            //       icon: const Icon(
+            //         Icons.qr_code_scanner,
+            //         color: Colors.lightBlue,
+            //       ))
+            // ],
             title: Consumer<Group>(
                 builder: (context, group, child) => Row(
                       children: group.pilots.values

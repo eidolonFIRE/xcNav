@@ -277,7 +277,7 @@ class ActivePlan with ChangeNotifier {
       if (target != null) points.add(target);
     }
 
-    return Polyline(points: points, color: Colors.red, strokeWidth: 4);
+    return Polyline(points: points, color: Colors.red, strokeWidth: 5);
   }
 
   /// ETA from a location to a waypoint

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
@@ -21,11 +22,16 @@ import 'package:xcnav/screens/qr_scanner.dart';
 import 'package:xcnav/screens/settings_editor.dart';
 import 'package:xcnav/screens/flight_log_viewer.dart';
 import 'package:xcnav/screens/plans_viewer.dart';
+import 'package:xcnav/screens/group_details.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+
   runApp(
     MultiProvider(
         providers: [
@@ -121,6 +127,16 @@ class MyApp extends StatelessWidget {
           // child: ElevatedButton(onPressed: () {}, child: Text('label')),
         ),
 
+        textButtonTheme: TextButtonThemeData(
+          style: ButtonStyle(
+            foregroundColor: MaterialStateProperty.all(Colors.white),
+            textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+                (states) => const TextStyle(color: Colors.white, fontSize: 24)),
+          ),
+
+          // child: ElevatedButton(onPressed: () {}, child: Text('label')),
+        ),
+
         // textButtonTheme: TextButtonThemeData(
         //   style: ButtonStyle(
         //       textStyle: MaterialStateProperty.resolveWith((state) => const TextStyle(color: Colors.white),
@@ -139,6 +155,7 @@ class MyApp extends StatelessWidget {
         "/settings": (context) => const SettingsEditor(),
         "/flightLogs": (context) => const FlightLogViewer(),
         "/plans": (context) => const PlansViewer(),
+        "/groupDetails": (context) => const GroupDetails(),
       },
     );
   }
