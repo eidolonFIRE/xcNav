@@ -447,6 +447,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         ])),
               ),
             )),
+        // --- Main Menu
         drawer: Drawer(
             child: ListView(
           children: [
@@ -519,6 +520,78 @@ class _MyHomePageState extends State<MyHomePage> {
               height: 20,
             ),
 
+            // --- Fuel Indicator
+            Consumer<MyTelemetry>(
+                builder: (context, myTelemetry, child) => ListTile(
+                      minVerticalPadding: 0,
+                      leading: const Icon(Icons.local_gas_station, size: 30),
+                      title: GestureDetector(
+                        onTap: () => {showFuelDialog(context)},
+                        child: Card(
+                          child: (myTelemetry.fuel > 0)
+                              ? Builder(builder: (context) {
+                                  int remMin = (myTelemetry.fuel /
+                                          myTelemetry.fuelBurnRate *
+                                          60)
+                                      .ceil();
+                                  String value = (remMin >= 60)
+                                      ? (remMin / 60).toStringAsFixed(1)
+                                      : remMin.toString();
+                                  String unit = (remMin >= 60) ? "hr" : "min";
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.max,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: [
+                                      Text.rich(
+                                        TextSpan(
+                                          children: [
+                                            TextSpan(
+                                                text: myTelemetry.fuel
+                                                    .toStringAsFixed(1),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .headline4),
+                                            TextSpan(
+                                                text: " L", style: instrLabel)
+                                          ],
+                                        ),
+                                        softWrap: false,
+                                      ),
+                                      Text.rich(
+                                        TextSpan(
+                                          children: [
+                                            TextSpan(
+                                                text: value,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .headline4),
+                                            TextSpan(
+                                                text: unit, style: instrLabel)
+                                          ],
+                                        ),
+                                        softWrap: false,
+                                      ),
+                                    ],
+                                  );
+                                })
+                              : Padding(
+                                  padding: const EdgeInsets.all(6.0),
+                                  child: Text(
+                                    "Set Fuel Level",
+                                    style:
+                                        Theme.of(context).textTheme.headline5,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    )),
+
+            const Divider(
+              height: 20,
+            ),
+
             ListTile(
               minVerticalPadding: 20,
               onTap: () => {Navigator.pushNamed(context, "/groupDetails")},
@@ -530,6 +603,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 "Group",
                 style: Theme.of(context).textTheme.headline5,
               ),
+              trailing: IconButton(
+                  iconSize: 30,
+                  onPressed: () => {Navigator.pushNamed(context, "/qrScanner")},
+                  icon: const Icon(
+                    Icons.qr_code_scanner,
+                    color: Colors.lightBlue,
+                  )),
             ),
 
             ListTile(
@@ -989,75 +1069,6 @@ class _MyHomePageState extends State<MyHomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               mainAxisSize: MainAxisSize.max,
               children: [
-                // --- Fuel Indicator
-                Flexible(
-                  flex: 2,
-                  fit: FlexFit.loose,
-                  child: GestureDetector(
-                    onTap: () => {showFuelDialog(context)},
-                    child: Card(
-                      color: myTelemetry.fuelIndicatorColor(etaNext, etaTrip),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                        child: (myTelemetry.fuel > 0)
-                            ? Builder(builder: (context) {
-                                int remMin = (myTelemetry.fuel /
-                                        myTelemetry.fuelBurnRate *
-                                        60)
-                                    .ceil();
-                                String value = (remMin >= 60)
-                                    ? (remMin / 60).toStringAsFixed(1)
-                                    : remMin.toString();
-                                String unit = (remMin >= 60) ? "hr" : "min";
-                                return Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      "Fuel",
-                                      style: instrLabel,
-                                    ),
-                                    Text.rich(
-                                      TextSpan(
-                                        children: [
-                                          TextSpan(
-                                              text: myTelemetry.fuel
-                                                  .toStringAsFixed(1),
-                                              style: instrLower),
-                                          TextSpan(
-                                              text: " L", style: instrLabel)
-                                        ],
-                                      ),
-                                      softWrap: false,
-                                    ),
-                                    Text.rich(
-                                      TextSpan(
-                                        children: [
-                                          TextSpan(
-                                              text: value, style: instrLower),
-                                          TextSpan(
-                                              text: unit, style: instrLabel)
-                                        ],
-                                      ),
-                                      softWrap: false,
-                                    ),
-                                  ],
-                                );
-                              })
-                            : Text(
-                                "Set\nFuel\nLevel",
-                                style: instrLabel,
-                                textAlign: TextAlign.center,
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(
-                    height: 100,
-                    width: 2,
-                    child: VerticalDivider(thickness: 2, color: Colors.black)),
-
                 // --- ETA to next waypoint
                 Flexible(
                   fit: FlexFit.tight,

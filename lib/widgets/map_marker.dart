@@ -15,6 +15,7 @@ const iconOptions = {
   "right": Icons.turn_right,
   "sleep": Icons.local_hotel,
   "flag": Icons.sports_score,
+  "camera": Icons.photo_camera,
   // TODO: add custom icons (camping tent, pylons, power lines?, LZ, etc)
 };
 
