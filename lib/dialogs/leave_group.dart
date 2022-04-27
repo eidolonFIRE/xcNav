@@ -26,11 +26,8 @@ void promptLeaveGroup(BuildContext context) {
             ElevatedButton.icon(
                 label: const Text("Leave"),
                 onPressed: () {
-                  if (newWaypointName.text.isNotEmpty) {
-                    Provider.of<Client>(context, listen: false)
-                        .leaveGroup(false);
-                    Navigator.popUntil(context, ModalRoute.withName("/home"));
-                  }
+                  Provider.of<Client>(context, listen: false).leaveGroup(false);
+                  Navigator.popUntil(context, ModalRoute.withName("/home"));
                 },
                 icon: const Icon(
                   Icons.logout,
