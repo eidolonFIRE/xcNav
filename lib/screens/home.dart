@@ -198,7 +198,7 @@ class _MyHomePageState extends State<MyHomePage> {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.best,
           activityType: ActivityType.fitness,
-          distanceFilter: 10,
+          distanceFilter: 0,
           pauseLocationUpdatesAutomatically: false,
           // Only set to true if our app will be started up in the background.
           showBackgroundLocationIndicator: false,
@@ -206,7 +206,7 @@ class _MyHomePageState extends State<MyHomePage> {
       } else {
         locationSettings = const LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
+          distanceFilter: 0,
         );
       }
 

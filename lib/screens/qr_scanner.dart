@@ -20,6 +20,7 @@ class QRScanner extends StatefulWidget {
 
 class _QRScannerState extends State<QRScanner> {
   QRViewController? controller;
+  bool goodResult = false;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
 
   // In order to get hot reload to work we need to pause the camera if the platform
@@ -109,7 +110,8 @@ class _QRScannerState extends State<QRScanner> {
     controller.scannedDataStream.listen((scanData) {
       debugPrint("QR scanner scanData: ${scanData.code}");
       // Follow invite link
-      if (scanData.code != null) {
+      if (scanData.code != null && !goodResult) {
+        goodResult = true;
         controller.pauseCamera().then((value) {
           Provider.of<Client>(context, listen: false).joinGroup(scanData.code!);
           Navigator.pop<bool>(context, true);
