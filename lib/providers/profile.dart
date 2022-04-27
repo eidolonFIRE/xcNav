@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 
 class Profile with ChangeNotifier {
   String? name;
@@ -70,6 +73,13 @@ class Profile with ChangeNotifier {
 
     prefs.setString("profile.name", newName.trim());
     prefs.setString("profile.avatar", base64Encode(newRawAvatar));
+
+    // Save avatar to file
+    path_provider.getTemporaryDirectory().then((tempDir) {
+      var outfile = File(tempDir.path + "/avatar.jpg");
+      outfile.writeAsBytes(newRawAvatar);
+    });
+
     notifyListeners();
   }
 
@@ -87,7 +97,7 @@ class Profile with ChangeNotifier {
       if (statusCode < 200 || statusCode > 400) {
         throw Exception("Error while pushing avatar");
       }
-      return json.decode(response.body);
+      return response.body;
     });
   }
 

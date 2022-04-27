@@ -69,7 +69,7 @@ class Group with ChangeNotifier {
   }
 
   void processNewPilot(dynamic p) async {
-    Pilot newPilot = Pilot(p["id"], p["name"], Geo());
+    Pilot newPilot = Pilot(p["id"], p["name"] ?? "Anonymous", Geo());
 
     // Make fresh local pilot
     if (p["avatar_hash"] != null && p["avatar_hash"] != "") {
