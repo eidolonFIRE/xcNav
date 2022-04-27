@@ -93,8 +93,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _toggleServiceStatusStream();
 
-    positionStreamStarted = !positionStreamStarted;
-    _toggleListening();
+    // TODO: this is a work-around for unsolved bug. Android starts with stream not running. Ios starts with stream running.
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      positionStreamStarted = !positionStreamStarted;
+      _toggleListening();
+    }
 
     // intialize the controllers
     mapController = MapController();
@@ -119,6 +122,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Provider.of<Settings>(context, listen: false).addListener(() {
       if (Provider.of<Settings>(context, listen: false).spoofLocation) {
         if (timer == null) {
+          positionStreamStarted = !positionStreamStarted;
           _toggleListening();
           debugPrint("--- Starting Location Spoofer ---");
           timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
@@ -130,6 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       } else {
         if (timer != null) {
+          positionStreamStarted = !positionStreamStarted;
           _toggleListening();
           debugPrint("--- Stopping Location Spoofer ---");
           timer?.cancel();
@@ -140,6 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _toggleServiceStatusStream() {
+    debugPrint("Toggle Location Service Stream");
     if (_serviceStatusStreamSubscription == null) {
       final serviceStatusStream = _geolocatorPlatform.getServiceStatusStream();
       _serviceStatusStreamSubscription =
@@ -169,6 +175,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _toggleListening() {
+    debugPrint("Toggle Location Listening");
     if (_positionStreamSubscription == null) {
       late LocationSettings locationSettings;
 

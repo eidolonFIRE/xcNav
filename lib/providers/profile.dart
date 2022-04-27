@@ -118,16 +118,13 @@ class Profile with ChangeNotifier {
 
   String _hash() {
     // build long string
-    String str = "Meta" +
-        (name ?? "") +
-        (id ?? "") +
-        (_avatarRaw != null ? base64Encode(_avatarRaw!) : "");
+    String str = "Meta" + (name ?? "") + (id ?? "") + (avatarHash ?? "");
 
     // fold string into hash
     int hash = 0;
     for (int i = 0, len = str.length; i < len; i++) {
       hash = ((hash << 5) - hash) + str.codeUnitAt(i);
-      hash |= 0;
+      hash &= 0xffffff;
     }
     return (hash < 0 ? hash * -2 : hash).toRadixString(16);
   }
