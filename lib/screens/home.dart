@@ -190,7 +190,7 @@ class _MyHomePageState extends State<MyHomePage> {
           defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.best,
-          activityType: ActivityType.fitness,
+          // activityType: ActivityType.fitness,
           distanceFilter: 0,
           pauseLocationUpdatesAutomatically: false,
           // Only set to true if our app will be started up in the background.
