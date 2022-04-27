@@ -140,6 +140,8 @@ class MyTelemetry with ChangeNotifier {
     return Colors.grey.shade900;
   }
 
+  int get fuelTimeRemaining => ((fuel / fuelBurnRate) * 360000).ceil();
+
   Polyline buildFlightTrace() {
     return Polyline(
         points: flightTrace,

@@ -70,17 +70,20 @@ class Geo {
 
   /// Find distance to and location of the best intercept to path.
   /// (Nearest point that doesn't have acute angle between next point and this point)
-  PathIntercept nearestPointOnPath(List<LatLng> path) {
+  PathIntercept nearestPointOnPath(List<LatLng> path, bool isReversed) {
     // Scan through all line segments and find intercept
     int matchIndex = 0;
     double matchdist = double.infinity;
 
-    for (int index = 0; index < path.length; index++) {
+    for (int index = isReversed ? path.length - 1 : 0;
+        isReversed ? (index > 0) : (index < path.length);
+        index += isReversed ? -1 : 1) {
       final dist = latlngCalc.distance(latLng, path[index]);
       double angleToNext = double.nan;
-      if (index < path.length - 1) {
+      if (isReversed ? (index > 0) : (index < path.length - 1)) {
         double delta = latlngCalc.bearing(path[index], latLng) -
-            latlngCalc.bearing(path[index], path[index + 1]);
+            latlngCalc.bearing(
+                path[index], path[index + (isReversed ? -1 : 1)]);
         if (delta > 180) delta -= 360;
         if (delta < -180) delta += 360;
         angleToNext = delta.abs();

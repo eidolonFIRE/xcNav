@@ -4,6 +4,9 @@ class Settings with ChangeNotifier {
   bool _spoofLocation = false;
   bool _showAirspace = false;
 
+  // TODO: map buttons setting
+  // bool _mapIconsRightSide = false;
+
   bool get spoofLocation => _spoofLocation;
   set spoofLocation(bool value) {
     _spoofLocation = value;

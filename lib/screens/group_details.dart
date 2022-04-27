@@ -35,6 +35,10 @@ class _GroupDetailsState extends State<GroupDetails> {
     return Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
+          title: Text(
+            "Group Members",
+            style: Theme.of(context).textTheme.headline6,
+          ),
           actions: [
             IconButton(
                 iconSize: 35,

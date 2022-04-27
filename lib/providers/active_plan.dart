@@ -13,7 +13,8 @@ import 'package:xcnav/models/eta.dart';
 
 class ActivePlan with ChangeNotifier {
   List<Waypoint> waypoints = [];
-  bool isReversed = false;
+  bool _isReversed = false;
+  bool _includeReturnTrip = false;
 
   void Function(
     WaypointAction action,
@@ -46,6 +47,18 @@ class ActivePlan with ChangeNotifier {
       (selectedIndex != null && selectedIndex! < waypoints.length)
           ? waypoints[selectedIndex!]
           : null;
+
+  bool get includeReturnTrip => _includeReturnTrip;
+  set includeReturnTrip(bool value) {
+    _includeReturnTrip = value;
+    notifyListeners();
+  }
+
+  bool get isReversed => _isReversed;
+  set isReversed(bool value) {
+    _isReversed = value;
+    notifyListeners();
+  }
 
   void load() async {
     debugPrint("Loading waypoints");
@@ -93,8 +106,8 @@ class ActivePlan with ChangeNotifier {
       return max(0, min(waypoints.length, index));
     } else {
       if (selectedIndex != null) {
-        // TODO: support reverse direction flight plan
-        return min(selectedIndex! + 1, waypoints.length);
+        return max(
+            0, min(selectedIndex! + (isReversed ? -1 : 1), waypoints.length));
       } else {
         return 0;
       }
@@ -248,7 +261,7 @@ class ActivePlan with ChangeNotifier {
       // skip optional waypoints
       if (wp.isOptional) continue;
 
-      if (wp.latlng.length > 0) {
+      if (wp.latlng.isNotEmpty) {
         points.add(wp.latlng[0]);
       }
       if (wp.latlng.length > 1) {
@@ -270,7 +283,7 @@ class ActivePlan with ChangeNotifier {
       // update wp guide
       LatLng? target;
       if (selectedWp!.latlng.length > 1) {
-        target = geo.nearestPointOnPath(selectedWp!.latlng).latlng;
+        target = geo.nearestPointOnPath(selectedWp!.latlng, isReversed).latlng;
       } else if (selectedWp!.latlng.isNotEmpty) {
         target = selectedWp!.latlng[0];
       }
@@ -286,11 +299,14 @@ class ActivePlan with ChangeNotifier {
     if (waypointIndex < waypoints.length) {
       Waypoint target = waypoints[waypointIndex];
       if (target.latlng.length > 1) {
-        final intercept = geo.nearestPointOnPath(target.latlng);
+        // --- to path
+        final intercept = geo.nearestPointOnPath(target.latlng, isReversed);
         double dist = geo.distanceToLatlng(intercept.latlng) +
-            target.lengthFromIndex(intercept.index);
+            target.lengthBetweenIndexs(
+                intercept.index, isReversed ? 0 : target.latlng.length - 1);
         return ETA.fromSpeed(dist, speed);
       } else {
+        // --- to point
         if (target.latlng.isNotEmpty) {
           double dist = geo.distanceToLatlng(target.latlng[0]);
           return ETA.fromSpeed(dist, speed);

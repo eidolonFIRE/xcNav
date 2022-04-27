@@ -54,14 +54,15 @@ class WaypointCardReadOnly extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: Text.rich(
                         TextSpan(children: [
-                          WidgetSpan(
-                            child: Icon(
-                              iconOptions[waypoint.icon],
-                              size: 20,
-                              color: Colors.white,
+                          if (waypoint.icon != null)
+                            WidgetSpan(
+                              child: Icon(
+                                iconOptions[waypoint.icon],
+                                size: 20,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                          const TextSpan(text: " "),
+                          if (waypoint.icon != null) const TextSpan(text: " "),
                           TextSpan(
                             text: waypoint.name,
                             style: const TextStyle(

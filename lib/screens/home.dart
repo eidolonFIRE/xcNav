@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
@@ -20,6 +21,8 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat.dart';
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/widgets/fuel_warning.dart';
+import 'package:xcnav/widgets/icon_image.dart';
 
 // widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -116,6 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Provider.of<Settings>(context, listen: false).addListener(() {
       if (Provider.of<Settings>(context, listen: false).spoofLocation) {
         if (timer == null) {
+          _toggleListening();
           debugPrint("--- Starting Location Spoofer ---");
           timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
             Provider.of<MyTelemetry>(context, listen: false).updateGeo(
@@ -126,6 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       } else {
         if (timer != null) {
+          _toggleListening();
           debugPrint("--- Stopping Location Spoofer ---");
           timer?.cancel();
           timer = null;
@@ -290,8 +295,28 @@ class _MyHomePageState extends State<MyHomePage> {
         elevation: 0,
         constraints: const BoxConstraints(maxHeight: 500),
         builder: (BuildContext context) {
-          return Consumer<ActivePlan>(
-            builder: (context, plan, child) => Column(
+          return Consumer2<ActivePlan, MyTelemetry>(
+              builder: (context, activePlan, myTelemetry, child) {
+            ETA etaNext = activePlan.selectedIndex != null
+                ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd,
+                    activePlan.selectedIndex!)
+                : ETA(0, 0);
+            ETA etaTrip = activePlan.etaToTripEnd(
+                myTelemetry.geo.spd, activePlan.selectedIndex ?? 0);
+            etaTrip += etaNext;
+
+            if (activePlan.includeReturnTrip && !activePlan.isReversed) {
+              // optionally include eta for return trip
+              etaTrip += activePlan.etaToTripEnd(myTelemetry.geo.spd, 0);
+            }
+
+            int etaTripMin = (etaTrip.time / 60000).ceil();
+            String etaTripValue = (etaTripMin >= 60)
+                ? (etaTripMin / 60).toStringAsFixed(1)
+                : etaTripMin.toString();
+            String etaTripUnit = (etaTripMin >= 60) ? "hr" : "min";
+
+            return Column(
               children: [
                 // Waypoint menu buttons
                 Row(
@@ -324,11 +349,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       onPressed: () => editWaypoint(
                         context,
                         false,
-                        plan.selectedWp?.latlng ?? [],
+                        activePlan.selectedWp?.latlng ?? [],
                         editPointsCallback: () {
                           editablePolyline.points.clear();
                           editablePolyline.points
-                              .addAll(plan.selectedWp?.latlng ?? []);
+                              .addAll(activePlan.selectedWp?.latlng ?? []);
                           Navigator.popUntil(
                               context, ModalRoute.withName("/home"));
                           setFocusMode(FocusMode.editPath);
@@ -339,36 +364,137 @@ class _MyHomePageState extends State<MyHomePage> {
                     // --- Delete Selected Waypoint
                     IconButton(
                         iconSize: 25,
-                        onPressed: () => plan.removeSelectedWaypoint(),
+                        onPressed: () => activePlan.removeSelectedWaypoint(),
                         icon: const Icon(Icons.delete, color: Colors.red)),
                   ],
                 ),
+
+                Divider(
+                  thickness: 2,
+                  height: 0,
+                  color: Colors.grey[900],
+                ),
+
                 // --- Waypoint list
                 Expanded(
-                  child: ReorderableListView.builder(
-                    itemCount: plan.waypoints.length,
-                    itemBuilder: (context, i) => WaypointCard(
-                      key: ValueKey(plan.waypoints[i]),
-                      waypoint: plan.waypoints[i],
-                      index: i,
-                      onSelect: () {
-                        debugPrint("Selected $i");
-                        plan.selectWaypoint(i);
+                  child: ListView(primary: true, children: [
+                    ReorderableListView.builder(
+                      shrinkWrap: true,
+                      primary: false,
+                      itemCount: activePlan.waypoints.length,
+                      itemBuilder: (context, i) => WaypointCard(
+                        key: ValueKey(activePlan.waypoints[i]),
+                        waypoint: activePlan.waypoints[i],
+                        index: i,
+                        isFaded: activePlan.selectedIndex != null &&
+                            ((activePlan.isReversed &&
+                                    i > activePlan.selectedIndex!) ||
+                                (!activePlan.isReversed &&
+                                    i < activePlan.selectedIndex!)),
+                        onSelect: () {
+                          debugPrint("Selected $i");
+                          activePlan.selectWaypoint(i);
+                        },
+                        onToggleOptional: () {
+                          activePlan.toggleOptional(i);
+                        },
+                        isSelected: i == activePlan.selectedIndex,
+                      ),
+                      onReorder: (oldIndex, newIndex) {
+                        debugPrint("WP order: $oldIndex --> $newIndex");
+                        activePlan.sortWaypoint(oldIndex, newIndex);
                       },
-                      onToggleOptional: () {
-                        plan.toggleOptional(i);
-                      },
-                      isSelected: i == plan.selectedIndex,
                     ),
-                    onReorder: (oldIndex, newIndex) {
-                      debugPrint("WP order: $oldIndex --> $newIndex");
-                      plan.sortWaypoint(oldIndex, newIndex);
-                    },
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.sync),
+                          const Text(
+                            " Include Return Trip",
+                          ),
+                          Switch(
+                              value: activePlan.includeReturnTrip,
+                              onChanged: (value) =>
+                                  {activePlan.includeReturnTrip = value}),
+                        ],
+                      ),
+                    )
+                  ]),
                 ),
+
+                // --- Trip Options
+                Divider(
+                  thickness: 2,
+                  height: 0,
+                  color: Colors.grey[900],
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 10),
+                          child: Text(
+                            "Trip Remaining",
+                            style: instrLabel,
+                            // textAlign: TextAlign.left,
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              "Returning",
+                            ),
+                            Switch(
+                                value: activePlan.isReversed,
+                                activeThumbImage: IconImageProvider(
+                                    Icons.arrow_upward,
+                                    color: Colors.black),
+                                inactiveThumbImage: IconImageProvider(
+                                    Icons.arrow_downward,
+                                    color: Colors.black),
+                                onChanged: (value) =>
+                                    {activePlan.isReversed = value}),
+                          ],
+                        ),
+                      ],
+                    ),
+                    // --- Trip ETA
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text.rich(
+                        TextSpan(children: [
+                          TextSpan(text: etaTrip.miles(), style: instrLower),
+                          TextSpan(text: " mi", style: instrLabel),
+                          if (myTelemetry.inFlight)
+                            TextSpan(
+                              text: "   " + etaTripValue,
+                              style: instrLower,
+                            ),
+                          if (myTelemetry.inFlight)
+                            TextSpan(text: etaTripUnit, style: instrLabel),
+                          if (myTelemetry.inFlight &&
+                              myTelemetry.fuel > 0 &&
+                              myTelemetry.fuelTimeRemaining < etaNext.time)
+                            const WidgetSpan(
+                                child: Padding(
+                              padding: EdgeInsets.only(left: 20),
+                              child: FuelWarning(35),
+                            )),
+                        ]),
+                      ),
+                    ),
+                  ],
+                )
               ],
-            ),
-          );
+            );
+          });
         });
   }
 
@@ -408,7 +534,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           // --- Speedometer
                           Text.rich(TextSpan(children: [
                             TextSpan(
-                              text: (myTelementy.geo.spd * 3.6 * km2Miles)
+                              text: min(999,
+                                      (myTelementy.geo.spd * 3.6 * km2Miles))
                                   .toStringAsFixed(0),
                               style: instrUpper,
                             ),
@@ -437,7 +564,13 @@ class _MyHomePageState extends State<MyHomePage> {
                           // --- Vario
                           Text.rich(TextSpan(children: [
                             TextSpan(
-                              text: (myTelementy.geo.vario * meters2Feet * 60)
+                              text: min(
+                                      9999,
+                                      max(
+                                          -9999,
+                                          (myTelementy.geo.vario *
+                                              meters2Feet *
+                                              60)))
                                   .toStringAsFixed(0),
                               style: instrUpper
                                   .merge(const TextStyle(fontSize: 30)),
@@ -1063,86 +1196,155 @@ class _MyHomePageState extends State<MyHomePage> {
               myTelemetry.geo.spd, activePlan.selectedIndex ?? 0);
           etaTrip += etaNext;
 
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                // --- ETA to next waypoint
-                Flexible(
-                  fit: FlexFit.tight,
-                  flex: 2,
-                  child: GestureDetector(
-                      onTap: showFlightPlan,
-                      child: (activePlan.selectedIndex != null)
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                  Text(
-                                    "ETA next",
-                                    style: instrLabel,
+          int etaNextMin = (etaNext.time / 60000).ceil();
+          String etaNextValue = (etaNextMin >= 60)
+              ? (etaNextMin / 60).toStringAsFixed(1)
+              : etaNextMin.toString();
+          String etaNextUnit = (etaNextMin >= 60) ? "hr" : "min";
+
+          final curWp = activePlan.selectedWp;
+
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // --- Previous Waypoint
+              IconButton(
+                onPressed: () {
+                  if (activePlan.selectedIndex != null &&
+                      activePlan.selectedIndex! > 0) {
+                    // (Skip optional waypoints)
+                    for (int i = activePlan.selectedIndex! - 1; i >= 0; i--) {
+                      if (!activePlan.waypoints[i].isOptional) {
+                        activePlan.selectWaypoint(i);
+                        break;
+                      }
+                    }
+                  }
+                },
+                iconSize: 40,
+                color: (activePlan.selectedIndex != null &&
+                        activePlan.selectedIndex! > 0)
+                    ? Colors.white
+                    : Colors.grey[700],
+                icon: activePlan.isReversed
+                    ? const Icon(
+                        Icons.skip_previous,
+                      )
+                    : SvgPicture.asset(
+                        "assets/images/reverse_back.svg",
+                        color: ((activePlan.selectedIndex ?? 0) > 0)
+                            ? Colors.white
+                            : Colors.grey[700],
+                      ),
+              ),
+
+              // --- Next Waypoint Info
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                    onTap: showFlightPlan,
+                    child: (curWp != null)
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // --- Current Waypoint Label
+                              Text.rich(
+                                TextSpan(children: [
+                                  if (curWp.icon != null)
+                                    WidgetSpan(
+                                      child: Container(
+                                        transform:
+                                            Matrix4.translationValues(0, 15, 0),
+                                        child: SizedBox(
+                                            width: 20,
+                                            height: 30,
+                                            child: MapMarker(curWp, 30)),
+                                      ),
+                                    ),
+                                  if (curWp.icon != null)
+                                    const TextSpan(text: "  "),
+                                  TextSpan(
+                                    text: curWp.name,
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 30),
                                   ),
-                                  Text.rich(TextSpan(children: [
-                                    TextSpan(
-                                        text: etaNext.miles(),
-                                        style: instrLower),
-                                    TextSpan(text: " mi", style: instrLabel)
-                                  ])),
-                                  myTelemetry.inFlight
-                                      ? Text(
-                                          etaNext.hhmm(),
-                                          style: instrLower,
-                                        )
-                                      : Text(
-                                          "-:--",
-                                          style: instrLower.merge(TextStyle(
-                                              color: Colors.grey[600])),
-                                        ),
-                                ])
-                          : Text(
-                              "Select\nWaypoint",
-                              style: instrLabel,
-                              textAlign: TextAlign.center,
-                            )),
-                ),
-
-                const SizedBox(
-                    height: 100,
-                    width: 2,
-                    child: VerticalDivider(thickness: 2, color: Colors.black)),
-
-                // --- Trip Time Remaining
-                Flexible(
-                  flex: 2,
-                  fit: FlexFit.tight,
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          "ETA trip",
-                          style: instrLabel,
-                        ),
-                        Text.rich(TextSpan(children: [
-                          TextSpan(text: etaTrip.miles(), style: instrLower),
-                          TextSpan(text: " mi", style: instrLabel)
-                        ])),
-                        myTelemetry.inFlight
-                            ? Text(
-                                etaTrip.hhmm(),
-                                style: instrLower,
-                              )
-                            : Text(
-                                "-:--",
-                                style: instrLower
-                                    .merge(TextStyle(color: Colors.grey[600])),
+                                ]),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                      ]),
-                )
-              ],
-            ),
+                              SizedBox(
+                                width: 200,
+                                child: Divider(
+                                  thickness: 2,
+                                  height: 8,
+                                  color: Colors.grey[900],
+                                ),
+                              ),
+                              // --- ETA next
+                              Text.rich(
+                                TextSpan(children: [
+                                  TextSpan(
+                                      text: etaNext.miles(), style: instrLower),
+                                  TextSpan(text: " mi ", style: instrLabel),
+                                  if (myTelemetry.inFlight)
+                                    TextSpan(
+                                      text: "   " + etaNextValue,
+                                      style: instrLower,
+                                    ),
+                                  if (myTelemetry.inFlight)
+                                    TextSpan(
+                                        text: etaNextUnit, style: instrLabel),
+                                  if (myTelemetry.inFlight &&
+                                      myTelemetry.fuel > 0 &&
+                                      myTelemetry.fuelTimeRemaining <
+                                          etaNext.time)
+                                    const WidgetSpan(
+                                        child: Padding(
+                                      padding: EdgeInsets.only(left: 20),
+                                      child: FuelWarning(35),
+                                    )),
+                                ]),
+                              ),
+                            ],
+                          )
+                        : const Text("Select Waypoint")),
+              ),
+              // --- Next Waypoint
+              IconButton(
+                onPressed: () {
+                  if (activePlan.selectedIndex != null &&
+                      activePlan.selectedIndex! <
+                          activePlan.waypoints.length - 1) {
+                    // (Skip optional waypoints)
+                    for (int i = activePlan.selectedIndex! + 1;
+                        i < activePlan.waypoints.length;
+                        i++) {
+                      if (!activePlan.waypoints[i].isOptional) {
+                        activePlan.selectWaypoint(i);
+                        break;
+                      }
+                    }
+                  }
+                },
+                iconSize: 40,
+                color: (activePlan.selectedIndex != null &&
+                        activePlan.selectedIndex! <
+                            activePlan.waypoints.length - 1)
+                    ? Colors.white
+                    : Colors.grey[700],
+                icon: !activePlan.isReversed
+                    ? const Icon(
+                        Icons.skip_next,
+                      )
+                    : SvgPicture.asset(
+                        "assets/images/reverse_forward.svg",
+                        color: ((activePlan.selectedIndex ?? -1) <
+                                activePlan.waypoints.length - 1)
+                            ? Colors.white
+                            : Colors.grey[700],
+                      ),
+              ),
+            ],
           );
         }));
   }

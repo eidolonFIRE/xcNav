@@ -3,7 +3,7 @@ import 'package:xcnav/models/waypoint.dart';
 
 const iconOptions = {
   "star": Icons.star,
-  "square": Icons.square_rounded,
+  // "square": Icons.square_rounded,
   "x": Icons.close,
   "paraglider": Icons.paragliding,
   "takeoff": Icons.flight_takeoff,

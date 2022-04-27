@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/geo.dart';
 
@@ -69,17 +70,17 @@ class Waypoint {
     return jsonEncode(toJson());
   }
 
-  /// Get waypoint length.
+  /// Get full waypoint length.
   /// If waypoint is single point, length = 0
   /// (this getter will cache)
   double get length {
-    return _length ??= lengthFromIndex(0);
+    return _length ??= lengthBetweenIndexs(0, latlng.length - 1);
   }
 
-  double lengthFromIndex(int index) {
+  double lengthBetweenIndexs(int start, int end) {
     // TODO: cache distances between all the points (vs recalculating every time)
     double dist = 0;
-    for (int t = index; t < latlng.length - 1; t++) {
+    for (int t = start; t < min(latlng.length - 1, end); t++) {
       dist += latlngCalc.distance(latlng[t], latlng[t + 1]);
     }
     return dist;

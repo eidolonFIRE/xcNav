@@ -13,12 +13,14 @@ class WaypointCard extends StatelessWidget {
       required this.index,
       required this.onSelect,
       required this.onToggleOptional,
-      required this.isSelected})
+      required this.isSelected,
+      required this.isFaded})
       : super(key: key);
 
   final Waypoint waypoint;
   final int index;
   final bool isSelected;
+  final bool isFaded;
 
   // callbacks
   final VoidCallback onSelect;
@@ -59,18 +61,22 @@ class WaypointCard extends StatelessWidget {
                   ),
                   child: Text.rich(
                     TextSpan(children: [
-                      WidgetSpan(
-                        child: Icon(
-                          iconOptions[waypoint.icon],
-                          size: 24,
-                          color: Colors.white,
+                      // --- Icon
+                      if (waypoint.icon != null)
+                        WidgetSpan(
+                          child: Icon(
+                            iconOptions[waypoint.icon],
+                            size: 24,
+                            color: isFaded ? Colors.grey[600] : Colors.white,
+                          ),
                         ),
-                      ),
-                      const TextSpan(text: " "),
+                      if (waypoint.icon != null) const TextSpan(text: " "),
+                      // --- Name
                       TextSpan(
                         text: waypoint.name,
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 24),
+                        style: TextStyle(
+                            color: isFaded ? Colors.grey[600] : Colors.white,
+                            fontSize: 24),
                       ),
                     ]),
                     maxLines: 4,
