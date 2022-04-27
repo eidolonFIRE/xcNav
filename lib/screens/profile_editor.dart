@@ -19,9 +19,8 @@ class ProfileEditor extends StatefulWidget {
 }
 
 class _ProfileEditorState extends State<ProfileEditor> {
-  XFile imageFile = XFile("assets/images/default_avatar.png");
+  XFile inputFile = XFile("assets/images/default_avatar.png");
   File? croppedImage;
-  Uint8List? croppedImageRaw;
   Uint8List? inputImage;
 
   final TextEditingController nameController = TextEditingController();
@@ -38,16 +37,37 @@ class _ProfileEditorState extends State<ProfileEditor> {
   @override
   void initState() {
     super.initState();
-    currentName = Provider.of<Profile>(context, listen: false).name;
+    var profile = Provider.of<Profile>(context, listen: false);
+    currentName = profile.name;
     isOptional = currentName != null && currentName != "";
     nameController.value = TextEditingValue(text: currentName ?? "");
+
+    // initial image
+    if (profile.avatarRaw != null) {
+      path_provider.getTemporaryDirectory().then((tempDir) {
+        var infile = File(tempDir.path + "/avatar.jpg");
+        infile.exists().then((exists) {
+          if (exists) {
+            inputFile = XFile(tempDir.path + "/tempRecal.jpg");
+            inputFile.readAsBytes().then((value) {
+              setState(() {
+                inputImage = value;
+              });
+              refreshCropped();
+            });
+          } else {
+            debugPrint("avatar.jpg wasn't saved");
+          }
+        });
+      });
+    }
   }
 
   void pickGallery() {
     _picker.pickImage(source: ImageSource.gallery).then((value) {
       if (value != null) {
-        imageFile = value;
-        imageFile.readAsBytes().then((value) {
+        inputFile = value;
+        inputFile.readAsBytes().then((value) {
           setState(() {
             inputImage = value;
           });
@@ -60,8 +80,8 @@ class _ProfileEditorState extends State<ProfileEditor> {
   void pickCamera() {
     _picker.pickImage(source: ImageSource.camera).then((value) {
       if (value != null) {
-        imageFile = value;
-        imageFile.readAsBytes().then((value) {
+        inputFile = value;
+        inputFile.readAsBytes().then((value) {
           setState(() {
             inputImage = value;
           });
@@ -74,12 +94,12 @@ class _ProfileEditorState extends State<ProfileEditor> {
   void refreshCropped() {
     // use full crop in none set
     Rect area = const Rect.fromLTWH(0, 0, 1, 1);
-    if (cropKey.currentState != null) {
+    if (cropKey.currentState != null && cropKey.currentState!.area != null) {
       area = cropKey.currentState!.area!;
     }
 
-    // use crap state
-    ImageCrop.cropImage(file: File(imageFile.path), area: area).then((value) {
+    // use crop state
+    ImageCrop.cropImage(file: File(inputFile.path), area: area).then((value) {
       path_provider.getTemporaryDirectory().then((dir) {
         final targetPath = dir.absolute.path + "/temp_${area.toString()}.jpg";
         FlutterImageCompress.compressAndGetFile(value.absolute.path, targetPath,
