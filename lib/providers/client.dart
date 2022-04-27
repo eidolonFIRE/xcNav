@@ -267,7 +267,6 @@ class Client with ChangeNotifier {
     int? newIndex,
     Waypoint? data,
   ) {
-    // if (state == ClientState.connected) {
     sendToAWS("flightPlanUpdate", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
       "hash": hashFlightPlanData(
@@ -277,7 +276,6 @@ class Client with ChangeNotifier {
       "data": data?.toJson(),
       "new_index": newIndex,
     });
-    // }
   }
 
   void pushFlightPlan() {
@@ -437,7 +435,8 @@ class Client with ChangeNotifier {
 
       // update profile
       if (msg["pilot_meta_hash"] != profile.hash) {
-        debugPrint("Server had outdate profile meta.");
+        debugPrint(
+            "Server had outdate profile meta. (${msg["pilot_meta_hash"]} != ${profile.hash})");
         pushProfile(profile);
       }
     }
