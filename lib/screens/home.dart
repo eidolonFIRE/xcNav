@@ -169,7 +169,8 @@ class _MyHomePageState extends State<MyHomePage> {
       });
 
       // Initial start of the position stream
-      if (!positionStreamStarted) {
+      if (!positionStreamStarted &&
+          defaultTargetPlatform == TargetPlatform.android) {
         positionStreamStarted = true;
         _toggleListening();
       }
