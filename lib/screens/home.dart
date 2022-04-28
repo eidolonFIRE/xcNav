@@ -1236,9 +1236,9 @@ class _MyHomePageState extends State<MyHomePage> {
               ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd,
                   activePlan.selectedIndex!)
               : ETA(0, 0);
-          ETA etaTrip = activePlan.etaToTripEnd(
-              myTelemetry.geo.spd, activePlan.selectedIndex ?? 0);
-          etaTrip += etaNext;
+          // ETA etaTrip = activePlan.etaToTripEnd(
+          //     myTelemetry.geo.spd, activePlan.selectedIndex ?? 0);
+          // etaTrip += etaNext;
 
           int etaNextMin = (etaNext.time / 60000).ceil();
           String etaNextValue = (etaNextMin >= 60)
