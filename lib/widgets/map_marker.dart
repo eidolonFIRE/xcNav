@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 const iconOptions = {
+  null: null,
   "star": Icons.star,
   // "square": Icons.square_rounded,
   "x": Icons.close,

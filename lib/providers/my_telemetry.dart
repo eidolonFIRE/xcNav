@@ -45,10 +45,12 @@ class MyTelemetry with ChangeNotifier {
   void _load() async {
     final prefs = await SharedPreferences.getInstance();
     fuel = prefs.getDouble("me.fuel") ?? 0;
+    lastSaved = fuel;
     fuelBurnRate = prefs.getDouble("me.fuelBurnRate") ?? 4;
   }
 
   void _save() async {
+    debugPrint("Fuel Level Saved");
     final prefs = await SharedPreferences.getInstance();
     prefs.setDouble("me.fuel", fuel);
     prefs.setDouble("me.fuelBurnRate", fuelBurnRate);

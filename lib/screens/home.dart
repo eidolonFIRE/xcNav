@@ -420,22 +420,32 @@ class _MyHomePageState extends State<MyHomePage> {
                         activePlan.sortWaypoint(oldIndex, newIndex);
                       },
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.sync),
-                          const Text(
-                            " Include Return Trip",
-                          ),
-                          Switch(
-                              value: activePlan.includeReturnTrip,
-                              onChanged: (value) =>
-                                  {activePlan.includeReturnTrip = value}),
-                        ],
+                    if (activePlan.waypoints.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Text(
+                          "Flightplan is Empty",
+                          textAlign: TextAlign.center,
+                          style: instrLabel,
+                        ),
                       ),
-                    )
+                    if (activePlan.waypoints.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.sync),
+                            const Text(
+                              " Include Return Trip",
+                            ),
+                            Switch(
+                                value: activePlan.includeReturnTrip,
+                                onChanged: (value) =>
+                                    {activePlan.includeReturnTrip = value}),
+                          ],
+                        ),
+                      )
                   ]),
                 ),
 
@@ -1085,15 +1095,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
             // --- Map View Buttons
             Positioned(
-              left: 0,
+              left: 10,
+              top: 0,
+              bottom: 0,
               child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   mainAxisSize: MainAxisSize.max,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                        padding: const EdgeInsets.fromLTRB(5, 20, 0, 0),
-                        child: MapButton(
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // --- Focus on Me
+                        MapButton(
                           size: 60,
                           selected: focusMode == FocusMode.me,
                           child: Image.asset(
@@ -1103,20 +1117,27 @@ class _MyHomePageState extends State<MyHomePage> {
                               Provider.of<MyTelemetry>(context, listen: false)
                                   .geo
                                   .latLng),
-                        )),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(5, 30, 0, 20),
-                      child: MapButton(
-                        size: 60,
-                        selected: focusMode == FocusMode.group,
-                        onPressed: () => setFocusMode(FocusMode.group),
-                        child: Image.asset(
-                            "assets/images/icon_controls_centermap_group.png"),
-                      ),
+                        ),
+                        //
+                        SizedBox(
+                            width: 2,
+                            height: 20,
+                            child: Container(
+                              color: Colors.black,
+                            )),
+                        // --- Focus on Group
+                        MapButton(
+                          size: 60,
+                          selected: focusMode == FocusMode.group,
+                          onPressed: () => setFocusMode(FocusMode.group),
+                          child: Image.asset(
+                              "assets/images/icon_controls_centermap_group.png"),
+                        ),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(5, 60, 0, 0),
-                      child: MapButton(
+                    Column(mainAxisSize: MainAxisSize.min, children: [
+                      // --- Zoom In (+)
+                      MapButton(
                         size: 60,
                         selected: false,
                         onPressed: () => {
@@ -1126,27 +1147,35 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: Image.asset(
                             "assets/images/icon_controls_zoom_in.png"),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(5, 30, 0, 20),
-                      child: MapButton(
-                        size: 60,
-                        selected: false,
-                        onPressed: () => {
-                          mapController.move(
-                              mapController.center, mapController.zoom - 1)
-                        },
-                        child: Image.asset(
-                            "assets/images/icon_controls_zoom_out.png"),
+                      //
+                      SizedBox(
+                          width: 2,
+                          height: 20,
+                          child: Container(
+                            color: Colors.black,
+                          )),
+                      // --- Zoom Out (-)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 60),
+                        child: MapButton(
+                          size: 60,
+                          selected: false,
+                          onPressed: () => {
+                            mapController.move(
+                                mapController.center, mapController.zoom - 1)
+                          },
+                          child: Image.asset(
+                              "assets/images/icon_controls_zoom_out.png"),
+                        ),
                       ),
-                    ),
+                    ]),
                   ]),
             ),
 
             // --- Chat button
             Positioned(
                 bottom: 10,
-                left: 5,
+                left: 10,
                 child: MapButton(
                   size: 60,
                   selected: false,
@@ -1160,7 +1189,7 @@ class _MyHomePageState extends State<MyHomePage> {
             if (Provider.of<Chat>(context).numUnread > 0)
               Positioned(
                   bottom: 10,
-                  left: 50,
+                  left: 60,
                   child: Container(
                       decoration: const BoxDecoration(
                           color: Colors.red,
@@ -1288,7 +1317,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               SizedBox(
-                                width: 200,
+                                width: MediaQuery.of(context).size.width / 2,
                                 child: Divider(
                                   thickness: 2,
                                   height: 8,
