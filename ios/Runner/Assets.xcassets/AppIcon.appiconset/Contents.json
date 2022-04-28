@@ -55,110 +55,64 @@
       "size" : "60x60"
     },
     {
-      "idiom" : "ipad",
-      "scale" : "1x",
-      "size" : "20x20"
-    },
-    {
-      "idiom" : "ipad",
-      "scale" : "2x",
-      "size" : "20x20"
-    },
-    {
-      "idiom" : "ipad",
-      "scale" : "1x",
-      "size" : "29x29"
-    },
-    {
-      "idiom" : "ipad",
-      "scale" : "2x",
-      "size" : "29x29"
-    },
-    {
-      "idiom" : "ipad",
-      "scale" : "1x",
-      "size" : "40x40"
-    },
-    {
-      "idiom" : "ipad",
-      "scale" : "2x",
-      "size" : "40x40"
-    },
-    {
-      "idiom" : "ipad",
-      "scale" : "1x",
-      "size" : "76x76"
-    },
-    {
-      "idiom" : "ipad",
-      "scale" : "2x",
-      "size" : "76x76"
-    },
-    {
-      "idiom" : "ipad",
-      "scale" : "2x",
-      "size" : "83.5x83.5"
-    },
-    {
-      "idiom" : "ios-marketing",
-      "scale" : "1x",
-      "size" : "1024x1024"
-    },
-    {
       "filename" : "AppIcon-20~ipad.png",
       "idiom" : "ipad",
       "scale" : "1x",
-      "size" : "20x20",
-      "unassigned" : true
+      "size" : "20x20"
     },
     {
       "filename" : "AppIcon-20@2x~ipad.png",
       "idiom" : "ipad",
       "scale" : "2x",
-      "size" : "20x20",
-      "unassigned" : true
+      "size" : "20x20"
     },
     {
       "filename" : "AppIcon-29~ipad.png",
       "idiom" : "ipad",
       "scale" : "1x",
-      "size" : "29x29",
-      "unassigned" : true
+      "size" : "29x29"
     },
     {
       "filename" : "AppIcon-29@2x~ipad.png",
       "idiom" : "ipad",
       "scale" : "2x",
-      "size" : "29x29",
-      "unassigned" : true
+      "size" : "29x29"
     },
     {
       "filename" : "AppIcon-40~ipad.png",
       "idiom" : "ipad",
       "scale" : "1x",
-      "size" : "40x40",
-      "unassigned" : true
+      "size" : "40x40"
     },
     {
       "filename" : "AppIcon-40@2x~ipad.png",
       "idiom" : "ipad",
       "scale" : "2x",
-      "size" : "40x40",
-      "unassigned" : true
+      "size" : "40x40"
+    },
+    {
+      "filename" : "AppIcon~ipad.png",
+      "idiom" : "ipad",
+      "scale" : "1x",
+      "size" : "76x76"
+    },
+    {
+      "filename" : "xcnav.appicon3x.png",
+      "idiom" : "ipad",
+      "scale" : "2x",
+      "size" : "76x76"
     },
     {
       "filename" : "AppIcon-83.5@2x~ipad.png",
       "idiom" : "ipad",
       "scale" : "2x",
-      "size" : "83.5x83.5",
-      "unassigned" : true
+      "size" : "83.5x83.5"
     },
     {
       "filename" : "AppIcon~ios-marketing.png",
       "idiom" : "ios-marketing",
       "scale" : "1x",
-      "size" : "1024x1024",
-      "unassigned" : true
+      "size" : "1024x1024"
     }
   ],
   "info" : {
