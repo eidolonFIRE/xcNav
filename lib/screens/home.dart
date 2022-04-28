@@ -93,12 +93,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _toggleServiceStatusStream();
 
-    // TODO: this is a work-around for unsolved bug. Android starts with stream not running. Ios starts with stream running.
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      positionStreamStarted = !positionStreamStarted;
-      _toggleListening();
-    }
-
     // intialize the controllers
     mapController = MapController();
 
@@ -122,8 +116,10 @@ class _MyHomePageState extends State<MyHomePage> {
     Provider.of<Settings>(context, listen: false).addListener(() {
       if (Provider.of<Settings>(context, listen: false).spoofLocation) {
         if (timer == null) {
-          positionStreamStarted = !positionStreamStarted;
-          _toggleListening();
+          if (positionStreamStarted) {
+            positionStreamStarted = !positionStreamStarted;
+            _toggleListening();
+          }
           debugPrint("--- Starting Location Spoofer ---");
           timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
             Provider.of<MyTelemetry>(context, listen: false).updateGeo(
@@ -134,8 +130,10 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       } else {
         if (timer != null) {
-          positionStreamStarted = !positionStreamStarted;
-          _toggleListening();
+          if (!positionStreamStarted) {
+            positionStreamStarted = !positionStreamStarted;
+            _toggleListening();
+          }
           debugPrint("--- Stopping Location Spoofer ---");
           timer?.cancel();
           timer = null;
@@ -153,12 +151,11 @@ class _MyHomePageState extends State<MyHomePage> {
         _serviceStatusStreamSubscription?.cancel();
         _serviceStatusStreamSubscription = null;
       }).listen((serviceStatus) {
-        String serviceStatusValue;
         if (serviceStatus == ServiceStatus.enabled) {
           if (positionStreamStarted) {
             _toggleListening();
           }
-          serviceStatusValue = 'enabled';
+          debugPrint("Location Service Enabled");
         } else {
           if (_positionStreamSubscription != null) {
             setState(() {
@@ -167,10 +164,15 @@ class _MyHomePageState extends State<MyHomePage> {
               debugPrint('Position Stream has been canceled');
             });
           }
-          serviceStatusValue = 'disabled';
+          debugPrint("Location Service Disabled");
         }
-        debugPrint('Location service has been $serviceStatusValue');
       });
+
+      // Initial start of the position stream
+      if (!positionStreamStarted) {
+        positionStreamStarted = true;
+        _toggleListening();
+      }
     }
   }
 
