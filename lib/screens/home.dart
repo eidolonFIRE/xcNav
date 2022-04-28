@@ -155,6 +155,11 @@ class _MyHomePageState extends State<MyHomePage> {
           if (positionStreamStarted) {
             _toggleListening();
           }
+          if (defaultTargetPlatform == TargetPlatform.iOS &&
+              !positionStreamStarted) {
+            positionStreamStarted = true;
+            _toggleListening();
+          }
           debugPrint("Location Service Enabled");
         } else {
           if (_positionStreamSubscription != null) {
@@ -200,7 +205,7 @@ class _MyHomePageState extends State<MyHomePage> {
           defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.best,
-          activityType: ActivityType.fitness,
+          // activityType: ActivityType.fitness,
           distanceFilter: 0,
           pauseLocationUpdatesAutomatically: false,
           // Only set to true if our app will be started up in the background.
