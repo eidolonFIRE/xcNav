@@ -6,6 +6,9 @@ import 'package:settings_ui/settings_ui.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
 
+//
+import 'package:xcnav/units.dart';
+
 class SettingsEditor extends StatefulWidget {
   const SettingsEditor({Key? key}) : super(key: key);
 
@@ -35,6 +38,78 @@ class _SettingsEditorState extends State<SettingsEditor> {
           ),
           body: SettingsList(
             sections: [
+              SettingsSection(title: const Text("Display Units"), tiles: [
+                SettingsTile.navigation(
+                  title: const Text("Fuel"),
+                  trailing: DropdownButton<DisplayUnitsFuel>(
+                      onChanged: (value) => {
+                            settings.displayUnitsFuel =
+                                value ?? DisplayUnitsFuel.liter
+                          },
+                      value: settings.displayUnitsFuel,
+                      items: const [
+                        DropdownMenuItem(
+                            value: DisplayUnitsFuel.liter, child: Text("L")),
+                        DropdownMenuItem(
+                            value: DisplayUnitsFuel.gal, child: Text("Gal")),
+                      ]),
+                  leading: const Icon(Icons.local_gas_station),
+                ),
+                SettingsTile.navigation(
+                  title: const Text("Distance"),
+                  trailing: DropdownButton<DisplayUnitsDist>(
+                      onChanged: (value) => {
+                            settings.displayUnitsDist =
+                                value ?? DisplayUnitsDist.english
+                          },
+                      value: settings.displayUnitsDist,
+                      items: const [
+                        DropdownMenuItem(
+                            value: DisplayUnitsDist.english,
+                            child: Text("English")),
+                        DropdownMenuItem(
+                            value: DisplayUnitsDist.metric,
+                            child: Text("Metric")),
+                      ]),
+                  leading: const Icon(Icons.architecture),
+                ),
+                SettingsTile.navigation(
+                  title: const Text("Speed"),
+                  trailing: DropdownButton<DisplayUnitsSpeed>(
+                      onChanged: (value) => {
+                            settings.displayUnitsSpeed =
+                                value ?? DisplayUnitsSpeed.mph
+                          },
+                      value: settings.displayUnitsSpeed,
+                      items: const [
+                        DropdownMenuItem(
+                            value: DisplayUnitsSpeed.mph, child: Text("mph")),
+                        DropdownMenuItem(
+                            value: DisplayUnitsSpeed.kph, child: Text("kph")),
+                        DropdownMenuItem(
+                            value: DisplayUnitsSpeed.kts, child: Text("kts")),
+                        DropdownMenuItem(
+                            value: DisplayUnitsSpeed.mps, child: Text("m/s")),
+                      ]),
+                  leading: const Icon(Icons.timer),
+                ),
+                SettingsTile.navigation(
+                  title: const Text("Vario Unit"),
+                  trailing: DropdownButton<DisplayUnitsVario>(
+                      onChanged: (value) => {
+                            settings.displayUnitsVario =
+                                value ?? DisplayUnitsVario.fpm
+                          },
+                      value: settings.displayUnitsVario,
+                      items: const [
+                        DropdownMenuItem(
+                            value: DisplayUnitsVario.fpm, child: Text("ft/m")),
+                        DropdownMenuItem(
+                            value: DisplayUnitsVario.mps, child: Text("m/s")),
+                      ]),
+                  leading: const Icon(Icons.trending_up),
+                ),
+              ]),
               SettingsSection(
                 title: const Text("UI Options"),
                 tiles: [
@@ -62,6 +137,8 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     // --- Erase Identity
                     SettingsTile.navigation(
                       title: const Text("Clear Identity"),
+                      description: const Text(
+                          "This will reset your pilot ID and profile!"),
                       leading: const Icon(
                         Icons.warning_amber,
                         color: Colors.red,

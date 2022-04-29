@@ -155,7 +155,9 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.durationTime != null
                                 ? Text(
-                                    hmm(log.durationTime!.inMilliseconds),
+                                    (log.durationTime!.inMilliseconds / 3600000)
+                                            .toStringAsFixed(1) +
+                                        " hr",
                                     textAlign: TextAlign.end,
                                   )
                                 : Container())

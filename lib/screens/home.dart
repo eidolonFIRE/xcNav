@@ -21,6 +21,7 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat.dart';
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/fuel_warning.dart';
 import 'package:xcnav/widgets/icon_image.dart';
 
@@ -495,8 +496,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text.rich(
                         TextSpan(children: [
-                          TextSpan(text: etaTrip.miles(), style: instrLower),
-                          TextSpan(text: " mi", style: instrLabel),
+                          TextSpan(
+                              text: convertDistValueCoarse(
+                                      Provider.of<Settings>(context,
+                                              listen: false)
+                                          .displayUnitsDist,
+                                      etaTrip.distance)
+                                  .toStringAsFixed(1),
+                              style: instrLower),
+                          TextSpan(
+                              text: unitStrDistCoarse[
+                                  Provider.of<Settings>(context, listen: false)
+                                      .displayUnitsDist],
+                              style: instrLabel),
                           if (myTelemetry.inFlight)
                             TextSpan(
                               text: "   " + etaTripValue,
@@ -535,23 +547,13 @@ class _MyHomePageState extends State<MyHomePage> {
     debugPrint("Build /home");
     return Scaffold(
         appBar: AppBar(
-            // Here we take the value from the MyHomePage object that was created by
-            // the App.build method, and use it to set our appbar title.
             automaticallyImplyLeading: true,
             leadingWidth: 35,
             toolbarHeight: 64,
-            // leading: IconButton(
-            //   padding: EdgeInsets.zero,
-            //   icon: const Icon(
-            //     Icons.menu,
-            //     color: Colors.grey,
-            //   ),
-            //   onPressed: () => {},
-            // ),
             title: SizedBox(
               height: 64,
-              child: Consumer<MyTelemetry>(
-                builder: (context, myTelementy, child) => Padding(
+              child: Consumer2<MyTelemetry, Settings>(
+                builder: (context, myTelementy, settings, child) => Padding(
                     padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -559,13 +561,19 @@ class _MyHomePageState extends State<MyHomePage> {
                           // --- Speedometer
                           Text.rich(TextSpan(children: [
                             TextSpan(
-                              text: min(999,
-                                      (myTelementy.geo.spd * 3.6 * km2Miles))
-                                  .toStringAsFixed(0),
+                              text: min(
+                                      999,
+                                      convertSpeedValue(
+                                          settings.displayUnitsSpeed,
+                                          myTelementy.geo.spd))
+                                  .toStringAsFixed(settings.displayUnitsSpeed ==
+                                          DisplayUnitsSpeed.mps
+                                      ? 1
+                                      : 0),
                               style: instrUpper,
                             ),
                             TextSpan(
-                              text: " mph",
+                              text: unitStrSpeed[settings.displayUnitsSpeed],
                               style: instrLabel,
                             )
                           ])),
@@ -576,11 +584,16 @@ class _MyHomePageState extends State<MyHomePage> {
                           // --- Altimeter
                           Text.rich(TextSpan(children: [
                             TextSpan(
-                              text: (myTelementy.geo.alt * meters2Feet)
+                              text: convertDistValueFine(
+                                      settings.displayUnitsDist,
+                                      myTelementy.geo.alt)
                                   .toStringAsFixed(0),
                               style: instrUpper,
                             ),
-                            TextSpan(text: " ft", style: instrLabel)
+                            TextSpan(
+                                text:
+                                    unitStrDistFine[settings.displayUnitsDist],
+                                style: instrLabel)
                           ])),
                           const SizedBox(
                               height: 100,
@@ -593,14 +606,19 @@ class _MyHomePageState extends State<MyHomePage> {
                                       9999,
                                       max(
                                           -9999,
-                                          (myTelementy.geo.vario *
-                                              meters2Feet *
-                                              60)))
-                                  .toStringAsFixed(0),
+                                          convertVarioValue(
+                                              settings.displayUnitsVario,
+                                              myTelementy.geo.vario)))
+                                  .toStringAsFixed(settings.displayUnitsVario ==
+                                          DisplayUnitsVario.fpm
+                                      ? 0
+                                      : 1),
                               style: instrUpper
                                   .merge(const TextStyle(fontSize: 30)),
                             ),
-                            TextSpan(text: " ft/m", style: instrLabel)
+                            TextSpan(
+                                text: unitStrVario[settings.displayUnitsVario],
+                                style: instrLabel)
                           ])),
                         ])),
               ),
@@ -705,13 +723,21 @@ class _MyHomePageState extends State<MyHomePage> {
                                         TextSpan(
                                           children: [
                                             TextSpan(
-                                                text: myTelemetry.fuel
+                                                text: convertFuelValue(
+                                                        Provider.of<Settings>(
+                                                                context)
+                                                            .displayUnitsFuel,
+                                                        myTelemetry.fuel)
                                                     .toStringAsFixed(1),
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .headline4),
                                             TextSpan(
-                                                text: " L", style: instrLabel)
+                                                text: unitStrFuel[
+                                                    Provider.of<Settings>(
+                                                            context)
+                                                        .displayUnitsFuel],
+                                                style: instrLabel)
                                           ],
                                         ),
                                         softWrap: false,
@@ -1260,9 +1286,6 @@ class _MyHomePageState extends State<MyHomePage> {
               ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd,
                   activePlan.selectedIndex!)
               : ETA(0, 0);
-          // ETA etaTrip = activePlan.etaToTripEnd(
-          //     myTelemetry.geo.spd, activePlan.selectedIndex ?? 0);
-          // etaTrip += etaNext;
 
           int etaNextMin = (etaNext.time / 60000).ceil();
           String etaNextValue = (etaNextMin >= 60)
@@ -1352,8 +1375,19 @@ class _MyHomePageState extends State<MyHomePage> {
                               Text.rich(
                                 TextSpan(children: [
                                   TextSpan(
-                                      text: etaNext.miles(), style: instrLower),
-                                  TextSpan(text: " mi ", style: instrLabel),
+                                      text: convertDistValueCoarse(
+                                              Provider.of<Settings>(context,
+                                                      listen: false)
+                                                  .displayUnitsDist,
+                                              etaNext.distance)
+                                          .toStringAsFixed(1),
+                                      style: instrLower),
+                                  TextSpan(
+                                      text: unitStrDistCoarse[
+                                          Provider.of<Settings>(context,
+                                                  listen: false)
+                                              .displayUnitsDist],
+                                      style: instrLabel),
                                   if (myTelemetry.inFlight)
                                     TextSpan(
                                       text: "   " + etaNextValue,

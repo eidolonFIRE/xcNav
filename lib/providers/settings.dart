@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum DisplayUnits {
-  english,
-  metric1, // kph
-  metric2, // m/s
-}
+import 'package:xcnav/units.dart';
 
 class Settings with ChangeNotifier {
   bool _spoofLocation = false;
   bool _showAirspace = false;
-  DisplayUnits _displayUnits = DisplayUnits.english;
+  var _displayUnitsSpeed = DisplayUnitsSpeed.mph;
+  var _displayUnitsVario = DisplayUnitsVario.fpm;
+  var _displayUnitsDist = DisplayUnitsDist.english;
+  var _displayUnitsFuel = DisplayUnitsFuel.liter;
   bool _mapControlsRightSide = false;
 
   Settings() {
@@ -19,10 +18,16 @@ class Settings with ChangeNotifier {
 
   _loadSettings() {
     SharedPreferences.getInstance().then((prefs) {
-      _displayUnits =
-          DisplayUnits.values[prefs.getInt("settings.displayUnits") ?? 0];
+      _displayUnitsSpeed = DisplayUnitsSpeed
+          .values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
+      _displayUnitsVario = DisplayUnitsVario
+          .values[prefs.getInt("settings.displayUnitsVario") ?? 0];
+      _displayUnitsDist = DisplayUnitsDist
+          .values[prefs.getInt("settings.displayUnitsDist") ?? 0];
       _mapControlsRightSide =
           prefs.getBool("settings.mapControlsRightSide") ?? false;
+      _displayUnitsFuel = DisplayUnitsFuel
+          .values[prefs.getInt("settings.displayUnitsFuel") ?? 0];
     });
   }
 
@@ -37,11 +42,38 @@ class Settings with ChangeNotifier {
   }
 
   // --- displayUnits
-  DisplayUnits get displayUnits => _displayUnits;
-  set displayUnits(DisplayUnits value) {
-    _displayUnits = value;
+  DisplayUnitsSpeed get displayUnitsSpeed => _displayUnitsSpeed;
+  set displayUnitsSpeed(DisplayUnitsSpeed value) {
+    _displayUnitsSpeed = value;
     SharedPreferences.getInstance().then((prefs) {
-      prefs.setInt("settings.displayUnits", _displayUnits.index);
+      prefs.setInt("settings.displayUnitsSpeed", _displayUnitsSpeed.index);
+    });
+    notifyListeners();
+  }
+
+  DisplayUnitsVario get displayUnitsVario => _displayUnitsVario;
+  set displayUnitsVario(DisplayUnitsVario value) {
+    _displayUnitsVario = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setInt("settings.displayUnitsVario", _displayUnitsVario.index);
+    });
+    notifyListeners();
+  }
+
+  DisplayUnitsDist get displayUnitsDist => _displayUnitsDist;
+  set displayUnitsDist(DisplayUnitsDist value) {
+    _displayUnitsDist = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setInt("settings.displayUnitsDist", _displayUnitsDist.index);
+    });
+    notifyListeners();
+  }
+
+  DisplayUnitsFuel get displayUnitsFuel => _displayUnitsFuel;
+  set displayUnitsFuel(DisplayUnitsFuel value) {
+    _displayUnitsFuel = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setInt("settings.displayUnitsFuel", _displayUnitsFuel.index);
     });
     notifyListeners();
   }

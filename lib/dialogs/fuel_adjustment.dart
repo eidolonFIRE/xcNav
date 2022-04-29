@@ -13,12 +13,22 @@ void showFuelDialog(BuildContext context) {
 
         return Consumer<MyTelemetry>(builder: (context, myTelemetry, child) {
           return AlertDialog(
-            title: Row(
+            title: Flex(
+              direction: Axis.horizontal,
               mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: const [
-                Text("Fuel Level"),
-                Text("Burn Rate"),
+                Expanded(
+                  child: Text(
+                    "Fuel\n(L)",
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    "Burn Rate\n(L/hr)",
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ],
             ),
             content: Row(
