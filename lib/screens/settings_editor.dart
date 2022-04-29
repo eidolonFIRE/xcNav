@@ -21,18 +21,31 @@ class _SettingsEditorState extends State<SettingsEditor> {
     return Consumer<Settings>(builder: ((context, settings, child) {
       return Scaffold(
           appBar: AppBar(
-            title: SizedBox(
-              height: 32,
-              child: TextField(
-                style: const TextStyle(fontSize: 24),
-                controller: searchInput,
-                decoration:
-                    const InputDecoration(suffixIcon: Icon(Icons.search)),
-              ),
-            ),
+            title: const Text("Settings"),
+            // TODO: when we have enough settings, we can use a search
+            // title: SizedBox(
+            //   height: 32,
+            //   child: TextField(
+            //     style: const TextStyle(fontSize: 24),
+            //     controller: searchInput,
+            //     decoration:
+            //         const InputDecoration(suffixIcon: Icon(Icons.search)),
+            //   ),
+            // ),
           ),
           body: SettingsList(
             sections: [
+              SettingsSection(
+                title: const Text("UI Options"),
+                tiles: [
+                  SettingsTile.switchTile(
+                    initialValue: settings.mapControlsRightSide,
+                    onToggle: (value) => settings.mapControlsRightSide = value,
+                    title: const Text("Map Controls Right Side"),
+                    leading: const Icon(Icons.swap_horiz),
+                  )
+                ],
+              ),
               SettingsSection(
                   title: const Text(
                     "Debug Tools",

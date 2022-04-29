@@ -964,10 +964,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 List<Message> bubbles = [];
                 for (int i = chat.messages.length - 1; i > 0; i--) {
                   if (chat.messages[i].timestamp >
-                      max(
-                          DateTime.now().millisecondsSinceEpoch -
-                              1000 * numSeconds,
-                          chat.chatLastOpened)) {
+                          max(
+                              DateTime.now().millisecondsSinceEpoch -
+                                  1000 * numSeconds,
+                              chat.chatLastOpened) &&
+                      chat.messages[i].pilotId !=
+                          Provider.of<Profile>(context, listen: false).id) {
                     bubbles.add(chat.messages[i]);
                     // "self destruct" the message after several seconds
                     Timer _hideBubble =
@@ -980,7 +982,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
                 }
                 return Positioned(
-                    right: 0,
+                    right: Provider.of<Settings>(context).mapControlsRightSide
+                        ? 70
+                        : 0,
                     bottom: 0,
                     // left: 100,
                     child: Column(
@@ -1038,7 +1042,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 focusMode == FocusMode.editPath)
               Positioned(
                 bottom: 15,
-                right: 20,
+                right: Provider.of<Settings>(context).mapControlsRightSide
+                    ? null
+                    : 20,
+                left: Provider.of<Settings>(context).mapControlsRightSide
+                    ? 20
+                    : null,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1095,7 +1104,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
             // --- Map View Buttons
             Positioned(
-              left: 10,
+              left: Provider.of<Settings>(context).mapControlsRightSide
+                  ? null
+                  : 10,
+              right: Provider.of<Settings>(context).mapControlsRightSide
+                  ? 10
+                  : null,
               top: 0,
               bottom: 0,
               child: Column(
@@ -1175,32 +1189,42 @@ class _MyHomePageState extends State<MyHomePage> {
             // --- Chat button
             Positioned(
                 bottom: 10,
-                left: 10,
-                child: MapButton(
-                  size: 60,
-                  selected: false,
-                  onPressed: () => {Navigator.pushNamed(context, "/party")},
-                  child: const Icon(
-                    Icons.chat,
-                    size: 30,
-                    color: Colors.black,
-                  ),
+                left: Provider.of<Settings>(context).mapControlsRightSide
+                    ? null
+                    : 10,
+                right: Provider.of<Settings>(context).mapControlsRightSide
+                    ? 10
+                    : null,
+                child: Stack(
+                  children: [
+                    MapButton(
+                      size: 60,
+                      selected: false,
+                      onPressed: () => {Navigator.pushNamed(context, "/party")},
+                      child: const Icon(
+                        Icons.chat,
+                        size: 30,
+                        color: Colors.black,
+                      ),
+                    ),
+                    if (Provider.of<Chat>(context).numUnread > 0)
+                      Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                              decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(10))),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Text(
+                                  "${Provider.of<Chat>(context).numUnread}",
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                              ))),
+                  ],
                 )),
-            if (Provider.of<Chat>(context).numUnread > 0)
-              Positioned(
-                  bottom: 10,
-                  left: 60,
-                  child: Container(
-                      decoration: const BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.all(Radius.circular(10))),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Text(
-                          "${Provider.of<Chat>(context).numUnread}",
-                          style: const TextStyle(fontSize: 20),
-                        ),
-                      ))),
 
             // --- Connection status banner (along top of map)
             if (Provider.of<Client>(context).state == ClientState.disconnected)
