@@ -16,7 +16,7 @@ import 'package:xcnav/providers/chat.dart';
 // screens
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/screens/loading.dart';
-import 'package:xcnav/screens/party.dart';
+import 'package:xcnav/screens/chat.dart';
 import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
 import 'package:xcnav/screens/settings_editor.dart';
@@ -56,7 +56,7 @@ void main() {
             lazy: false,
           ),
           ChangeNotifierProvider(
-            create: (_) => Chat(),
+            create: (_) => ChatMessages(),
             lazy: false,
           ),
           ChangeNotifierProvider(
@@ -151,7 +151,7 @@ class MyApp extends StatelessWidget {
         "/": (context) => const LoadingScreen(),
         "/home": (context) => const MyHomePage(),
         "/profileEditor": (context) => const ProfileEditor(),
-        "/party": (context) => const Party(),
+        "/party": (context) => const Chat(),
         "/qrScanner": (context) => const QRScanner(),
         "/settings": (context) => const SettingsEditor(),
         "/flightLogs": (context) => const FlightLogViewer(),

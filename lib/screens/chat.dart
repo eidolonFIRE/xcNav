@@ -15,14 +15,30 @@ import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
 
-class Party extends StatefulWidget {
-  const Party({Key? key}) : super(key: key);
+const List<String> quickchat = [
+  "Waiting here... ⏱️",
+  "Let's Gooooo!",
+  "Where to? 🤷",
+  "Turning back ↩️",
+  "Landed ok 🛬",
+  "",
+  "Good Air 🧈",
+  "Hazardous ☠️",
+  "",
+  "Emergency: Engine out!",
+  "Low fuel ⚠️",
+  "Ignore last",
+  // "Emergency: Landing immediately!",
+];
+
+class Chat extends StatefulWidget {
+  const Chat({Key? key}) : super(key: key);
 
   @override
-  State<Party> createState() => _PartyState();
+  State<Chat> createState() => _ChatState();
 }
 
-class _PartyState extends State<Party> {
+class _ChatState extends State<Chat> {
   final TextEditingController chatInput = TextEditingController();
 
   FocusNode? inputFieldNode;
@@ -45,7 +61,7 @@ class _PartyState extends State<Party> {
           .sendchatMessage(text, isEmergency: false);
       chatInput.clear();
 
-      Provider.of<Chat>(context, listen: false).processSentMessage(
+      Provider.of<ChatMessages>(context, listen: false).processSentMessage(
           DateTime.now().millisecondsSinceEpoch,
           Provider.of<Profile>(context, listen: false).id ?? "",
           text,
@@ -61,25 +77,55 @@ class _PartyState extends State<Party> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-            // actions: [
-            //   IconButton(
-            //       iconSize: 30,
-            //       onPressed: () => {Navigator.pushNamed(context, "/qrScanner")},
-            //       icon: const Icon(
-            //         Icons.qr_code_scanner,
-            //         color: Colors.lightBlue,
-            //       ))
-            // ],
-            title: Consumer<Group>(
-                builder: (context, group, child) => Row(
-                      children: group.pilots.values
-                          .toList()
-                          .map((e) => AvatarRound(e.avatar, 20))
-                          .toList(),
-                    ))),
+          // title: Consumer<Group>(
+          //     builder: (context, group, child) => Row(
+          //           children: group.pilots.values
+          //               .toList()
+          //               .map((e) => AvatarRound(e.avatar, 20))
+          //               .toList(),
+          //         ))
+          centerTitle: true,
+          title: IconButton(
+              icon: const Icon(Icons.auto_awesome),
+              onPressed: () => {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return SimpleDialog(
+                            alignment: Alignment.topCenter,
+                            // title: const Text("Quick Message"),
+                            children: quickchat
+                                .map((msg) => (msg == "")
+                                    ? const Divider(
+                                        thickness: 2,
+                                        height: 10,
+                                      )
+                                    : SimpleDialogOption(
+                                        child: Text(
+                                          msg.startsWith("Emergency:")
+                                              ? msg.substring(11)
+                                              : msg,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headline6!
+                                              .merge(TextStyle(
+                                                  color: msg.startsWith(
+                                                          "Emergency:")
+                                                      ? Colors.red
+                                                      : Colors.white)),
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.pop(context, msg),
+                                      ))
+                                .toList());
+                      },
+                    ).then(
+                        (value) => {if (value != null) sendChatMessage(value)})
+                  }),
+        ),
         // --- Chat Bubble List
         body: Center(
-          child: Consumer<Chat>(builder: (context, chat, child) {
+          child: Consumer<ChatMessages>(builder: (context, chat, child) {
             // TODO: this isn't super reliable
             chat.chatLastOpened = DateTime.now().millisecondsSinceEpoch;
             chat.numUnread = 0;

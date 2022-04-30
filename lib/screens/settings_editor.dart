@@ -60,13 +60,13 @@ class _SettingsEditorState extends State<SettingsEditor> {
                   trailing: DropdownButton<DisplayUnitsDist>(
                       onChanged: (value) => {
                             settings.displayUnitsDist =
-                                value ?? DisplayUnitsDist.english
+                                value ?? DisplayUnitsDist.imperial
                           },
                       value: settings.displayUnitsDist,
                       items: const [
                         DropdownMenuItem(
-                            value: DisplayUnitsDist.english,
-                            child: Text("English")),
+                            value: DisplayUnitsDist.imperial,
+                            child: Text("Imperial")),
                         DropdownMenuItem(
                             value: DisplayUnitsDist.metric,
                             child: Text("Metric")),

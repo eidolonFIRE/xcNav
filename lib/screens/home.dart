@@ -717,7 +717,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
             // --- Chat bubbles
-            Consumer<Chat>(
+            Consumer<ChatMessages>(
               builder: (context, chat, child) {
                 // get valid bubbles
                 const numSeconds = 10;
@@ -967,7 +967,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         color: Colors.black,
                       ),
                     ),
-                    if (Provider.of<Chat>(context).numUnread > 0)
+                    if (Provider.of<ChatMessages>(context).numUnread > 0)
                       Positioned(
                           bottom: 0,
                           right: 0,
@@ -979,7 +979,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               child: Padding(
                                 padding: const EdgeInsets.all(4.0),
                                 child: Text(
-                                  "${Provider.of<Chat>(context).numUnread}",
+                                  "${Provider.of<ChatMessages>(context).numUnread}",
                                   style: const TextStyle(fontSize: 20),
                                 ),
                               ))),

@@ -253,7 +253,7 @@ class Client with ChangeNotifier {
   void leaveGroup(bool promptSplit) {
     // This is just alias to joining an unknown group
     Provider.of<Group>(context, listen: false).currentGroupID = null;
-    Provider.of<Chat>(context, listen: false).leftGroup();
+    Provider.of<ChatMessages>(context, listen: false).leftGroup();
     sendToAWS("joinGroupRequest", {"prompt_split": promptSplit});
   }
 
@@ -306,7 +306,8 @@ class Client with ChangeNotifier {
     String? currentGroupID =
         Provider.of<Group>(context, listen: false).currentGroupID;
     if (msg["group"] == currentGroupID) {
-      Provider.of<Chat>(context, listen: false).processMessageFromServer(msg);
+      Provider.of<ChatMessages>(context, listen: false)
+          .processMessageFromServer(msg);
     } else {
       // getting messages from the wrong group!
       debugPrint("Wrong group ID! $currentGroupID, ${msg["group"]}");

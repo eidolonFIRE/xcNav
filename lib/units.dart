@@ -14,7 +14,7 @@ enum DisplayUnitsVario {
 }
 
 enum DisplayUnitsDist {
-  english,
+  imperial,
   metric,
 }
 
@@ -36,12 +36,12 @@ const Map<DisplayUnitsVario, String> unitStrVario = {
 };
 
 const Map<DisplayUnitsDist, String> unitStrDistFine = {
-  DisplayUnitsDist.english: " ft",
+  DisplayUnitsDist.imperial: " ft",
   DisplayUnitsDist.metric: " m",
 };
 
 const Map<DisplayUnitsDist, String> unitStrDistCoarse = {
-  DisplayUnitsDist.english: " mi",
+  DisplayUnitsDist.imperial: " mi",
   DisplayUnitsDist.metric: " km",
 };
 
@@ -52,7 +52,7 @@ const Map<DisplayUnitsFuel, String> unitStrFuel = {
 
 double convertDistValueFine(DisplayUnitsDist mode, double value) {
   switch (mode) {
-    case DisplayUnitsDist.english:
+    case DisplayUnitsDist.imperial:
       return value * meters2Feet;
     case DisplayUnitsDist.metric:
       return value;
@@ -61,7 +61,7 @@ double convertDistValueFine(DisplayUnitsDist mode, double value) {
 
 double convertDistValueCoarse(DisplayUnitsDist mode, double value) {
   switch (mode) {
-    case DisplayUnitsDist.english:
+    case DisplayUnitsDist.imperial:
       return value * meters2Miles;
     case DisplayUnitsDist.metric:
       return value / 1000;

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/notifications.dart';
 
-class Chat with ChangeNotifier {
+class ChatMessages with ChangeNotifier {
   List<Message> messages = [];
 
   int chatLastOpened = 0;

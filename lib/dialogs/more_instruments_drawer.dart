@@ -15,6 +15,7 @@ Widget moreInstrumentsDrawer() {
     builder: (context, myTelemetry, child) => SafeArea(
       child: Dialog(
           // elevation: 10,
+          backgroundColor: Colors.grey[900],
           insetPadding: const EdgeInsets.only(left: 0, right: 0, top: 60),
           alignment: Alignment.topCenter,
           child: Column(
@@ -68,7 +69,7 @@ Widget moreInstrumentsDrawer() {
                 title: GestureDetector(
                   onTap: () => {showFuelDialog(context)},
                   child: Card(
-                    color: Colors.grey[700],
+                    color: Colors.grey[800],
                     child: (myTelemetry.fuel > 0)
                         ? Builder(builder: (context) {
                             int remMin = (myTelemetry.fuel /

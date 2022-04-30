@@ -8,7 +8,7 @@ class Settings with ChangeNotifier {
   bool _showAirspace = false;
   var _displayUnitsSpeed = DisplayUnitsSpeed.mph;
   var _displayUnitsVario = DisplayUnitsVario.fpm;
-  var _displayUnitsDist = DisplayUnitsDist.english;
+  var _displayUnitsDist = DisplayUnitsDist.imperial;
   var _displayUnitsFuel = DisplayUnitsFuel.liter;
   bool _mapControlsRightSide = false;
 
