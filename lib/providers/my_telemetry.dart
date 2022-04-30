@@ -68,7 +68,7 @@ class MyTelemetry with ChangeNotifier {
         jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
   }
 
-  void updateGeo(Geo newGeo) {
+  void updateGeo(Geo newGeo, {bool? bypassRecording}) {
     // debugPrint("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
     geoPrev = geo;
     geo = newGeo;
@@ -89,10 +89,12 @@ class MyTelemetry with ChangeNotifier {
         debugPrint("Flight Ended");
 
         // Dump current flight to log
-        saveFlight().then((value) {
-          // then clear the log
-          recordGeo.clear();
-        });
+        if (!(bypassRecording ?? false)) {
+          saveFlight().then((value) {
+            // then clear the log
+            recordGeo.clear();
+          });
+        }
       }
     }
 
@@ -102,7 +104,7 @@ class MyTelemetry with ChangeNotifier {
           max(0, fuel - fuelBurnRate * (geo.time - geoPrev!.time) / 3600000.0);
 
       // --- Record path
-      recordGeo.add(geo);
+      if (!(bypassRecording ?? false)) recordGeo.add(geo);
       if (flightTrace.isEmpty ||
           (flightTrace.isNotEmpty &&
               latlngCalc.distance(flightTrace.last, geo.latLng) > 50)) {

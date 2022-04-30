@@ -123,8 +123,6 @@ class _MyHomePageState extends State<MyHomePage> {
           debugPrint("--- Starting Location Spoofer ---");
           timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
             handleGeomUpdate(context, fakeFlight.genFakeLocationFlight());
-
-            refreshMapView();
           });
         }
       } else {
@@ -250,7 +248,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var geo = Geo.fromPosition(position, myTelemetry.geo);
 
     if (geo.lat != 0.0 || geo.lng != 0.0) {
-      myTelemetry.updateGeo(geo);
+      myTelemetry.updateGeo(geo, bypassRecording: settings.groundMode);
 
       if (!settings.groundMode || settings.groundModeTelemetry) {
         Provider.of<Client>(context, listen: false)
