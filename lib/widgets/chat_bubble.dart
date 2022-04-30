@@ -29,9 +29,11 @@ class ChatBubble extends StatelessWidget {
                   constraints: BoxConstraints(
                       maxWidth: MediaQuery.of(context).size.width * 0.8),
                   child: Card(
-                    color: isMe
-                        ? Colors.blue
-                        : const Color.fromARGB(255, 230, 230, 230),
+                    color: text.toLowerCase().startsWith("emergency:")
+                        ? Colors.red
+                        : (isMe
+                            ? Colors.blue
+                            : const Color.fromARGB(255, 230, 230, 230)),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(10),
