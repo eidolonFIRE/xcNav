@@ -16,6 +16,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat.dart';
+import 'package:xcnav/providers/settings.dart';
 
 enum ClientState {
   disconnected,
@@ -82,16 +83,6 @@ class Client with ChangeNotifier {
         } else if (state == ClientState.authenticated && profile.name != null) {
           // Just need to update server with new profile
           pushProfile(profile);
-        }
-      });
-
-      // Subscribe to my geo updates
-      Provider.of<MyTelemetry>(context, listen: false).addListener(() {
-        MyTelemetry telemetry =
-            Provider.of<MyTelemetry>(context, listen: false);
-        if (state == ClientState.authenticated &&
-            (telemetry.geo.lat != 0.0 || telemetry.geo.lng != 0.0)) {
-          sendTelemetry(telemetry.geo, telemetry.fuel);
         }
       });
 
@@ -212,18 +203,20 @@ class Client with ChangeNotifier {
 
   // --- send our telemetry
   void sendTelemetry(Geo geo, double fuel) {
-    sendToAWS("pilotTelemetry", {
-      "timestamp": geo.time,
-      "pilot_id": "", // backend will fill this in
-      "telemetry": {
-        "gps": {
-          "lat": geo.lat,
-          "lng": geo.lng,
-          "alt": geo.alt,
+    if (state == ClientState.authenticated) {
+      sendToAWS("pilotTelemetry", {
+        "timestamp": geo.time,
+        "pilot_id": "", // backend will fill this in
+        "telemetry": {
+          "gps": {
+            "lat": geo.lat,
+            "lng": geo.lng,
+            "alt": geo.alt,
+          },
+          "fuel": fuel,
         },
-        "fuel": fuel,
-      },
-    });
+      });
+    }
   }
 
   void requestGroupInfo(String? reqGroupID) {

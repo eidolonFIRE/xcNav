@@ -122,9 +122,8 @@ class _MyHomePageState extends State<MyHomePage> {
           }
           debugPrint("--- Starting Location Spoofer ---");
           timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
-            Provider.of<MyTelemetry>(context, listen: false).updateGeo(
-                Geo.fromPosition(fakeFlight.genFakeLocationFlight(),
-                    Provider.of<MyTelemetry>(context, listen: false).geo));
+            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight());
+
             refreshMapView();
           });
         }
@@ -245,9 +244,19 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void handleGeomUpdate(BuildContext context, Position geo) {
-    Provider.of<MyTelemetry>(context, listen: false).updateGeo(Geo.fromPosition(
-        geo, Provider.of<MyTelemetry>(context, listen: false).geo));
+  void handleGeomUpdate(BuildContext context, Position position) {
+    var myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+    var settings = Provider.of<Settings>(context, listen: false);
+    var geo = Geo.fromPosition(position, myTelemetry.geo);
+
+    if (geo.lat != 0.0 || geo.lng != 0.0) {
+      myTelemetry.updateGeo(geo);
+
+      if (!settings.groundMode || settings.groundModeTelemetry) {
+        Provider.of<Client>(context, listen: false)
+            .sendTelemetry(geo, myTelemetry.fuel);
+      }
+    }
     refreshMapView();
   }
 
@@ -345,6 +354,111 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Widget topInstruments(BuildContext context) {
+    return GestureDetector(
+      onTap: () => showMoreInstruments(context),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
+        child: SizedBox(
+          height: 64,
+          child: Consumer2<MyTelemetry, Settings>(
+            builder: (context, myTelementy, settings, child) => Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // --- Speedometer
+                  Text.rich(TextSpan(children: [
+                    TextSpan(
+                      text: min(
+                              999,
+                              convertSpeedValue(settings.displayUnitsSpeed,
+                                  myTelementy.geo.spd))
+                          .toStringAsFixed(settings.displayUnitsSpeed ==
+                                  DisplayUnitsSpeed.mps
+                              ? 1
+                              : 0),
+                      style: instrUpper,
+                    ),
+                    TextSpan(
+                      text: unitStrSpeed[settings.displayUnitsSpeed],
+                      style: instrLabel,
+                    )
+                  ])),
+                  const SizedBox(
+                      height: 100,
+                      child:
+                          VerticalDivider(thickness: 2, color: Colors.black)),
+                  // --- Altimeter
+                  Text.rich(TextSpan(children: [
+                    TextSpan(
+                      text: convertDistValueFine(
+                              settings.displayUnitsDist, myTelementy.geo.alt)
+                          .toStringAsFixed(0),
+                      style: instrUpper,
+                    ),
+                    TextSpan(
+                        text: unitStrDistFine[settings.displayUnitsDist],
+                        style: instrLabel)
+                  ])),
+                  const SizedBox(
+                      height: 100,
+                      child:
+                          VerticalDivider(thickness: 2, color: Colors.black)),
+                  // --- Vario
+                  Text.rich(TextSpan(children: [
+                    TextSpan(
+                      text: min(
+                              9999,
+                              max(
+                                  -9999,
+                                  convertVarioValue(settings.displayUnitsVario,
+                                      myTelementy.geo.vario)))
+                          .toStringAsFixed(settings.displayUnitsVario ==
+                                  DisplayUnitsVario.fpm
+                              ? 0
+                              : 1),
+                      style: instrUpper.merge(const TextStyle(fontSize: 30)),
+                    ),
+                    TextSpan(
+                        text: unitStrVario[settings.displayUnitsVario],
+                        style: instrLabel)
+                  ])),
+                ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Top Bar in ground support mode
+  Widget groundControlBar(BuildContext context) {
+    return SizedBox(
+      height: 60,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Text("Ground Support Mode", style: instrLabel),
+          Card(
+              color: Colors.grey[700],
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text("Share my Position"),
+                    Switch(
+                        value:
+                            Provider.of<Settings>(context).groundModeTelemetry,
+                        onChanged: (value) =>
+                            Provider.of<Settings>(context, listen: false)
+                                .groundModeTelemetry = value),
+                  ],
+                ),
+              ))
+        ],
+      ),
+    );
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   //
   //
@@ -360,83 +474,9 @@ class _MyHomePageState extends State<MyHomePage> {
             automaticallyImplyLeading: true,
             leadingWidth: 35,
             toolbarHeight: 64,
-            title: GestureDetector(
-              onTap: () => showMoreInstruments(context),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
-                child: SizedBox(
-                  height: 64,
-                  child: Consumer2<MyTelemetry, Settings>(
-                    builder: (context, myTelementy, settings, child) => Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // --- Speedometer
-                          Text.rich(TextSpan(children: [
-                            TextSpan(
-                              text: min(
-                                      999,
-                                      convertSpeedValue(
-                                          settings.displayUnitsSpeed,
-                                          myTelementy.geo.spd))
-                                  .toStringAsFixed(settings.displayUnitsSpeed ==
-                                          DisplayUnitsSpeed.mps
-                                      ? 1
-                                      : 0),
-                              style: instrUpper,
-                            ),
-                            TextSpan(
-                              text: unitStrSpeed[settings.displayUnitsSpeed],
-                              style: instrLabel,
-                            )
-                          ])),
-                          const SizedBox(
-                              height: 100,
-                              child: VerticalDivider(
-                                  thickness: 2, color: Colors.black)),
-                          // --- Altimeter
-                          Text.rich(TextSpan(children: [
-                            TextSpan(
-                              text: convertDistValueFine(
-                                      settings.displayUnitsDist,
-                                      myTelementy.geo.alt)
-                                  .toStringAsFixed(0),
-                              style: instrUpper,
-                            ),
-                            TextSpan(
-                                text:
-                                    unitStrDistFine[settings.displayUnitsDist],
-                                style: instrLabel)
-                          ])),
-                          const SizedBox(
-                              height: 100,
-                              child: VerticalDivider(
-                                  thickness: 2, color: Colors.black)),
-                          // --- Vario
-                          Text.rich(TextSpan(children: [
-                            TextSpan(
-                              text: min(
-                                      9999,
-                                      max(
-                                          -9999,
-                                          convertVarioValue(
-                                              settings.displayUnitsVario,
-                                              myTelementy.geo.vario)))
-                                  .toStringAsFixed(settings.displayUnitsVario ==
-                                          DisplayUnitsVario.fpm
-                                      ? 0
-                                      : 1),
-                              style: instrUpper
-                                  .merge(const TextStyle(fontSize: 30)),
-                            ),
-                            TextSpan(
-                                text: unitStrVario[settings.displayUnitsVario],
-                                style: instrLabel)
-                          ])),
-                        ]),
-                  ),
-                ),
-              ),
-            )),
+            title: Provider.of<Settings>(context).groundMode
+                ? groundControlBar(context)
+                : topInstruments(context)),
         // --- Main Menu
         drawer: Drawer(
             child: ListView(

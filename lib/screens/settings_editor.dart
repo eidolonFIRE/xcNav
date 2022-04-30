@@ -116,9 +116,19 @@ class _SettingsEditorState extends State<SettingsEditor> {
                   SettingsTile.switchTile(
                     initialValue: settings.mapControlsRightSide,
                     onToggle: (value) => settings.mapControlsRightSide = value,
-                    title: const Text("Map Controls Right Side"),
+                    title: const Text("Right-handed UI"),
                     leading: const Icon(Icons.swap_horiz),
-                  )
+                    description: const Text(
+                        "Move map control buttons to the right side."),
+                  ),
+                  SettingsTile.switchTile(
+                    initialValue: settings.groundMode,
+                    onToggle: (value) => settings.groundMode = value,
+                    title: const Text("Ground Support Mode"),
+                    leading: const Icon(Icons.swap_horiz),
+                    description:
+                        const Text("Alters UI and doesn't record track."),
+                  ),
                 ],
               ),
               SettingsSection(
