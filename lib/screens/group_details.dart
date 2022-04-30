@@ -5,9 +5,11 @@ import 'package:xcnav/dialogs/leave_group.dart';
 // Providers
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/providers/settings.dart';
 
 // Models
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/units.dart';
 
 // Widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -29,6 +31,10 @@ class _GroupDetailsState extends State<GroupDetails> {
   void dispose() {
     super.dispose();
   }
+
+  static const valueStyle = TextStyle(fontSize: 22, color: Colors.white);
+  static const unitStyle = TextStyle(fontSize: 16, color: Colors.white);
+  static final fillStyle = TextStyle(fontSize: 14, color: Colors.grey[600]);
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +64,8 @@ class _GroupDetailsState extends State<GroupDetails> {
                 ))
           ],
         ),
-        body: Consumer<Group>(
-            builder: (context, group, child) => ListView(
+        body: Consumer2<Group, Settings>(
+            builder: (context, group, settings, child) => ListView(
                 children: group.pilots.values
                     .map((_p) => ListTile(
                           leading: AvatarRound(_p.avatar, 28),
@@ -70,9 +76,48 @@ class _GroupDetailsState extends State<GroupDetails> {
                           subtitle: (_p.geo.time >
                                   DateTime.now().millisecondsSinceEpoch -
                                       5000 * 60)
-                              ? Text(
-                                  "${(_p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo) * meters2Miles).toStringAsFixed(1)} mi away,   ${(_p.geo.alt * meters2Feet).toStringAsFixed(0)}' alt",
-                                  style: Theme.of(context).textTheme.bodyMedium)
+                              ? Text.rich(TextSpan(children: [
+                                  // dist
+                                  TextSpan(
+                                      style: valueStyle,
+                                      text: convertDistValueCoarse(
+                                              settings.displayUnitsDist,
+                                              _p.geo.distanceTo(
+                                                  Provider.of<MyTelemetry>(
+                                                          context)
+                                                      .geo))
+                                          .toStringAsFixed(1)),
+                                  TextSpan(
+                                      style: unitStyle,
+                                      text: unitStrDistCoarse[
+                                          settings.displayUnitsDist]),
+                                  TextSpan(
+                                      style: fillStyle, text: " away, going "),
+                                  // speed
+                                  TextSpan(
+                                      style: valueStyle,
+                                      text: convertSpeedValue(
+                                              settings.displayUnitsSpeed,
+                                              _p.geo.spd)
+                                          .toStringAsFixed(0)),
+                                  TextSpan(
+                                      style: unitStyle,
+                                      text: unitStrSpeed[
+                                          settings.displayUnitsSpeed]),
+                                  TextSpan(style: fillStyle, text: ", at "),
+                                  // alt
+                                  TextSpan(
+                                      style: valueStyle,
+                                      text: convertDistValueFine(
+                                              settings.displayUnitsDist,
+                                              _p.geo.alt)
+                                          .toStringAsFixed(0)),
+                                  TextSpan(
+                                      style: unitStyle,
+                                      text: unitStrDistFine[
+                                          settings.displayUnitsDist]),
+                                  // TextSpan(style: fillStyle, text: " alt"),
+                                ]))
                               : const Text("( outdated telemetry )"),
                         ))
                     .toList())));
