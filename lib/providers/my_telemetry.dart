@@ -24,6 +24,7 @@ class MyTelemetry with ChangeNotifier {
   // Recorded
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
+  DateTime? takeOff;
 
   // in-flight hysterisis
   int triggerHyst = 0;
@@ -82,6 +83,7 @@ class MyTelemetry with ChangeNotifier {
       inFlight = !inFlight;
       triggerHyst = 0;
       if (inFlight) {
+        takeOff = DateTime.now();
         debugPrint("In Flight!!!");
       } else {
         debugPrint("Flight Ended");

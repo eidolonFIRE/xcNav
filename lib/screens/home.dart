@@ -12,7 +12,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:xcnav/dialogs/flightplan_drawer.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -24,18 +23,17 @@ import 'package:xcnav/providers/chat.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/fuel_warning.dart';
-import 'package:xcnav/widgets/icon_image.dart';
 
 // widgets
-import 'package:xcnav/widgets/waypoint_card.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
 // dialogs
-import 'package:xcnav/dialogs/fuel_adjustment.dart';
 import 'package:xcnav/dialogs/edit_waypoint.dart';
+import 'package:xcnav/dialogs/flightplan_drawer.dart';
+import 'package:xcnav/dialogs/more_instruments_drawer.dart';
 
 // models
 import 'package:xcnav/models/eta.dart';
@@ -310,21 +308,41 @@ class _MyHomePageState extends State<MyHomePage> {
         elevation: 0,
         constraints: const BoxConstraints(maxHeight: 500),
         builder: (BuildContext context) {
-          return flightPlanDrawer(setFocusMode, () {
-            editablePolyline.points.clear();
-            Navigator.pop(context);
-            setFocusMode(FocusMode.addPath);
-          }, () {
-            editablePolyline.points.clear();
-            editablePolyline.points.addAll(
-                Provider.of<ActivePlan>(context, listen: false)
-                        .selectedWp
-                        ?.latlng ??
-                    []);
-            Navigator.popUntil(context, ModalRoute.withName("/home"));
-            setFocusMode(FocusMode.editPath);
-          });
+          return SafeArea(
+            child: flightPlanDrawer(setFocusMode, () {
+              editablePolyline.points.clear();
+              Navigator.pop(context);
+              setFocusMode(FocusMode.addPath);
+            }, () {
+              editablePolyline.points.clear();
+              editablePolyline.points.addAll(
+                  Provider.of<ActivePlan>(context, listen: false)
+                          .selectedWp
+                          ?.latlng ??
+                      []);
+              Navigator.popUntil(context, ModalRoute.withName("/home"));
+              setFocusMode(FocusMode.editPath);
+            }),
+          );
         });
+  }
+
+  void showMoreInstruments(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierLabel: "Instruments",
+      barrierDismissible: true,
+      pageBuilder: (BuildContext context, animationIn, animationOut) {
+        return moreInstrumentsDrawer();
+      },
+      // TODO: this could use some tuning
+      transitionBuilder: (ctx, animation, _, child) {
+        return FractionalTranslation(
+          translation: Offset(0, animation.value - 1),
+          child: child,
+        );
+      },
+    );
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -342,12 +360,14 @@ class _MyHomePageState extends State<MyHomePage> {
             automaticallyImplyLeading: true,
             leadingWidth: 35,
             toolbarHeight: 64,
-            title: SizedBox(
-              height: 64,
-              child: Consumer2<MyTelemetry, Settings>(
-                builder: (context, myTelementy, settings, child) => Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
-                    child: Row(
+            title: GestureDetector(
+              onTap: () => showMoreInstruments(context),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
+                child: SizedBox(
+                  height: 64,
+                  child: Consumer2<MyTelemetry, Settings>(
+                    builder: (context, myTelementy, settings, child) => Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           // --- Speedometer
@@ -412,7 +432,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                 text: unitStrVario[settings.displayUnitsVario],
                                 style: instrLabel)
                           ])),
-                        ])),
+                        ]),
+                  ),
+                ),
               ),
             )),
         // --- Main Menu
@@ -483,86 +505,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
               ),
             ),
-
-            const Divider(
-              height: 20,
-            ),
-
-            // --- Fuel Indicator
-            Consumer<MyTelemetry>(
-                builder: (context, myTelemetry, child) => ListTile(
-                      minVerticalPadding: 0,
-                      leading: const Icon(Icons.local_gas_station, size: 30),
-                      title: GestureDetector(
-                        onTap: () => {showFuelDialog(context)},
-                        child: Card(
-                          child: (myTelemetry.fuel > 0)
-                              ? Builder(builder: (context) {
-                                  int remMin = (myTelemetry.fuel /
-                                          myTelemetry.fuelBurnRate *
-                                          60)
-                                      .ceil();
-                                  String value = (remMin >= 60)
-                                      ? (remMin / 60).toStringAsFixed(1)
-                                      : remMin.toString();
-                                  String unit = (remMin >= 60) ? "hr" : "min";
-                                  return Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      Text.rich(
-                                        TextSpan(
-                                          children: [
-                                            TextSpan(
-                                                text: convertFuelValue(
-                                                        Provider.of<Settings>(
-                                                                context)
-                                                            .displayUnitsFuel,
-                                                        myTelemetry.fuel)
-                                                    .toStringAsFixed(1),
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline4),
-                                            TextSpan(
-                                                text: unitStrFuel[
-                                                    Provider.of<Settings>(
-                                                            context)
-                                                        .displayUnitsFuel],
-                                                style: instrLabel)
-                                          ],
-                                        ),
-                                        softWrap: false,
-                                      ),
-                                      Text.rich(
-                                        TextSpan(
-                                          children: [
-                                            TextSpan(
-                                                text: value,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline4),
-                                            TextSpan(
-                                                text: unit, style: instrLabel)
-                                          ],
-                                        ),
-                                        softWrap: false,
-                                      ),
-                                    ],
-                                  );
-                                })
-                              : Padding(
-                                  padding: const EdgeInsets.all(6.0),
-                                  child: Text(
-                                    "Set Fuel Level",
-                                    style:
-                                        Theme.of(context).textTheme.headline5,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    )),
 
             const Divider(
               height: 20,

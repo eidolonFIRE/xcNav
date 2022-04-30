@@ -102,10 +102,11 @@ class MyApp extends StatelessWidget {
         // bottomNavigationBarTheme:
         //     BottomNavigationBarThemeData(backgroundColor: primaryDarkColor),
         textTheme: const TextTheme(
+            headline4: TextStyle(color: Colors.white),
             button: TextStyle(
-          fontSize: 30,
-          color: Colors.white,
-        )),
+              fontSize: 30,
+              color: Colors.white,
+            )),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
             side: MaterialStateProperty.resolveWith<BorderSide>(
