@@ -12,6 +12,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:xcnav/models/waypoint.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -727,6 +728,41 @@ class _MyHomePageState extends State<MyHomePage> {
                               .whereNotNull()
                               .toList(),
                         ),
+
+                        // Launch Location (automatic marker)
+                        if (myTelemetry.launchGeo != null)
+                          MarkerLayerOptions(markers: [
+                            Marker(
+                                width: 40,
+                                height: 60,
+                                point: myTelemetry.launchGeo!.latLng,
+                                builder: (ctx) => Container(
+                                      transformAlignment: const Alignment(0, 0),
+                                      transform: Matrix4.rotationZ(
+                                          -mapController.rotation * pi / 180),
+                                      child: Stack(children: [
+                                        Container(
+                                          transform: Matrix4.translationValues(
+                                              0, -60 / 2, 0),
+                                          child: Image.asset(
+                                            "assets/images/pin.png",
+                                            color: Colors.lightGreen,
+                                          ),
+                                        ),
+                                        Center(
+                                          child: Container(
+                                            transform:
+                                                Matrix4.translationValues(
+                                                    0, -60 / 1.5, 0),
+                                            child: const Icon(
+                                              Icons.flight_takeoff,
+                                              size: 60 / 2,
+                                            ),
+                                          ),
+                                        ),
+                                      ]),
+                                    ))
+                          ]),
 
                         // Live locations other pilots
                         MarkerLayerOptions(

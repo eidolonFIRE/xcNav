@@ -92,6 +92,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
         // --- Waypoint list
         Expanded(
           child: ListView(primary: true, children: [
+            // --- List of waypoints
             ReorderableListView.builder(
               shrinkWrap: true,
               primary: false,
@@ -118,6 +119,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                 activePlan.sortWaypoint(oldIndex, newIndex);
               },
             ),
+            // This shows when flight plan is empty
             if (activePlan.waypoints.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -127,6 +129,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                   style: instrLabel,
                 ),
               ),
+            // --- Switch to include return trip
             if (activePlan.waypoints.length > 1)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10.0),

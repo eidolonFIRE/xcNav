@@ -4,11 +4,8 @@ import 'package:xcnav/models/waypoint.dart';
 const iconOptions = {
   null: null,
   "star": Icons.star,
-  // "square": Icons.square_rounded,
   "x": Icons.close,
   "paraglider": Icons.paragliding,
-  "takeoff": Icons.flight_takeoff,
-  "landing": Icons.flight_land,
   "exclamation": Icons.priority_high,
   "question": Icons.question_mark,
   "fuel": Icons.local_gas_station,
@@ -17,6 +14,7 @@ const iconOptions = {
   "sleep": Icons.local_hotel,
   "flag": Icons.sports_score,
   "camera": Icons.photo_camera,
+  "airport": Icons.local_airport,
   // TODO: add custom icons (camping tent, pylons, power lines?, LZ, etc)
 };
 

@@ -17,14 +17,13 @@ class MyTelemetry with ChangeNotifier {
   Geo geo = Geo();
   double fuel = 0; // Liters
   double fuelBurnRate = 4; // Liter/Hour
-
-  // Calculated
   Geo? geoPrev;
 
   // Recorded
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
   DateTime? takeOff;
+  Geo? launchGeo;
 
   // in-flight hysterisis
   int triggerHyst = 0;
@@ -84,6 +83,7 @@ class MyTelemetry with ChangeNotifier {
       triggerHyst = 0;
       if (inFlight) {
         takeOff = DateTime.now();
+        launchGeo = newGeo;
         debugPrint("In Flight!!!");
       } else {
         debugPrint("Flight Ended");
