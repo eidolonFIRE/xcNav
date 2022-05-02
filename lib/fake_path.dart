@@ -46,7 +46,8 @@ class FakeFlight {
   FakeFlight() {
     randPhaseA = rand.nextDouble() / 100;
     randPhaseB = rand.nextDouble() * 3.15159;
-    fakeCenter = FakeGeo(-121.2971, 37.6738, fake_ground);
+    fakeCenter = FakeGeo(-121.2971 + rand.nextDouble() / 10,
+        37.6738 + rand.nextDouble() / 10, fake_ground);
     lat = fakeCenter.lat;
     lng = fakeCenter.lng;
     alt = fake_ground;

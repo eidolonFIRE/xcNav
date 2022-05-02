@@ -29,6 +29,7 @@ import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
 import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/icon_image.dart';
 
 // dialogs
 import 'package:xcnav/dialogs/edit_waypoint.dart';
@@ -65,10 +66,13 @@ TextStyle instrLabel = TextStyle(
 
 class _MyHomePageState extends State<MyHomePage> {
   late MapController mapController;
+  bool mapReady = false;
   FocusMode focusMode = FocusMode.me;
   FocusMode prevFocusMode = FocusMode.me;
+  bool northLock = true;
 
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
+  Stream<Position>? positionStream;
   StreamSubscription<Position>? _positionStreamSubscription;
   StreamSubscription<ServiceStatus>? _serviceStatusStreamSubscription;
   bool positionStreamStarted = false;
@@ -91,10 +95,11 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-    _toggleServiceStatusStream();
+    _setupServiceStatusStream();
 
     // intialize the controllers
     mapController = MapController();
+    mapController.onReady.then((value) => mapReady = true);
 
     polyEditor = PolyEditor(
       addClosePathMarker: false,
@@ -131,6 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
             positionStreamStarted = !positionStreamStarted;
             _toggleListening();
           }
+          _serviceStatusStreamSubscription!.resume();
           debugPrint("--- Stopping Location Spoofer ---");
           timer?.cancel();
           timer = null;
@@ -139,7 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _toggleServiceStatusStream() {
+  void _setupServiceStatusStream() {
     debugPrint("Toggle Location Service Stream");
     if (_serviceStatusStreamSubscription == null) {
       final serviceStatusStream = _geolocatorPlatform.getServiceStatusStream();
@@ -215,33 +221,27 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       }
 
-      final positionStream = _geolocatorPlatform.getPositionStream(
+      positionStream = _geolocatorPlatform.getPositionStream(
           locationSettings: locationSettings);
-      _positionStreamSubscription = positionStream.handleError((error) {
-        _positionStreamSubscription?.cancel();
-        _positionStreamSubscription = null;
-      }).listen((position) => {handleGeomUpdate(context, position)});
-      _positionStreamSubscription?.pause();
     }
 
     setState(() {
       if (_positionStreamSubscription == null) {
-        return;
-      }
+        _positionStreamSubscription = positionStream!.handleError((error) {
+          _positionStreamSubscription?.cancel();
+          _positionStreamSubscription = null;
+        }).listen((position) => {handleGeomUpdate(context, position)});
 
-      String statusDisplayValue;
-      if (_positionStreamSubscription!.isPaused) {
-        _positionStreamSubscription!.resume();
-        statusDisplayValue = 'resumed';
+        debugPrint('Listening for position updates RESUMED');
       } else {
-        _positionStreamSubscription!.pause();
-        statusDisplayValue = 'paused';
+        _positionStreamSubscription?.cancel();
+        _positionStreamSubscription = null;
+        debugPrint('Listening for position updates PAUSED');
       }
-
-      debugPrint('Listening for position updates $statusDisplayValue');
     });
   }
 
+  /// Do all the things with a GPS update
   void handleGeomUpdate(BuildContext context, Position position) {
     var myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
     var settings = Provider.of<Settings>(context, listen: false);
@@ -270,28 +270,34 @@ class _MyHomePageState extends State<MyHomePage> {
   void refreshMapView() {
     Geo geo = Provider.of<MyTelemetry>(context, listen: false).geo;
     CenterZoom? centerZoom;
+
+    // --- Orient to gps heading
+    if (!northLock &&
+        (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
+      mapController.rotate(-geo.hdg / pi * 180);
+    }
+    // --- Move to center
     if (focusMode == FocusMode.me) {
       centerZoom = CenterZoom(
           center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
     } else if (focusMode == FocusMode.group) {
       List<LatLng> points = Provider.of<Group>(context, listen: false)
           .pilots
-          // Don't consider telemetry older than 2 minutes
+          // Don't consider telemetry older than 5 minutes
           .values
           .where((_p) =>
-              _p.geo.time > DateTime.now().millisecondsSinceEpoch - 2000 * 60)
+              _p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
           .map((e) => e.geo.latLng)
           .toList();
       points.add(LatLng(geo.lat, geo.lng));
       centerZoom = mapController.centerZoomFitBounds(
           LatLngBounds.fromPoints(points),
-          options:
-              const FitBoundsOptions(padding: EdgeInsets.all(80), maxZoom: 13));
-    } else {
-      centerZoom =
-          CenterZoom(center: mapController.center, zoom: mapController.zoom);
+          options: const FitBoundsOptions(
+              padding: EdgeInsets.all(100), maxZoom: 13, inside: true));
     }
-    mapController.move(centerZoom.center, centerZoom.zoom);
+    if (centerZoom != null) {
+      mapController.move(centerZoom.center, centerZoom.zoom);
+    }
   }
 
   void onMapTap(BuildContext context, LatLng latlng) {
@@ -604,155 +610,174 @@ class _MyHomePageState extends State<MyHomePage> {
         body: Center(
           child: Stack(alignment: Alignment.center, children: [
             Consumer3<MyTelemetry, Settings, ActivePlan>(
-              builder: (context, myTelemetry, settings, plan, child) =>
-                  FlutterMap(
-                mapController: mapController,
-                options: MapOptions(
-                  interactiveFlags:
-                      InteractiveFlag.all & ~InteractiveFlag.rotate,
-                  center: myTelemetry.geo.latLng,
-                  zoom: 12.0,
-                  onTap: (tapPosition, point) => onMapTap(context, point),
-                  onLongPress: (tapPosition, point) =>
-                      onMapLongPress(context, point),
-                  onPositionChanged: (mapPosition, hasGesture) {
-                    // debugPrint("$mapPosition $hasGesture");
-                    if (hasGesture &&
-                        (focusMode == FocusMode.me ||
-                            focusMode == FocusMode.group)) {
-                      // --- Unlock any focus lock
-                      setFocusMode(FocusMode.unlocked);
-                    }
-                  },
-                  allowPanningOnScrollingParent: false,
-                  plugins: [
-                    DragMarkerPlugin(),
-                  ],
-                ),
-                layers: [
-                  TileLayerOptions(
-                    // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                    // subdomains: ['a', 'b', 'c'],
-                    urlTemplate:
-                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                    // tileSize: 512,
-                    // zoomOffset: -1,
-                  ),
-
-                  if (settings.showAirspace)
-                    TileLayerOptions(
-                      urlTemplate:
-                          'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                      maxZoom: 17,
-                      tms: true,
-                      subdomains: ['1', '2'],
-                      backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                    ),
-                  if (settings.showAirspace)
-                    TileLayerOptions(
-                      urlTemplate:
-                          'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                      maxZoom: 17,
-                      tms: true,
-                      subdomains: ['1', '2'],
-                      backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                    ),
-                  if (settings.showAirspace)
-                    TileLayerOptions(
-                      urlTemplate:
-                          'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                      maxZoom: 17,
-                      tms: true,
-                      subdomains: ['1', '2'],
-                      backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                    ),
-
-                  // Flight Log
-                  PolylineLayerOptions(
-                      polylines: [myTelemetry.buildFlightTrace()]),
-
-                  // Trip snake lines
-                  PolylineLayerOptions(polylines: plan.buildTripSnake()),
-
-                  PolylineLayerOptions(
-                    polylines: [plan.buildNextWpIndicator(myTelemetry.geo)],
-                  ),
-
-                  // Flight plan paths
-                  PolylineLayerOptions(
-                    polylines: plan.waypoints
-                        .where((value) => value.latlng.length > 1)
-                        .mapIndexed((i, e) => Polyline(
-                            points: e.latlng,
-                            strokeWidth: 6,
-                            color: Color(e.color ?? Colors.black.value)))
-                        .toList(),
-                  ),
-
-                  // Flight plan markers
-                  DragMarkerPluginOptions(
-                    markers: plan.waypoints
-                        .mapIndexed((i, e) => e.latlng.length == 1
-                            ? DragMarker(
-                                point: e.latlng[0],
-                                height: 60 * 0.8,
-                                width: 40 * 0.8,
-                                onTap: (_) => plan.selectWaypoint(i),
-                                onDragEnd: (p0, p1) => {
-                                      plan.moveWaypoint(i, [p1])
-                                    },
-                                builder: (context) => MapMarker(e, 60 * 0.8))
-                            : null)
-                        .whereNotNull()
-                        .toList(),
-                  ),
-
-                  // Live locations other pilots
-                  MarkerLayerOptions(
-                    markers: Provider.of<Group>(context)
-                        .pilots
-                        // Don't share locations older than 5minutes
-                        .values
-                        .where((_p) =>
-                            _p.geo.time >
-                            DateTime.now().millisecondsSinceEpoch - 5000 * 60)
-                        .toList()
-                        .map((pilot) => Marker(
-                            point: pilot.geo.latLng,
-                            width: 40,
-                            height: 40,
-                            builder: (ctx) => Container(
-                                transformAlignment: const Alignment(0, 0),
-                                child: AvatarRound(pilot.avatar, 40))))
-                        .toList(),
-                  ),
-
-                  // "ME" Live Location Marker
-                  MarkerLayerOptions(
-                    markers: [
-                      Marker(
-                        width: 50.0,
-                        height: 50.0,
-                        point: myTelemetry.geo.latLng,
-                        builder: (ctx) => Container(
-                          transformAlignment: const Alignment(0, 0),
-                          child: Image.asset("assets/images/red_arrow.png"),
-                          transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
-                        ),
+                builder: (context, myTelemetry, settings, plan, child) =>
+                    FlutterMap(
+                      mapController: mapController,
+                      options: MapOptions(
+                        interactiveFlags: InteractiveFlag.all &
+                            (northLock
+                                ? ~InteractiveFlag.rotate
+                                : InteractiveFlag.all),
+                        // rotation: -myTelemetry.geo.hdg,
+                        center: myTelemetry.geo.latLng,
+                        zoom: 12.0,
+                        onTap: (tapPosition, point) => onMapTap(context, point),
+                        onLongPress: (tapPosition, point) =>
+                            onMapLongPress(context, point),
+                        onPositionChanged: (mapPosition, hasGesture) {
+                          // debugPrint("$mapPosition $hasGesture");
+                          if (hasGesture &&
+                              (focusMode == FocusMode.me ||
+                                  focusMode == FocusMode.group)) {
+                            // --- Unlock any focus lock
+                            setFocusMode(FocusMode.unlocked);
+                          }
+                        },
+                        allowPanningOnScrollingParent: false,
+                        plugins: [
+                          DragMarkerPlugin(),
+                        ],
                       ),
-                    ],
-                  ),
+                      layers: [
+                        TileLayerOptions(
+                          // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                          // subdomains: ['a', 'b', 'c'],
+                          urlTemplate:
+                              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                          // tileSize: 512,
+                          // zoomOffset: -1,
+                        ),
 
-                  // Draggable line editor
-                  if (focusMode == FocusMode.addPath ||
-                      focusMode == FocusMode.editPath)
-                    PolylineLayerOptions(polylines: polyLines),
-                  if (focusMode == FocusMode.addPath ||
-                      focusMode == FocusMode.editPath)
-                    DragMarkerPluginOptions(markers: polyEditor.edit()),
-                ],
-              ),
-            ),
+                        if (settings.showAirspace)
+                          TileLayerOptions(
+                            urlTemplate:
+                                'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                            maxZoom: 17,
+                            tms: true,
+                            subdomains: ['1', '2'],
+                            backgroundColor:
+                                const Color.fromARGB(0, 255, 255, 255),
+                          ),
+                        if (settings.showAirspace)
+                          TileLayerOptions(
+                            urlTemplate:
+                                'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                            maxZoom: 17,
+                            tms: true,
+                            subdomains: ['1', '2'],
+                            backgroundColor:
+                                const Color.fromARGB(0, 255, 255, 255),
+                          ),
+                        if (settings.showAirspace)
+                          TileLayerOptions(
+                            urlTemplate:
+                                'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                            maxZoom: 17,
+                            tms: true,
+                            subdomains: ['1', '2'],
+                            backgroundColor:
+                                const Color.fromARGB(0, 255, 255, 255),
+                          ),
+
+                        // Flight Log
+                        PolylineLayerOptions(
+                            polylines: [myTelemetry.buildFlightTrace()]),
+
+                        // Trip snake lines
+                        PolylineLayerOptions(polylines: plan.buildTripSnake()),
+
+                        PolylineLayerOptions(
+                          polylines: [
+                            plan.buildNextWpIndicator(myTelemetry.geo)
+                          ],
+                        ),
+
+                        // Flight plan paths
+                        PolylineLayerOptions(
+                          polylines: plan.waypoints
+                              .where((value) => value.latlng.length > 1)
+                              .mapIndexed((i, e) => Polyline(
+                                  points: e.latlng,
+                                  strokeWidth: 6,
+                                  color: Color(e.color ?? Colors.black.value)))
+                              .toList(),
+                        ),
+
+                        // Flight plan markers
+                        DragMarkerPluginOptions(
+                          markers: plan.waypoints
+                              .mapIndexed((i, e) => e.latlng.length == 1
+                                  ? DragMarker(
+                                      point: e.latlng[0],
+                                      height: 60 * 0.8,
+                                      width: 40 * 0.8,
+                                      onTap: (_) => plan.selectWaypoint(i),
+                                      onDragEnd: (p0, p1) => {
+                                            plan.moveWaypoint(i, [p1])
+                                          },
+                                      builder: (context) => Container(
+                                          transformAlignment:
+                                              const Alignment(0, 0),
+                                          transform: Matrix4.rotationZ(
+                                              -mapController.rotation *
+                                                  pi /
+                                                  180),
+                                          child: MapMarker(e, 60 * 0.8)))
+                                  : null)
+                              .whereNotNull()
+                              .toList(),
+                        ),
+
+                        // Live locations other pilots
+                        MarkerLayerOptions(
+                          markers: Provider.of<Group>(context)
+                              .pilots
+                              // Don't share locations older than 5minutes
+                              .values
+                              .where((_p) =>
+                                  _p.geo.time >
+                                  DateTime.now().millisecondsSinceEpoch -
+                                      5000 * 60)
+                              .toList()
+                              .map((pilot) => Marker(
+                                  point: pilot.geo.latLng,
+                                  width: 40,
+                                  height: 40,
+                                  builder: (ctx) => Container(
+                                      transformAlignment: const Alignment(0, 0),
+                                      transform: Matrix4.rotationZ(
+                                          -mapController.rotation * pi / 180),
+                                      child: AvatarRound(pilot.avatar, 40))))
+                              .toList(),
+                        ),
+
+                        // "ME" Live Location Marker
+                        MarkerLayerOptions(
+                          markers: [
+                            Marker(
+                              width: 50.0,
+                              height: 50.0,
+                              point: myTelemetry.geo.latLng,
+                              builder: (ctx) => Container(
+                                transformAlignment: const Alignment(0, 0),
+                                child:
+                                    Image.asset("assets/images/red_arrow.png"),
+                                transform:
+                                    Matrix4.rotationZ(myTelemetry.geo.hdg),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Draggable line editor
+                        if (focusMode == FocusMode.addPath ||
+                            focusMode == FocusMode.editPath)
+                          PolylineLayerOptions(polylines: polyLines),
+                        if (focusMode == FocusMode.addPath ||
+                            focusMode == FocusMode.editPath)
+                          DragMarkerPluginOptions(markers: polyEditor.edit()),
+                      ],
+                    )),
 
             // --- Chat bubbles
             Consumer<ChatMessages>(
@@ -908,13 +933,47 @@ class _MyHomePageState extends State<MyHomePage> {
               right: Provider.of<Settings>(context).mapControlsRightSide
                   ? 10
                   : null,
-              top: 0,
-              bottom: 0,
+              top: 10,
+              bottom: 10,
               child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   mainAxisSize: MainAxisSize.max,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // --- Compass
+                    MapButton(
+                        child: Stack(fit: StackFit.expand, children: [
+                          StreamBuilder(
+                              stream: mapController.mapEventStream,
+                              builder: (context, event) => Container(
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: mapReady
+                                        ? Matrix4.rotationZ(
+                                            mapController.rotation * pi / 180)
+                                        : Matrix4.rotationZ(0),
+                                    child: SvgPicture.asset(
+                                      "assets/images/compass.svg",
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )),
+                          if (northLock)
+                            Image(
+                                // width: 50,
+                                // height: 50,
+                                // fit: BoxFit.none,
+                                image: IconImageProvider(Icons.lock,
+                                    color: Colors.black)),
+                        ]),
+                        size: 60,
+                        onPressed: () => {
+                              setState(
+                                () {
+                                  northLock = !northLock;
+                                  if (northLock) mapController.rotate(0);
+                                },
+                              )
+                            },
+                        selected: false),
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -967,62 +1026,61 @@ class _MyHomePageState extends State<MyHomePage> {
                             color: Colors.black,
                           )),
                       // --- Zoom Out (-)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 60),
-                        child: MapButton(
-                          size: 60,
-                          selected: false,
-                          onPressed: () => {
-                            mapController.move(
-                                mapController.center, mapController.zoom - 1)
-                          },
-                          child: Image.asset(
-                              "assets/images/icon_controls_zoom_out.png"),
-                        ),
+                      MapButton(
+                        size: 60,
+                        selected: false,
+                        onPressed: () => {
+                          mapController.move(
+                              mapController.center, mapController.zoom - 1)
+                        },
+                        child: Image.asset(
+                            "assets/images/icon_controls_zoom_out.png"),
                       ),
                     ]),
+                    // --- Chat button
+                    Stack(
+                      children: [
+                        MapButton(
+                          size: 60,
+                          selected: false,
+                          onPressed: () =>
+                              {Navigator.pushNamed(context, "/party")},
+                          child: const Icon(
+                            Icons.chat,
+                            size: 30,
+                            color: Colors.black,
+                          ),
+                        ),
+                        if (Provider.of<ChatMessages>(context).numUnread > 0)
+                          Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                  decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.all(
+                                          Radius.circular(10))),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Text(
+                                      "${Provider.of<ChatMessages>(context).numUnread}",
+                                      style: const TextStyle(fontSize: 20),
+                                    ),
+                                  ))),
+                      ],
+                    )
                   ]),
             ),
 
-            // --- Chat button
-            Positioned(
-                bottom: 10,
-                left: Provider.of<Settings>(context).mapControlsRightSide
-                    ? null
-                    : 10,
-                right: Provider.of<Settings>(context).mapControlsRightSide
-                    ? 10
-                    : null,
-                child: Stack(
-                  children: [
-                    MapButton(
-                      size: 60,
-                      selected: false,
-                      onPressed: () => {Navigator.pushNamed(context, "/party")},
-                      child: const Icon(
-                        Icons.chat,
-                        size: 30,
-                        color: Colors.black,
-                      ),
-                    ),
-                    if (Provider.of<ChatMessages>(context).numUnread > 0)
-                      Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                              decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(10))),
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Text(
-                                  "${Provider.of<ChatMessages>(context).numUnread}",
-                                  style: const TextStyle(fontSize: 20),
-                                ),
-                              ))),
-                  ],
-                )),
+            // Positioned(
+            //     bottom: 10,
+            //     left: Provider.of<Settings>(context).mapControlsRightSide
+            //         ? null
+            //         : 10,
+            //     right: Provider.of<Settings>(context).mapControlsRightSide
+            //         ? 10
+            //         : null,
+            //     child: ),
 
             // --- Connection status banner (along top of map)
             if (Provider.of<Client>(context).state == ClientState.disconnected)
