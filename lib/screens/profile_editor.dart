@@ -142,6 +142,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: isOptional,
+        title: const Text("Edit Profile"),
         actions: [
           IconButton(
             iconSize: 40,

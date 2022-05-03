@@ -18,8 +18,11 @@ class PathIntercept {
 class Geo {
   double lat = 0;
   double lng = 0;
+
+  /// Meters
   double alt = 0;
   int time = 0; // milliseconds
+  /// Radians
   double hdg = 0; // radians
   double spd = 0; // meters/sec
   double vario = 0; // meters/sec
@@ -33,7 +36,8 @@ class Geo {
   Geo.fromPosition(Position location, Geo? prev) {
     lat = location.latitude;
     lng = location.longitude;
-    alt = location.altitude;
+    alt = 700;
+    // location.altitude;
     time = location.timestamp?.millisecondsSinceEpoch ?? 0;
 
     if (prev != null && prev.time < time) {

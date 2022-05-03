@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/providers/adsb.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -248,12 +249,18 @@ class _MyHomePageState extends State<MyHomePage> {
     var settings = Provider.of<Settings>(context, listen: false);
     var geo = Geo.fromPosition(position, myTelemetry.geo);
 
+    // Update ADSB
+    Provider.of<ADSB>(context, listen: false).refresh(geo);
+
     if (geo.lat != 0.0 || geo.lng != 0.0) {
       myTelemetry.updateGeo(geo, bypassRecording: settings.groundMode);
 
       if (!settings.groundMode || settings.groundModeTelemetry) {
-        Provider.of<Client>(context, listen: false)
-            .sendTelemetry(geo, myTelemetry.fuel);
+        // TODO: better way to reduce telemetry messages
+        if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
+          Provider.of<Client>(context, listen: false)
+              .sendTelemetry(geo, myTelemetry.fuel);
+        }
       }
     }
     refreshMapView();
@@ -441,7 +448,7 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Text("Ground Support Mode", style: instrLabel),
+          Text("Ground Support", style: instrLabel),
           Card(
               color: Colors.grey[700],
               child: Padding(
@@ -449,7 +456,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text("Share my Position"),
+                    const Text("Share Position"),
                     Switch(
                         value:
                             Provider.of<Settings>(context).groundModeTelemetry,
@@ -763,6 +770,26 @@ class _MyHomePageState extends State<MyHomePage> {
                                       ]),
                                     ))
                           ]),
+
+                        // GA planes (ADSB IN)
+                        MarkerLayerOptions(
+                            markers: Provider.of<ADSB>(context, listen: false)
+                                .planes
+                                .values
+                                .map(
+                                  (e) => Marker(
+                                    width: 50.0,
+                                    height: 50.0,
+                                    point: e.latlng,
+                                    builder: (ctx) => Container(
+                                      transformAlignment: const Alignment(0, 0),
+                                      child: e.getIcon(myTelemetry.geo),
+                                      transform:
+                                          Matrix4.rotationZ(e.hdg * pi / 180),
+                                    ),
+                                  ),
+                                )
+                                .toList()),
 
                         // Live locations other pilots
                         MarkerLayerOptions(
@@ -1147,7 +1174,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // --- Bottom Instruments
         bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(
             builder: (context, activePlan, myTelemetry, child) {
-          debugPrint("Update ETA");
+          // debugPrint("Update ETA");
           ETA etaNext = activePlan.selectedIndex != null
               ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd,
                   activePlan.selectedIndex!)

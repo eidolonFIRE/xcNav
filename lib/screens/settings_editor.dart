@@ -141,7 +141,10 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     SettingsTile.switchTile(
                       initialValue: settings.spoofLocation,
                       title: const Text("Spoof Location"),
-                      leading: const Icon(Icons.location_off),
+                      leading: const Icon(
+                        Icons.location_off,
+                        color: Colors.red,
+                      ),
                       onToggle: (value) => {settings.spoofLocation = value},
                     ),
                     // --- Erase Identity

@@ -5,6 +5,7 @@ import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
 
 // providers
+import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -57,6 +58,10 @@ void main() {
           ),
           ChangeNotifierProvider(
             create: (_) => ChatMessages(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (context) => ADSB(context),
             lazy: false,
           ),
           ChangeNotifierProvider(

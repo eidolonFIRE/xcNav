@@ -13,10 +13,13 @@ import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 
 class MyTelemetry with ChangeNotifier {
-  // Live Readings
   Geo geo = Geo();
-  double fuel = 0; // Liters
-  double fuelBurnRate = 4; // Liter/Hour
+
+  /// Liters
+  double fuel = 0;
+
+  /// Liter/Hour
+  double fuelBurnRate = 4;
   Geo? geoPrev;
 
   // Recorded

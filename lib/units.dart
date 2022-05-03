@@ -45,6 +45,11 @@ const Map<DisplayUnitsDist, String> unitStrDistCoarse = {
   DisplayUnitsDist.metric: " km",
 };
 
+const Map<DisplayUnitsDist, String> unitStrDistCoarseVerbal = {
+  DisplayUnitsDist.imperial: " mile",
+  DisplayUnitsDist.metric: " kilometer",
+};
+
 const Map<DisplayUnitsFuel, String> unitStrFuel = {
   DisplayUnitsFuel.liter: " L",
   DisplayUnitsFuel.gal: " gal",

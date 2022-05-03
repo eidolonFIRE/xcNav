@@ -85,7 +85,7 @@ class _PlansViewerState extends State<PlansViewer> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Flight Plans"),
-        centerTitle: true,
+        // centerTitle: true,
         actions: [
           IconButton(
               onPressed: () => {

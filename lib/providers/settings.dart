@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/providers/adsb.dart';
 
 import 'package:xcnav/units.dart';
 
@@ -20,6 +21,12 @@ class Settings with ChangeNotifier {
   var _displayUnitsVario = DisplayUnitsVario.fpm;
   var _displayUnitsDist = DisplayUnitsDist.imperial;
   var _displayUnitsFuel = DisplayUnitsFuel.liter;
+
+  // --- ADSB
+  ProximityConfig adsbProxConfig =
+      ProximityConfig(vertical: 300, horizontalDist: 500, horizontalTime: 45);
+  // Use this for testing...
+  // ProximityConfig(vertical: 3000, horizontalDist: 2000, horizontalTime: 45);
 
   Settings() {
     _loadSettings();

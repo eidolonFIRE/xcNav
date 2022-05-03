@@ -60,9 +60,9 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Flights",
+          "Flight Logs",
         ),
-        centerTitle: true,
+        // centerTitle: true,
         // TODO: show some aggregate numbers here
       ),
       body: ListView(
