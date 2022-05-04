@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 // Providers
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/chat.dart';
+import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/profile.dart';
 
 // Models

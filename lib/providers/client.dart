@@ -15,7 +15,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/providers/chat.dart';
+import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
 
 enum ClientState {
@@ -238,7 +238,7 @@ class Client with ChangeNotifier {
 
   void joinGroup(String reqGroupID) {
     sendToAWS("joinGroupRequest", {
-      "group": reqGroupID,
+      "group": reqGroupID.toLowerCase(),
     });
     debugPrint("Requesting Join Group $reqGroupID");
   }

@@ -16,12 +16,6 @@ void promptLeaveGroup(BuildContext context) {
           ),
           titlePadding: const EdgeInsets.all(10),
           contentPadding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-          // content: Column(
-          //   mainAxisSize: MainAxisSize.min,
-          //   children: [
-
-          //   ],
-          // ),
           actions: [
             ElevatedButton.icon(
                 label: const Text("Leave"),

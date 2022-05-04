@@ -21,7 +21,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
-import 'package:xcnav/providers/chat.dart';
+import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/fuel_warning.dart';
@@ -843,7 +843,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         MarkerLayerOptions(
                           markers: Provider.of<Group>(context)
                               .pilots
-                              // Don't share locations older than 5minutes
+                              // Don't see locations older than 5minutes
                               .values
                               .where((_p) =>
                                   _p.geo.time >

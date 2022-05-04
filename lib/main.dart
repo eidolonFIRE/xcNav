@@ -12,7 +12,7 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
-import 'package:xcnav/providers/chat.dart';
+import 'package:xcnav/providers/chat_messages.dart';
 
 // screens
 import 'package:xcnav/screens/home.dart';
