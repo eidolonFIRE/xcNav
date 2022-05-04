@@ -36,8 +36,7 @@ class Geo {
   Geo.fromPosition(Position location, Geo? prev) {
     lat = location.latitude;
     lng = location.longitude;
-    alt = 700;
-    // location.altitude;
+    alt = location.altitude;
     time = location.timestamp?.millisecondsSinceEpoch ?? 0;
 
     if (prev != null && prev.time < time) {

@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 
 // Providers
 import 'package:xcnav/providers/profile.dart';
@@ -38,6 +41,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
           ),
           body: SettingsList(
             sections: [
+              // --- Display Units
               SettingsSection(title: const Text("Display Units"), tiles: [
                 SettingsTile.navigation(
                   title: const Text("Fuel"),
@@ -110,6 +114,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                   leading: const Icon(Icons.trending_up),
                 ),
               ]),
+              // --- UI options
               SettingsSection(
                 title: const Text("UI Options"),
                 tiles: [
@@ -131,6 +136,27 @@ class _SettingsEditorState extends State<SettingsEditor> {
                   ),
                 ],
               ),
+              // --- ADSB options
+              SettingsSection(title: const Text("ADSB"), tiles: [
+                SettingsTile.navigation(
+                  title: const Text("Proximity Profile"),
+                  leading: const Icon(Icons.radar),
+                  description: Text(
+                      settings.proximityProfile.toMultilineString(settings)),
+                  trailing: DropdownButton<String>(
+                    onChanged: (value) {
+                      settings.selectProximityConfig(value ?? "Medium");
+                    },
+                    value: settings.proximityProfileName,
+                    items: settings.proximityProfileOptions.entries
+                        .map((each) => DropdownMenuItem(
+                            value: each.key, child: Text(each.key)))
+                        .toList(),
+                  ),
+                )
+              ]),
+
+              // --- Debug Tools
               SettingsSection(
                   title: const Text(
                     "Debug Tools",
@@ -168,10 +194,20 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                   // The "Yes" button
                                   TextButton.icon(
                                       onPressed: () {
-                                        // Remove the box
+                                        // Clear Profile
                                         Provider.of<Profile>(context,
                                                 listen: false)
                                             .eraseIdentity();
+
+                                        // Remove Avatar saved file
+                                        path_provider
+                                            .getTemporaryDirectory()
+                                            .then((tempDir) {
+                                          var outfile = File(
+                                              tempDir.path + "/avatar.jpg");
+                                          outfile.exists().then((value) =>
+                                              {if (value) outfile.delete()});
+                                        });
 
                                         // Close the dialog
                                         Navigator.of(context).pop();

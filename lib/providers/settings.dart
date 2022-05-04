@@ -23,12 +23,23 @@ class Settings with ChangeNotifier {
   var _displayUnitsFuel = DisplayUnitsFuel.liter;
 
   // --- ADSB
-  ProximityConfig adsbProxConfig =
-      ProximityConfig(vertical: 300, horizontalDist: 500, horizontalTime: 45);
-  // Use this for testing...
-  // ProximityConfig(vertical: 3000, horizontalDist: 2000, horizontalTime: 45);
+  bool _adsbEnabled = false;
+  final Map<String, ProximityConfig> proximityProfileOptions = {
+    "Off": ProximityConfig(vertical: 0, horizontalDist: 0, horizontalTime: 0),
+    "Small":
+        ProximityConfig(vertical: 200, horizontalDist: 300, horizontalTime: 30),
+    "Medium":
+        ProximityConfig(vertical: 400, horizontalDist: 600, horizontalTime: 45),
+    "Large": ProximityConfig(
+        vertical: 800, horizontalDist: 1200, horizontalTime: 60),
+    "X-Large": ProximityConfig(
+        vertical: 1000, horizontalDist: 2000, horizontalTime: 90),
+  };
+  late ProximityConfig proximityProfile;
+  late String proximityProfileName;
 
   Settings() {
+    selectProximityConfig("Medium");
     _loadSettings();
   }
 
@@ -48,6 +59,11 @@ class Settings with ChangeNotifier {
       _groundMode = prefs.getBool("settings.groundMode") ?? false;
       _groundModeTelemetry =
           prefs.getBool("settings.groundModeTelemetry") ?? false;
+
+      // --- ADSB
+      selectProximityConfig(
+          prefs.getString("settings.adsbProximityProfile") ?? "Medium");
+      _adsbEnabled = prefs.getBool("settings.adsbEnabled") ?? false;
     });
   }
 
@@ -124,6 +140,26 @@ class Settings with ChangeNotifier {
     _groundModeTelemetry = value;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setBool("settings.groundModeTelemetry", _groundModeTelemetry);
+    });
+    notifyListeners();
+  }
+
+  // --- ADSB
+  void selectProximityConfig(String name) {
+    proximityProfile =
+        proximityProfileOptions[name] ?? proximityProfileOptions["Medium"]!;
+    proximityProfileName = name;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString("settings.adsbProximityProfile", name);
+    });
+    notifyListeners();
+  }
+
+  bool get adsbEnabled => _adsbEnabled;
+  set adsbEnabled(bool value) {
+    _adsbEnabled = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.adsbEnabled", _adsbEnabled);
     });
     notifyListeners();
   }

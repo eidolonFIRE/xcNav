@@ -26,6 +26,12 @@ class ProximityConfig {
       {required this.vertical,
       required this.horizontalDist,
       required this.horizontalTime});
+
+  String toMultilineString(Settings settings) {
+    return "Vertical: ${(convertDistValueFine(settings.displayUnitsDist, vertical) / 50).ceil() * 50}${unitStrDistFine[settings.displayUnitsDist]}\n"
+        "Horiz Dist: ${(convertDistValueFine(settings.displayUnitsDist, horizontalDist) / 100).ceil() * 100}${unitStrDistFine[settings.displayUnitsDist]}\n"
+        "Horiz Time: ${horizontalTime.toStringAsFixed(0)} sec";
+  }
 }
 
 class ADSB with ChangeNotifier {
@@ -38,46 +44,59 @@ class ADSB with ChangeNotifier {
 
   int lastHeartbeat = 0;
 
+  bool portListening = false;
+
   ADSB(BuildContext ctx) {
     context = ctx;
 
     flutterTts = FlutterTts();
     flutterTts.awaitSpeakCompletion(true);
     flutterTts.setStartHandler(() {
-      print("Playing");
       ttsState = TtsState.playing;
     });
 
     flutterTts.setCompletionHandler(() {
-      print("Complete");
       ttsState = TtsState.stopped;
     });
 
     flutterTts.setCancelHandler(() {
-      print("Cancel");
       ttsState = TtsState.stopped;
     });
 
     flutterTts.setErrorHandler((msg) {
-      print("error: $msg");
       ttsState = TtsState.stopped;
     });
 
-    RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 4000).then((_sock) {
-      sock = _sock;
+    Provider.of<Settings>(context, listen: false).addListener(() {
+      var settings = Provider.of<Settings>(context, listen: false);
+      debugPrint("-----");
+      if (!portListening && settings.adsbEnabled) {
+        // --- Start Listening
+        debugPrint("Opening ADSB listen port 4000");
+        RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 4000)
+            .then((_sock) {
+          sock = _sock;
 
-      _sock.listen((event) {
-        // debugPrint("ADSB event: ${event.toString()}");
-        Datagram? dg = _sock.receive();
-        if (dg != null) {
-          // debugPrint("${dg.data.toString()}");
-          decodeGDL90(dg.data);
-        }
-      }, onError: (error) {
-        debugPrint("ADSB socket error: ${error.toString()}");
-      }, onDone: () {
-        debugPrint("ADSB socket done.");
-      });
+          _sock.listen((event) {
+            // debugPrint("ADSB event: ${event.toString()}");
+            Datagram? dg = _sock.receive();
+            if (dg != null) {
+              // debugPrint("${dg.data.toString()}");
+              decodeGDL90(dg.data);
+            }
+          }, onError: (error) {
+            debugPrint("ADSB socket error: ${error.toString()}");
+          }, onDone: () {
+            debugPrint("ADSB socket done.");
+          });
+        });
+        portListening = true;
+      } else if (portListening && !settings.adsbEnabled) {
+        // --- Stop Listening
+        debugPrint("Closing ADSB listen port");
+        sock?.close();
+        portListening = false;
+      }
     });
   }
 
@@ -120,9 +139,13 @@ class ADSB with ChangeNotifier {
       type = GAtype.large;
     }
 
-    // debugPrint("GA $id (${type.toString()}): $lat, $lng, $spd m/s  $alt m, $hdg deg");
+    debugPrint(
+        "GA $id (${type.toString()}): $lat, $lng, $spd m/s  $alt m, $hdg deg");
 
-    if (type.index > 0 && type.index < 22 && (lat != 0 || lng != 0)) {
+    if (type.index > 0 &&
+        type.index < 22 &&
+        (lat != 0 || lng != 0) &&
+        (lat < 90 && lat > -90)) {
       planes[id] = GA(id, LatLng(lat, lng), alt, spd, hdg, type,
           DateTime.now().millisecondsSinceEpoch);
     }
@@ -132,7 +155,11 @@ class ADSB with ChangeNotifier {
     switch (data[1]) {
       case 0:
         // --- heartbeat
-        lastHeartbeat = DateTime.now().millisecondsSinceEpoch;
+        // debugPrint("ADSB heartbeat ${data[2].toRadixString(2)}");
+        if (data[2] & 0x50 == 0) {
+          lastHeartbeat = DateTime.now().millisecondsSinceEpoch;
+        }
+
         break;
       case 20:
         // --- traffic
@@ -157,7 +184,7 @@ class ADSB with ChangeNotifier {
 
   void checkProximity(Geo observer) {
     ProximityConfig config =
-        Provider.of<Settings>(context, listen: false).adsbProxConfig;
+        Provider.of<Settings>(context, listen: false).proximityProfile;
 
     for (GA each in planes.values) {
       final double dist = latlngCalc.distance(each.latlng, observer.latLng);
@@ -188,12 +215,6 @@ class ADSB with ChangeNotifier {
   }
 
   void speakWarning(GA ga, Geo observer, double? eta) {
-    //     tts.setVolume(volume);
-    // tts.setRate(rate);
-    // if (languageCode != null) {
-    //   tts.setLanguage(languageCode!);
-    // }
-    // tts.setPitch(pitch);
     final settings = Provider.of<Settings>(context, listen: false);
 
     // direction

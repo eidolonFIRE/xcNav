@@ -20,8 +20,7 @@ class MapButton extends StatelessWidget {
       width: size,
       height: size,
       child: MaterialButton(
-          minWidth: size,
-          height: size,
+          visualDensity: VisualDensity.compact,
           onPressed: onPressed,
           shape: RoundedRectangleBorder(
             borderRadius: const BorderRadius.all(Radius.circular(30)),

@@ -540,7 +540,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ])),
             ),
 
-            // --- Map tile-layer selection
+            // --- Map Options
             ListTile(
               minVerticalPadding: 20,
               leading: const Icon(
@@ -557,6 +557,39 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
               ),
             ),
+
+            ListTile(
+                minVerticalPadding: 20,
+                leading: const Icon(Icons.radar, size: 30),
+                title: Text("ADSB-in",
+                    style: Theme.of(context).textTheme.headline5),
+                trailing: Switch(
+                  value: Provider.of<Settings>(context).adsbEnabled,
+                  onChanged: (value) => {
+                    Provider.of<Settings>(context, listen: false).adsbEnabled =
+                        value
+                  },
+                ),
+                subtitle: Provider.of<Settings>(context).adsbEnabled
+                    ? (Provider.of<ADSB>(context).lastHeartbeat >
+                            DateTime.now().millisecondsSinceEpoch - 1000 * 10)
+                        ? const Text.rich(TextSpan(children: [
+                            WidgetSpan(
+                                child: Icon(
+                              Icons.check,
+                              color: Colors.green,
+                            )),
+                            TextSpan(text: "Connected")
+                          ]))
+                        : const Text.rich(TextSpan(children: [
+                            WidgetSpan(
+                                child: Icon(
+                              Icons.link_off,
+                              color: Colors.amber,
+                            )),
+                            TextSpan(text: "No Data")
+                          ]))
+                    : null),
 
             const Divider(
               height: 20,
@@ -691,6 +724,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         PolylineLayerOptions(
                             polylines: [myTelemetry.buildFlightTrace()]),
 
+                        // ADSB Proximity
+                        if (settings.adsbEnabled)
+                          CircleLayerOptions(circles: [
+                            CircleMarker(
+                                point: myTelemetry.geo.latLng,
+                                color: Colors.transparent,
+                                borderStrokeWidth: 1,
+                                borderColor: Colors.black54,
+                                radius:
+                                    settings.proximityProfile.horizontalDist,
+                                useRadiusInMeter: true)
+                          ]),
+
                         // Trip snake lines
                         PolylineLayerOptions(polylines: plan.buildTripSnake()),
 
@@ -772,24 +818,26 @@ class _MyHomePageState extends State<MyHomePage> {
                           ]),
 
                         // GA planes (ADSB IN)
-                        MarkerLayerOptions(
-                            markers: Provider.of<ADSB>(context, listen: false)
-                                .planes
-                                .values
-                                .map(
-                                  (e) => Marker(
-                                    width: 50.0,
-                                    height: 50.0,
-                                    point: e.latlng,
-                                    builder: (ctx) => Container(
-                                      transformAlignment: const Alignment(0, 0),
-                                      child: e.getIcon(myTelemetry.geo),
-                                      transform:
-                                          Matrix4.rotationZ(e.hdg * pi / 180),
+                        if (settings.adsbEnabled)
+                          MarkerLayerOptions(
+                              markers: Provider.of<ADSB>(context, listen: false)
+                                  .planes
+                                  .values
+                                  .map(
+                                    (e) => Marker(
+                                      width: 50.0,
+                                      height: 50.0,
+                                      point: e.latlng,
+                                      builder: (ctx) => Container(
+                                        transformAlignment:
+                                            const Alignment(0, 0),
+                                        child: e.getIcon(myTelemetry.geo),
+                                        transform:
+                                            Matrix4.rotationZ(e.hdg * pi / 180),
+                                      ),
                                     ),
-                                  ),
-                                )
-                                .toList()),
+                                  )
+                                  .toList()),
 
                         // Live locations other pilots
                         MarkerLayerOptions(
@@ -1005,28 +1053,35 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     // --- Compass
                     MapButton(
-                        child: Stack(fit: StackFit.expand, children: [
-                          StreamBuilder(
-                              stream: mapController.mapEventStream,
-                              builder: (context, event) => Container(
-                                    transformAlignment: const Alignment(0, 0),
-                                    transform: mapReady
-                                        ? Matrix4.rotationZ(
-                                            mapController.rotation * pi / 180)
-                                        : Matrix4.rotationZ(0),
-                                    child: SvgPicture.asset(
-                                      "assets/images/compass.svg",
-                                      fit: BoxFit.cover,
-                                    ),
-                                  )),
-                          if (northLock)
-                            Image(
-                                // width: 50,
-                                // height: 50,
-                                // fit: BoxFit.none,
-                                image: IconImageProvider(Icons.lock,
-                                    color: Colors.black)),
-                        ]),
+                        child: Stack(
+                            fit: StackFit.expand,
+                            clipBehavior: Clip.none,
+                            children: [
+                              StreamBuilder(
+                                  stream: mapController.mapEventStream,
+                                  builder: (context, event) => Container(
+                                        transformAlignment:
+                                            const Alignment(0, 0),
+                                        transform: mapReady
+                                            ? Matrix4.rotationZ(
+                                                mapController.rotation *
+                                                    pi /
+                                                    180)
+                                            : Matrix4.rotationZ(0),
+                                        child: SvgPicture.asset(
+                                          "assets/images/compass.svg",
+                                          fit: BoxFit.none,
+                                          color: northLock ? Colors.grey : null,
+                                        ),
+                                      )),
+                              if (northLock)
+                                SvgPicture.asset(
+                                  "assets/images/lock.svg",
+                                  // width: 40,
+                                  color: Colors.grey[900]!.withAlpha(120),
+                                  // fit: BoxFit.none,
+                                ),
+                            ]),
                         size: 60,
                         onPressed: () => {
                               setState(
@@ -1044,8 +1099,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         MapButton(
                           size: 60,
                           selected: focusMode == FocusMode.me,
-                          child: Image.asset(
-                              "assets/images/icon_controls_centermap_me.png"),
+                          child: SvgPicture.asset(
+                              "assets/images/icon_controls_centermap_me.svg"),
                           onPressed: () => setFocusMode(
                               FocusMode.me,
                               Provider.of<MyTelemetry>(context, listen: false)
@@ -1064,8 +1119,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           size: 60,
                           selected: focusMode == FocusMode.group,
                           onPressed: () => setFocusMode(FocusMode.group),
-                          child: Image.asset(
-                              "assets/images/icon_controls_centermap_group.png"),
+                          child: SvgPicture.asset(
+                              "assets/images/icon_controls_centermap_group.svg"),
                         ),
                       ],
                     ),
@@ -1078,8 +1133,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           mapController.move(
                               mapController.center, mapController.zoom + 1)
                         },
-                        child: Image.asset(
-                            "assets/images/icon_controls_zoom_in.png"),
+                        child: SvgPicture.asset(
+                            "assets/images/icon_controls_zoom_in.svg"),
                       ),
                       //
                       SizedBox(
@@ -1096,8 +1151,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           mapController.move(
                               mapController.center, mapController.zoom - 1)
                         },
-                        child: Image.asset(
-                            "assets/images/icon_controls_zoom_out.png"),
+                        child: SvgPicture.asset(
+                            "assets/images/icon_controls_zoom_out.svg"),
                       ),
                     ]),
                     // --- Chat button

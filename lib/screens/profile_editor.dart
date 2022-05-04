@@ -48,8 +48,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
         var infile = File(tempDir.path + "/avatar.jpg");
         infile.exists().then((exists) {
           if (exists) {
-            inputFile = XFile(tempDir.path + "/tempRecal.jpg");
-            inputFile.readAsBytes().then((value) {
+            infile.readAsBytes().then((value) {
               setState(() {
                 inputImage = value;
               });
@@ -167,17 +166,29 @@ class _ProfileEditorState extends State<ProfileEditor> {
                 child: AspectRatio(
                   aspectRatio: 1,
                   child: Card(
-                    child: Stack(children: [
+                    child: Stack(fit: StackFit.expand, children: [
                       inputImage != null
                           ? Listener(
                               child: _buildCropImage(),
                               onPointerUp: (event) => refreshCropped(),
                             )
-                          : Container(),
+                          : const Center(
+                              child: Padding(
+                                padding: EdgeInsets.only(bottom: 70),
+                                child: Text(
+                                  "Set Avatar",
+                                  style: TextStyle(fontStyle: FontStyle.italic),
+                                ),
+                              ),
+                            ),
                       // --- buttons
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: inputImage != null
+                            ? MainAxisAlignment.start
+                            : MainAxisAlignment.center,
+                        crossAxisAlignment: inputImage != null
+                            ? CrossAxisAlignment.start
+                            : CrossAxisAlignment.center,
                         children: [
                           IconButton(
                               onPressed: pickGallery,
