@@ -214,6 +214,39 @@ class ADSB with ChangeNotifier {
     }
   }
 
+  void testWarning() {
+    ProximityConfig config =
+        Provider.of<Settings>(context, listen: false).proximityProfile;
+    var rand = Random(DateTime.now().millisecondsSinceEpoch);
+    var observer = LatLng(0, 0);
+
+    var ga = GA(
+        0,
+        latlngCalc.offset(LatLng(0, 0), 10 + rand.nextDouble() * 3000,
+            rand.nextDouble() * 360),
+        rand.nextDouble() * 200 - 100,
+        35 + rand.nextDouble() * 50,
+        rand.nextDouble() * 360,
+        GAtype.values[rand.nextInt(GAtype.values.length)],
+        DateTime.now().millisecondsSinceEpoch);
+
+    final double dist = latlngCalc.distance(ga.latlng, observer);
+    final double bearing = latlngCalc.bearing(ga.latlng, observer);
+
+    final double delta = deltaHdg(bearing, ga.hdg).abs();
+
+    final double tangentOffset = sin(delta * pi / 180) * dist;
+    final double? eta =
+        (ga.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist)
+            ? dist / ga.spd
+            : null;
+    speakWarning(
+        ga,
+        Geo.fromValues(0, 0, 0, DateTime.now().millisecondsSinceEpoch,
+            rand.nextDouble() * 2 * pi, 11.15 + 4.5 * rand.nextDouble(), 0),
+        eta);
+  }
+
   void speakWarning(GA ga, Geo observer, double? eta) {
     final settings = Provider.of<Settings>(context, listen: false);
 

@@ -1,8 +1,9 @@
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-
-const _meters2Feet = 3.28084;
+import 'package:xcnav/models/geo.dart';
+import 'package:latlong2/latlong.dart';
 
 class FakeGeo {
   FakeGeo(this.lng, this.lat, this.alt);
@@ -25,72 +26,56 @@ Position fakeGeoToLoc(FakeGeo geo) {
   );
 }
 
+/// Create a fake flight track
 class FakeFlight {
-  // Create a fake flight track
-  // FakeGeo prev_e = null;
-  Random rand = Random();
+  late Random rand;
 
-  late double randPhaseA;
-  late double randPhaseB;
-  late FakeGeo fakeCenter;
-  bool fake_in_flight = false;
-  double fake_in_flight_timer = 10;
-  double mainPhase = 0;
-  double fake_ground = 66 / _meters2Feet;
-
-  late double lat;
-  late double lng;
+  // Position
+  late FakeGeo center;
+  late LatLng latlng;
   late double alt;
+  double vario = 0;
+  late double spd;
+  double hdg = 0;
+
+  // Wind
+  late double windSpd;
+  late double windHdg;
 
   @override
   FakeFlight() {
-    randPhaseA = rand.nextDouble() / 100;
-    randPhaseB = rand.nextDouble() * 3.15159;
-    fakeCenter = FakeGeo(-121.2971 + rand.nextDouble() / 10,
-        37.6738 + rand.nextDouble() / 10, fake_ground);
-    lat = fakeCenter.lat;
-    lng = fakeCenter.lng;
-    alt = fake_ground;
+    rand = Random(DateTime.now().millisecondsSinceEpoch);
+
+    initFakeFlight(Geo.fromValues(0, 0, 0, 0, 0, 0, 0));
+    spd = 11.15 + 4.5 * rand.nextDouble();
   }
 
   double randomCentered() {
     return rand.nextDouble() * 2 - 1;
   }
 
+  /// Sets the starting point for the fake flight data
+  void initFakeFlight(Geo geo) {
+    center = FakeGeo(geo.lng, geo.lat, geo.alt);
+
+    latlng = LatLng(center.lat, center.lng);
+    alt = center.alt;
+
+    windSpd = rand.nextDouble() * 5 + 1;
+    windHdg = rand.nextDouble() * 360;
+
+    debugPrint("Fake Wind: $windSpd, $windHdg");
+  }
+
   Position genFakeLocationFlight() {
-    fake_in_flight_timer -= 1;
-    if (fake_in_flight_timer <= 0) {
-      fake_in_flight = !fake_in_flight;
-      if (fake_in_flight) {
-        // duration in the air
-        fake_in_flight_timer = rand.nextInt(40) + 60;
-      } else {
-        // duration on the ground
-        fake_in_flight_timer = rand.nextInt(10) + 20;
-      }
-    }
+    hdg += randomCentered() * 20 + 5;
 
-    if (fake_in_flight) {
-      mainPhase += 0.016;
-      if (fake_in_flight_timer > 30) {
-        alt += (rand.nextDouble() + 1) * 5;
-      } else if (fake_in_flight_timer < 10) {
-        alt = max(fake_ground, alt * 0.9 - 100);
-      }
-    } else {
-      fakeCenter.lat += randomCentered() / 20000.0;
-      fakeCenter.lng += randomCentered() / 20000.0;
-    }
+    latlng = latlngCalc.offset(latlng, spd * 5, hdg);
+    latlng = latlngCalc.offset(latlng, windSpd * 5, windHdg);
 
-    lat = fakeCenter.lat +
-        sin(mainPhase + randPhaseA) /
-            70 *
-            (sin(mainPhase * 10.0 + randPhaseB) / 20 + 1);
-    lng = fakeCenter.lng +
-        cos(mainPhase + randPhaseA) /
-            50 *
-            (sin(mainPhase * 10.0 + randPhaseB) / 20 + 1);
+    vario = min(10, max(-10, vario + rand.nextDouble())) * 0.9;
+    alt = max(0, alt * 0.99 + vario);
 
-    return fakeGeoToLoc(FakeGeo(lng, lat, alt));
+    return fakeGeoToLoc(FakeGeo(latlng.longitude, latlng.latitude, alt));
   }
 }

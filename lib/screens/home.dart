@@ -128,7 +128,9 @@ class _MyHomePageState extends State<MyHomePage> {
             _toggleListening();
           }
           debugPrint("--- Starting Location Spoofer ---");
-          timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+          fakeFlight.initFakeFlight(
+              Provider.of<MyTelemetry>(context, listen: false).geo);
+          timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
             handleGeomUpdate(context, fakeFlight.genFakeLocationFlight());
           });
         }

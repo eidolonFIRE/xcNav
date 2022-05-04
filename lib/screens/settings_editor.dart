@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 // Providers
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/providers/adsb.dart';
 
 //
 import 'package:xcnav/units.dart';
@@ -153,7 +154,14 @@ class _SettingsEditorState extends State<SettingsEditor> {
                             value: each.key, child: Text(each.key)))
                         .toList(),
                   ),
-                )
+                ),
+                // --- Test Audio
+                SettingsTile.navigation(
+                  title: const Text("Test Warning Audio"),
+                  leading: const Icon(Icons.volume_up),
+                  onPressed: (event) =>
+                      {Provider.of<ADSB>(context, listen: false).testWarning()},
+                ),
               ]),
 
               // --- Debug Tools
