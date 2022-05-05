@@ -23,6 +23,7 @@ class MyTelemetry with ChangeNotifier {
   Geo? geoPrev;
 
   // Recorded
+  int windFirstSampleIndex = 0;
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
   DateTime? takeOff;

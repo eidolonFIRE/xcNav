@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:xcnav/providers/my_telemetry.dart';
 
 // Providers
 import 'package:xcnav/providers/profile.dart';
@@ -180,6 +181,19 @@ class _SettingsEditorState extends State<SettingsEditor> {
                         color: Colors.red,
                       ),
                       onToggle: (value) => {settings.spoofLocation = value},
+                    ),
+                    // --- Clear path
+                    SettingsTile.navigation(
+                      title: const Text("Clear Recorded Path"),
+                      leading: const Icon(Icons.delete_sweep),
+                      onPressed: (_) {
+                        Provider.of<MyTelemetry>(context, listen: false)
+                            .recordGeo
+                            .clear();
+                        Provider.of<MyTelemetry>(context, listen: false)
+                            .flightTrace
+                            .clear();
+                      },
                     ),
                     // --- Erase Identity
                     SettingsTile.navigation(

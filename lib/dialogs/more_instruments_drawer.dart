@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:provider/provider.dart';
@@ -9,6 +11,7 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/polar_plot.dart';
 
 Widget moreInstrumentsDrawer() {
   return Consumer<MyTelemetry>(
@@ -132,6 +135,132 @@ Widget moreInstrumentsDrawer() {
                   ),
                 ),
               ),
+
+              const Divider(thickness: 2),
+
+              // --- Wind Chart
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        const Text("Wind Indicator"),
+                        const Text("( under development )"),
+                        ElevatedButton.icon(
+                            label: const Text(
+                              "Start Capture",
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            onPressed: () => {
+                                  myTelemetry.windFirstSampleIndex =
+                                      myTelemetry.recordGeo.length - 1
+                                },
+                            icon: const Icon(
+                              Icons.start,
+                              size: 20,
+                            )),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width / 2,
+                    height: 200,
+                    child: Builder(
+                      builder: (context) {
+                        if (myTelemetry.recordGeo.length < 2)
+                          return Container();
+
+                        // // TODO: leaky integrator
+                        // final avgSpd = myTelemetry.recordGeo
+                        //         .map((e) => e.spd)
+                        //         .reduce((a, b) => a + b) /
+                        //     myTelemetry.recordGeo.length;
+
+                        // List<double> samples = [];
+
+                        // for (int i = 0; i < 16; i++) {
+                        //   double v = avgSpd;
+                        //   myTelemetry.recordGeo.forEach((element) {
+                        //     v += cos((i / 16 * 2 * pi) - element.hdg) *
+                        //         (element.spd - avgSpd) /
+                        //         myTelemetry.recordGeo.length;
+                        //   });
+                        //   // v = avgSpd;
+                        //   samples.add(v);
+                        // }
+
+                        // return CustomPaint(
+                        //   painter:
+                        //       PolarPlotPainter(Colors.blue, 2, samples, avgSpd * 2),
+                        // );
+
+                        return charts.ScatterPlotChart(
+                          [
+                            charts.Series<Geo, double>(
+                              id: "Speed",
+                              data: myTelemetry.recordGeo
+                                  .sublist(myTelemetry.windFirstSampleIndex),
+                              colorFn: (_, __) =>
+                                  charts.MaterialPalette.blue.shadeDefault,
+                              domainFn: (value, _) => value.hdg,
+                              measureFn: (value, _) => convertSpeedValue(
+                                  Provider.of<Settings>(context, listen: false)
+                                      .displayUnitsSpeed,
+                                  value.spd),
+                            ),
+                          ],
+                          animate: false,
+                          behaviors: [
+                            charts.ChartTitle(
+                                "Speed (${unitStrSpeed[Provider.of<Settings>(context, listen: false).displayUnitsSpeed]})",
+                                behaviorPosition: charts.BehaviorPosition.start,
+                                titleOutsideJustification:
+                                    charts.OutsideJustification.middleDrawArea,
+                                titleStyleSpec: const charts.TextStyleSpec(
+                                    color: charts.MaterialPalette.white)),
+                          ],
+                          domainAxis: charts.NumericAxisSpec(
+                              renderSpec: charts.SmallTickRendererSpec(
+
+                                  // Tick and Label styling here.
+                                  labelStyle: charts.TextStyleSpec(
+                                      fontSize: 10, // size in Pts.
+                                      color:
+                                          charts.MaterialPalette.white.darker),
+
+                                  // Change the line colors to match text color.
+                                  lineStyle: charts.LineStyleSpec(
+                                      color: charts
+                                          .MaterialPalette.white.darker))),
+                          primaryMeasureAxis: charts.NumericAxisSpec(
+                              tickProviderSpec:
+                                  const charts.BasicNumericTickProviderSpec(
+                                      desiredMinTickCount: 4),
+                              renderSpec: charts.GridlineRendererSpec(
+
+                                  // Tick and Label styling here.
+                                  labelStyle: const charts.TextStyleSpec(
+                                      fontSize: 14, // size in Pts.
+                                      color: charts.MaterialPalette.white),
+
+                                  // Change the line colors to match text color.
+                                  lineStyle: charts.LineStyleSpec(
+                                      color: charts
+                                          .MaterialPalette.white.darker))),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+
+              const Divider(thickness: 2),
+
+              // --- Altitude Chart
               Container(
                 constraints: const BoxConstraints(maxHeight: 200),
                 child: charts.TimeSeriesChart(
