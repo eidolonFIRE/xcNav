@@ -202,8 +202,9 @@ Widget moreInstrumentsDrawer() {
                           [
                             charts.Series<Geo, double>(
                               id: "Speed",
-                              data: myTelemetry.recordGeo
-                                  .sublist(myTelemetry.windFirstSampleIndex),
+                              data: myTelemetry.recordGeo.sublist(min(
+                                  myTelemetry.recordGeo.length - 1,
+                                  myTelemetry.windFirstSampleIndex)),
                               colorFn: (_, __) =>
                                   charts.MaterialPalette.blue.shadeDefault,
                               domainFn: (value, _) => value.hdg,

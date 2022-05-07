@@ -37,8 +37,8 @@
    showgrid="true"
    units="mm"
    inkscape:zoom="4.908153"
-   inkscape:cx="103.37359"
-   inkscape:cy="93.653871"
+   inkscape:cx="94.577156"
+   inkscape:cy="94.5522"
    inkscape:window-x="554"
    inkscape:window-y="425"
    inkscape:window-maximized="0"
@@ -50,10 +50,10 @@
    id="style2">
 	.st0{fill:none;stroke:#000000;}
 </style>
-<polygon
-   id="Triangle"
-   class="st0"
-   points="17,20 11,22 17,9 23,22 "
-   transform="matrix(9.6206156,0,0,9.6206156,-69.062277,-60.128847)"
-   style="fill:none;fill-opacity:1;stroke:#000000" />
-</svg>
+
+<path
+   style="fill:none;stroke:#000000;stroke-width:12;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:12;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+   d="M 154.96063,151.1811 94.488189,132.28347 37.795276,151.1811 94.488189,30.236222 Z"
+   id="path4522"
+   inkscape:connector-curvature="0"
+   sodipodi:nodetypes="ccccc" /></svg>

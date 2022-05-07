@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ class ProfileEditor extends StatefulWidget {
 }
 
 class _ProfileEditorState extends State<ProfileEditor> {
-  XFile inputFile = XFile("assets/images/default_avatar.png");
+  XFile? inputFile;
   File? croppedImage;
   Uint8List? inputImage;
 
@@ -52,7 +53,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
               setState(() {
                 inputImage = value;
               });
-              refreshCropped();
+              // refreshCropped();
             });
           } else {
             debugPrint("avatar.jpg wasn't saved");
@@ -60,45 +61,55 @@ class _ProfileEditorState extends State<ProfileEditor> {
         });
       });
     }
+
+    // This is a hack to work around the lack of callbacks in the cropper
+    Timer updateLoop =
+        Timer.periodic(Duration(milliseconds: 500), (timer) async {
+      refreshCropped();
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    croppedImage?.delete();
   }
 
   void pickGallery() {
     _picker.pickImage(source: ImageSource.gallery).then((value) {
-      if (value != null) {
-        inputFile = value;
-        inputFile.readAsBytes().then((value) {
-          setState(() {
-            inputImage = value;
-          });
-          refreshCropped();
-        });
-      }
+      if (value != null) selectImage(value);
     });
   }
 
   void pickCamera() {
     _picker.pickImage(source: ImageSource.camera).then((value) {
-      if (value != null) {
-        inputFile = value;
-        inputFile.readAsBytes().then((value) {
-          setState(() {
-            inputImage = value;
-          });
-          refreshCropped();
-        });
-      }
+      if (value != null) selectImage(value);
+    });
+  }
+
+  void selectImage(XFile file) {
+    inputFile = file;
+    inputFile!.readAsBytes().then((value) {
+      setState(() {
+        inputImage = value;
+        refreshCropped();
+      });
     });
   }
 
   void refreshCropped() {
     // use full crop in none set
+    if (inputFile == null) return;
+
     Rect area = const Rect.fromLTWH(0, 0, 1, 1);
     if (cropKey.currentState != null && cropKey.currentState!.area != null) {
       area = cropKey.currentState!.area!;
     }
 
+    debugPrint("${area.width} ${area.height}");
+
     // use crop state
-    ImageCrop.cropImage(file: File(inputFile.path), area: area).then((value) {
+    ImageCrop.cropImage(file: File(inputFile!.path), area: area).then((value) {
       path_provider.getTemporaryDirectory().then((dir) {
         final targetPath = dir.absolute.path + "/temp_${area.toString()}.jpg";
         FlutterImageCompress.compressAndGetFile(value.absolute.path, targetPath,
@@ -114,6 +125,9 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
   void accept(BuildContext contex, bool isOptional) {
     // TODO: validate text correctly
+    if (cropKey.currentState != null) {
+      refreshCropped();
+    }
     if (nameController.text.length > 1 && croppedImage != null) {
       croppedImage!.readAsBytes().then((value) {
         Provider.of<Profile>(context, listen: false)
@@ -132,7 +146,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
       image: MemoryImage(inputImage!),
       key: cropKey,
       aspectRatio: 1,
-      maximumScale: 10,
+      maximumScale: 5,
     );
   }
 
@@ -168,10 +182,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
                   child: Card(
                     child: Stack(fit: StackFit.expand, children: [
                       inputImage != null
-                          ? Listener(
-                              child: _buildCropImage(),
-                              onPointerUp: (event) => refreshCropped(),
-                            )
+                          ? _buildCropImage()
                           : const Center(
                               child: Padding(
                                 padding: EdgeInsets.only(bottom: 70),
