@@ -332,20 +332,25 @@ class _MyHomePageState extends State<MyHomePage> {
         constraints: const BoxConstraints(maxHeight: 500),
         builder: (BuildContext context) {
           return SafeArea(
-            child: flightPlanDrawer(setFocusMode, () {
-              editablePolyline.points.clear();
-              Navigator.pop(context);
-              setFocusMode(FocusMode.addPath);
-            }, () {
-              editablePolyline.points.clear();
-              editablePolyline.points.addAll(
-                  Provider.of<ActivePlan>(context, listen: false)
-                          .selectedWp
-                          ?.latlng ??
-                      []);
-              Navigator.popUntil(context, ModalRoute.withName("/home"));
-              setFocusMode(FocusMode.editPath);
-            }),
+            child: Dismissible(
+              key: const Key("flightPlanDrawer"),
+              direction: DismissDirection.down,
+              onDismissed: (event) => Navigator.pop(context),
+              child: flightPlanDrawer(setFocusMode, () {
+                editablePolyline.points.clear();
+                Navigator.pop(context);
+                setFocusMode(FocusMode.addPath);
+              }, () {
+                editablePolyline.points.clear();
+                editablePolyline.points.addAll(
+                    Provider.of<ActivePlan>(context, listen: false)
+                            .selectedWp
+                            ?.latlng ??
+                        []);
+                Navigator.popUntil(context, ModalRoute.withName("/home"));
+                setFocusMode(FocusMode.editPath);
+              }),
+            ),
           );
         });
   }
@@ -356,7 +361,12 @@ class _MyHomePageState extends State<MyHomePage> {
       barrierLabel: "Instruments",
       barrierDismissible: true,
       pageBuilder: (BuildContext context, animationIn, animationOut) {
-        return moreInstrumentsDrawer();
+        return Dismissible(
+          key: const Key("moreInstruments"),
+          child: moreInstrumentsDrawer(),
+          direction: DismissDirection.up,
+          onDismissed: (event) => {Navigator.pop(context)},
+        );
       },
       // TODO: this could use some tuning
       transitionBuilder: (ctx, animation, _, child) {
