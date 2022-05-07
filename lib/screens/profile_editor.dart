@@ -23,6 +23,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
   XFile? inputFile;
   File? croppedImage;
   Uint8List? inputImage;
+  late Timer updateLoop;
 
   final TextEditingController nameController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
@@ -49,11 +50,12 @@ class _ProfileEditorState extends State<ProfileEditor> {
         var infile = File(tempDir.path + "/avatar.jpg");
         infile.exists().then((exists) {
           if (exists) {
+            inputFile = XFile(tempDir.path + "/avatar.jpg");
             infile.readAsBytes().then((value) {
               setState(() {
                 inputImage = value;
+                refreshCropped();
               });
-              // refreshCropped();
             });
           } else {
             debugPrint("avatar.jpg wasn't saved");
@@ -63,8 +65,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
     }
 
     // This is a hack to work around the lack of callbacks in the cropper
-    Timer updateLoop =
-        Timer.periodic(Duration(milliseconds: 500), (timer) async {
+    updateLoop = Timer.periodic(Duration(milliseconds: 500), (timer) async {
       refreshCropped();
     });
   }
@@ -129,14 +130,18 @@ class _ProfileEditorState extends State<ProfileEditor> {
       refreshCropped();
     }
     if (nameController.text.length > 1 && croppedImage != null) {
+      updateLoop.cancel();
       croppedImage!.readAsBytes().then((value) {
-        Provider.of<Profile>(context, listen: false)
-            .updateNameAvatar(nameController.text, value);
-        if (isOptional) {
-          Navigator.pop(contex);
-        } else {
-          Navigator.popAndPushNamed(context, "/home");
-        }
+        // (workaround to clear animations)
+        Timer(const Duration(seconds: 1), () {
+          Provider.of<Profile>(context, listen: false)
+              .updateNameAvatar(nameController.text, value);
+          if (isOptional) {
+            Navigator.pop(contex);
+          } else {
+            Navigator.popAndPushNamed(context, "/home");
+          }
+        });
       });
     }
   }
@@ -146,7 +151,6 @@ class _ProfileEditorState extends State<ProfileEditor> {
       image: MemoryImage(inputImage!),
       key: cropKey,
       aspectRatio: 1,
-      maximumScale: 5,
     );
   }
 
