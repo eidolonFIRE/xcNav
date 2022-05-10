@@ -2,8 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:flutter_barometer_plugin/flutter_barometer.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
@@ -35,6 +38,12 @@ class MyTelemetry with ChangeNotifier {
 
   // fuel save interval
   double? lastSaved;
+
+  /// Latest Barometric Reading
+  BarometerValue? baro;
+  BarometerValue? baroAmbient;
+  bool baroAmbientRequested = false;
+  bool stationFound = false;
 
   @override
   void dispose() {
@@ -71,13 +80,64 @@ class MyTelemetry with ChangeNotifier {
         jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
   }
 
-  void updateGeo(Geo newGeo, {bool? bypassRecording}) {
+  void updateGeo(Position position, {bool? bypassRecording}) {
     // debugPrint("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
     geoPrev = geo;
-    geo = newGeo;
+    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
+
+    // fetch ambient baro from weather service
+    if (baroAmbient == null && !baroAmbientRequested) {
+      baroAmbientRequested = true;
+      http
+          .get(Uri.parse(
+              "https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
+          .then((responseXY) {
+        // nearest stations
+        var msgXY = jsonDecode(responseXY.body);
+        var x = msgXY["properties"]["gridX"];
+        var y = msgXY["properties"]["gridY"];
+        var gridId = msgXY["properties"]["gridId"];
+
+        http
+            .get(Uri.parse(
+                "https://api.weather.gov/gridpoints/$gridId/$x,$y/stations"))
+            .then((responsePoint) async {
+          var msgPoint = jsonDecode(responsePoint.body);
+          // check each for pressure
+          stationFound = false;
+
+          if (msgPoint["observationStations"] != null) {
+            List<dynamic> stationList = msgPoint["observationStations"];
+            for (String each in stationList) {
+              if (stationFound) break;
+              await http
+                  .get(Uri.parse(each + "/observations/latest"))
+                  .then((responseStation) {
+                var msgStation = jsonDecode(responseStation.body);
+                if (msgStation["properties"] != null &&
+                    msgStation["properties"]["seaLevelPressure"]["value"] !=
+                        null) {
+                  double pressure = msgStation["properties"]
+                          ["barometricPressure"]["value"] /
+                      100;
+                  debugPrint(
+                      "Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
+                  baroAmbient = BarometerValue(pressure);
+                  baroAmbientRequested = false;
+                  stationFound = true;
+                }
+              });
+            }
+          } else {
+            debugPrint("No stations found for point $gridId, $x, $y");
+            // debugPrint(responsePoint.body);
+          }
+        });
+      });
+    }
 
     // --- In-Flight detector
-    if ((geo.spd.abs() > 2.5 || geo.vario.abs() > 1.0) ^ inFlight) {
+    if ((geo.spd > 2.5 || geo.vario.abs() > 1.0) ^ inFlight) {
       triggerHyst += geo.time - geoPrev!.time;
     } else {
       triggerHyst = 0;
@@ -87,7 +147,7 @@ class MyTelemetry with ChangeNotifier {
       triggerHyst = 0;
       if (inFlight) {
         takeOff = DateTime.now();
-        launchGeo = newGeo;
+        launchGeo = geo;
         debugPrint("In Flight!!!");
       } else {
         debugPrint("Flight Ended");

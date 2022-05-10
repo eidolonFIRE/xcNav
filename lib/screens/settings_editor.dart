@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -42,6 +43,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
             // ),
           ),
           body: SettingsList(
+            platform: DevicePlatform.iOS,
             sections: [
               // --- Display Units
               SettingsSection(title: const Text("Display Units"), tiles: [
@@ -100,7 +102,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                   leading: const Icon(Icons.timer),
                 ),
                 SettingsTile.navigation(
-                  title: const Text("Vario Unit"),
+                  title: const Text("Vario"),
                   trailing: DropdownButton<DisplayUnitsVario>(
                       onChanged: (value) => {
                             settings.displayUnitsVario =
@@ -125,26 +127,34 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     onToggle: (value) => settings.mapControlsRightSide = value,
                     title: const Text("Right-handed UI"),
                     leading: const Icon(Icons.swap_horiz),
-                    description: const Text(
-                        "Move map control buttons to the right side."),
+                    // description: const Text(
+                    //     "Move map control buttons to the right side."),
                   ),
                   SettingsTile.switchTile(
                     initialValue: settings.groundMode,
                     onToggle: (value) => settings.groundMode = value,
                     title: const Text("Ground Support Mode"),
-                    leading: const Icon(Icons.swap_horiz),
-                    description:
-                        const Text("Alters UI and doesn't record track."),
+                    leading: const Icon(Icons.directions_car),
+                    // description:
+                    //     const Text("Alters UI and doesn't record track."),
                   ),
                 ],
               ),
               // --- ADSB options
               SettingsSection(title: const Text("ADSB"), tiles: [
                 SettingsTile.navigation(
-                  title: const Text("Proximity Profile"),
+                  title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Proximity Profile"),
+                        // const Divider(),
+                        Text(
+                          settings.proximityProfile.toMultilineString(settings),
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.white60),
+                        )
+                      ]),
                   leading: const Icon(Icons.radar),
-                  description: Text(
-                      settings.proximityProfile.toMultilineString(settings)),
                   trailing: DropdownButton<String>(
                     onChanged: (value) {
                       settings.selectProximityConfig(value ?? "Medium");
@@ -184,8 +194,11 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     ),
                     // --- Clear path
                     SettingsTile.navigation(
-                      title: const Text("Clear Recorded Path"),
-                      leading: const Icon(Icons.delete_sweep),
+                      title: const Text("Clear Current Flight"),
+                      leading: const Icon(
+                        Icons.delete_sweep,
+                        color: Colors.red,
+                      ),
                       onPressed: (_) {
                         Provider.of<MyTelemetry>(context, listen: false)
                             .recordGeo
@@ -198,8 +211,8 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     // --- Erase Identity
                     SettingsTile.navigation(
                       title: const Text("Clear Identity"),
-                      description: const Text(
-                          "This will reset your pilot ID and profile!"),
+                      // description: const Text(
+                      //     "This will reset your pilot ID and profile!"),
                       leading: const Icon(
                         Icons.warning_amber,
                         color: Colors.red,
@@ -250,7 +263,15 @@ class _SettingsEditorState extends State<SettingsEditor> {
                             }),
                       },
                     )
-                  ])
+                  ]),
+              SettingsSection(tiles: [
+                SettingsTile(
+                    title: const Text("Version"),
+                    trailing: FutureBuilder<PackageInfo>(
+                        future: PackageInfo.fromPlatform(),
+                        builder: (context, version) => Text(
+                            "${version.data?.version ?? "?"} - ( ${version.data?.buildNumber ?? "?"} )")))
+              ]),
             ],
           ));
     }));

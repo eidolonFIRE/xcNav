@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_barometer_plugin/flutter_barometer.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
@@ -73,6 +74,8 @@ class _MyHomePageState extends State<MyHomePage> {
   FocusMode prevFocusMode = FocusMode.me;
   bool northLock = true;
 
+  StreamSubscription<BarometerValue>? listenBaro;
+
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
   Stream<Position>? positionStream;
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -98,6 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
 
     _setupServiceStatusStream();
+    _startBaroService();
 
     // intialize the controllers
     mapController = MapController();
@@ -123,11 +127,14 @@ class _MyHomePageState extends State<MyHomePage> {
     Provider.of<Settings>(context, listen: false).addListener(() {
       if (Provider.of<Settings>(context, listen: false).spoofLocation) {
         if (timer == null) {
+          // --- Spoof Location / Disable Baro
+          listenBaro?.cancel();
           if (positionStreamStarted) {
             positionStreamStarted = !positionStreamStarted;
             _toggleListening();
           }
           debugPrint("--- Starting Location Spoofer ---");
+          Provider.of<MyTelemetry>(context, listen: false).baro = null;
           fakeFlight.initFakeFlight(
               Provider.of<MyTelemetry>(context, listen: false).geo);
           timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
@@ -136,6 +143,10 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       } else {
         if (timer != null) {
+          // --- Real Location / Baro
+
+          _startBaroService();
+
           if (!positionStreamStarted) {
             positionStreamStarted = !positionStreamStarted;
             _toggleListening();
@@ -146,6 +157,13 @@ class _MyHomePageState extends State<MyHomePage> {
           timer = null;
         }
       }
+    });
+  }
+
+  void _startBaroService() {
+    listenBaro = FlutterBarometer.currentPressureEvent.listen((event) {
+      Provider.of<MyTelemetry>(context, listen: false).baro = event;
+      // debugPrint("Baro: ${event.hectpascal}");
     });
   }
 
@@ -249,22 +267,21 @@ class _MyHomePageState extends State<MyHomePage> {
   void handleGeomUpdate(BuildContext context, Position position) {
     var myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
     var settings = Provider.of<Settings>(context, listen: false);
-    var geo = Geo.fromPosition(position, myTelemetry.geo);
 
-    // Update ADSB
-    Provider.of<ADSB>(context, listen: false).refresh(geo);
-
-    if (geo.lat != 0.0 || geo.lng != 0.0) {
-      myTelemetry.updateGeo(geo, bypassRecording: settings.groundMode);
+    if (position.latitude != 0.0 || position.longitude != 0.0) {
+      myTelemetry.updateGeo(position, bypassRecording: settings.groundMode);
 
       if (!settings.groundMode || settings.groundModeTelemetry) {
         // TODO: better way to reduce telemetry messages
         if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
           Provider.of<Client>(context, listen: false)
-              .sendTelemetry(geo, myTelemetry.fuel);
+              .sendTelemetry(myTelemetry.geo, myTelemetry.fuel);
         }
       }
     }
+
+    // Update ADSB
+    Provider.of<ADSB>(context, listen: false).refresh(myTelemetry.geo);
     refreshMapView();
   }
 
@@ -335,6 +352,7 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Dismissible(
               key: const Key("flightPlanDrawer"),
               direction: DismissDirection.down,
+              resizeDuration: const Duration(milliseconds: 10),
               onDismissed: (event) => Navigator.pop(context),
               child: flightPlanDrawer(setFocusMode, () {
                 editablePolyline.points.clear();
@@ -363,6 +381,7 @@ class _MyHomePageState extends State<MyHomePage> {
       pageBuilder: (BuildContext context, animationIn, animationOut) {
         return Dismissible(
           key: const Key("moreInstruments"),
+          resizeDuration: const Duration(milliseconds: 10),
           child: moreInstrumentsDrawer(),
           direction: DismissDirection.up,
           onDismissed: (event) => {Navigator.pop(context)},

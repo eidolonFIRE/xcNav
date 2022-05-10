@@ -61,7 +61,7 @@ class FakeFlight {
     latlng = LatLng(center.lat, center.lng);
     alt = center.alt;
 
-    windSpd = rand.nextDouble() * 5 + 5;
+    windSpd = rand.nextDouble() * 5 + 10;
     windHdg = rand.nextDouble() * 360;
 
     debugPrint("Fake Wind: $windSpd, $windHdg");
@@ -70,8 +70,10 @@ class FakeFlight {
   Position genFakeLocationFlight() {
     hdg += randomCentered() * 20 + 5;
 
-    latlng = latlngCalc.offset(latlng, spd * 5, hdg);
-    latlng = latlngCalc.offset(latlng, windSpd * 5, windHdg);
+    latlng = latlngCalc.offset(
+        latlng, (spd + randomCentered()) * 5, hdg + randomCentered());
+    latlng = latlngCalc.offset(
+        latlng, windSpd * 5 + randomCentered(), windHdg + randomCentered());
 
     vario = min(10, max(-10, vario + randomCentered())) * 0.95;
     alt = max(0, alt * 0.99 + vario);

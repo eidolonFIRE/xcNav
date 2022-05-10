@@ -65,9 +65,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     // get initial location
     _getCurrentPosition().then((location) {
       debugPrint("initial location: $location");
-      Provider.of<MyTelemetry>(context, listen: false).updateGeo(
-          Geo.fromPosition(
-              location, Provider.of<MyTelemetry>(context, listen: false).geo));
+      Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
 
       // Go to next screen
       if (Provider.of<Profile>(context, listen: false).name != null) {

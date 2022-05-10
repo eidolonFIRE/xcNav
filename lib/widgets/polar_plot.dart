@@ -3,23 +3,24 @@ import 'dart:ui';
 import 'package:collection/collection.dart';
 
 import 'package:flutter/material.dart';
+import 'package:scidart/numdart.dart';
 
 class PolarPlotPainter extends CustomPainter {
   late Paint _paint;
-  late List<double> _data;
+  late Array2d _data;
   late double _maxValue;
-
   late Paint _paintGrid;
+  late bool _stroke;
 
   PolarPlotPainter(
-      Color color, double width, List<double> data, double maxValue) {
+      Color color, double width, Array2d data, double maxValue, bool stroke) {
     _paint = Paint()
       ..color = color
       ..strokeWidth = width;
-    _paint.style = PaintingStyle.fill;
+    _paint.style = stroke ? PaintingStyle.stroke : PaintingStyle.fill;
     _data = data;
     _maxValue = maxValue;
-
+    _stroke = stroke;
     _paintGrid = Paint()
       ..color = Colors.white
       ..strokeWidth = 1;
@@ -32,15 +33,27 @@ class PolarPlotPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    Path p = Path();
-    p.addPolygon(
-        _data
-            .mapIndexed<Offset>((i, e) =>
-                calcPoint(i / _data.length * 2 * pi, e) * size.width / 2 +
-                Offset(size.width / 2, size.height / 2))
-            .toList(),
-        true);
-    canvas.drawPath(p, _paint);
+    final maxSize = min(size.width, size.height) / 2;
+
+    if (_stroke) {
+      Path p = Path();
+      p.addPolygon(
+          _data
+              .map<Offset>((e) =>
+                  calcPoint(e[0], e[1]) * maxSize +
+                  Offset(size.width / 2, size.height / 2))
+              .toList(),
+          true);
+      canvas.drawPath(p, _paint);
+    } else {
+      _data.forEach((e) {
+        canvas.drawCircle(
+            calcPoint(e[0], e[1]) * maxSize +
+                Offset(size.width / 2, size.height / 2),
+            _paint.strokeWidth,
+            _paint);
+      });
+    }
 
     // Paint grid
     canvas.drawLine(Offset(0, size.height / 2),

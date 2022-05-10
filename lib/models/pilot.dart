@@ -37,7 +37,9 @@ class Pilot {
             speed: 0,
             speedAccuracy: 1,
           ),
-          geo);
+          geo,
+          null,
+          null);
     } else {
       debugPrint("skipped");
     }

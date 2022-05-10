@@ -1,3 +1,7 @@
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_barometer_plugin/flutter_barometer.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -21,11 +25,18 @@ class Geo {
 
   /// Meters
   double alt = 0;
-  int time = 0; // milliseconds
+
+  /// milliseconds since epoch
+  int time = 0;
+
   /// Radians
-  double hdg = 0; // radians
-  double spd = 0; // meters/sec
-  double vario = 0; // meters/sec
+  double hdg = 0;
+
+  /// meters/sec
+  double spd = 0;
+
+  /// meters/sec
+  double vario = 0;
 
   LatLng get latLng => LatLng(lat, lng);
 
@@ -33,11 +44,12 @@ class Geo {
   Geo.fromValues(
       this.lat, this.lng, this.alt, this.time, this.hdg, this.spd, this.vario);
 
-  Geo.fromPosition(Position location, Geo? prev) {
+  Geo.fromPosition(Position location, Geo? prev, BarometerValue? baro,
+      BarometerValue? baroAmbient) {
     lat = location.latitude;
     lng = location.longitude;
-    alt = location.altitude;
-    time = location.timestamp?.millisecondsSinceEpoch ?? 0;
+    time = location.timestamp?.millisecondsSinceEpoch ??
+        DateTime.now().millisecondsSinceEpoch;
 
     if (prev != null && prev.time < time) {
       // prefer our own calculations
@@ -52,23 +64,25 @@ class Geo {
             3.1415926 /
             180;
       }
-
-      vario = (alt - prev.alt) / (time - prev.time) * 1000;
     } else {
       spd = location.speed;
       hdg = location.heading;
+    }
+
+    if (baro != null) {
+      // altitude / vario filtering
+      final double amb = baroAmbient?.hectpascal ?? 1013.25;
+      alt =
+          145366.45 * (1 - pow(baro.hectpascal / amb, 0.190284)) / meters2Feet;
+    } else {
+      alt = location.altitude;
+    }
+
+    if (prev != null) {
+      vario = (alt - prev.alt) / (time - prev.time) * 1000;
+    } else {
       vario = 0;
     }
-  }
-
-  Geo.fromJson(dynamic data) {
-    lat = data["lat"];
-    lng = data["lng"];
-    alt = data["alt"];
-    time = data["time"];
-    hdg = data["hdg"];
-    spd = data["spd"];
-    vario = data["vario"];
   }
 
   /// Find distance to and location of the best intercept to path.
@@ -122,5 +136,15 @@ class Geo {
       "spd": spd,
       "vario": vario,
     };
+  }
+
+  Geo.fromJson(dynamic data) {
+    lat = data["lat"];
+    lng = data["lng"];
+    alt = data["alt"];
+    time = data["time"];
+    hdg = data["hdg"];
+    spd = data["spd"];
+    vario = data["vario"];
   }
 }
