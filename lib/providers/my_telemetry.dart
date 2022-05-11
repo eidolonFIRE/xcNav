@@ -25,12 +25,13 @@ class MyTelemetry with ChangeNotifier {
   double fuelBurnRate = 4;
   Geo? geoPrev;
 
-  // Recorded
-  int windFirstSampleIndex = 0;
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
   DateTime? takeOff;
   Geo? launchGeo;
+
+  /// This is coming from wind readings
+  double? airspeed;
 
   // in-flight hysterisis
   int triggerHyst = 0;
@@ -46,16 +47,6 @@ class MyTelemetry with ChangeNotifier {
   BarometerValue? baroAmbient;
   bool baroAmbientRequested = false;
   bool stationFound = false;
-
-  /// Most recent wind calculation performed
-  DateTime? lastWindCalc;
-
-  /// Radians
-  double windHdg = 0;
-
-  /// m/s
-  double windSpd = 0;
-  double? airspeed;
 
   @override
   void dispose() {

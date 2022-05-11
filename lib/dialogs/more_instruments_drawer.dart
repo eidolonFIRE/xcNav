@@ -9,6 +9,7 @@ import 'package:xcnav/dialogs/fuel_adjustment.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/wind_plot.dart';
@@ -138,197 +139,110 @@ Widget moreInstrumentsDrawer() {
 
               const Divider(thickness: 2),
 
-              // --- Wind Chart
-              Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      mainAxisSize: MainAxisSize.max,
-                      // crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Wind Detector",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                        const Divider(),
-                        ListTile(
-                          title: const Text("Airspeed"),
-                          trailing: myTelemetry.airspeed != null
-                              ? Text.rich(TextSpan(children: [
-                                  TextSpan(
-                                      style: const TextStyle(fontSize: 30),
-                                      text: convertSpeedValue(
-                                              Provider.of<Settings>(context,
-                                                      listen: false)
-                                                  .displayUnitsSpeed,
-                                              myTelemetry.airspeed!)
-                                          .toStringAsFixed(0)),
-                                  TextSpan(
-                                      style: const TextStyle(
-                                          fontSize: 14, color: Colors.grey),
-                                      text: unitStrSpeed[Provider.of<Settings>(
-                                              context,
-                                              listen: false)
-                                          .displayUnitsSpeed]!)
-                                ]))
-                              : const Text("?"),
-                        ),
-                        ListTile(
-                          title: const Text("Wind Speed"),
-                          trailing: myTelemetry.lastWindCalc != null
-                              ? Text.rich(TextSpan(children: [
-                                  TextSpan(
-                                      style: const TextStyle(
-                                        fontSize: 30,
-                                      ),
-                                      text: convertSpeedValue(
-                                              Provider.of<Settings>(context,
-                                                      listen: false)
-                                                  .displayUnitsSpeed,
-                                              myTelemetry.windSpd)
-                                          .toStringAsFixed(0)),
-                                  TextSpan(
-                                      style: const TextStyle(
-                                          fontSize: 14, color: Colors.grey),
-                                      text: unitStrSpeed[Provider.of<Settings>(
-                                              context,
-                                              listen: false)
-                                          .displayUnitsSpeed]!)
-                                ]))
-                              : const Text("?"),
-                        ),
-                        ElevatedButton.icon(
-                            label: const Text(
-                              "Clear",
-                              style: TextStyle(fontSize: 12),
-                            ),
-                            onPressed: () => {
-                                  myTelemetry.windFirstSampleIndex =
-                                      myTelemetry.recordGeo.length - 1
-                                },
-                            icon: const Icon(
-                              Icons.start,
-                              size: 20,
-                            )),
-                      ],
+              /// --- Wind Chart
+              Consumer<Wind>(
+                builder: (context, wind, child) => Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisSize: MainAxisSize.max,
+                        // crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Wind Detector",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 20, right: 20),
+                            child: Divider(),
+                          ),
+                          ListTile(
+                            title: const Text("Airspeed"),
+                            trailing: myTelemetry.airspeed != null
+                                ? Text.rich(TextSpan(children: [
+                                    TextSpan(
+                                        style: const TextStyle(fontSize: 30),
+                                        text: convertSpeedValue(
+                                                Provider.of<Settings>(context,
+                                                        listen: false)
+                                                    .displayUnitsSpeed,
+                                                myTelemetry.airspeed!)
+                                            .toStringAsFixed(0)),
+                                    TextSpan(
+                                        style: const TextStyle(
+                                            fontSize: 14, color: Colors.grey),
+                                        text: unitStrSpeed[
+                                            Provider.of<Settings>(context,
+                                                    listen: false)
+                                                .displayUnitsSpeed]!)
+                                  ]))
+                                : const Text("?"),
+                          ),
+                          ListTile(
+                            title: const Text("Wind Speed"),
+                            trailing: wind.lastWindCalc != null
+                                ? Text.rich(TextSpan(children: [
+                                    TextSpan(
+                                        style: const TextStyle(
+                                          fontSize: 30,
+                                        ),
+                                        text: convertSpeedValue(
+                                                Provider.of<Settings>(context,
+                                                        listen: false)
+                                                    .displayUnitsSpeed,
+                                                wind.windSpd)
+                                            .toStringAsFixed(0)),
+                                    TextSpan(
+                                        style: const TextStyle(
+                                            fontSize: 14, color: Colors.grey),
+                                        text: unitStrSpeed[
+                                            Provider.of<Settings>(context,
+                                                    listen: false)
+                                                .displayUnitsSpeed]!)
+                                  ]))
+                                : const Text("?"),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.pause_circle,
+                                size: 24,
+                                color: wind.isRecording
+                                    ? Colors.grey
+                                    : Colors.white,
+                              ),
+                              Switch(
+                                  value: wind.isRecording,
+                                  onChanged: (value) {
+                                    if (value) {
+                                      wind.windSampleFirst =
+                                          myTelemetry.recordGeo.length - 1;
+                                      wind.windSampleLast = null;
+                                    } else {
+                                      wind.windSampleLast =
+                                          myTelemetry.recordGeo.length - 1;
+                                    }
+                                    wind.isRecording = value;
+                                  }),
+                              Icon(
+                                Icons.play_circle,
+                                size: 24,
+                                color: wind.isRecording
+                                    ? Colors.white
+                                    : Colors.grey,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  /// --- Wind Readings Polar Chart
-                  Builder(builder: (context) {
-                    if (myTelemetry.recordGeo.length < 2) return const Card();
-
-                    // --- Circle Fit
-                    // https://people.cas.uab.edu/~mosya/cl/
-
-                    // Select our samples
-                    final List<Geo> samples = myTelemetry.recordGeo.sublist(max(
-                        max(0, myTelemetry.recordGeo.length - 100),
-                        min(myTelemetry.recordGeo.length - 1,
-                            myTelemetry.windFirstSampleIndex)));
-
-                    // massage the samples
-                    final samplesX = samples
-                        .map((e) => cos(e.hdg - pi / 2) * e.spd)
-                        .toList();
-                    final samplesY = samples
-                        .map((e) => sin(e.hdg - pi / 2) * e.spd)
-                        .toList();
-                    final xMean =
-                        samplesX.reduce((a, b) => a + b) / samplesX.length;
-                    final yMean =
-                        samplesY.reduce((a, b) => a + b) / samplesY.length;
-                    final maxSpd =
-                        samples.reduce((a, b) => a.spd > b.spd ? a : b).spd *
-                            1.1;
-
-                    // run the algorithm
-                    double mXX = 0;
-                    double mYY = 0;
-                    double mXY = 0;
-                    double mXZ = 0;
-                    double mYZ = 0;
-                    double mZZ = 0;
-
-                    for (int i = 0; i < samples.length; i++) {
-                      final xI = samplesX[i] - xMean;
-                      final yI = samplesY[i] - yMean;
-                      final zI = xI * xI + yI * yI;
-                      mXY += xI * yI;
-                      mXX += xI * xI;
-                      mYY += yI * yI;
-                      mXZ += xI * zI;
-                      mYZ += yI * zI;
-                      mZZ += zI * zI;
-                    }
-
-                    mXX /= samples.length;
-                    mYY /= samples.length;
-                    mXY /= samples.length;
-                    mXZ /= samples.length;
-                    mYZ /= samples.length;
-                    mZZ /= samples.length;
-
-                    final double mZ = mXX + mYY;
-                    final double covXY = mXX * mYY - mXY * mXY;
-                    final double a3 = 4 * mZ;
-                    final double a2 = -3 * mZ * mZ - mZZ;
-                    final double a1 = mZZ * mZ +
-                        4 * covXY * mZ -
-                        mXZ * mXZ -
-                        mYZ * mYZ -
-                        mZ * mZ * mZ;
-                    final double a0 = mXZ * mXZ * mYY +
-                        mYZ * mYZ * mXX -
-                        mZZ * covXY -
-                        2 * mXZ * mYZ * mXY +
-                        mZ * mZ * covXY;
-                    final double a22 = a2 + a2;
-                    final double a33 = a3 + a3 + a3;
-
-                    double xnew = 0;
-                    double ynew = 1e+20;
-                    const epsilon = 1e-6;
-                    const iterMax = 20;
-
-                    for (int iter = 1; iter < iterMax; iter++) {
-                      double yold = ynew;
-                      ynew = a0 + xnew * (a1 + xnew * (a2 + xnew * a3));
-                      if ((ynew).abs() > (yold).abs()) {
-                        debugPrint(
-                            "Newton-Taubin goes wrong direction: |ynew| > |yold|");
-                        xnew = 0;
-                        break;
-                      }
-                      double dY = a1 + xnew * (a22 + xnew * a33);
-                      double xold = xnew;
-                      xnew = xold - ynew / dY;
-                      if (((xnew - xold) / xnew).abs() < epsilon) break;
-                      if (iter >= iterMax) {
-                        debugPrint("Newton-Taubin will not converge");
-                        xnew = 0;
-                      }
-                      if (xnew < 0) {
-                        debugPrint("Newton-Taubin negative root:  x=$xnew");
-                        xnew = 0;
-                      }
-                    }
-
-                    // compute final offset and radius
-                    final det = xnew * xnew - xnew * mZ + covXY;
-                    final xCenter = (mXZ * (mYY - xnew) - mYZ * mXY) / det / 2;
-                    final yCenter = (mYZ * (mXX - xnew) - mXZ * mXY) / det / 2;
-                    final radius = sqrt(pow(xCenter, 2) + pow(yCenter, 2) + mZ);
-                    myTelemetry.windSpd =
-                        sqrt(pow(xCenter + xMean, 2) + pow(yCenter + yMean, 2));
-                    myTelemetry.windHdg = atan2(yCenter, xCenter) % (2 * pi);
-                    myTelemetry.airspeed = radius;
-                    myTelemetry.lastWindCalc = DateTime.now();
-
-                    return Card(
+                    /// --- Wind Readings Polar Chart
+                    Card(
                       color: Colors.black26,
                       child: Container(
                         // width: MediaQuery.of(context).size.width * 2 / 3,
@@ -341,18 +255,69 @@ Widget moreInstrumentsDrawer() {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              ClipRect(
-                                child: CustomPaint(
-                                  painter: WindPlotPainter(
-                                      Colors.blue,
-                                      3,
-                                      samplesX,
-                                      samplesY,
-                                      maxSpd,
-                                      Offset(xCenter + xMean, yCenter + yMean),
-                                      radius),
-                                ),
-                              ),
+                              (myTelemetry.recordGeo.length < 3 ||
+                                      wind.windSampleFirst == null ||
+                                      ((wind.windSampleFirst ??
+                                              myTelemetry.recordGeo.length) >
+                                          myTelemetry.recordGeo.length - 3))
+                                  ? Center(
+                                      child: wind.isRecording
+                                          ? Text("Measuring...")
+                                          : Text("No Data"))
+                                  : Builder(builder: (context) {
+                                      // --- Circle Fit
+                                      // https://people.cas.uab.edu/~mosya/cl/
+
+                                      /// First sample index can't be more than Wind.maxSamples back from latest sample or the last sample
+                                      final firstIndex = max(
+                                          0,
+                                          max(
+                                              ((wind.isRecording ||
+                                                          wind.windSampleLast ==
+                                                              null)
+                                                      ? myTelemetry.recordGeo
+                                                              .length -
+                                                          1
+                                                      : wind.windSampleLast!) -
+                                                  Wind.maxSamples,
+                                              wind.windSampleFirst!));
+
+                                      final List<Geo> samples =
+                                          myTelemetry.recordGeo.sublist(
+                                              firstIndex, wind.windSampleLast);
+
+                                      final samplesX = samples
+                                          .map((e) =>
+                                              cos(e.hdg - pi / 2) * e.spd)
+                                          .toList();
+                                      final samplesY = samples
+                                          .map((e) =>
+                                              sin(e.hdg - pi / 2) * e.spd)
+                                          .toList();
+
+                                      final maxSpd = samples
+                                              .reduce((a, b) =>
+                                                  a.spd > b.spd ? a : b)
+                                              .spd *
+                                          1.1;
+
+                                      var result =
+                                          wind.solve(samplesX, samplesY);
+
+                                      myTelemetry.airspeed = result.airspeed;
+
+                                      return ClipRect(
+                                        child: CustomPaint(
+                                          painter: WindPlotPainter(
+                                              3,
+                                              samplesX,
+                                              samplesY,
+                                              maxSpd,
+                                              result.circleCenter,
+                                              result.airspeed),
+                                        ),
+                                      );
+                                    }),
                               const Align(
                                   alignment: Alignment.topCenter,
                                   child: Text("N")),
@@ -369,9 +334,9 @@ Widget moreInstrumentsDrawer() {
                           ),
                         ),
                       ),
-                    );
-                  }),
-                ],
+                    )
+                  ],
+                ),
               ),
 
               const Divider(thickness: 2),

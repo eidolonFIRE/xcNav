@@ -13,6 +13,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/chat_messages.dart';
+import 'package:xcnav/providers/wind.dart';
 
 // screens
 import 'package:xcnav/screens/home.dart';
@@ -38,6 +39,10 @@ void main() {
         providers: [
           ChangeNotifierProvider(
             create: (_) => Settings(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Wind(),
             lazy: false,
           ),
           ChangeNotifierProvider(

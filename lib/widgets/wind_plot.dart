@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class WindPlotPainter extends CustomPainter {
@@ -14,9 +15,9 @@ class WindPlotPainter extends CustomPainter {
 
   late Paint _barbPaint;
 
-  WindPlotPainter(Color color, double width, this.dataX, this.dataY,
-      this.maxValue, this.circleCenter, this.circleRadius) {
-    _paint = Paint()..color = color;
+  WindPlotPainter(double width, this.dataX, this.dataY, this.maxValue,
+      this.circleCenter, this.circleRadius) {
+    _paint = Paint()..color = Colors.blue.withAlpha(150);
     _paint.style = PaintingStyle.fill;
 
     _paintGrid = Paint()
@@ -29,7 +30,7 @@ class WindPlotPainter extends CustomPainter {
       ..strokeWidth = width;
 
     _barbPaint = Paint()
-      ..color = Colors.redAccent
+      ..color = Colors.blue
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 4
       ..style = PaintingStyle.stroke;
@@ -47,19 +48,39 @@ class WindPlotPainter extends CustomPainter {
     canvas.drawLine(Offset(size.width / 2, size.height * (1 - _pad)),
         Offset(size.width / 2, size.height * _pad), _paintGrid);
 
+    // Paint Wind fit
+    final _circleCenter = circleCenter * maxSize / maxValue + center;
+    canvas.drawCircle(
+        _circleCenter, circleRadius * maxSize / maxValue, circlePaint);
+
     // Paint samples
     for (int i = 0; i < dataX.length; i++) {
       canvas.drawCircle(
           Offset(dataX[i], dataY[i]) * maxSize / maxValue + center, 3, _paint);
     }
 
-    // Paint Wind fit
-    final _circleCenter = circleCenter * maxSize / maxValue + center;
-    canvas.drawCircle(
-        _circleCenter, circleRadius * maxSize / maxValue, circlePaint);
-
     // Wind barb
     canvas.drawLine(center, _circleCenter, _barbPaint);
+    canvas.drawPoints(
+        PointMode.polygon,
+        [
+          _circleCenter +
+              Offset(cos(circleCenter.direction - pi / 1.2),
+                      sin(circleCenter.direction - pi / 1.2)) *
+                  circleCenter.distance *
+                  maxSize /
+                  maxValue /
+                  4,
+          _circleCenter,
+          _circleCenter +
+              Offset(cos(circleCenter.direction + pi / 1.2),
+                      sin(circleCenter.direction + pi / 1.2)) *
+                  circleCenter.distance *
+                  maxSize /
+                  maxValue /
+                  4,
+        ],
+        _barbPaint);
   }
 
   @override
