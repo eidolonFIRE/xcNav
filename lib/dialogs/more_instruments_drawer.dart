@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:provider/provider.dart';
@@ -220,34 +222,129 @@ Widget moreInstrumentsDrawer() {
                         max(0, myTelemetry.recordGeo.length - 100),
                         min(myTelemetry.recordGeo.length - 1,
                             myTelemetry.windFirstSampleIndex)));
+                    // --- Circle Fit
 
-                    final samplesMatrix = Array2d(
-                        samples.map((e) => Array([e.hdg, e.spd])).toList());
+                    final samplesMatrix = Array2d(samples
+                        .map((e) =>
+                            Array([cos(e.hdg) * e.spd, sin(e.hdg) * e.spd]))
+                        .toList());
 
-                    final double minSpd =
-                        samples.reduce((a, b) => a.spd < b.spd ? a : b).spd;
+                    double xMean = 0;
+                    double yMean = 0;
+                    for (var each in samplesMatrix) {
+                      xMean += each[0];
+                      yMean += each[1];
+                    }
+                    xMean /= samplesMatrix.length;
+                    yMean /= samplesMatrix.length;
+
+                    double Mxx = 0;
+                    double Myy = 0;
+                    double Mxy = 0;
+                    double Mxz = 0;
+                    double Myz = 0;
+                    double Mzz = 0;
+
+                    for (int i = 0; i < samplesMatrix.length; i++) {
+                      final Xi = samplesMatrix[i][0] - xMean;
+                      final Yi = samplesMatrix[i][1] - yMean;
+                      final Zi = Xi * Xi + Yi * Yi;
+                      Mxy += Xi * Yi;
+                      Mxx += Xi * Xi;
+                      Myy += Yi * Yi;
+                      Mxz += Xi * Zi;
+                      Myz += Yi * Zi;
+                      Mzz += Zi * Zi;
+                    }
+
+                    Mxx /= samplesMatrix.length;
+                    Myy /= samplesMatrix.length;
+                    Mxy /= samplesMatrix.length;
+                    Mxz /= samplesMatrix.length;
+                    Myz /= samplesMatrix.length;
+                    Mzz /= samplesMatrix.length;
+
+                    double Mz = Mxx + Myy;
+                    double Cov_xy = Mxx * Myy - Mxy * Mxy;
+                    double A3 = 4 * Mz;
+                    double A2 = -3 * Mz * Mz - Mzz;
+                    double A1 = Mzz * Mz +
+                        4 * Cov_xy * Mz -
+                        Mxz * Mxz -
+                        Myz * Myz -
+                        Mz * Mz * Mz;
+                    double A0 = Mxz * Mxz * Myy +
+                        Myz * Myz * Mxx -
+                        Mzz * Cov_xy -
+                        2 * Mxz * Myz * Mxy +
+                        Mz * Mz * Cov_xy;
+                    double A22 = A2 + A2;
+                    double A33 = A3 + A3 + A3;
+
+                    double xnew = 0;
+                    double ynew = 1e+20;
+                    double epsilon = 1e-6;
+                    double IterMax = 20;
+
+                    for (int iter = 1; iter < IterMax; iter++) {
+                      double yold = ynew;
+                      ynew = A0 + xnew * (A1 + xnew * (A2 + xnew * A3));
+                      if ((ynew).abs() > (yold).abs()) {
+                        debugPrint(
+                            "Newton-Taubin goes wrong direction: |ynew| > |yold|");
+                        xnew = 0;
+                        break;
+                      }
+                      double Dy = A1 + xnew * (A22 + xnew * A33);
+                      double xold = xnew;
+                      xnew = xold - ynew / Dy;
+                      if (((xnew - xold) / xnew).abs() < epsilon) break;
+                      if (iter >= IterMax) {
+                        debugPrint("Newton-Taubin will not converge");
+                        xnew = 0;
+                      }
+                      if (xnew < 0) {
+                        debugPrint("Newton-Taubin negative root:  x=$xnew");
+                        xnew = 0;
+                      }
+                    }
+
+                    double DET = xnew * xnew - xnew * Mz + Cov_xy;
+                    final xCenter = (Mxz * (Myy - xnew) - Myz * Mxy) / DET / 2;
+                    final yCenter = (Myz * (Mxx - xnew) - Mxz * Mxy) / DET / 2;
+
+                    final radius = sqrt(pow(xCenter, 2) + pow(yCenter, 2) + Mz);
+
+                    // Par = [Center+centroid , sqrt(Center*Center'+Mz)];
+
+                    // --- Sinusoid fit
+                    // final samplesMatrix = Array2d(
+                    //     samples.map((e) => Array([e.hdg, e.spd])).toList());
+
+                    // final double minSpd =
+                    //     samples.reduce((a, b) => a.spd < b.spd ? a : b).spd;
                     final double maxSpd =
                         samples.reduce((a, b) => a.spd > b.spd ? a : b).spd;
 
-                    Array windFit = gaussNewton(
-                        sinusoid,
-                        Array(samples.map((e) => e.hdg).toList()),
-                        Array(samples.map((e) => e.spd).toList()),
-                        (minSpd + maxSpd) / 2,
-                        0,
-                        0,
-                        1e-4,
-                        10);
+                    // Array windFit = gaussNewton(
+                    //     sinusoid,
+                    //     Array(samples.map((e) => e.hdg).toList()),
+                    //     Array(samples.map((e) => e.spd).toList()),
+                    //     (minSpd + maxSpd) / 2,
+                    //     0,
+                    //     0,
+                    //     1e-4,
+                    //     10);
 
-                    Array2d windSin = Array2d([Array([]), Array([])]);
-                    for (int i = 0; i < 48; i++) {
-                      windSin[0].add(2 * pi * i / 47 - pi);
-                    }
-                    final Array y = sinusoid(
-                        windFit[0], windFit[1], windFit[2], windSin[0]);
+                    // Array2d windSin = Array2d([Array([]), Array([])]);
+                    // for (int i = 0; i < 48; i++) {
+                    //   windSin[0].add(2 * pi * i / 47 - pi);
+                    // }
+                    // final Array y = sinusoid(
+                    //     windFit[0], windFit[1], windFit[2], windSin[0]);
 
-                    windSin[1] = y;
-                    windSin = matrixTranspose(windSin);
+                    // windSin[1] = y;
+                    // windSin = matrixTranspose(windSin);
 
                     final end = DateTime.now().millisecondsSinceEpoch;
                     debugPrint("---- Wind Computed: ${end - start}ms");
@@ -261,19 +358,14 @@ Widget moreInstrumentsDrawer() {
 
                       child: AspectRatio(
                         aspectRatio: 1,
-                        child: Stack(
-                          clipBehavior: Clip.hardEdge,
-                          fit: StackFit.expand,
-                          children: [
-                            CustomPaint(
-                              painter: PolarPlotPainter(
-                                  Colors.amber, 2, windSin, maxSpd, true),
-                            ),
-                            CustomPaint(
-                              painter: PolarPlotPainter(
-                                  Colors.blue, 3, samplesMatrix, maxSpd, false),
-                            )
-                          ],
+                        child: CustomPaint(
+                          painter: PolarPlotPainter(
+                              Colors.blue,
+                              3,
+                              samplesMatrix,
+                              maxSpd,
+                              Offset(xCenter + xMean, yCenter + yMean),
+                              radius),
                         ),
                       ),
                     );

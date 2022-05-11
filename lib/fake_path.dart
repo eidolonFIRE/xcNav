@@ -61,7 +61,7 @@ class FakeFlight {
     latlng = LatLng(center.lat, center.lng);
     alt = center.alt;
 
-    windSpd = rand.nextDouble() * 5 + 10;
+    windSpd = rand.nextDouble() * 1 + 20;
     windHdg = rand.nextDouble() * 360;
 
     debugPrint("Fake Wind: $windSpd, $windHdg");

@@ -7,53 +7,56 @@ import 'package:scidart/numdart.dart';
 
 class PolarPlotPainter extends CustomPainter {
   late Paint _paint;
-  late Array2d _data;
-  late double _maxValue;
+  late Array2d data;
+  late double maxValue;
   late Paint _paintGrid;
-  late bool _stroke;
 
-  PolarPlotPainter(
-      Color color, double width, Array2d data, double maxValue, bool stroke) {
-    _paint = Paint()
-      ..color = color
-      ..strokeWidth = width;
-    _paint.style = stroke ? PaintingStyle.stroke : PaintingStyle.fill;
-    _data = data;
-    _maxValue = maxValue;
-    _stroke = stroke;
+  late Offset circleCenter;
+  late double circleRadius;
+  late final Paint circlePaint;
+
+  PolarPlotPainter(Color color, double width, this.data, this.maxValue,
+      this.circleCenter, this.circleRadius) {
+    _paint = Paint()..color = color;
+    _paint.style = PaintingStyle.fill;
+
     _paintGrid = Paint()
       ..color = Colors.white
       ..strokeWidth = 1;
+
+    circlePaint = Paint()
+      ..color = Colors.amber
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width;
   }
 
   Offset calcPoint(double theta, double value) {
     return Offset(
-        cos(theta) * (value / _maxValue), sin(theta) * (value / _maxValue));
+        cos(theta) * (value / maxValue), sin(theta) * (value / maxValue));
   }
 
   @override
   void paint(Canvas canvas, Size size) {
     final maxSize = min(size.width, size.height) / 2;
+    final Offset center = Offset(size.width / 2, size.height / 2);
 
-    if (_stroke) {
-      Path p = Path();
-      p.addPolygon(
-          _data
-              .map<Offset>((e) =>
-                  calcPoint(e[0], e[1]) * maxSize +
-                  Offset(size.width / 2, size.height / 2))
-              .toList(),
-          true);
-      canvas.drawPath(p, _paint);
-    } else {
-      _data.forEach((e) {
-        canvas.drawCircle(
-            calcPoint(e[0], e[1]) * maxSize +
-                Offset(size.width / 2, size.height / 2),
-            _paint.strokeWidth,
-            _paint);
-      });
-    }
+    // Path p = Path();
+    // p.addPolygon(
+    //     _data
+    //         .map<Offset>((e) =>
+    //             calcPoint(e[0], e[1]) * maxSize +
+    //             Offset(size.width / 2, size.height / 2))
+    //         .toList(),
+    //     true);
+    // canvas.drawPath(p, _paint);
+
+    data.forEach((e) {
+      canvas.drawCircle(
+          Offset(e[0], e[1]) * maxSize / maxValue + center, 3, _paint);
+    });
+
+    canvas.drawCircle(circleCenter * maxSize / maxValue + center,
+        circleRadius * maxSize / maxValue, circlePaint);
 
     // Paint grid
     canvas.drawLine(Offset(0, size.height / 2),
@@ -65,6 +68,6 @@ class PolarPlotPainter extends CustomPainter {
   @override
   bool shouldRepaint(PolarPlotPainter oldDelegate) {
     return true;
-    //oldDelegate._maxValue != _maxValue;
+    //oldDelegate.maxValue != maxValue;
   }
 }
