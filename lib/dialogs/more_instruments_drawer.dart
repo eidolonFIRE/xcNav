@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:scidart/numdart.dart';
-// import 'package:scidart/scidart.dart';
 
 import 'package:xcnav/dialogs/fuel_adjustment.dart';
 import 'package:xcnav/models/geo.dart';
@@ -13,52 +11,7 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/polar_plot.dart';
-
-/// o = offset
-/// s = sin magnitude
-/// c = cosine magnitude
-Array sinusoid(double o, double s, double c, Array x) {
-  return Array(x.map((e) => sin(e) * s + o).toList()) +
-      Array(x.map((e) => cos(e) * c).toList());
-}
-
-Array2d jacobian(Function f, double o, double s, double c, Array x) {
-  const double eps = 1e-4;
-  final Array gradO =
-      arrayDivisionToScalar(f(o + eps, s, c, x) - f(o - eps, s, c, x), 2 * eps);
-  final Array gradS =
-      arrayDivisionToScalar(f(o, s + eps, c, x) - f(o, s - eps, c, x), 2 * eps);
-  final Array gradC =
-      arrayDivisionToScalar(f(o, s, c + eps, x) - f(o, s, c - eps, x), 2 * eps);
-  return matrixTranspose(Array2d([gradO, gradS, gradC]));
-}
-
-Array gaussNewton(Function f, Array hdg, Array spd, double o, double s,
-    double c, double tol, double maxIter) {
-  var next = Array([o, s, c]);
-  var prev = next;
-  for (int iter = 0; iter < maxIter; iter++) {
-    prev = next;
-    final j = jacobian(f, prev[0], prev[1], prev[2], hdg);
-    final jT = matrixTranspose(j);
-    final dy = spd - f(prev[0], prev[1], prev[2], hdg);
-    final foo = matrixDot(matrixDot(matrixInverse(matrixDot(jT, j)), jT),
-        matrixTranspose(Array2d([dy])));
-    next = prev + matrixTranspose(foo)[0];
-
-    // Constrains
-    // next[0] = max(0, next[0]);
-    // next[1] = min(15, max(-15, next[1]));
-    // next[2] = min(15, max(-15, next[2]));
-    debugPrint(next.toString());
-
-    if (matrixNormOne(Array2d([prev - next])) < tol) {
-      break;
-    }
-  }
-  return next;
-}
+import 'package:xcnav/widgets/wind_plot.dart';
 
 Widget moreInstrumentsDrawer() {
   return Consumer<MyTelemetry>(
@@ -194,12 +147,62 @@ Widget moreInstrumentsDrawer() {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       mainAxisSize: MainAxisSize.max,
+                      // crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Wind Indicator"),
-                        const Text("( WIP )"),
+                        const Text(
+                          "Wind Detector",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        const Divider(),
+                        ListTile(
+                          title: const Text("Airspeed"),
+                          trailing: myTelemetry.airspeed != null
+                              ? Text.rich(TextSpan(children: [
+                                  TextSpan(
+                                      style: const TextStyle(fontSize: 30),
+                                      text: convertSpeedValue(
+                                              Provider.of<Settings>(context,
+                                                      listen: false)
+                                                  .displayUnitsSpeed,
+                                              myTelemetry.airspeed!)
+                                          .toStringAsFixed(0)),
+                                  TextSpan(
+                                      style: const TextStyle(
+                                          fontSize: 14, color: Colors.grey),
+                                      text: unitStrSpeed[Provider.of<Settings>(
+                                              context,
+                                              listen: false)
+                                          .displayUnitsSpeed]!)
+                                ]))
+                              : const Text("?"),
+                        ),
+                        ListTile(
+                          title: const Text("Wind Speed"),
+                          trailing: myTelemetry.lastWindCalc != null
+                              ? Text.rich(TextSpan(children: [
+                                  TextSpan(
+                                      style: const TextStyle(
+                                        fontSize: 30,
+                                      ),
+                                      text: convertSpeedValue(
+                                              Provider.of<Settings>(context,
+                                                      listen: false)
+                                                  .displayUnitsSpeed,
+                                              myTelemetry.windSpd)
+                                          .toStringAsFixed(0)),
+                                  TextSpan(
+                                      style: const TextStyle(
+                                          fontSize: 14, color: Colors.grey),
+                                      text: unitStrSpeed[Provider.of<Settings>(
+                                              context,
+                                              listen: false)
+                                          .displayUnitsSpeed]!)
+                                ]))
+                              : const Text("?"),
+                        ),
                         ElevatedButton.icon(
                             label: const Text(
-                              "Restart",
+                              "Clear",
                               style: TextStyle(fontSize: 12),
                             ),
                             onPressed: () => {
@@ -213,93 +216,98 @@ Widget moreInstrumentsDrawer() {
                       ],
                     ),
                   ),
+
+                  /// --- Wind Readings Polar Chart
                   Builder(builder: (context) {
-                    if (myTelemetry.recordGeo.length < 5) return Container();
+                    if (myTelemetry.recordGeo.length < 2) return const Card();
 
-                    final start = DateTime.now().millisecondsSinceEpoch;
+                    // --- Circle Fit
+                    // https://people.cas.uab.edu/~mosya/cl/
 
+                    // Select our samples
                     final List<Geo> samples = myTelemetry.recordGeo.sublist(max(
                         max(0, myTelemetry.recordGeo.length - 100),
                         min(myTelemetry.recordGeo.length - 1,
                             myTelemetry.windFirstSampleIndex)));
-                    // --- Circle Fit
 
-                    final samplesMatrix = Array2d(samples
-                        .map((e) =>
-                            Array([cos(e.hdg) * e.spd, sin(e.hdg) * e.spd]))
-                        .toList());
+                    // massage the samples
+                    final samplesX = samples
+                        .map((e) => cos(e.hdg - pi / 2) * e.spd)
+                        .toList();
+                    final samplesY = samples
+                        .map((e) => sin(e.hdg - pi / 2) * e.spd)
+                        .toList();
+                    final xMean =
+                        samplesX.reduce((a, b) => a + b) / samplesX.length;
+                    final yMean =
+                        samplesY.reduce((a, b) => a + b) / samplesY.length;
+                    final maxSpd =
+                        samples.reduce((a, b) => a.spd > b.spd ? a : b).spd *
+                            1.1;
 
-                    double xMean = 0;
-                    double yMean = 0;
-                    for (var each in samplesMatrix) {
-                      xMean += each[0];
-                      yMean += each[1];
+                    // run the algorithm
+                    double mXX = 0;
+                    double mYY = 0;
+                    double mXY = 0;
+                    double mXZ = 0;
+                    double mYZ = 0;
+                    double mZZ = 0;
+
+                    for (int i = 0; i < samples.length; i++) {
+                      final xI = samplesX[i] - xMean;
+                      final yI = samplesY[i] - yMean;
+                      final zI = xI * xI + yI * yI;
+                      mXY += xI * yI;
+                      mXX += xI * xI;
+                      mYY += yI * yI;
+                      mXZ += xI * zI;
+                      mYZ += yI * zI;
+                      mZZ += zI * zI;
                     }
-                    xMean /= samplesMatrix.length;
-                    yMean /= samplesMatrix.length;
 
-                    double Mxx = 0;
-                    double Myy = 0;
-                    double Mxy = 0;
-                    double Mxz = 0;
-                    double Myz = 0;
-                    double Mzz = 0;
+                    mXX /= samples.length;
+                    mYY /= samples.length;
+                    mXY /= samples.length;
+                    mXZ /= samples.length;
+                    mYZ /= samples.length;
+                    mZZ /= samples.length;
 
-                    for (int i = 0; i < samplesMatrix.length; i++) {
-                      final Xi = samplesMatrix[i][0] - xMean;
-                      final Yi = samplesMatrix[i][1] - yMean;
-                      final Zi = Xi * Xi + Yi * Yi;
-                      Mxy += Xi * Yi;
-                      Mxx += Xi * Xi;
-                      Myy += Yi * Yi;
-                      Mxz += Xi * Zi;
-                      Myz += Yi * Zi;
-                      Mzz += Zi * Zi;
-                    }
-
-                    Mxx /= samplesMatrix.length;
-                    Myy /= samplesMatrix.length;
-                    Mxy /= samplesMatrix.length;
-                    Mxz /= samplesMatrix.length;
-                    Myz /= samplesMatrix.length;
-                    Mzz /= samplesMatrix.length;
-
-                    double Mz = Mxx + Myy;
-                    double Cov_xy = Mxx * Myy - Mxy * Mxy;
-                    double A3 = 4 * Mz;
-                    double A2 = -3 * Mz * Mz - Mzz;
-                    double A1 = Mzz * Mz +
-                        4 * Cov_xy * Mz -
-                        Mxz * Mxz -
-                        Myz * Myz -
-                        Mz * Mz * Mz;
-                    double A0 = Mxz * Mxz * Myy +
-                        Myz * Myz * Mxx -
-                        Mzz * Cov_xy -
-                        2 * Mxz * Myz * Mxy +
-                        Mz * Mz * Cov_xy;
-                    double A22 = A2 + A2;
-                    double A33 = A3 + A3 + A3;
+                    final double mZ = mXX + mYY;
+                    final double covXY = mXX * mYY - mXY * mXY;
+                    final double a3 = 4 * mZ;
+                    final double a2 = -3 * mZ * mZ - mZZ;
+                    final double a1 = mZZ * mZ +
+                        4 * covXY * mZ -
+                        mXZ * mXZ -
+                        mYZ * mYZ -
+                        mZ * mZ * mZ;
+                    final double a0 = mXZ * mXZ * mYY +
+                        mYZ * mYZ * mXX -
+                        mZZ * covXY -
+                        2 * mXZ * mYZ * mXY +
+                        mZ * mZ * covXY;
+                    final double a22 = a2 + a2;
+                    final double a33 = a3 + a3 + a3;
 
                     double xnew = 0;
                     double ynew = 1e+20;
-                    double epsilon = 1e-6;
-                    double IterMax = 20;
+                    const epsilon = 1e-6;
+                    const iterMax = 20;
 
-                    for (int iter = 1; iter < IterMax; iter++) {
+                    for (int iter = 1; iter < iterMax; iter++) {
                       double yold = ynew;
-                      ynew = A0 + xnew * (A1 + xnew * (A2 + xnew * A3));
+                      ynew = a0 + xnew * (a1 + xnew * (a2 + xnew * a3));
                       if ((ynew).abs() > (yold).abs()) {
                         debugPrint(
                             "Newton-Taubin goes wrong direction: |ynew| > |yold|");
                         xnew = 0;
                         break;
                       }
-                      double Dy = A1 + xnew * (A22 + xnew * A33);
+                      double dY = a1 + xnew * (a22 + xnew * a33);
                       double xold = xnew;
-                      xnew = xold - ynew / Dy;
+                      xnew = xold - ynew / dY;
                       if (((xnew - xold) / xnew).abs() < epsilon) break;
-                      if (iter >= IterMax) {
+                      if (iter >= iterMax) {
                         debugPrint("Newton-Taubin will not converge");
                         xnew = 0;
                       }
@@ -309,63 +317,56 @@ Widget moreInstrumentsDrawer() {
                       }
                     }
 
-                    double DET = xnew * xnew - xnew * Mz + Cov_xy;
-                    final xCenter = (Mxz * (Myy - xnew) - Myz * Mxy) / DET / 2;
-                    final yCenter = (Myz * (Mxx - xnew) - Mxz * Mxy) / DET / 2;
+                    // compute final offset and radius
+                    final det = xnew * xnew - xnew * mZ + covXY;
+                    final xCenter = (mXZ * (mYY - xnew) - mYZ * mXY) / det / 2;
+                    final yCenter = (mYZ * (mXX - xnew) - mXZ * mXY) / det / 2;
+                    final radius = sqrt(pow(xCenter, 2) + pow(yCenter, 2) + mZ);
+                    myTelemetry.windSpd =
+                        sqrt(pow(xCenter + xMean, 2) + pow(yCenter + yMean, 2));
+                    myTelemetry.windHdg = atan2(yCenter, xCenter) % (2 * pi);
+                    myTelemetry.airspeed = radius;
+                    myTelemetry.lastWindCalc = DateTime.now();
 
-                    final radius = sqrt(pow(xCenter, 2) + pow(yCenter, 2) + Mz);
+                    return Card(
+                      color: Colors.black26,
+                      child: Container(
+                        // width: MediaQuery.of(context).size.width * 2 / 3,
+                        constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 2 / 3,
+                            maxHeight: 200),
 
-                    // Par = [Center+centroid , sqrt(Center*Center'+Mz)];
-
-                    // --- Sinusoid fit
-                    // final samplesMatrix = Array2d(
-                    //     samples.map((e) => Array([e.hdg, e.spd])).toList());
-
-                    // final double minSpd =
-                    //     samples.reduce((a, b) => a.spd < b.spd ? a : b).spd;
-                    final double maxSpd =
-                        samples.reduce((a, b) => a.spd > b.spd ? a : b).spd;
-
-                    // Array windFit = gaussNewton(
-                    //     sinusoid,
-                    //     Array(samples.map((e) => e.hdg).toList()),
-                    //     Array(samples.map((e) => e.spd).toList()),
-                    //     (minSpd + maxSpd) / 2,
-                    //     0,
-                    //     0,
-                    //     1e-4,
-                    //     10);
-
-                    // Array2d windSin = Array2d([Array([]), Array([])]);
-                    // for (int i = 0; i < 48; i++) {
-                    //   windSin[0].add(2 * pi * i / 47 - pi);
-                    // }
-                    // final Array y = sinusoid(
-                    //     windFit[0], windFit[1], windFit[2], windSin[0]);
-
-                    // windSin[1] = y;
-                    // windSin = matrixTranspose(windSin);
-
-                    final end = DateTime.now().millisecondsSinceEpoch;
-                    debugPrint("---- Wind Computed: ${end - start}ms");
-
-                    return Container(
-                      // width: MediaQuery.of(context).size.width * 2 / 3,
-                      constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 2 / 3,
-                          maxHeight: 200),
-                      // clipBehavior: Clip.hardEdge,
-
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: CustomPaint(
-                          painter: PolarPlotPainter(
-                              Colors.blue,
-                              3,
-                              samplesMatrix,
-                              maxSpd,
-                              Offset(xCenter + xMean, yCenter + yMean),
-                              radius),
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ClipRect(
+                                child: CustomPaint(
+                                  painter: WindPlotPainter(
+                                      Colors.blue,
+                                      3,
+                                      samplesX,
+                                      samplesY,
+                                      maxSpd,
+                                      Offset(xCenter + xMean, yCenter + yMean),
+                                      radius),
+                                ),
+                              ),
+                              const Align(
+                                  alignment: Alignment.topCenter,
+                                  child: Text("N")),
+                              const Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Text("S")),
+                              const Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text("W")),
+                              const Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text("E")),
+                            ],
+                          ),
                         ),
                       ),
                     );

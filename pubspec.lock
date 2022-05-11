@@ -643,13 +643,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.0.1+1"
-  scidart:
-    dependency: "direct main"
-    description:
-      name: scidart
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.0.2-dev.9"
   settings_ui:
     dependency: "direct main"
     description:

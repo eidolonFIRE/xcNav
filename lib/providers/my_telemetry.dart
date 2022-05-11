@@ -41,9 +41,21 @@ class MyTelemetry with ChangeNotifier {
 
   /// Latest Barometric Reading
   BarometerValue? baro;
+
+  /// Ambient barometric reading fetched from web API
   BarometerValue? baroAmbient;
   bool baroAmbientRequested = false;
   bool stationFound = false;
+
+  /// Most recent wind calculation performed
+  DateTime? lastWindCalc;
+
+  /// Radians
+  double windHdg = 0;
+
+  /// m/s
+  double windSpd = 0;
+  double? airspeed;
 
   @override
   void dispose() {
