@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -283,6 +282,7 @@ class ADSB with ChangeNotifier {
     String msg =
         "Warning! $typeStr $oclock o'clock$vertSep ${etaStr ?? distMsg}... ";
     debugPrint(msg);
+    flutterTts.setVolume(1);
     flutterTts.speak(msg);
   }
 

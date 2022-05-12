@@ -13,8 +13,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/providers/adsb.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -24,15 +22,15 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
-import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/fuel_warning.dart';
+import 'package:xcnav/providers/wind.dart';
+import 'package:xcnav/providers/adsb.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
 import 'package:xcnav/widgets/map_marker.dart';
-import 'package:xcnav/widgets/icon_image.dart';
+import 'package:xcnav/widgets/fuel_warning.dart';
 
 // dialogs
 import 'package:xcnav/dialogs/edit_waypoint.dart';
@@ -44,7 +42,9 @@ import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/message.dart';
 
+// misc
 import 'package:xcnav/fake_path.dart';
+import 'package:xcnav/units.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -399,73 +399,78 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget topInstruments(BuildContext context) {
     return GestureDetector(
-      onTap: () => showMoreInstruments(context),
+      onPanDown: (event) => showMoreInstruments(context),
+      // onTap: () => showMoreInstruments(context),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
-        child: SizedBox(
-          height: 64,
-          child: Consumer2<MyTelemetry, Settings>(
-            builder: (context, myTelementy, settings, child) => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // --- Speedometer
-                  Text.rich(TextSpan(children: [
-                    TextSpan(
-                      text: min(
-                              999,
-                              convertSpeedValue(settings.displayUnitsSpeed,
-                                  myTelementy.geo.spd))
-                          .toStringAsFixed(settings.displayUnitsSpeed ==
-                                  DisplayUnitsSpeed.mps
-                              ? 1
-                              : 0),
-                      style: instrUpper,
-                    ),
-                    TextSpan(
-                      text: unitStrSpeed[settings.displayUnitsSpeed],
-                      style: instrLabel,
-                    )
-                  ])),
-                  const SizedBox(
-                      height: 100,
-                      child:
-                          VerticalDivider(thickness: 2, color: Colors.black)),
-                  // --- Altimeter
-                  Text.rich(TextSpan(children: [
-                    TextSpan(
-                      text: convertDistValueFine(
-                              settings.displayUnitsDist, myTelementy.geo.alt)
-                          .toStringAsFixed(0),
-                      style: instrUpper,
-                    ),
-                    TextSpan(
-                        text: unitStrDistFine[settings.displayUnitsDist],
-                        style: instrLabel)
-                  ])),
-                  const SizedBox(
-                      height: 100,
-                      child:
-                          VerticalDivider(thickness: 2, color: Colors.black)),
-                  // --- Vario
-                  Text.rich(TextSpan(children: [
-                    TextSpan(
-                      text: min(
-                              9999,
-                              max(
-                                  -9999,
-                                  convertVarioValue(settings.displayUnitsVario,
-                                      myTelementy.geo.vario)))
-                          .toStringAsFixed(settings.displayUnitsVario ==
-                                  DisplayUnitsVario.fpm
-                              ? 0
-                              : 1),
-                      style: instrUpper.merge(const TextStyle(fontSize: 30)),
-                    ),
-                    TextSpan(
-                        text: unitStrVario[settings.displayUnitsVario],
-                        style: instrLabel)
-                  ])),
-                ]),
+        child: Container(
+          color: Colors.grey[800],
+          child: SizedBox(
+            height: 64,
+            child: Consumer2<MyTelemetry, Settings>(
+              builder: (context, myTelementy, settings, child) => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // --- Speedometer
+                    Text.rich(TextSpan(children: [
+                      TextSpan(
+                        text: min(
+                                999,
+                                convertSpeedValue(settings.displayUnitsSpeed,
+                                    myTelementy.geo.spd))
+                            .toStringAsFixed(settings.displayUnitsSpeed ==
+                                    DisplayUnitsSpeed.mps
+                                ? 1
+                                : 0),
+                        style: instrUpper,
+                      ),
+                      TextSpan(
+                        text: unitStrSpeed[settings.displayUnitsSpeed],
+                        style: instrLabel,
+                      )
+                    ])),
+                    const SizedBox(
+                        height: 100,
+                        child:
+                            VerticalDivider(thickness: 2, color: Colors.black)),
+                    // --- Altimeter
+                    Text.rich(TextSpan(children: [
+                      TextSpan(
+                        text: convertDistValueFine(
+                                settings.displayUnitsDist, myTelementy.geo.alt)
+                            .toStringAsFixed(0),
+                        style: instrUpper,
+                      ),
+                      TextSpan(
+                          text: unitStrDistFine[settings.displayUnitsDist],
+                          style: instrLabel)
+                    ])),
+                    const SizedBox(
+                        height: 100,
+                        child:
+                            VerticalDivider(thickness: 2, color: Colors.black)),
+                    // --- Vario
+                    Text.rich(TextSpan(children: [
+                      TextSpan(
+                        text: min(
+                                9999,
+                                max(
+                                    -9999,
+                                    convertVarioValue(
+                                        settings.displayUnitsVario,
+                                        myTelementy.geo.vario)))
+                            .toStringAsFixed(settings.displayUnitsVario ==
+                                    DisplayUnitsVario.fpm
+                                ? 0
+                                : 1),
+                        style: instrUpper.merge(const TextStyle(fontSize: 30)),
+                      ),
+                      TextSpan(
+                          text: unitStrVario[settings.displayUnitsVario],
+                          style: instrLabel)
+                    ])),
+                  ]),
+            ),
           ),
         ),
       ),
@@ -936,11 +941,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       chat.messages[i].pilotId !=
                           Provider.of<Profile>(context, listen: false).id) {
                     bubbles.add(chat.messages[i]);
-                    // "self destruct" the message after several seconds
-                    Timer _hideBubble =
-                        Timer(const Duration(seconds: numSeconds), () {
-                      // TODO: This is prolly hacky... but it works for now
-                      chat.notifyListeners();
+
+                    Timer(const Duration(seconds: numSeconds), () {
+                      // "self destruct" the message after several seconds
+                      chat.refresh();
                     });
                   } else {
                     break;
@@ -1106,12 +1110,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                         ),
                                       )),
                               if (northLock)
-                                SvgPicture.asset(
-                                  "assets/images/lock.svg",
-                                  // width: 40,
-                                  color: Colors.grey[900]!.withAlpha(120),
-                                  // fit: BoxFit.none,
-                                ),
+                                const Center(
+                                    child: Text(
+                                  "- N -",
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold),
+                                )),
                             ]),
                         size: 60,
                         onPressed: () => {
@@ -1221,15 +1227,46 @@ class _MyHomePageState extends State<MyHomePage> {
                   ]),
             ),
 
-            // Positioned(
-            //     bottom: 10,
-            //     left: Provider.of<Settings>(context).mapControlsRightSide
-            //         ? null
-            //         : 10,
-            //     right: Provider.of<Settings>(context).mapControlsRightSide
-            //         ? 10
-            //         : null,
-            //     child: ),
+            /// Wind direction indicator
+            if (Provider.of<Wind>(context).result != null)
+              StreamBuilder(
+                stream: mapController.mapEventStream,
+                builder: (context, event) => Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Container(
+                        transformAlignment: const Alignment(0, 0),
+                        transform: mapReady
+                            ? Matrix4.rotationZ(
+                                mapController.rotation * pi / 180 +
+                                    Provider.of<Wind>(context).result!.windHdg +
+                                    pi / 2)
+                            : Matrix4.rotationZ(0),
+                        child: SvgPicture.asset(
+                          "assets/images/arrow.svg",
+                          width: 80,
+                          height: 80,
+                          // color: Colors.blue,
+                        ),
+                      ),
+                    )),
+              ),
+
+            if (Provider.of<Wind>(context).result != null)
+              Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.all(42),
+                    child: Text(
+                      convertSpeedValue(
+                              Provider.of<Settings>(context, listen: false)
+                                  .displayUnitsSpeed,
+                              Provider.of<Wind>(context).result!.windSpd)
+                          .toStringAsFixed(0),
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  )),
 
             // --- Connection status banner (along top of map)
             if (Provider.of<Client>(context).state == ClientState.disconnected)
@@ -1312,7 +1349,8 @@ class _MyHomePageState extends State<MyHomePage> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: GestureDetector(
-                    onTap: showFlightPlan,
+                    onPanDown: (details) => showFlightPlan(),
+                    // onTap: showFlightPlan,
                     child: (curWp != null)
                         ? Column(
                             mainAxisSize: MainAxisSize.min,

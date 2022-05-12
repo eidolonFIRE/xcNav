@@ -30,9 +30,6 @@ class MyTelemetry with ChangeNotifier {
   DateTime? takeOff;
   Geo? launchGeo;
 
-  /// This is coming from wind readings
-  double? airspeed;
-
   // in-flight hysterisis
   int triggerHyst = 0;
   bool inFlight = false;

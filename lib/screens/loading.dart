@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:xcnav/models/geo.dart';
 // import 'package:permission_handler/permission_handler.dart' as perms;
 
 // providers
@@ -109,7 +108,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       // Location services are not enabled don't continue
       // accessing the position and request users of the
       // App to enable the location services.
-      debugPrint("$_kLocationServicesDisabledMessage");
+      debugPrint(_kLocationServicesDisabledMessage);
       return false;
     }
 

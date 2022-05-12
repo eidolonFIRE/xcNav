@@ -1,5 +1,4 @@
 import 'package:xcnav/models/geo.dart';
-import 'package:xcnav/providers/settings.dart';
 
 enum DisplayUnitsSpeed {
   mph,

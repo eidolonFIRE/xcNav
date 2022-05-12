@@ -10,6 +10,10 @@ class ChatMessages with ChangeNotifier {
   int chatLastOpened = 0;
   int numUnread = 0;
 
+  void refresh() {
+    notifyListeners();
+  }
+
   void leftGroup() {
     messages.clear();
     notifyListeners();

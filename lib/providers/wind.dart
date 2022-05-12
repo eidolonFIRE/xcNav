@@ -1,31 +1,34 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 
 class WindSolveResult {
-  final double airspeed;
-  final double windSpd;
+  late final double airspeed;
+  late final double windSpd;
   final double windHdg;
   final Offset circleCenter;
-
-  WindSolveResult(this.airspeed, this.windSpd, this.windHdg, this.circleCenter);
+  final double maxSpd;
+  late final int timestamp;
+  List<double> samplesX;
+  List<double> samplesY;
+  WindSolveResult(double _airspeed, double _windSpd, this.windHdg,
+      this.circleCenter, this.maxSpd, this.samplesX, this.samplesY) {
+    // Clamp these values to avoid issues with UI overflow
+    airspeed = min(99, max(-99, _airspeed));
+    windSpd = min(99, max(-99, _windSpd));
+    timestamp = DateTime.now().millisecondsSinceEpoch;
+  }
 }
 
 class Wind with ChangeNotifier {
   /// Most recent wind calculation performed
-  DateTime? _lastWindCalc;
-  DateTime? get lastWindCalc => _lastWindCalc;
+  WindSolveResult? _result;
+  WindSolveResult? get result => _result;
 
   bool _isRecording = false;
-
-  /// Radians
-  double _windHdg = 0;
-  double get windHdg => _windHdg;
-
-  /// m/s
-  double _windSpd = 0;
-  double get windSpd => _windSpd;
 
   // Recorded
   int? windSampleFirst;
@@ -40,17 +43,41 @@ class Wind with ChangeNotifier {
     notifyListeners();
   }
 
-  void recordReading(double hdg, double spd) {
-    _windHdg = hdg;
-    _windSpd = spd;
+  Wind(BuildContext context) {
+    Provider.of<MyTelemetry>(context, listen: false).addListener(() {
+      final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
 
-    _lastWindCalc = DateTime.now();
-    // notifyListeners();
+      // Conditions for skipping the solve
+      if (myTelemetry.recordGeo.length < 3 ||
+          windSampleFirst == null ||
+          ((windSampleFirst ?? myTelemetry.recordGeo.length) >
+              myTelemetry.recordGeo.length - 3)) return;
+
+      final firstIndex = max(
+          0,
+          max(
+              ((isRecording || windSampleLast == null)
+                      ? myTelemetry.recordGeo.length - 1
+                      : windSampleLast!) -
+                  maxSamples,
+              windSampleFirst!));
+
+      final List<Geo> samples =
+          myTelemetry.recordGeo.sublist(firstIndex, windSampleLast);
+
+      final samplesX = samples.map((e) => cos(e.hdg - pi / 2) * e.spd).toList();
+      final samplesY = samples.map((e) => sin(e.hdg - pi / 2) * e.spd).toList();
+
+      final maxSpd = samples.reduce((a, b) => a.spd > b.spd ? a : b).spd * 1.1;
+
+      solve(samplesX, samplesY, maxSpd);
+    });
   }
 
-  WindSolveResult solve(List<double> samplesX, List<double> samplesY) {
+  /// #Solve wind direction from GPS samples.
+  /// https://people.cas.uab.edu/~mosya/cl/
+  void solve(List<double> samplesX, List<double> samplesY, double maxSpd) {
     // massage the samples into cartesian
-
     final xMean = samplesX.reduce((a, b) => a + b) / samplesX.length;
     final yMean = samplesY.reduce((a, b) => a + b) / samplesY.length;
 
@@ -129,10 +156,11 @@ class Wind with ChangeNotifier {
     final radius = sqrt(pow(xCenter, 2) + pow(yCenter, 2) + mZ);
     xCenter += xMean;
     yCenter += yMean;
-    final windSpeed = sqrt(pow(xCenter, 2) + pow(yCenter, 2));
+    final windSpd = sqrt(pow(xCenter, 2) + pow(yCenter, 2));
+    final windHdg = atan2(yCenter, xCenter) % (2 * pi);
 
-    recordReading(atan2(yCenter, xCenter) % (2 * pi), windSpeed);
-
-    return WindSolveResult(radius, windSpd, windHdg, Offset(xCenter, yCenter));
+    _result = WindSolveResult(radius, windSpd, windHdg,
+        Offset(xCenter, yCenter), maxSpd, samplesX, samplesY);
+    notifyListeners();
   }
 }

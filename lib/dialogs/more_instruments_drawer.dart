@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:provider/provider.dart';
@@ -12,6 +10,7 @@ import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/icon_image.dart';
 import 'package:xcnav/widgets/wind_plot.dart';
 
 Widget moreInstrumentsDrawer() {
@@ -159,64 +158,75 @@ Widget moreInstrumentsDrawer() {
                             padding: EdgeInsets.only(left: 20, right: 20),
                             child: Divider(),
                           ),
-                          ListTile(
-                            title: const Text("Airspeed"),
-                            trailing: myTelemetry.airspeed != null
-                                ? Text.rich(TextSpan(children: [
-                                    TextSpan(
-                                        style: const TextStyle(fontSize: 30),
-                                        text: convertSpeedValue(
-                                                Provider.of<Settings>(context,
-                                                        listen: false)
-                                                    .displayUnitsSpeed,
-                                                myTelemetry.airspeed!)
-                                            .toStringAsFixed(0)),
-                                    TextSpan(
-                                        style: const TextStyle(
-                                            fontSize: 14, color: Colors.grey),
-                                        text: unitStrSpeed[
-                                            Provider.of<Settings>(context,
-                                                    listen: false)
-                                                .displayUnitsSpeed]!)
-                                  ]))
-                                : const Text("?"),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6, right: 6),
+                            child: ListTile(
+                              title: const Text("Airspeed"),
+                              trailing: wind.result != null
+                                  ? Text.rich(TextSpan(children: [
+                                      TextSpan(
+                                          style: const TextStyle(fontSize: 30),
+                                          text: convertSpeedValue(
+                                                  Provider.of<Settings>(context,
+                                                          listen: false)
+                                                      .displayUnitsSpeed,
+                                                  wind.result!.airspeed)
+                                              .toStringAsFixed(0)),
+                                      TextSpan(
+                                          style: const TextStyle(
+                                              fontSize: 14, color: Colors.grey),
+                                          text: unitStrSpeed[
+                                              Provider.of<Settings>(context,
+                                                      listen: false)
+                                                  .displayUnitsSpeed]!)
+                                    ]))
+                                  : const Text("?"),
+                            ),
                           ),
-                          ListTile(
-                            title: const Text("Wind Speed"),
-                            trailing: wind.lastWindCalc != null
-                                ? Text.rich(TextSpan(children: [
-                                    TextSpan(
-                                        style: const TextStyle(
-                                          fontSize: 30,
-                                        ),
-                                        text: convertSpeedValue(
-                                                Provider.of<Settings>(context,
-                                                        listen: false)
-                                                    .displayUnitsSpeed,
-                                                wind.windSpd)
-                                            .toStringAsFixed(0)),
-                                    TextSpan(
-                                        style: const TextStyle(
-                                            fontSize: 14, color: Colors.grey),
-                                        text: unitStrSpeed[
-                                            Provider.of<Settings>(context,
-                                                    listen: false)
-                                                .displayUnitsSpeed]!)
-                                  ]))
-                                : const Text("?"),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6, right: 6),
+                            child: ListTile(
+                              title: const Text("Wind Speed"),
+                              trailing: wind.result != null
+                                  ? Text.rich(TextSpan(children: [
+                                      TextSpan(
+                                          style: const TextStyle(
+                                            fontSize: 30,
+                                          ),
+                                          text: convertSpeedValue(
+                                                  Provider.of<Settings>(context,
+                                                          listen: false)
+                                                      .displayUnitsSpeed,
+                                                  wind.result!.windSpd)
+                                              .toStringAsFixed(0)),
+                                      TextSpan(
+                                          style: const TextStyle(
+                                              fontSize: 14, color: Colors.grey),
+                                          text: unitStrSpeed[
+                                              Provider.of<Settings>(context,
+                                                      listen: false)
+                                                  .displayUnitsSpeed]!)
+                                    ]))
+                                  : const Text("?"),
+                            ),
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.pause_circle,
-                                size: 24,
-                                color: wind.isRecording
-                                    ? Colors.grey
-                                    : Colors.white,
-                              ),
+                              Text("Hold",
+                                  style: TextStyle(
+                                    color: wind.isRecording
+                                        ? Colors.grey[700]
+                                        : Colors.white,
+                                  )),
                               Switch(
                                   value: wind.isRecording,
+                                  inactiveThumbImage: IconImageProvider(
+                                      Icons.pause,
+                                      color: Colors.black),
+                                  activeThumbImage: IconImageProvider(
+                                      Icons.play_arrow,
+                                      color: Colors.black),
                                   onChanged: (value) {
                                     if (value) {
                                       wind.windSampleFirst =
@@ -228,13 +238,12 @@ Widget moreInstrumentsDrawer() {
                                     }
                                     wind.isRecording = value;
                                   }),
-                              Icon(
-                                Icons.play_circle,
-                                size: 24,
-                                color: wind.isRecording
-                                    ? Colors.white
-                                    : Colors.grey,
-                              ),
+                              Text("Active",
+                                  style: TextStyle(
+                                    color: wind.isRecording
+                                        ? Colors.white
+                                        : Colors.grey[700],
+                                  )),
                             ],
                           ),
                         ],
@@ -255,69 +264,22 @@ Widget moreInstrumentsDrawer() {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              (myTelemetry.recordGeo.length < 3 ||
-                                      wind.windSampleFirst == null ||
-                                      ((wind.windSampleFirst ??
-                                              myTelemetry.recordGeo.length) >
-                                          myTelemetry.recordGeo.length - 3))
+                              wind.result == null
                                   ? Center(
                                       child: wind.isRecording
-                                          ? Text("Measuring...")
-                                          : Text("No Data"))
-                                  : Builder(builder: (context) {
-                                      // --- Circle Fit
-                                      // https://people.cas.uab.edu/~mosya/cl/
-
-                                      /// First sample index can't be more than Wind.maxSamples back from latest sample or the last sample
-                                      final firstIndex = max(
-                                          0,
-                                          max(
-                                              ((wind.isRecording ||
-                                                          wind.windSampleLast ==
-                                                              null)
-                                                      ? myTelemetry.recordGeo
-                                                              .length -
-                                                          1
-                                                      : wind.windSampleLast!) -
-                                                  Wind.maxSamples,
-                                              wind.windSampleFirst!));
-
-                                      final List<Geo> samples =
-                                          myTelemetry.recordGeo.sublist(
-                                              firstIndex, wind.windSampleLast);
-
-                                      final samplesX = samples
-                                          .map((e) =>
-                                              cos(e.hdg - pi / 2) * e.spd)
-                                          .toList();
-                                      final samplesY = samples
-                                          .map((e) =>
-                                              sin(e.hdg - pi / 2) * e.spd)
-                                          .toList();
-
-                                      final maxSpd = samples
-                                              .reduce((a, b) =>
-                                                  a.spd > b.spd ? a : b)
-                                              .spd *
-                                          1.1;
-
-                                      var result =
-                                          wind.solve(samplesX, samplesY);
-
-                                      myTelemetry.airspeed = result.airspeed;
-
-                                      return ClipRect(
-                                        child: CustomPaint(
-                                          painter: WindPlotPainter(
-                                              3,
-                                              samplesX,
-                                              samplesY,
-                                              maxSpd,
-                                              result.circleCenter,
-                                              result.airspeed),
-                                        ),
-                                      );
-                                    }),
+                                          ? const Text("Measuring...")
+                                          : const Text("No Measurements"))
+                                  : ClipRect(
+                                      child: CustomPaint(
+                                        painter: WindPlotPainter(
+                                            3,
+                                            wind.result!.samplesX,
+                                            wind.result!.samplesY,
+                                            wind.result!.maxSpd,
+                                            wind.result!.circleCenter,
+                                            wind.result!.airspeed),
+                                      ),
+                                    ),
                               const Align(
                                   alignment: Alignment.topCenter,
                                   child: Text("N")),
@@ -342,63 +304,66 @@ Widget moreInstrumentsDrawer() {
               const Divider(thickness: 2),
 
               // --- Altitude Chart
-              Container(
-                constraints: const BoxConstraints(maxHeight: 200),
-                child: charts.TimeSeriesChart(
-                  [
-                    charts.Series<Geo, DateTime>(
-                      id: "Altitude",
-                      data: myTelemetry.recordGeo,
-                      colorFn: (_, __) =>
-                          charts.MaterialPalette.blue.shadeDefault,
-                      domainFn: (value, _) =>
-                          DateTime.fromMillisecondsSinceEpoch(value.time),
-                      measureFn: (value, _) => convertDistValueFine(
-                          Provider.of<Settings>(context, listen: false)
-                              .displayUnitsDist,
-                          value.alt),
-                    )
-                  ],
-                  defaultRenderer: charts.LineRendererConfig(
-                      includeArea: true, stacked: true),
-                  animate: false,
+              Card(
+                color: Colors.black26,
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  child: charts.TimeSeriesChart(
+                    [
+                      charts.Series<Geo, DateTime>(
+                        id: "Altitude",
+                        data: myTelemetry.recordGeo,
+                        colorFn: (_, __) =>
+                            charts.MaterialPalette.blue.shadeDefault,
+                        domainFn: (value, _) =>
+                            DateTime.fromMillisecondsSinceEpoch(value.time),
+                        measureFn: (value, _) => convertDistValueFine(
+                            Provider.of<Settings>(context, listen: false)
+                                .displayUnitsDist,
+                            value.alt),
+                      )
+                    ],
+                    defaultRenderer: charts.LineRendererConfig(
+                        includeArea: true, stacked: true),
+                    animate: false,
 
-                  behaviors: [
-                    charts.ChartTitle(
-                        "Altitude   (${unitStrDistFine[Provider.of<Settings>(context).displayUnitsDist]} )",
-                        behaviorPosition: charts.BehaviorPosition.start,
-                        titleOutsideJustification:
-                            charts.OutsideJustification.middleDrawArea,
-                        titleStyleSpec: const charts.TextStyleSpec(
-                            color: charts.MaterialPalette.white)),
-                  ],
+                    behaviors: [
+                      charts.ChartTitle(
+                          "Altitude   (${unitStrDistFine[Provider.of<Settings>(context).displayUnitsDist]} )",
+                          behaviorPosition: charts.BehaviorPosition.start,
+                          titleOutsideJustification:
+                              charts.OutsideJustification.middleDrawArea,
+                          titleStyleSpec: const charts.TextStyleSpec(
+                              color: charts.MaterialPalette.white)),
+                    ],
 
-                  domainAxis: const charts.DateTimeAxisSpec(
-                      renderSpec: charts.SmallTickRendererSpec(
+                    domainAxis: const charts.DateTimeAxisSpec(
+                        renderSpec: charts.SmallTickRendererSpec(
 
-                          // Tick and Label styling here.
-                          labelStyle: charts.TextStyleSpec(
-                              fontSize: 14, // size in Pts.
-                              color: charts.MaterialPalette.white),
+                            // Tick and Label styling here.
+                            labelStyle: charts.TextStyleSpec(
+                                fontSize: 14, // size in Pts.
+                                color: charts.MaterialPalette.white),
 
-                          // Change the line colors to match text color.
-                          lineStyle: charts.LineStyleSpec(
-                              color: charts.MaterialPalette.white))),
+                            // Change the line colors to match text color.
+                            lineStyle: charts.LineStyleSpec(
+                                color: charts.MaterialPalette.white))),
 
-                  /// Assign a custom style for the measure axis.
-                  primaryMeasureAxis: const charts.NumericAxisSpec(
-                      tickProviderSpec: charts.BasicNumericTickProviderSpec(
-                          desiredMinTickCount: 4),
-                      renderSpec: charts.GridlineRendererSpec(
+                    /// Assign a custom style for the measure axis.
+                    primaryMeasureAxis: const charts.NumericAxisSpec(
+                        tickProviderSpec: charts.BasicNumericTickProviderSpec(
+                            desiredMinTickCount: 4),
+                        renderSpec: charts.GridlineRendererSpec(
 
-                          // Tick and Label styling here.
-                          labelStyle: charts.TextStyleSpec(
-                              fontSize: 14, // size in Pts.
-                              color: charts.MaterialPalette.white),
+                            // Tick and Label styling here.
+                            labelStyle: charts.TextStyleSpec(
+                                fontSize: 14, // size in Pts.
+                                color: charts.MaterialPalette.white),
 
-                          // Change the line colors to match text color.
-                          lineStyle: charts.LineStyleSpec(
-                              color: charts.MaterialPalette.white))),
+                            // Change the line colors to match text color.
+                            lineStyle: charts.LineStyleSpec(
+                                color: charts.MaterialPalette.white))),
+                  ),
                 ),
               ),
             ],

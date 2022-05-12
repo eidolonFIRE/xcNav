@@ -42,11 +42,11 @@ void main() {
             lazy: false,
           ),
           ChangeNotifierProvider(
-            create: (_) => Wind(),
+            create: (_) => MyTelemetry(),
             lazy: false,
           ),
           ChangeNotifierProvider(
-            create: (_) => MyTelemetry(),
+            create: (context) => Wind(context),
             lazy: false,
           ),
           ChangeNotifierProvider(

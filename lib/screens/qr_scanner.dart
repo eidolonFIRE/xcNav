@@ -148,7 +148,7 @@ class _QRScannerState extends State<QRScanner> {
                                       .currentGroupID
                                       ?.toUpperCase() ??
                                   "",
-                              style: TextStyle(color: Colors.black)),
+                              style: const TextStyle(color: Colors.black)),
                         )),
                   ]))),
         ],

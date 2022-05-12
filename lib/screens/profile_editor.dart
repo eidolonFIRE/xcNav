@@ -65,7 +65,8 @@ class _ProfileEditorState extends State<ProfileEditor> {
     }
 
     // This is a hack to work around the lack of callbacks in the cropper
-    updateLoop = Timer.periodic(Duration(milliseconds: 500), (timer) async {
+    updateLoop =
+        Timer.periodic(const Duration(milliseconds: 500), (timer) async {
       refreshCropped();
     });
   }

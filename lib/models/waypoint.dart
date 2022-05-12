@@ -61,8 +61,6 @@ class Waypoint {
       List<double> raw = e.cast<double>();
       latlng.add(LatLng(raw[0], raw[1]));
     }
-
-    // TODO: calculate length
   }
 
   @override

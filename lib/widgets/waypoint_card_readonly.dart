@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
 class WaypointCardReadOnly extends StatelessWidget {

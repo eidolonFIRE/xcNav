@@ -97,7 +97,6 @@ class FlightPlan {
             int.parse((colorText ?? Colors.black.value.toString()), radix: 16) |
                 0xff000000;
 
-        // TODO: parse icon
         if (points.isNotEmpty) {
           waypoints.add(Waypoint(
               name, points, name.toLowerCase().startsWith("opt"), null, color));

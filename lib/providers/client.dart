@@ -13,10 +13,8 @@ import 'package:xcnav/models/waypoint.dart';
 // --- Providers
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/active_plan.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
-import 'package:xcnav/providers/settings.dart';
 
 enum ClientState {
   disconnected,
@@ -48,9 +46,11 @@ class Client with ChangeNotifier {
   set state(ClientState newState) {
     _state = newState;
     if (newState == ClientState.disconnected) {
+      debugPrint("Reconnecting!");
       if (socket != null) {
-        debugPrint("Reconnecting!");
         socket!.close().then((value) => connect());
+      } else {
+        connect();
       }
     }
     notifyListeners();
@@ -62,6 +62,7 @@ class Client with ChangeNotifier {
             "wss://cilme82sm3.execute-api.us-west-1.amazonaws.com/production")
         .then((newSocket) {
       socket = newSocket;
+      state = ClientState.connected;
       debugPrint("Connected!");
 
       socket!.listen(handleResponse, onError: (errorRaw) {
@@ -93,6 +94,7 @@ class Client with ChangeNotifier {
           selectWaypoint;
     }).onError((error, stackTrace) {
       debugPrint("Failed to connect! $error");
+      state = ClientState.disconnected;
     });
   }
 

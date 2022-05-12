@@ -3,7 +3,6 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:xcnav/models/eta.dart';
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/flight_log.dart';
@@ -51,8 +50,23 @@ class FlightLogSummary extends StatelessWidget {
                             .then((Directory path) {
                           var outFile =
                               File(path.path + "/xcNav_kml/$filename.kml");
-                          outFile.create(recursive: true).then(
-                              (value) => value.writeAsString(log.toKML()));
+                          outFile.create(recursive: true).then((value) => value
+                              .writeAsString(log.toKML())
+                              .then((value) => showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                        title: const Text("File Exported to:"),
+                                        content: Text(outFile.path),
+                                        actions: [
+                                          IconButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              icon: const Icon(
+                                                Icons.check,
+                                                color: Colors.green,
+                                              ))
+                                        ],
+                                      ))));
                         });
                       },
                       icon: const Icon(Icons.download)),

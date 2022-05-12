@@ -8,7 +8,6 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/settings.dart';
 
 // Models
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/units.dart';
 
 // Widgets
