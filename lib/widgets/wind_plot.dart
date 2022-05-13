@@ -24,8 +24,10 @@ class WindPlotPainter extends CustomPainter {
   late final Paint _barbPaint;
   late final Paint _mePaint;
 
+  late final bool isActive;
+
   WindPlotPainter(double width, this.dataX, this.dataY, this.maxValue,
-      this.circleCenter, this.circleRadius) {
+      this.circleCenter, this.circleRadius, this.isActive) {
     _paint = Paint()..color = Colors.red.withAlpha(100);
     _paint.style = PaintingStyle.fill;
 
@@ -112,20 +114,22 @@ class WindPlotPainter extends CustomPainter {
         _barbPaint);
 
     // Last reading (current movement)
-    final lastPoint = Offset(dataX.last, dataY.last);
-    final lastPointScaled = lastPoint * maxSize / maxValue + center;
-    canvas.drawLine(center, lastPointScaled, _mePaint);
-    if (_arrow != null) {
-      canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
-      canvas.rotate(lastPoint.direction + pi / 2);
-      canvas.drawImageRect(
-          _arrow!,
-          const Rect.fromLTWH(0, 0, 128, 130),
-          Rect.fromCenter(
-              center: const Offset(0, 0),
-              width: maxSize / 3,
-              height: maxSize / 3),
-          Paint());
+    if (isActive) {
+      final lastPoint = Offset(dataX.last, dataY.last);
+      final lastPointScaled = lastPoint * maxSize / maxValue + center;
+      canvas.drawLine(center, lastPointScaled, _mePaint);
+      if (_arrow != null) {
+        canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
+        canvas.rotate(lastPoint.direction + pi / 2);
+        canvas.drawImageRect(
+            _arrow!,
+            const Rect.fromLTWH(0, 0, 128, 130),
+            Rect.fromCenter(
+                center: const Offset(0, 0),
+                width: maxSize / 3,
+                height: maxSize / 3),
+            Paint());
+      }
     }
   }
 

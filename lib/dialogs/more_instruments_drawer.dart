@@ -299,7 +299,8 @@ Widget moreInstrumentsDrawer() {
                                             wind.result!.samplesY,
                                             wind.result!.maxSpd,
                                             wind.result!.circleCenter,
-                                            wind.result!.airspeed),
+                                            wind.result!.airspeed,
+                                            wind.isRecording),
                                       ),
                                     ),
                               const Align(

@@ -328,7 +328,6 @@ class ActivePlan with ChangeNotifier {
   /// ETA from a waypoint to the end of the trip
   ETA etaToTripEnd(double speed, int waypointIndex, Wind wind) {
     // sum up the route
-    double dist = 0;
     var retval = ETA(0, 0);
     if (waypointIndex < waypoints.length) {
       int? prevIndex;
@@ -346,31 +345,38 @@ class ActivePlan with ChangeNotifier {
           LatLng prevLatlng = isReversed
               ? waypoints[prevIndex].latlng.last
               : waypoints[prevIndex].latlng.first;
-          // dist += latlngCalc.distance(
-          //     isReversed ? wpIndex.latlng.last : wpIndex.latlng.first,
-          //     prevLatlng);
-
-          final _next = isReversed ? wpIndex.latlng.last : wpIndex.latlng.first;
+          final nextLatLng =
+              isReversed ? wpIndex.latlng.last : wpIndex.latlng.first;
 
           retval += ETA.fromSpeed(
-              latlngCalc.distance(_next, prevLatlng),
+              latlngCalc.distance(nextLatLng, prevLatlng),
               wind.result != null && useWind
                   ? (wind.result!.airspeed -
-                      cos(latlngCalc.bearing(prevLatlng, _next) * pi / 180 -
+                      cos(latlngCalc.bearing(prevLatlng, nextLatLng) *
+                                  pi /
+                                  180 -
                               wind.result!.windHdg +
                               (isReversed ? pi : 0)) *
                           wind.result!.windSpd)
                   : speed);
 
           // add path distance
-          // dist += wpIndex.length;
-          // TODO: Account for path in wind
-          retval += ETA.fromSpeed(wpIndex.length, speed);
+          retval += ETA.fromSpeed(
+              wpIndex.length,
+              wind.result != null && useWind
+                  ? (wind.result!.airspeed -
+                      cos(latlngCalc.bearing(wpIndex.latlng.first,
+                                      wpIndex.latlng.last) *
+                                  pi /
+                                  180 -
+                              wind.result!.windHdg +
+                              (isReversed ? pi : 0)) *
+                          wind.result!.windSpd)
+                  : speed);
         }
         prevIndex = i;
       }
       return retval;
-      // return ETA.fromSpeed(dist, speed);
     }
     return ETA(0, 0);
   }
