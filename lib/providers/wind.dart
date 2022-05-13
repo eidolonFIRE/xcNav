@@ -14,11 +14,8 @@ class WindSolveResult {
   late final int timestamp;
   List<double> samplesX;
   List<double> samplesY;
-  WindSolveResult(double _airspeed, double _windSpd, this.windHdg,
-      this.circleCenter, this.maxSpd, this.samplesX, this.samplesY) {
-    // Clamp these values to avoid issues with UI overflow
-    airspeed = min(99, max(-99, _airspeed));
-    windSpd = min(99, max(-99, _windSpd));
+  WindSolveResult(this.airspeed, this.windSpd, this.windHdg, this.circleCenter,
+      this.maxSpd, this.samplesX, this.samplesY) {
     timestamp = DateTime.now().millisecondsSinceEpoch;
   }
 }
@@ -46,31 +43,41 @@ class Wind with ChangeNotifier {
   Wind(BuildContext context) {
     Provider.of<MyTelemetry>(context, listen: false).addListener(() {
       final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-
+      final cardinality = myTelemetry.recordGeo.length;
       // Conditions for skipping the solve
-      if (myTelemetry.recordGeo.length < 3 ||
+      if (cardinality < 2 ||
           windSampleFirst == null ||
-          ((windSampleFirst ?? myTelemetry.recordGeo.length) >
-              myTelemetry.recordGeo.length - 3)) return;
+          ((windSampleFirst ?? cardinality) > cardinality - 3)) return;
 
-      final firstIndex = max(
-          0,
+      final firstIndex = min(
+          cardinality - 1,
           max(
-              ((isRecording || windSampleLast == null)
-                      ? myTelemetry.recordGeo.length - 1
-                      : windSampleLast!) -
-                  maxSamples,
-              windSampleFirst!));
+              0,
+              max(
+                  ((isRecording || windSampleLast == null)
+                          ? cardinality - 1
+                          : windSampleLast!) -
+                      maxSamples,
+                  windSampleFirst!)));
+
+      // clamp
+      if (windSampleLast != null) {
+        windSampleLast = min(cardinality - 1, windSampleLast!);
+      }
 
       final List<Geo> samples =
           myTelemetry.recordGeo.sublist(firstIndex, windSampleLast);
+      if (samples.isNotEmpty) {
+        final samplesX =
+            samples.map((e) => cos(e.hdg - pi / 2) * e.spd).toList();
+        final samplesY =
+            samples.map((e) => sin(e.hdg - pi / 2) * e.spd).toList();
 
-      final samplesX = samples.map((e) => cos(e.hdg - pi / 2) * e.spd).toList();
-      final samplesY = samples.map((e) => sin(e.hdg - pi / 2) * e.spd).toList();
+        final maxSpd =
+            samples.reduce((a, b) => a.spd > b.spd ? a : b).spd * 1.1;
 
-      final maxSpd = samples.reduce((a, b) => a.spd > b.spd ? a : b).spd * 1.1;
-
-      solve(samplesX, samplesY, maxSpd);
+        solve(samplesX, samplesY, maxSpd);
+      }
     });
   }
 

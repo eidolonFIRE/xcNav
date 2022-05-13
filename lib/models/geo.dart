@@ -79,6 +79,8 @@ class Geo {
 
     if (prev != null) {
       vario = (alt - prev.alt) / (time - prev.time) * 1000;
+      // Blend vario with previous vario reading to offer some mild smoothing
+      if (prev.vario.isFinite) vario = (vario + prev.vario) / 2;
     } else {
       vario = 0;
     }

@@ -2,38 +2,67 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as UI;
+
+import 'package:flutter/services.dart';
+
+UI.Image? _arrow;
+
 class WindPlotPainter extends CustomPainter {
-  late Paint _paint;
+  late final Paint _paint;
   final List<double> dataX;
   final List<double> dataY;
   final double maxValue;
-  late Paint _paintGrid;
+  late final Paint _paintGrid;
 
-  late Offset circleCenter;
-  late double circleRadius;
+  late final Offset circleCenter;
+  late final double circleRadius;
   late final Paint circlePaint;
 
-  late Paint _barbPaint;
+  late final Paint _barbPaint;
+  late final Paint _mePaint;
 
   WindPlotPainter(double width, this.dataX, this.dataY, this.maxValue,
       this.circleCenter, this.circleRadius) {
-    _paint = Paint()..color = Colors.blue.withAlpha(150);
+    _paint = Paint()..color = Colors.red.withAlpha(100);
     _paint.style = PaintingStyle.fill;
 
     _paintGrid = Paint()
-      ..color = Colors.white
+      ..color = Colors.grey.shade600
       ..strokeWidth = 1;
 
     circlePaint = Paint()
-      ..color = Colors.amber
+      ..color = Colors.purpleAccent
       ..style = PaintingStyle.stroke
       ..strokeWidth = width;
 
     _barbPaint = Paint()
       ..color = Colors.blue
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = 4
+      ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
+
+    _mePaint = Paint()
+      ..color = Colors.red.withAlpha(150)
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    if (_arrow == null) {
+      loadUiImage("./assets/images/red_arrow.png")
+          .then((value) => _arrow = value);
+    }
+  }
+
+  Future<UI.Image> loadUiImage(String imageAssetPath) async {
+    final ByteData data = await rootBundle.load(imageAssetPath);
+    final Completer<UI.Image> completer = Completer();
+    UI.decodeImageFromList(Uint8List.view(data.buffer), (UI.Image img) {
+      return completer.complete(img);
+    });
+    return completer.future;
   }
 
   @override
@@ -70,7 +99,7 @@ class WindPlotPainter extends CustomPainter {
                   circleCenter.distance *
                   maxSize /
                   maxValue /
-                  4,
+                  3,
           _circleCenter,
           _circleCenter +
               Offset(cos(circleCenter.direction + pi / 1.2),
@@ -78,9 +107,26 @@ class WindPlotPainter extends CustomPainter {
                   circleCenter.distance *
                   maxSize /
                   maxValue /
-                  4,
+                  3,
         ],
         _barbPaint);
+
+    // Last reading (current movement)
+    final lastPoint = Offset(dataX.last, dataY.last);
+    final lastPointScaled = lastPoint * maxSize / maxValue + center;
+    canvas.drawLine(center, lastPointScaled, _mePaint);
+    if (_arrow != null) {
+      canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
+      canvas.rotate(lastPoint.direction + pi / 2);
+      canvas.drawImageRect(
+          _arrow!,
+          const Rect.fromLTWH(0, 0, 128, 130),
+          Rect.fromCenter(
+              center: const Offset(0, 0),
+              width: maxSize / 3,
+              height: maxSize / 3),
+          Paint());
+    }
   }
 
   @override

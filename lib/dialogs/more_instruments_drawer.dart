@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:provider/provider.dart';
@@ -75,10 +77,12 @@ Widget moreInstrumentsDrawer() {
                     color: Colors.grey[800],
                     child: (myTelemetry.fuel > 0)
                         ? Builder(builder: (context) {
-                            int remMin = (myTelemetry.fuel /
-                                    myTelemetry.fuelBurnRate *
-                                    60)
-                                .ceil();
+                            int remMin = min(
+                                999 * 60,
+                                (myTelemetry.fuel /
+                                        myTelemetry.fuelBurnRate *
+                                        60)
+                                    .ceil());
                             String value = (remMin >= 60)
                                 ? (remMin / 60).toStringAsFixed(1)
                                 : remMin.toString();
@@ -166,12 +170,20 @@ Widget moreInstrumentsDrawer() {
                                   ? Text.rich(TextSpan(children: [
                                       TextSpan(
                                           style: const TextStyle(fontSize: 30),
-                                          text: convertSpeedValue(
+                                          text: printValue(
+                                              value: convertSpeedValue(
                                                   Provider.of<Settings>(context,
                                                           listen: false)
                                                       .displayUnitsSpeed,
-                                                  wind.result!.airspeed)
-                                              .toStringAsFixed(0)),
+                                                  wind.result!.airspeed),
+                                              digits: 3,
+                                              decimals: Provider.of<Settings>(
+                                                              context,
+                                                              listen: false)
+                                                          .displayUnitsSpeed ==
+                                                      DisplayUnitsSpeed.mps
+                                                  ? 1
+                                                  : 0)),
                                       TextSpan(
                                           style: const TextStyle(
                                               fontSize: 14, color: Colors.grey),
@@ -193,12 +205,20 @@ Widget moreInstrumentsDrawer() {
                                           style: const TextStyle(
                                             fontSize: 30,
                                           ),
-                                          text: convertSpeedValue(
+                                          text: printValue(
+                                              value: convertSpeedValue(
                                                   Provider.of<Settings>(context,
                                                           listen: false)
                                                       .displayUnitsSpeed,
-                                                  wind.result!.windSpd)
-                                              .toStringAsFixed(0)),
+                                                  wind.result!.windSpd),
+                                              digits: 3,
+                                              decimals: Provider.of<Settings>(
+                                                              context,
+                                                              listen: false)
+                                                          .displayUnitsSpeed ==
+                                                      DisplayUnitsSpeed.mps
+                                                  ? 1
+                                                  : 0)),
                                       TextSpan(
                                           style: const TextStyle(
                                               fontSize: 14, color: Colors.grey),
@@ -267,8 +287,10 @@ Widget moreInstrumentsDrawer() {
                               wind.result == null
                                   ? Center(
                                       child: wind.isRecording
-                                          ? const Text("Measuring...")
-                                          : const Text("No Measurements"))
+                                          ? const CircularProgressIndicator(
+                                              strokeWidth: 3,
+                                            )
+                                          : const Text("???"))
                                   : ClipRect(
                                       child: CustomPaint(
                                         painter: WindPlotPainter(

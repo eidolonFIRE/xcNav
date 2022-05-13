@@ -83,6 +83,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   Future<Position> _getCurrentPosition() async {
     final hasPermission = await _handlePermission();
 
+    // This shouldn't be happening...
     if (!hasPermission) {
       return Position(
           accuracy: 0,

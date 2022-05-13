@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:xcnav/models/geo.dart';
 
 enum DisplayUnitsSpeed {
@@ -54,7 +56,17 @@ const Map<DisplayUnitsFuel, String> unitStrFuel = {
   DisplayUnitsFuel.gal: " gal",
 };
 
-double convertDistValueFine(DisplayUnitsDist mode, double value) {
+String printValue(
+    {required double value, required int digits, required int decimals}) {
+  if (!value.isFinite) return "?";
+  final int mag = (pow(10, digits) - 1).round();
+  final double decPwr = pow(10, decimals).toDouble();
+  return ((min(mag, max(-mag, value)) * decPwr).round() / decPwr)
+      .toStringAsFixed(decimals);
+}
+
+double convertDistValueFine(DisplayUnitsDist mode, double value,
+    {int? clampDigits}) {
   switch (mode) {
     case DisplayUnitsDist.imperial:
       return value * meters2Feet;

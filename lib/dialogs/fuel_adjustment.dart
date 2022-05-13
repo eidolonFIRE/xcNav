@@ -40,7 +40,7 @@ void showFuelDialog(BuildContext context) {
                 children: [
                   // --- Fuel Level
                   Card(
-                    color: Colors.grey.shade700,
+                    color: Colors.grey.shade900,
                     child: Row(children: [
                       Column(
                         mainAxisSize: MainAxisSize.min,
@@ -94,7 +94,7 @@ void showFuelDialog(BuildContext context) {
 
                   // --- Burn Rate
                   Card(
-                    color: Colors.grey.shade700,
+                    color: Colors.grey.shade900,
                     child: Row(children: [
                       Column(
                         mainAxisSize: MainAxisSize.min,

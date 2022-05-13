@@ -68,7 +68,7 @@ class FakeFlight {
   }
 
   Position genFakeLocationFlight() {
-    hdg += randomCentered() * 20 + 5;
+    hdg += randomCentered() * 30 + 10;
 
     latlng = latlngCalc.offset(
         latlng, (spd + randomCentered()) * 5, hdg + randomCentered());

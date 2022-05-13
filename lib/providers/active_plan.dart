@@ -9,11 +9,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/eta.dart';
+import 'package:xcnav/providers/wind.dart';
 
 class ActivePlan with ChangeNotifier {
   List<Waypoint> waypoints = [];
   bool _isReversed = false;
   bool _includeReturnTrip = false;
+  bool _useWind = false;
 
   void Function(
     WaypointAction action,
@@ -56,6 +58,12 @@ class ActivePlan with ChangeNotifier {
   bool get isReversed => _isReversed;
   set isReversed(bool value) {
     _isReversed = value;
+    notifyListeners();
+  }
+
+  bool get useWind => _useWind;
+  set useWind(bool value) {
+    _useWind = value;
     notifyListeners();
   }
 
@@ -318,9 +326,10 @@ class ActivePlan with ChangeNotifier {
   }
 
   /// ETA from a waypoint to the end of the trip
-  ETA etaToTripEnd(double speed, int waypointIndex) {
+  ETA etaToTripEnd(double speed, int waypointIndex, Wind wind) {
     // sum up the route
     double dist = 0;
+    var retval = ETA(0, 0);
     if (waypointIndex < waypoints.length) {
       int? prevIndex;
       for (int i = waypointIndex;
@@ -337,16 +346,31 @@ class ActivePlan with ChangeNotifier {
           LatLng prevLatlng = isReversed
               ? waypoints[prevIndex].latlng.last
               : waypoints[prevIndex].latlng.first;
-          dist += latlngCalc.distance(
-              isReversed ? wpIndex.latlng.last : wpIndex.latlng.first,
-              prevLatlng);
+          // dist += latlngCalc.distance(
+          //     isReversed ? wpIndex.latlng.last : wpIndex.latlng.first,
+          //     prevLatlng);
+
+          final _next = isReversed ? wpIndex.latlng.last : wpIndex.latlng.first;
+
+          retval += ETA.fromSpeed(
+              latlngCalc.distance(_next, prevLatlng),
+              wind.result != null && useWind
+                  ? (wind.result!.airspeed -
+                      cos(latlngCalc.bearing(prevLatlng, _next) * pi / 180 -
+                              wind.result!.windHdg +
+                              (isReversed ? pi : 0)) *
+                          wind.result!.windSpd)
+                  : speed);
 
           // add path distance
-          dist += wpIndex.length;
+          // dist += wpIndex.length;
+          // TODO: Account for path in wind
+          retval += ETA.fromSpeed(wpIndex.length, speed);
         }
         prevIndex = i;
       }
-      return ETA.fromSpeed(dist, speed);
+      return retval;
+      // return ETA.fromSpeed(dist, speed);
     }
     return ETA(0, 0);
   }

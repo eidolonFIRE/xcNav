@@ -414,11 +414,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     // --- Speedometer
                     Text.rich(TextSpan(children: [
                       TextSpan(
-                        text: min(
-                                999,
-                                convertSpeedValue(settings.displayUnitsSpeed,
-                                    myTelementy.geo.spd))
-                            .toStringAsFixed(settings.displayUnitsSpeed ==
+                        text: printValue(
+                            value: convertSpeedValue(settings.displayUnitsSpeed,
+                                myTelementy.geo.spd),
+                            digits: 3,
+                            decimals: settings.displayUnitsSpeed ==
                                     DisplayUnitsSpeed.mps
                                 ? 1
                                 : 0),
@@ -436,9 +436,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     // --- Altimeter
                     Text.rich(TextSpan(children: [
                       TextSpan(
-                        text: convertDistValueFine(
-                                settings.displayUnitsDist, myTelementy.geo.alt)
-                            .toStringAsFixed(0),
+                        text: printValue(
+                            value: convertDistValueFine(
+                                settings.displayUnitsDist, myTelementy.geo.alt),
+                            digits: 5,
+                            decimals: 0),
                         style: instrUpper,
                       ),
                       TextSpan(
@@ -452,14 +454,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     // --- Vario
                     Text.rich(TextSpan(children: [
                       TextSpan(
-                        text: min(
-                                9999,
-                                max(
-                                    -9999,
-                                    convertVarioValue(
-                                        settings.displayUnitsVario,
-                                        myTelementy.geo.vario)))
-                            .toStringAsFixed(settings.displayUnitsVario ==
+                        text: printValue(
+                            value: convertVarioValue(settings.displayUnitsVario,
+                                myTelementy.geo.vario),
+                            digits: 3,
+                            decimals: settings.displayUnitsVario ==
                                     DisplayUnitsVario.fpm
                                 ? 0
                                 : 1),
@@ -1252,18 +1251,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     )),
               ),
-
             if (Provider.of<Wind>(context).result != null)
               Align(
                   alignment: Alignment.topCenter,
                   child: Padding(
                     padding: const EdgeInsets.all(42),
                     child: Text(
-                      convertSpeedValue(
+                      printValue(
+                          value: convertSpeedValue(
                               Provider.of<Settings>(context, listen: false)
                                   .displayUnitsSpeed,
-                              Provider.of<Wind>(context).result!.windSpd)
-                          .toStringAsFixed(0),
+                              Provider.of<Wind>(context).result!.windSpd),
+                          digits: 2,
+                          decimals: 0),
                       style: const TextStyle(color: Colors.black),
                     ),
                   )),
@@ -1303,7 +1303,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   activePlan.selectedIndex!)
               : ETA(0, 0);
 
-          int etaNextMin = (etaNext.time / 60000).ceil();
+          int etaNextMin = min(999 * 60, (etaNext.time / 60000).ceil());
           String etaNextValue = (etaNextMin >= 60)
               ? (etaNextMin / 60).toStringAsFixed(1)
               : etaNextMin.toString();

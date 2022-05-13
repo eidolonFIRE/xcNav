@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/providers/wind.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/fuel_warning.dart';
@@ -27,15 +30,18 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
             myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
         : ETA(0, 0);
     ETA etaTrip = activePlan.etaToTripEnd(
-        myTelemetry.geo.spd, activePlan.selectedIndex ?? 0);
+        myTelemetry.geo.spd,
+        activePlan.selectedIndex ?? 0,
+        Provider.of<Wind>(context, listen: false));
     etaTrip += etaNext;
 
     if (activePlan.includeReturnTrip && !activePlan.isReversed) {
       // optionally include eta for return trip
-      etaTrip += activePlan.etaToTripEnd(myTelemetry.geo.spd, 0);
+      etaTrip += activePlan.etaToTripEnd(
+          myTelemetry.geo.spd, 0, Provider.of<Wind>(context, listen: false));
     }
 
-    int etaTripMin = (etaTrip.time / 60000).ceil();
+    int etaTripMin = min(999 * 60, (etaTrip.time / 60000).ceil());
     String etaTripValue = (etaTripMin >= 60)
         ? (etaTripMin / 60).toStringAsFixed(1)
         : etaTripMin.toString();
@@ -161,7 +167,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 10),
@@ -170,6 +176,64 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                     style: instrLabel,
                     // textAlign: TextAlign.left,
                   ),
+                ),
+                // --- Trip ETA
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text.rich(
+                    TextSpan(children: [
+                      TextSpan(
+                          text: convertDistValueCoarse(
+                                  Provider.of<Settings>(context, listen: false)
+                                      .displayUnitsDist,
+                                  etaTrip.distance)
+                              .toStringAsFixed(1),
+                          style: instrLower),
+                      TextSpan(
+                          text: unitStrDistCoarse[
+                              Provider.of<Settings>(context, listen: false)
+                                  .displayUnitsDist],
+                          style: instrLabel),
+                      if (myTelemetry.inFlight)
+                        TextSpan(
+                          text: "   " + etaTripValue,
+                          style: instrLower,
+                        ),
+                      if (myTelemetry.inFlight)
+                        TextSpan(text: etaTripUnit, style: instrLabel),
+                      if (myTelemetry.inFlight &&
+                          myTelemetry.fuel > 0 &&
+                          myTelemetry.fuelTimeRemaining < etaNext.time)
+                        const WidgetSpan(
+                            child: Padding(
+                          padding: EdgeInsets.only(left: 20),
+                          child: FuelWarning(35),
+                        )),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(
+              height: 0,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text("Use Wind"),
+                    Switch(
+                      value: activePlan.useWind,
+                      onChanged: (value) => {activePlan.useWind = value},
+                      activeThumbImage: Provider.of<Wind>(context).result !=
+                              null
+                          ? IconImageProvider(Icons.check, color: Colors.black)
+                          : IconImageProvider(Icons.question_mark,
+                              color: Colors.black),
+                    ),
+                  ],
                 ),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -188,42 +252,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                   ],
                 ),
               ],
-            ),
-            // --- Trip ETA
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text.rich(
-                TextSpan(children: [
-                  TextSpan(
-                      text: convertDistValueCoarse(
-                              Provider.of<Settings>(context, listen: false)
-                                  .displayUnitsDist,
-                              etaTrip.distance)
-                          .toStringAsFixed(1),
-                      style: instrLower),
-                  TextSpan(
-                      text: unitStrDistCoarse[
-                          Provider.of<Settings>(context, listen: false)
-                              .displayUnitsDist],
-                      style: instrLabel),
-                  if (myTelemetry.inFlight)
-                    TextSpan(
-                      text: "   " + etaTripValue,
-                      style: instrLower,
-                    ),
-                  if (myTelemetry.inFlight)
-                    TextSpan(text: etaTripUnit, style: instrLabel),
-                  if (myTelemetry.inFlight &&
-                      myTelemetry.fuel > 0 &&
-                      myTelemetry.fuelTimeRemaining < etaNext.time)
-                    const WidgetSpan(
-                        child: Padding(
-                      padding: EdgeInsets.only(left: 20),
-                      child: FuelWarning(35),
-                    )),
-                ]),
-              ),
-            ),
+            )
           ],
         )
       ],
