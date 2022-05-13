@@ -4,7 +4,7 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:flutter_barometer_plugin/flutter_barometer.dart';
+import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
