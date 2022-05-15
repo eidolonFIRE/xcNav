@@ -893,7 +893,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                       transformAlignment: const Alignment(0, 0),
                                       transform: Matrix4.rotationZ(
                                           -mapController.rotation * pi / 180),
-                                      child: AvatarRound(pilot.avatar, 40))))
+                                      child: AvatarRound(pilot.avatar, 40,
+                                          hdg: pilot.geo.hdg +
+                                              mapController.rotation *
+                                                  pi /
+                                                  180))))
                               .toList(),
                         ),
 
@@ -1311,159 +1315,173 @@ class _MyHomePageState extends State<MyHomePage> {
 
           final curWp = activePlan.selectedWp;
 
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // --- Previous Waypoint
-              IconButton(
-                onPressed: () {
-                  if (activePlan.selectedIndex != null &&
-                      activePlan.selectedIndex! > 0) {
-                    // (Skip optional waypoints)
-                    for (int i = activePlan.selectedIndex! - 1; i >= 0; i--) {
-                      if (!activePlan.waypoints[i].isOptional) {
-                        activePlan.selectWaypoint(i);
-                        break;
+          return SafeArea(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // --- Previous Waypoint
+                IconButton(
+                  onPressed: () {
+                    if (activePlan.selectedIndex != null &&
+                        activePlan.selectedIndex! > 0) {
+                      // (Skip optional waypoints)
+                      for (int i = activePlan.selectedIndex! - 1; i >= 0; i--) {
+                        if (!activePlan.waypoints[i].isOptional) {
+                          activePlan.selectWaypoint(i);
+                          break;
+                        }
                       }
                     }
-                  }
-                },
-                iconSize: 40,
-                color: (activePlan.selectedIndex != null &&
-                        activePlan.selectedIndex! > 0)
-                    ? Colors.white
-                    : Colors.grey[700],
-                icon: activePlan.isReversed
-                    ? const Icon(
-                        Icons.skip_previous,
-                      )
-                    : SvgPicture.asset(
-                        "assets/images/reverse_back.svg",
-                        color: ((activePlan.selectedIndex ?? 0) > 0)
-                            ? Colors.white
-                            : Colors.grey[700],
-                      ),
-              ),
+                  },
+                  iconSize: 40,
+                  color: (activePlan.selectedIndex != null &&
+                          activePlan.selectedIndex! > 0)
+                      ? Colors.white
+                      : Colors.grey.shade700,
+                  icon: activePlan.isReversed
+                      ? const Icon(
+                          Icons.skip_previous,
+                        )
+                      : SvgPicture.asset(
+                          "assets/images/reverse_back.svg",
+                          color: ((activePlan.selectedIndex ?? 0) > 0)
+                              ? Colors.white
+                              : Colors.grey.shade700,
+                        ),
+                ),
 
-              // --- Next Waypoint Info
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
+                // --- Next Waypoint Info
+                Expanded(
+                  child: GestureDetector(
                     onPanDown: (details) => showFlightPlan(),
                     // onTap: showFlightPlan,
-                    child: (curWp != null)
-                        ? Column(
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 60),
+                      color: Colors.grey.shade800,
+                      child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // --- Current Waypoint Label
-                              Text.rich(
-                                TextSpan(children: [
-                                  if (curWp.icon != null)
-                                    WidgetSpan(
-                                      child: Container(
-                                        transform:
-                                            Matrix4.translationValues(0, 15, 0),
-                                        child: SizedBox(
-                                            width: 20,
-                                            height: 30,
-                                            child: MapMarker(curWp, 30)),
+                            children: (curWp != null)
+                                ? [
+                                    // --- Current Waypoint Label
+                                    Text.rich(
+                                      TextSpan(children: [
+                                        // if (curWp.icon != null)
+                                        WidgetSpan(
+                                          child: Container(
+                                            transform:
+                                                Matrix4.translationValues(
+                                                    0, 15, 0),
+                                            child: SizedBox(
+                                                width: 20,
+                                                height: 30,
+                                                child: MapMarker(curWp, 30)),
+                                          ),
+                                        ),
+                                        // if (curWp.icon != null)
+                                        const TextSpan(text: "  "),
+                                        TextSpan(
+                                          text: curWp.name,
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 30),
+                                        ),
+                                      ]),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    SizedBox(
+                                      width:
+                                          MediaQuery.of(context).size.width / 2,
+                                      child: const Divider(
+                                        thickness: 1,
+                                        height: 8,
+                                        color: Colors.grey,
                                       ),
                                     ),
-                                  if (curWp.icon != null)
-                                    const TextSpan(text: "  "),
-                                  TextSpan(
-                                    text: curWp.name,
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 30),
-                                  ),
-                                ]),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              SizedBox(
-                                width: MediaQuery.of(context).size.width / 2,
-                                child: Divider(
-                                  thickness: 2,
-                                  height: 8,
-                                  color: Colors.grey[900],
-                                ),
-                              ),
-                              // --- ETA next
-                              Text.rich(
-                                TextSpan(children: [
-                                  TextSpan(
-                                      text: convertDistValueCoarse(
-                                              Provider.of<Settings>(context,
-                                                      listen: false)
-                                                  .displayUnitsDist,
-                                              etaNext.distance)
-                                          .toStringAsFixed(1),
-                                      style: instrLower),
-                                  TextSpan(
-                                      text: unitStrDistCoarse[
-                                          Provider.of<Settings>(context,
-                                                  listen: false)
-                                              .displayUnitsDist],
-                                      style: instrLabel),
-                                  if (myTelemetry.inFlight)
-                                    TextSpan(
-                                      text: "   " + etaNextValue,
-                                      style: instrLower,
+                                    // --- ETA next
+                                    Text.rich(
+                                      TextSpan(children: [
+                                        TextSpan(
+                                            text: convertDistValueCoarse(
+                                                    Provider.of<Settings>(
+                                                            context,
+                                                            listen: false)
+                                                        .displayUnitsDist,
+                                                    etaNext.distance)
+                                                .toStringAsFixed(1),
+                                            style: instrLower),
+                                        TextSpan(
+                                            text: unitStrDistCoarse[
+                                                Provider.of<Settings>(context,
+                                                        listen: false)
+                                                    .displayUnitsDist],
+                                            style: instrLabel),
+                                        if (myTelemetry.inFlight)
+                                          TextSpan(
+                                            text: "   " + etaNextValue,
+                                            style: instrLower,
+                                          ),
+                                        if (myTelemetry.inFlight)
+                                          TextSpan(
+                                              text: etaNextUnit,
+                                              style: instrLabel),
+                                        if (myTelemetry.inFlight &&
+                                            myTelemetry.fuel > 0 &&
+                                            myTelemetry.fuelTimeRemaining <
+                                                etaNext.time)
+                                          const WidgetSpan(
+                                              child: Padding(
+                                            padding: EdgeInsets.only(left: 20),
+                                            child: FuelWarning(35),
+                                          )),
+                                      ]),
                                     ),
-                                  if (myTelemetry.inFlight)
-                                    TextSpan(
-                                        text: etaNextUnit, style: instrLabel),
-                                  if (myTelemetry.inFlight &&
-                                      myTelemetry.fuel > 0 &&
-                                      myTelemetry.fuelTimeRemaining <
-                                          etaNext.time)
-                                    const WidgetSpan(
-                                        child: Padding(
-                                      padding: EdgeInsets.only(left: 20),
-                                      child: FuelWarning(35),
-                                    )),
-                                ]),
-                              ),
-                            ],
-                          )
-                        : const Text("Select Waypoint")),
-              ),
-              // --- Next Waypoint
-              IconButton(
-                onPressed: () {
-                  if (activePlan.selectedIndex != null &&
-                      activePlan.selectedIndex! <
-                          activePlan.waypoints.length - 1) {
-                    // (Skip optional waypoints)
-                    for (int i = activePlan.selectedIndex! + 1;
-                        i < activePlan.waypoints.length;
-                        i++) {
-                      if (!activePlan.waypoints[i].isOptional) {
-                        activePlan.selectWaypoint(i);
-                        break;
+                                  ]
+                                : const [Text("Select Waypoint")],
+                          )),
+                    ),
+                  ),
+                ),
+                // --- Next Waypoint
+                IconButton(
+                  onPressed: () {
+                    if (activePlan.selectedIndex != null &&
+                        activePlan.selectedIndex! <
+                            activePlan.waypoints.length - 1) {
+                      // (Skip optional waypoints)
+                      for (int i = activePlan.selectedIndex! + 1;
+                          i < activePlan.waypoints.length;
+                          i++) {
+                        if (!activePlan.waypoints[i].isOptional) {
+                          activePlan.selectWaypoint(i);
+                          break;
+                        }
                       }
                     }
-                  }
-                },
-                iconSize: 40,
-                color: (activePlan.selectedIndex != null &&
-                        activePlan.selectedIndex! <
-                            activePlan.waypoints.length - 1)
-                    ? Colors.white
-                    : Colors.grey[700],
-                icon: !activePlan.isReversed
-                    ? const Icon(
-                        Icons.skip_next,
-                      )
-                    : SvgPicture.asset(
-                        "assets/images/reverse_forward.svg",
-                        color: ((activePlan.selectedIndex ?? -1) <
-                                activePlan.waypoints.length - 1)
-                            ? Colors.white
-                            : Colors.grey[700],
-                      ),
-              ),
-            ],
+                  },
+                  iconSize: 40,
+                  color: (activePlan.selectedIndex != null &&
+                          activePlan.selectedIndex! <
+                              activePlan.waypoints.length - 1)
+                      ? Colors.white
+                      : Colors.grey[700],
+                  icon: !activePlan.isReversed
+                      ? const Icon(
+                          Icons.skip_next,
+                        )
+                      : SvgPicture.asset(
+                          "assets/images/reverse_forward.svg",
+                          color: ((activePlan.selectedIndex ?? -1) <
+                                  activePlan.waypoints.length - 1)
+                              ? Colors.white
+                              : Colors.grey[700],
+                        ),
+                ),
+              ],
+            ),
           );
         }));
   }

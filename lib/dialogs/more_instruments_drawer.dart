@@ -20,7 +20,7 @@ Widget moreInstrumentsDrawer() {
     builder: (context, myTelemetry, child) => SafeArea(
       child: Dialog(
           // elevation: 10,
-          backgroundColor: Colors.grey[900],
+          backgroundColor: Colors.grey.shade900,
           insetPadding: const EdgeInsets.only(left: 0, right: 0, top: 60),
           alignment: Alignment.topCenter,
           child: Column(
@@ -162,73 +162,67 @@ Widget moreInstrumentsDrawer() {
                             padding: EdgeInsets.only(left: 20, right: 20),
                             child: Divider(),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 6, right: 6),
-                            child: ListTile(
-                              title: const Text("Airspeed"),
-                              trailing: wind.result != null
-                                  ? Text.rich(TextSpan(children: [
-                                      TextSpan(
-                                          style: const TextStyle(fontSize: 30),
-                                          text: printValue(
-                                              value: convertSpeedValue(
-                                                  Provider.of<Settings>(context,
-                                                          listen: false)
-                                                      .displayUnitsSpeed,
-                                                  wind.result!.airspeed),
-                                              digits: 3,
-                                              decimals: Provider.of<Settings>(
-                                                              context,
-                                                              listen: false)
-                                                          .displayUnitsSpeed ==
-                                                      DisplayUnitsSpeed.mps
-                                                  ? 1
-                                                  : 0)),
-                                      TextSpan(
-                                          style: const TextStyle(
-                                              fontSize: 14, color: Colors.grey),
-                                          text: unitStrSpeed[
-                                              Provider.of<Settings>(context,
-                                                      listen: false)
-                                                  .displayUnitsSpeed]!)
-                                    ]))
-                                  : const Text("?"),
-                            ),
+                          ListTile(
+                            title: const Text("Airspeed"),
+                            trailing: wind.result != null
+                                ? Text.rich(TextSpan(children: [
+                                    TextSpan(
+                                        style: const TextStyle(fontSize: 30),
+                                        text: printValue(
+                                            value: convertSpeedValue(
+                                                Provider.of<Settings>(context,
+                                                        listen: false)
+                                                    .displayUnitsSpeed,
+                                                wind.result!.airspeed),
+                                            digits: 3,
+                                            decimals: Provider.of<Settings>(
+                                                            context,
+                                                            listen: false)
+                                                        .displayUnitsSpeed ==
+                                                    DisplayUnitsSpeed.mps
+                                                ? 1
+                                                : 0)),
+                                    TextSpan(
+                                        style: const TextStyle(
+                                            fontSize: 14, color: Colors.grey),
+                                        text: unitStrSpeed[
+                                            Provider.of<Settings>(context,
+                                                    listen: false)
+                                                .displayUnitsSpeed]!)
+                                  ]))
+                                : const Text("?"),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 6, right: 6),
-                            child: ListTile(
-                              title: const Text("Wind Speed"),
-                              trailing: wind.result != null
-                                  ? Text.rich(TextSpan(children: [
-                                      TextSpan(
-                                          style: const TextStyle(
-                                            fontSize: 30,
-                                          ),
-                                          text: printValue(
-                                              value: convertSpeedValue(
-                                                  Provider.of<Settings>(context,
-                                                          listen: false)
-                                                      .displayUnitsSpeed,
-                                                  wind.result!.windSpd),
-                                              digits: 3,
-                                              decimals: Provider.of<Settings>(
-                                                              context,
-                                                              listen: false)
-                                                          .displayUnitsSpeed ==
-                                                      DisplayUnitsSpeed.mps
-                                                  ? 1
-                                                  : 0)),
-                                      TextSpan(
-                                          style: const TextStyle(
-                                              fontSize: 14, color: Colors.grey),
-                                          text: unitStrSpeed[
-                                              Provider.of<Settings>(context,
-                                                      listen: false)
-                                                  .displayUnitsSpeed]!)
-                                    ]))
-                                  : const Text("?"),
-                            ),
+                          ListTile(
+                            title: const Text("Wind Speed"),
+                            trailing: wind.result != null
+                                ? Text.rich(TextSpan(children: [
+                                    TextSpan(
+                                        style: const TextStyle(
+                                          fontSize: 30,
+                                        ),
+                                        text: printValue(
+                                            value: convertSpeedValue(
+                                                Provider.of<Settings>(context,
+                                                        listen: false)
+                                                    .displayUnitsSpeed,
+                                                wind.result!.windSpd),
+                                            digits: 3,
+                                            decimals: Provider.of<Settings>(
+                                                            context,
+                                                            listen: false)
+                                                        .displayUnitsSpeed ==
+                                                    DisplayUnitsSpeed.mps
+                                                ? 1
+                                                : 0)),
+                                    TextSpan(
+                                        style: const TextStyle(
+                                            fontSize: 14, color: Colors.grey),
+                                        text: unitStrSpeed[
+                                            Provider.of<Settings>(context,
+                                                    listen: false)
+                                                .displayUnitsSpeed]!)
+                                  ]))
+                                : const Text("?"),
                           ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -276,8 +270,8 @@ Widget moreInstrumentsDrawer() {
                       child: Container(
                         // width: MediaQuery.of(context).size.width * 2 / 3,
                         constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width * 2 / 3,
-                            maxHeight: 200),
+                          maxWidth: MediaQuery.of(context).size.width / 2,
+                        ),
 
                         child: AspectRatio(
                           aspectRatio: 1,
@@ -297,7 +291,7 @@ Widget moreInstrumentsDrawer() {
                                             3,
                                             wind.result!.samplesX,
                                             wind.result!.samplesY,
-                                            wind.result!.maxSpd,
+                                            wind.result!.maxSpd * 1.1,
                                             wind.result!.circleCenter,
                                             wind.result!.airspeed,
                                             wind.isRecording),

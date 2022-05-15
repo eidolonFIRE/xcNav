@@ -28,7 +28,7 @@ class WindPlotPainter extends CustomPainter {
 
   WindPlotPainter(double width, this.dataX, this.dataY, this.maxValue,
       this.circleCenter, this.circleRadius, this.isActive) {
-    _paint = Paint()..color = Colors.red.withAlpha(100);
+    _paint = Paint()..color = Colors.red;
     _paint.style = PaintingStyle.fill;
 
     _paintGrid = Paint()
@@ -36,7 +36,7 @@ class WindPlotPainter extends CustomPainter {
       ..strokeWidth = 1;
 
     circlePaint = Paint()
-      ..color = Colors.purpleAccent
+      ..color = Colors.amber
       ..style = PaintingStyle.stroke
       ..strokeWidth = width;
 
@@ -47,7 +47,7 @@ class WindPlotPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     _mePaint = Paint()
-      ..color = Colors.red.withAlpha(150)
+      ..color = Colors.red
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;

@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
 
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/models/waypoint.dart';
@@ -36,6 +39,7 @@ class WaypointCard extends StatelessWidget {
         selected: isSelected,
         selectedColor: Colors.black,
         contentPadding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
         leading: IconButton(
           onPressed: onToggleOptional,
           padding: EdgeInsets.zero,
@@ -48,22 +52,34 @@ class WaypointCard extends StatelessWidget {
             color: Color(waypoint.color ?? Colors.black.value),
           ),
         ),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        title: Flex(
+          direction: Axis.horizontal,
           children: [
-            TextButton(
-              child: Container(
-                  constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width / 4,
-                    maxWidth: MediaQuery.of(context).size.width / 2,
-                  ),
+            Expanded(
+              child: TextButton(
+                // style: ButtonStyle(
+                //   side: MaterialStateProperty.resolveWith<BorderSide>(
+                //       (states) => const BorderSide(color: Colors.black)),
+                //   backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                //       (states) => Colors.black45),
+                //   minimumSize: MaterialStateProperty.resolveWith<Size>(
+                //       (states) =>
+                //           Size(MediaQuery.of(context).size.width / 4, 40)),
+                //   padding:
+                //       MaterialStateProperty.resolveWith<EdgeInsetsGeometry>(
+                //           (states) => const EdgeInsets.all(12)),
+                //   textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+                //       (states) =>
+                //           const TextStyle(color: Colors.white, fontSize: 24)),
+                // ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
                   child: Text.rich(
                     TextSpan(children: [
                       // --- Icon
                       if (waypoint.icon != null)
                         WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
                           child: Icon(
                             iconOptions[waypoint.icon],
                             size: 24,
@@ -79,21 +95,42 @@ class WaypointCard extends StatelessWidget {
                             fontSize: 24),
                       ),
                     ]),
-                    maxLines: 4,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.start,
-                  )),
-              onPressed: onSelect,
+                  ),
+                ),
+                onPressed: onSelect,
+              ),
             ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: Provider.of<Group>(context)
-                  .pilots
-                  .values
-                  .where((element) => element.selectedWaypoint == index)
-                  .map((e) => AvatarRound(e.avatar, 24))
-                  .toList(),
-            )
+
+            /// Pilot Avatars
+            Consumer<Group>(builder: (context, group, child) {
+              var pilots = group.pilots.values
+                  .where((element) => element.selectedWaypoint == index);
+
+              if (pilots.isEmpty) return Container();
+
+              final width = min(MediaQuery.of(context).size.width / 3,
+                      pilots.length * 48 / pow(pilots.length, 0.3))
+                  .toDouble();
+              return SizedBox(
+                width: width,
+                height: 48,
+                child: Stack(
+                  children: pilots
+                      .map((e) => AvatarRound(e.avatar, 24))
+                      .mapIndexed(
+                        (index, element) => Positioned(
+                          left:
+                              (width - 48) / max(1, pilots.length - 1) * index,
+                          child: element,
+                        ),
+                      )
+                      .toList(),
+                ),
+              );
+            }),
           ],
         ),
         trailing: ReorderableDragStartListener(
