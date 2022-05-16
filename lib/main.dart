@@ -93,6 +93,8 @@ class MyApp extends StatelessWidget {
 
     debugPrint("Building App");
 
+    const darkColor = Color.fromARGB(255, 42, 42, 42);
+
     return MaterialApp(
       title: 'xcNav',
       darkTheme: ThemeData(
@@ -100,17 +102,17 @@ class MyApp extends StatelessWidget {
         // appBarTheme: AppBarTheme(backgroundColor: primaryDarkColor),
         // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
         // primaryColorLight: primaryDarkColor,
-        // backgroundColor: primaryDarkColor,
-        appBarTheme:
-            const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40)),
-        primarySwatch: Colors.blueGrey,
-        // scaffoldBackgroundColor: Colors.blueGrey[900],
+        backgroundColor: darkColor,
+        appBarTheme: const AppBarTheme(
+            toolbarTextStyle: TextStyle(fontSize: 40),
+            backgroundColor: darkColor),
+        primarySwatch: Colors.grey,
+        // scaffoldBackgroundColor: Colors.blueGrey.shade900,
         brightness: Brightness.dark,
-        // primaryColorBrightness: Brightness.dark,
-        // bottomSheetTheme:
-        //     BottomSheetThemeData(backgroundColor: primaryDarkColor),
-        // bottomNavigationBarTheme:
-        //     BottomNavigationBarThemeData(backgroundColor: primaryDarkColor),
+        bottomSheetTheme:
+            const BottomSheetThemeData(backgroundColor: darkColor),
+        bottomNavigationBarTheme:
+            const BottomNavigationBarThemeData(backgroundColor: darkColor),
         textTheme: const TextTheme(
             headline4: TextStyle(color: Colors.white),
             button: TextStyle(

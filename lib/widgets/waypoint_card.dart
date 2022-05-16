@@ -39,17 +39,25 @@ class WaypointCard extends StatelessWidget {
         selected: isSelected,
         selectedColor: Colors.black,
         contentPadding: EdgeInsets.zero,
-        visualDensity: VisualDensity.compact,
-        leading: IconButton(
-          onPressed: onToggleOptional,
-          padding: EdgeInsets.zero,
-          iconSize: 55,
-          icon: Image.asset(
-            "assets/images/wp" +
-                (waypoint.latlng.length > 1 ? "_path" : "") +
-                (waypoint.isOptional ? "_optional" : "") +
-                ".png",
-            color: Color(waypoint.color ?? Colors.black.value),
+        // visualDensity: VisualDensity.compact,
+        leading: GestureDetector(
+          onTap: onToggleOptional,
+          // padding: EdgeInsets.zero,
+          // iconSize: 55,
+
+          child: SizedBox(
+            width: 40,
+            // height: 60,
+            child: Image.asset(
+              "assets/images/wp" +
+                  (waypoint.latlng.length > 1 ? "_path" : "") +
+                  (waypoint.isOptional ? "_optional" : "") +
+                  ".png",
+              // fit: BoxFit.none,
+              height: 55,
+
+              color: Color(waypoint.color ?? Colors.black.value),
+            ),
           ),
         ),
         title: Flex(
@@ -133,13 +141,15 @@ class WaypointCard extends StatelessWidget {
             }),
           ],
         ),
-        trailing: ReorderableDragStartListener(
-          index: index,
-          child: const Icon(
-            Icons.drag_handle,
-            size: 24,
-          ),
-        ),
+
+        /// Long-press to sort
+        // trailing: ReorderableDragStartListener(
+        //   index: index,
+        //   child: const Icon(
+        //     Icons.drag_handle,
+        //     size: 24,
+        //   ),
+        // ),
       ),
     );
   }

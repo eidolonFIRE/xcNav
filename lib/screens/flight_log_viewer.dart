@@ -18,7 +18,7 @@ class FlightLogViewer extends StatefulWidget {
 }
 
 class _FlightLogViewerState extends State<FlightLogViewer> {
-  List<FlightLog> logs = [];
+  Map<String, FlightLog> logs = {};
 
   @override
   void initState() {
@@ -39,17 +39,17 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
       //if folder already exists return path
       logs.clear();
       // Async load in all the files
-      // TODO: ensure some sorted order (atm it's race)
       _appDocDirFolder
           .list(recursive: false, followLinks: false)
           .forEach((each) {
         File.fromUri(each.uri).readAsString().then((value) {
           setState(() {
-            logs.add(FlightLog.fromJson(each.path, jsonDecode(value)));
+            logs[each.uri.path] =
+                FlightLog.fromJson(each.path, jsonDecode(value));
           });
         });
       });
-      setState(() {});
+      // setState(() {});
     } else {
       debugPrint('"flight_logs" directory doesn\'t exist yet!');
     }
@@ -57,6 +57,8 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
 
   @override
   Widget build(BuildContext context) {
+    var keys = logs.keys.toList();
+    keys.sort((a, b) => b.compareTo(a));
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -66,8 +68,8 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
         // TODO: show some aggregate numbers here
       ),
       body: ListView(
-        children: logs
-            .map((e) => FlightLogSummary(e, refreshLogsFromDirectory))
+        children: keys
+            .map((e) => FlightLogSummary(logs[e]!, refreshLogsFromDirectory))
             .toList(),
       ),
     );

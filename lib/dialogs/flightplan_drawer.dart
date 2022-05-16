@@ -82,17 +82,23 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
               icon: const Icon(Icons.edit),
             ),
             // --- Delete Selected Waypoint
-            IconButton(
-                iconSize: 25,
-                onPressed: () => activePlan.removeSelectedWaypoint(),
-                icon: const Icon(Icons.delete, color: Colors.red)),
+
+            GestureDetector(
+              onDoubleTap: () => activePlan.removeSelectedWaypoint(),
+              onLongPress: () => activePlan.removeSelectedWaypoint(),
+              child: const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(Icons.delete, color: Colors.red, size: 25),
+              ),
+            )
+            // onPressed: () => activePlan.removeSelectedWaypoint(),
           ],
         ),
 
         Divider(
           thickness: 2,
           height: 0,
-          color: Colors.grey[900],
+          color: Theme.of(context).backgroundColor,
         ),
 
         // --- Waypoint list
@@ -160,7 +166,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
         Divider(
           thickness: 2,
           height: 0,
-          color: Colors.grey[900],
+          color: Theme.of(context).backgroundColor,
         ),
         Column(
           mainAxisSize: MainAxisSize.min,

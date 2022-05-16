@@ -38,7 +38,7 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.grey[700],
+      // color: Colors.grey[700],
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(children: [
@@ -47,10 +47,13 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
             mainAxisSize: MainAxisSize.max,
             children: [
               // --- Title
-              Text(
-                widget.plan.title,
-                style: Theme.of(context).textTheme.headline5!.merge(TextStyle(
-                    color: widget.plan.goodFile ? Colors.white : Colors.red)),
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(
+                  widget.plan.title,
+                  style: Theme.of(context).textTheme.headline6!.merge(TextStyle(
+                      color: widget.plan.goodFile ? Colors.white : Colors.red)),
+                ),
               ),
               // --- Action buttons
               Row(
@@ -58,7 +61,9 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                 children: [
                   // --- Edit this plan
                   IconButton(
+                      visualDensity: VisualDensity.compact,
                       onPressed: () {
+                        // TODO: implement edit flightplan name
                         // final filename = plan.title;
                         // (Platform.isIOS
                         //         ? getApplicationDocumentsDirectory()
@@ -74,7 +79,8 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                       icon: const Icon(Icons.edit)),
                   // --- Delete this plan
                   IconButton(
-                      // iconSize: 20,
+                      // iconSize: 10,
+                      visualDensity: VisualDensity.compact,
                       onPressed: () {
                         showDialog(
                             context: context,
@@ -118,6 +124,9 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                 ],
               )
             ],
+          ),
+          const Divider(
+            height: 10,
           ),
           IntrinsicHeight(
             child: Row(

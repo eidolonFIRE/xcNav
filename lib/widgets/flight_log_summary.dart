@@ -29,16 +29,21 @@ class FlightLogSummary extends StatelessWidget {
             mainAxisSize: MainAxisSize.max,
             children: [
               // --- Title
-              Text(
-                log.title,
-                style: Theme.of(context).textTheme.headline5!.merge(
-                    TextStyle(color: log.goodFile ? Colors.white : Colors.red)),
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(
+                  log.title,
+                  style: Theme.of(context).textTheme.headline6!.merge(TextStyle(
+                      color: log.goodFile ? Colors.white : Colors.red)),
+                ),
               ),
               // --- Action buttons
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
+                      visualDensity: VisualDensity.compact,
+                      iconSize: 16,
                       onPressed: () {
                         final filename = DateFormat("yyyy_MM_dd_hh_mm").format(
                             DateTime.fromMillisecondsSinceEpoch(
@@ -69,9 +74,13 @@ class FlightLogSummary extends StatelessWidget {
                                       ))));
                         });
                       },
-                      icon: const Icon(Icons.download)),
+                      icon: const Icon(
+                        Icons.download,
+                        size: 24,
+                      )),
                   IconButton(
-                      iconSize: 20,
+                      visualDensity: VisualDensity.compact,
+                      iconSize: 16,
                       onPressed: () {
                         // Delete the log file!
                         showDialog(
@@ -108,14 +117,13 @@ class FlightLogSummary extends StatelessWidget {
                               );
                             });
                       },
-                      icon: const Icon(
-                        Icons.delete,
-                        color: Colors.red,
-                      ))
+                      icon:
+                          const Icon(Icons.delete, color: Colors.red, size: 24))
                 ],
               )
             ],
           ),
+          const Divider(height: 10),
           Row(
             mainAxisSize: MainAxisSize.max,
             children: [

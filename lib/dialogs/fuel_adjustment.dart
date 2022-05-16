@@ -18,6 +18,17 @@ void showFuelDialog(BuildContext context) {
             onDismissed: (event) =>
                 Navigator.popUntil(context, ModalRoute.withName("/home")),
             child: AlertDialog(
+              actions: [
+                IconButton(
+                  onPressed: () =>
+                      Navigator.popUntil(context, ModalRoute.withName("/home")),
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.red,
+                    size: 30,
+                  ),
+                )
+              ],
               title: Flex(
                 direction: Axis.horizontal,
                 mainAxisSize: MainAxisSize.max,
@@ -40,7 +51,7 @@ void showFuelDialog(BuildContext context) {
                 children: [
                   // --- Fuel Level
                   Card(
-                    color: Colors.grey.shade900,
+                    color: Theme.of(context).backgroundColor,
                     child: Row(children: [
                       Column(
                         mainAxisSize: MainAxisSize.min,
@@ -94,7 +105,7 @@ void showFuelDialog(BuildContext context) {
 
                   // --- Burn Rate
                   Card(
-                    color: Colors.grey.shade900,
+                    color: Theme.of(context).backgroundColor,
                     child: Row(children: [
                       Column(
                         mainAxisSize: MainAxisSize.min,

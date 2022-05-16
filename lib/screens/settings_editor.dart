@@ -43,6 +43,9 @@ class _SettingsEditorState extends State<SettingsEditor> {
             // ),
           ),
           body: SettingsList(
+            darkTheme: SettingsThemeData(
+                settingsListBackground: Theme.of(context).backgroundColor,
+                settingsSectionBackground: Colors.grey.shade900),
             platform: DevicePlatform.iOS,
             sections: [
               // --- Display Units

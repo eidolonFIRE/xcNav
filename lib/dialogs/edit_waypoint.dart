@@ -119,7 +119,7 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                     child: SizedBox(
                       width: double.maxFinite,
                       child: Card(
-                        color: Colors.grey[900],
+                        color: Theme.of(context).backgroundColor,
                         child: GridView.count(
                           crossAxisCount: 5,
                           children: iconWidgets,
