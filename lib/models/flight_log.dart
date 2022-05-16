@@ -17,6 +17,7 @@ class FlightLog {
   late String title;
   Duration? durationTime;
   double? durationDist;
+  double? maxAlt;
 
   get filename => _filename;
 
@@ -28,7 +29,7 @@ class FlightLog {
       samples = _dataSamples.map((e) => Geo.fromJson(e)).toList();
 
       var date = DateTime.fromMillisecondsSinceEpoch(samples[0].time);
-      title = DateFormat("yyyy, MMM d").format(date);
+      title = DateFormat("MMM d - yyyy").format(date);
 
       // --- Calculate Stuff
       durationTime =
@@ -38,6 +39,8 @@ class FlightLog {
       for (int i = 0; i < samples.length - 1; i++) {
         durationDist = durationDist! + samples[i].distanceTo(samples[i + 1]);
       }
+
+      maxAlt = samples.reduce((a, b) => a.alt > b.alt ? a : b).alt;
 
       goodFile = true;
     } catch (e) {
@@ -97,7 +100,7 @@ class FlightLog {
     List<String> linestrings = [];
 
     const step = 6;
-    const velRange = [15, 35];
+    const velRange = [5, 25];
     for (int i = 0; i < samples.length; i += step) {
       // assemble kml point list
       List<String> points = [];

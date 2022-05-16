@@ -106,7 +106,7 @@ class MyApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(
             toolbarTextStyle: TextStyle(fontSize: 40),
             backgroundColor: darkColor),
-        primarySwatch: Colors.grey,
+        // primarySwatch: Colors.grey,
         // scaffoldBackgroundColor: Colors.blueGrey.shade900,
         brightness: Brightness.dark,
         bottomSheetTheme:
@@ -124,7 +124,7 @@ class MyApp extends StatelessWidget {
             side: MaterialStateProperty.resolveWith<BorderSide>(
                 (states) => const BorderSide(color: Colors.black)),
             backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                (states) => Colors.black45),
+                (states) => Colors.black38),
             minimumSize: MaterialStateProperty.resolveWith<Size>(
                 (states) => const Size(30, 40)),
             padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>(
@@ -134,7 +134,7 @@ class MyApp extends StatelessWidget {
             //       borderRadius: BorderRadius.circular(20));
             // }),
             textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                (states) => const TextStyle(color: Colors.white, fontSize: 24)),
+                (states) => const TextStyle(color: Colors.white, fontSize: 22)),
           ),
 
           // child: ElevatedButton(onPressed: () {}, child: Text('label')),

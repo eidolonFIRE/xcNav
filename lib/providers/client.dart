@@ -465,11 +465,13 @@ class Client with ChangeNotifier {
 
       // TODO: prompt to save before replacing data?
       // Clear out waypoints
-      if (msg["flight_plan"] != null && msg["flight_plan"] != []) {
-        ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
+      ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
+      if (msg["flight_plan"] != null && msg["flight_plan"].isNotEmpty) {
+        debugPrint("Replacing flightplan data");
         plan.parseFlightPlanSync(msg["flight_plan"]);
-      } else {
-        // Push our whole flightplan
+      } else if (plan.waypoints.isNotEmpty) {
+        // Push our flightplan
+        debugPrint("Pushing our plan!");
         pushFlightPlan();
       }
     }

@@ -3,9 +3,12 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/flight_log.dart';
+import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/units.dart';
 
 class FlightLogSummary extends StatelessWidget {
   final FlightLog log;
@@ -128,39 +131,36 @@ class FlightLogSummary extends StatelessWidget {
             mainAxisSize: MainAxisSize.max,
             children: [
               // --- Preview Image
-              Card(
-                  color: Colors.white,
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width / 3,
-                    height: MediaQuery.of(context).size.width / 3,
-                    child: FlutterMap(
-                        // mapController: mapController,
-                        options: MapOptions(
-                          interactiveFlags: InteractiveFlag.none,
-                          bounds: mapBounds,
-                          // allowPanningOnScrollingParent: false,
-                          // allowPanning: false,
-                        ),
-                        layers: [
-                          TileLayerOptions(
-                            // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                            // subdomains: ['a', 'b', 'c'],
-                            urlTemplate:
-                                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                            // tileSize: 512,
-                            // zoomOffset: -1,
-                          ),
-                          PolylineLayerOptions(polylines: [
-                            Polyline(
-                                points:
-                                    log.samples.map((e) => e.latLng).toList(),
-                                strokeWidth: 4,
-                                color: Colors.red,
-                                isDotted: false)
-                          ]),
-                          // TODO: show other things like take-off, landing, and flight plan
-                        ]),
-                  )),
+              SizedBox(
+                width: MediaQuery.of(context).size.width / 2.5,
+                height: MediaQuery.of(context).size.width / 2.5,
+                child: FlutterMap(
+                    // mapController: mapController,
+                    options: MapOptions(
+                      interactiveFlags: InteractiveFlag.none,
+                      bounds: mapBounds,
+                      // allowPanningOnScrollingParent: false,
+                      // allowPanning: false,
+                    ),
+                    layers: [
+                      TileLayerOptions(
+                        // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                        // subdomains: ['a', 'b', 'c'],
+                        urlTemplate:
+                            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                        // tileSize: 512,
+                        // zoomOffset: -1,
+                      ),
+                      PolylineLayerOptions(polylines: [
+                        Polyline(
+                            points: log.samples.map((e) => e.latLng).toList(),
+                            strokeWidth: 3,
+                            color: Colors.red,
+                            isDotted: false)
+                      ]),
+                      // TODO: show other things like take-off, landing, and flight plan
+                    ]),
+              ),
 
               // --- Info
               Expanded(
@@ -182,24 +182,72 @@ class FlightLogSummary extends StatelessWidget {
                                         " hr",
                                     textAlign: TextAlign.end,
                                   )
-                                : Container())
+                                : const Text(
+                                    "?",
+                                    textAlign: TextAlign.end,
+                                  ))
                       ]),
                       TableRow(children: [
                         const TableCell(child: Text("Distance")),
                         TableCell(
                             child: log.durationDist != null
                                 ? Text(
-                                    "${(log.durationDist! * meters2Miles).toStringAsFixed(1)} mi",
+                                    convertDistValueCoarse(
+                                                Provider.of<Settings>(context,
+                                                        listen: false)
+                                                    .displayUnitsDist,
+                                                log.durationDist!)
+                                            .toStringAsFixed(1) +
+                                        unitStrDistCoarse[Provider.of<Settings>(
+                                                context,
+                                                listen: false)
+                                            .displayUnitsDist]!,
                                     textAlign: TextAlign.end,
                                   )
-                                : Container()),
+                                : const Text(
+                                    "?",
+                                    textAlign: TextAlign.end,
+                                  )),
                       ]),
+                      TableRow(children: [
+                        const TableCell(child: Text("Max Altitude")),
+                        TableCell(
+                            child: log.maxAlt != null
+                                ? Text(
+                                    convertDistValueFine(
+                                                Provider.of<Settings>(context,
+                                                        listen: false)
+                                                    .displayUnitsDist,
+                                                log.maxAlt!)
+                                            .toStringAsFixed(1) +
+                                        unitStrDistFine[Provider.of<Settings>(
+                                                context,
+                                                listen: false)
+                                            .displayUnitsDist]!,
+                                    textAlign: TextAlign.end,
+                                  )
+                                : const Text(
+                                    "?",
+                                    textAlign: TextAlign.end,
+                                  )),
+                      ]),
+                      const TableRow(children: [
+                        TableCell(child: Text("")),
+                        TableCell(child: Text(""))
+                      ]),
+                      const TableRow(children: [
+                        TableCell(
+                          child: Text(
+                              "...Request what else you want to see here..."),
+                        ),
+                        TableCell(child: Text(""))
+                      ])
                     ],
                   ),
                 ),
               ),
             ],
-          )
+          ),
         ]),
       ),
     );

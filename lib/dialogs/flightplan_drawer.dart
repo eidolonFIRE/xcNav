@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
@@ -129,6 +130,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
               onReorder: (oldIndex, newIndex) {
                 debugPrint("WP order: $oldIndex --> $newIndex");
                 activePlan.sortWaypoint(oldIndex, newIndex);
+                Provider.of<Group>(context, listen: false)
+                    .fixPilotSelectionsOnSort(oldIndex, newIndex);
               },
             ),
             // This shows when flight plan is empty

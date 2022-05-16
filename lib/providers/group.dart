@@ -135,4 +135,20 @@ class Group with ChangeNotifier {
     }
     notifyListeners();
   }
+
+  void fixPilotSelectionsOnSort(int oldIndex, int newIndex) {
+    for (final _p in pilots.values) {
+      if (_p.selectedWaypoint != null) {
+        if (_p.selectedWaypoint == oldIndex) {
+          _p.selectedWaypoint = newIndex;
+        } else if (newIndex <= _p.selectedWaypoint! &&
+            oldIndex > _p.selectedWaypoint!) {
+          _p.selectedWaypoint = _p.selectedWaypoint! + 1;
+        } else if (_p.selectedWaypoint! <= newIndex &&
+            _p.selectedWaypoint! > oldIndex) {
+          _p.selectedWaypoint = _p.selectedWaypoint! - 1;
+        }
+      }
+    }
+  }
 }
