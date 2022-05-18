@@ -88,52 +88,63 @@ class MyTelemetry with ChangeNotifier {
     // fetch ambient baro from weather service
     if (baroAmbient == null && !baroAmbientRequested) {
       baroAmbientRequested = true;
-      http
-          .get(Uri.parse(
-              "https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
-          .then((responseXY) {
-        // nearest stations
-        var msgXY = jsonDecode(responseXY.body);
-        var x = msgXY["properties"]["gridX"];
-        var y = msgXY["properties"]["gridY"];
-        var gridId = msgXY["properties"]["gridId"];
-
+      try {
         http
             .get(Uri.parse(
-                "https://api.weather.gov/gridpoints/$gridId/$x,$y/stations"))
-            .then((responsePoint) async {
-          var msgPoint = jsonDecode(responsePoint.body);
-          // check each for pressure
-          stationFound = false;
+                "https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
+            .then((responseXY) {
+          // nearest stations
+          var msgXY = jsonDecode(responseXY.body);
+          var x = msgXY["properties"]["gridX"];
+          var y = msgXY["properties"]["gridY"];
+          var gridId = msgXY["properties"]["gridId"];
 
-          if (msgPoint["observationStations"] != null) {
-            List<dynamic> stationList = msgPoint["observationStations"];
-            for (String each in stationList) {
-              if (stationFound) break;
-              await http
-                  .get(Uri.parse(each + "/observations/latest"))
-                  .then((responseStation) {
-                var msgStation = jsonDecode(responseStation.body);
-                if (msgStation["properties"] != null &&
-                    msgStation["properties"]["seaLevelPressure"]["value"] !=
-                        null) {
-                  double pressure = msgStation["properties"]
-                          ["barometricPressure"]["value"] /
-                      100;
-                  debugPrint(
-                      "Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
-                  baroAmbient = BarometerValue(pressure);
-                  baroAmbientRequested = false;
-                  stationFound = true;
-                }
-              });
+          http
+              .get(Uri.parse(
+                  "https://api.weather.gov/gridpoints/$gridId/$x,$y/stations"))
+              .then((responsePoint) async {
+            var msgPoint = jsonDecode(responsePoint.body);
+            // check each for pressure
+            stationFound = false;
+
+            if (msgPoint["observationStations"] != null) {
+              List<dynamic> stationList = msgPoint["observationStations"];
+              for (String each in stationList) {
+                if (stationFound) break;
+                await http
+                    .get(Uri.parse(each + "/observations/latest"))
+                    .then((responseStation) {
+                  try {
+                    var msgStation = jsonDecode(responseStation.body);
+                    if (msgStation["properties"] != null &&
+                        msgStation["properties"]["seaLevelPressure"]["value"] !=
+                            null) {
+                      double pressure = msgStation["properties"]
+                              ["barometricPressure"]["value"] /
+                          100;
+                      debugPrint(
+                          "Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
+                      baroAmbient = BarometerValue(pressure);
+                      baroAmbientRequested = false;
+                      stationFound = true;
+                    }
+                  } catch (e) {
+                    debugPrint("Failed to get station info. $e");
+                    debugPrint(
+                        Uri.parse(each + "/observations/latest").toString());
+                    debugPrint(responseStation.body);
+                  }
+                });
+              }
+            } else {
+              debugPrint("No stations found for point $gridId, $x, $y");
+              // debugPrint(responsePoint.body);
             }
-          } else {
-            debugPrint("No stations found for point $gridId, $x, $y");
-            // debugPrint(responsePoint.body);
-          }
+          });
         });
-      });
+      } catch (e) {
+        debugPrint("Failed to fetch ambient pressure. $e");
+      }
     }
 
     // --- In-Flight detector

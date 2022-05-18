@@ -72,8 +72,7 @@ class ADSB with ChangeNotifier {
       if (!portListening && settings.adsbEnabled) {
         // --- Start Listening
         debugPrint("Opening ADSB listen port 4000");
-        RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 4000)
-            .then((_sock) {
+        RawDatagramSocket.bind(InternetAddress.anyIPv4, 4000).then((_sock) {
           sock = _sock;
 
           _sock.listen((event) {
