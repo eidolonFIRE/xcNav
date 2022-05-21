@@ -13,6 +13,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/chat_messages.dart';
+import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
 
 // screens
@@ -28,6 +29,7 @@ import 'package:xcnav/screens/group_details.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
+import 'package:xcnav/screens/weather_viewer.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +45,10 @@ void main() {
           ),
           ChangeNotifierProvider(
             create: (_) => MyTelemetry(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (context) => Weather(context),
             lazy: false,
           ),
           ChangeNotifierProvider(
@@ -169,6 +175,7 @@ class MyApp extends StatelessWidget {
         "/flightLogs": (context) => const FlightLogViewer(),
         "/plans": (context) => const PlansViewer(),
         "/groupDetails": (context) => const GroupDetails(),
+        "/weather": (context) => const WeatherViewer(),
       },
     );
   }

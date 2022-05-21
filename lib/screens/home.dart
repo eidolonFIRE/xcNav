@@ -627,7 +627,23 @@ class _MyHomePageState extends State<MyHomePage> {
                     : null),
 
             const Divider(
-              height: 20,
+              height: 0,
+            ),
+
+            /// Weather
+            ListTile(
+              minVerticalPadding: 20,
+              leading: const Icon(
+                Icons.cloudy_snowing,
+                size: 30,
+              ),
+              title:
+                  Text("Weather", style: Theme.of(context).textTheme.headline5),
+              onTap: () => {Navigator.pushNamed(context, "/weather")},
+            ),
+
+            const Divider(
+              height: 0,
             ),
 
             ListTile(
