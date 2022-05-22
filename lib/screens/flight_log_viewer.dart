@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -19,6 +20,7 @@ class FlightLogViewer extends StatefulWidget {
 
 class _FlightLogViewerState extends State<FlightLogViewer> {
   Map<String, FlightLog> logs = {};
+  bool loaded = false;
 
   @override
   void initState() {
@@ -37,19 +39,33 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
         Directory("${_appDocDir.path}/flight_logs/");
     if (await _appDocDirFolder.exists()) {
       //if folder already exists return path
+      setState(() {
+        loaded = false;
+      });
+
       logs.clear();
+
       // Async load in all the files
-      _appDocDirFolder
+      var files = await _appDocDirFolder
           .list(recursive: false, followLinks: false)
-          .forEach((each) {
+          .toList();
+      debugPrint("${files.length} log files found.");
+      List<Completer> completers = [];
+      for (var each in files) {
+        var _completer = Completer();
+        completers.add(_completer);
         File.fromUri(each.uri).readAsString().then((value) {
-          setState(() {
-            logs[each.uri.path] =
-                FlightLog.fromJson(each.path, jsonDecode(value));
-          });
+          logs[each.uri.path] =
+              FlightLog.fromJson(each.path, jsonDecode(value));
+          _completer.complete();
+        });
+      }
+      debugPrint("${completers.length} completers created.");
+      Future.wait(completers.map((e) => e.future).toList()).then((value) {
+        setState(() {
+          loaded = true;
         });
       });
-      // setState(() {});
     } else {
       debugPrint('"flight_logs" directory doesn\'t exist yet!');
     }
@@ -61,17 +77,20 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
     keys.sort((a, b) => b.compareTo(a));
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Flight Logs",
+        title: Text(
+          "Flight Logs  (${keys.length})",
         ),
-        // centerTitle: true,
         // TODO: show some aggregate numbers here
       ),
-      body: ListView(
-        children: keys
-            .map((e) => FlightLogSummary(logs[e]!, refreshLogsFromDirectory))
-            .toList(),
-      ),
+      body: !loaded
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : ListView.builder(
+              itemCount: keys.length,
+              itemBuilder: (context, index) => FlightLogSummary(
+                  logs[keys[index]]!, refreshLogsFromDirectory),
+            ),
     );
   }
 }

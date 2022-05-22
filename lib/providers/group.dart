@@ -1,41 +1,109 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart';
 
 // Models
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/models/geo.dart';
+
+class PastGroup {
+  // [id] == name
+  Map<String, Pilot> pilots = {};
+  late final String id;
+  late final DateTime timestamp;
+
+  PastGroup.new(this.id, this.timestamp, this.pilots);
+  PastGroup.fromJson(Map<String, dynamic> json) {
+    id = json["id"];
+    timestamp = DateTime.fromMillisecondsSinceEpoch(json["timestamp"]);
+    for (Map<String, dynamic> each in json["pilots"]) {
+      Pilot _p = Pilot.fromJson(each);
+      pilots[_p.id] = _p;
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "pilots": pilots.values.map((value) => value.toJson()).toList(),
+      "timestamp": timestamp.millisecondsSinceEpoch,
+    };
+  }
+}
 
 class Group with ChangeNotifier {
   String? _currentGroupID;
   Map<String, Pilot> pilots = {};
   SharedPreferences? prefs;
 
+  List<PastGroup> pastGroups = [];
+
   // --- Get/Set current group_id
   String? get currentGroupID => _currentGroupID;
 
   set currentGroupID(String? newGroupID) {
-    _currentGroupID = newGroupID;
-    pilots.clear();
-    if (newGroupID != null) {
-      debugPrint("Joined group: $newGroupID");
-      saveGroup(newGroupID);
-    } else {
-      debugPrint("Left Group");
+    if (newGroupID != _currentGroupID) {
+      // Remember this group
+      if (_currentGroupID != null && pilots.isNotEmpty) {
+        _appendToPastGroups();
+      }
+
+      // Join the new group
+      _currentGroupID = newGroupID;
+      pilots.clear();
+      if (newGroupID != null) {
+        debugPrint("Joined group: $newGroupID");
+        saveGroup(newGroupID);
+      } else {
+        debugPrint("Left Group");
+      }
+
+      _cleanPastGroups();
+
+      notifyListeners();
     }
-    notifyListeners();
+  }
+
+  void _appendToPastGroups() {
+    PastGroup pg = PastGroup(_currentGroupID!, DateTime.now(), pilots);
+    pastGroups.add(pg);
+  }
+
+  /// Remove the current groupID from history
+  void _cleanPastGroups() {
+    pastGroups =
+        pastGroups.where((element) => element.id != _currentGroupID).toList();
+    _savePastGroups();
+  }
+
+  void _savePastGroups() {
+    prefs?.setStringList("me.pastGroups",
+        pastGroups.map((e) => jsonEncode(e.toJson())).toList());
   }
 
   bool hasPilot(String pilotID) => pilots.containsKey(pilotID);
 
   Group() {
-    SharedPreferences.getInstance().then((value) => prefs = value);
+    SharedPreferences.getInstance().then((value) {
+      prefs = value;
+
+      // Load past groups
+      var _pastGroupsRaw = prefs!.getStringList("me.pastGroups");
+      if (_pastGroupsRaw != null) {
+        pastGroups = _pastGroupsRaw
+            .map((e) => PastGroup.fromJson(jsonDecode(e)))
+            .toList();
+
+        debugPrint("Loaded ${pastGroups.length} past groups.");
+
+        // remove any groups too old
+        pastGroups = pastGroups
+            .where((each) => each.timestamp
+                .isAfter(DateTime.now().subtract(const Duration(hours: 24))))
+            .toList();
+      }
+    });
   }
 
   void saveGroup(String groupID) {
@@ -51,64 +119,10 @@ class Group with ChangeNotifier {
     return null;
   }
 
-  Future fetchAvatarS3(String pilotID) async {
-    Uri uri = Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com",
-        "/xcnav_avatar_service", {"pilot_id": pilotID});
-    return http
-        .get(
-      uri,
-    )
-        .then((http.Response response) {
-      final int statusCode = response.statusCode;
-
-      if (statusCode < 200 || statusCode > 400) {
-        throw Exception("Error while fetching avatar");
-      }
-      return json.decode(response.body);
-    });
-  }
-
+  /// Add or Replace local pilot instance
   void processNewPilot(dynamic p) async {
-    Pilot newPilot = Pilot(p["id"], p["name"] ?? "Anonymous", Geo());
-
-    // Make fresh local pilot
-    if (p["avatar_hash"] != null && p["avatar_hash"] != "") {
-      // - Check if we have locally cached file matching pilot_id
-      Directory tempDir = await getTemporaryDirectory();
-      File fileAvatar = File("${tempDir.path}/avatars/${newPilot.id}.jpg");
-
-      if (await fileAvatar.exists()) {
-        // load cached file
-        Uint8List loadedBytes = await fileAvatar.readAsBytes();
-        String loadedHash = md5.convert(loadedBytes).toString();
-
-        if (loadedHash == p["avatar_hash"]) {
-          // cache hit
-          debugPrint("Loaded avatar from cache");
-          newPilot.avatar = Image.memory(loadedBytes);
-          newPilot.avatarHash = loadedHash;
-        }
-      }
-
-      if (newPilot.avatarHash == null) {
-        // - cache miss, load from S3
-        fetchAvatarS3(newPilot.id).then((value) {
-          Uint8List bytes = base64Decode(value["avatar"]);
-          newPilot.avatar = Image.memory(bytes);
-          newPilot.avatarHash = md5.convert(bytes).toString();
-
-          // save file to the temp file
-          fileAvatar
-              .create(recursive: true)
-              .then((value) => fileAvatar.writeAsBytes(bytes));
-        });
-      }
-    } else {
-      // - fallback on default avatar
-      newPilot.avatar = Image.asset("assets/images/default_avatar.png");
-    }
-
-    // Add / Replace local pilot instance
+    Pilot newPilot =
+        Pilot(p["id"], p["name"] ?? "Anonymous", p["avatar_hash"], Geo());
     pilots[p["id"]] = newPilot;
     notifyListeners();
   }
