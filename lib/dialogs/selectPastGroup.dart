@@ -9,7 +9,7 @@ void selectPastGroup(BuildContext context) {
   showDialog(
       context: context,
       builder: (context) => AlertDialog(
-          title: const Text("Past Groups"),
+          title: const Text("Recent Groups"),
           content: group.pastGroups.isEmpty
               ? const Text(
                   "Nothing here...\nHave you been in a group recently?",
@@ -29,7 +29,7 @@ void selectPastGroup(BuildContext context) {
                           child: Wrap(
                             alignment: WrapAlignment.spaceBetween,
                             // fit: StackFit.expand,
-                            children: group.pastGroups[index].pilots.values
+                            children: group.pastGroups[index].pilots
                                     .map<Widget>((p) => Card(
                                           shape: const RoundedRectangleBorder(
                                               borderRadius: BorderRadius.all(
@@ -80,7 +80,7 @@ void selectPastGroup(BuildContext context) {
                                       },
                                       icon: const Icon(
                                         Icons.login,
-                                        color: Colors.greenAccent,
+                                        color: Colors.lightGreen,
                                       ))
                                 ],
                           ));

@@ -9,6 +9,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/fuel_warning.dart';
@@ -72,26 +73,26 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                     AssetImage("assets/images/add_waypoint_path.png"),
                     color: Colors.yellow)),
             // --- Edit Waypoint
-            IconButton(
-              iconSize: 25,
-              onPressed: () => editWaypoint(
-                context,
-                false,
-                activePlan.selectedWp?.latlng ?? [],
-                editPointsCallback: onEditWaypoint,
-              ),
-              icon: const Icon(Icons.edit),
-            ),
+            // IconButton(
+            //   iconSize: 25,
+            //   onPressed: () => editWaypoint(
+            //     context,
+            //     false,
+            //     activePlan.selectedWp?.latlng ?? [],
+            //     editPointsCallback: onEditWaypoint,
+            //   ),
+            //   icon: const Icon(Icons.edit),
+            // ),
             // --- Delete Selected Waypoint
 
-            GestureDetector(
-              onDoubleTap: () => activePlan.removeSelectedWaypoint(),
-              onLongPress: () => activePlan.removeSelectedWaypoint(),
-              child: const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Icon(Icons.delete, color: Colors.red, size: 25),
-              ),
-            )
+            // GestureDetector(
+            //   onDoubleTap: () => activePlan.removeSelectedWaypoint(),
+            //   onLongPress: () => activePlan.removeSelectedWaypoint(),
+            //   child: const Padding(
+            //     padding: EdgeInsets.all(8.0),
+            //     child: Icon(Icons.delete, color: Colors.red, size: 25),
+            //   ),
+            // )
             // onPressed: () => activePlan.removeSelectedWaypoint(),
           ],
         ),
@@ -110,22 +111,76 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
               shrinkWrap: true,
               primary: false,
               itemCount: activePlan.waypoints.length,
-              itemBuilder: (context, i) => WaypointCard(
+              itemBuilder: (context, i) => Slidable(
                 key: ValueKey(activePlan.waypoints[i]),
-                waypoint: activePlan.waypoints[i],
-                index: i,
-                isFaded: activePlan.selectedIndex != null &&
-                    ((activePlan.isReversed && i > activePlan.selectedIndex!) ||
-                        (!activePlan.isReversed &&
-                            i < activePlan.selectedIndex!)),
-                onSelect: () {
-                  debugPrint("Selected $i");
-                  activePlan.selectWaypoint(i);
-                },
-                onToggleOptional: () {
-                  activePlan.toggleOptional(i);
-                },
-                isSelected: i == activePlan.selectedIndex,
+                startActionPane: ActionPane(
+                    extentRatio: 0.14,
+                    motion: const DrawerMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: (e) => {activePlan.removeWaypoint(i)},
+                        icon: Icons.delete,
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ]),
+                endActionPane: ActionPane(
+                  extentRatio: 0.3,
+                  motion: const ScrollMotion(),
+                  children: [
+                    // SlidableAction(
+                    //   onPressed: (e) => {},
+                    //   icon: Icons.drag_handle,
+                    //   backgroundColor: Colors.grey.shade400,
+                    //   foregroundColor: Colors.black,
+                    // )
+                    SlidableAction(
+                      onPressed: (e) => {
+                        editWaypoint(
+                          context,
+                          false,
+                          activePlan.selectedWp?.latlng ?? [],
+                          waypointIndex: i,
+                          editPointsCallback: onEditWaypoint,
+                        )
+                      },
+                      icon: Icons.edit,
+                      backgroundColor: Colors.grey.shade400,
+                      foregroundColor: Colors.black,
+                    ),
+                    ReorderableDragStartListener(
+                      index: i,
+                      child: Container(
+                        color: Colors.grey.shade400,
+                        child: const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Icon(
+                            Icons.drag_handle,
+                            size: 24,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                child: WaypointCard(
+                  waypoint: activePlan.waypoints[i],
+                  index: i,
+                  isFaded: activePlan.selectedIndex != null &&
+                      ((activePlan.isReversed &&
+                              i > activePlan.selectedIndex!) ||
+                          (!activePlan.isReversed &&
+                              i < activePlan.selectedIndex!)),
+                  onSelect: () {
+                    debugPrint("Selected $i");
+                    activePlan.selectWaypoint(i);
+                  },
+                  onToggleOptional: () {
+                    activePlan.toggleOptional(i);
+                  },
+                  isSelected: i == activePlan.selectedIndex,
+                ),
               ),
               onReorder: (oldIndex, newIndex) {
                 debugPrint("WP order: $oldIndex --> $newIndex");
@@ -148,18 +203,31 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
             if (activePlan.waypoints.length > 1)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.sync),
-                    const Text(
-                      " Include Return Trip",
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: Colors.grey.shade900,
+                        borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(40),
+                            bottomRight: Radius.circular(40))),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 20, right: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.sync),
+                          const Text(
+                            " Include Return Trip",
+                          ),
+                          Switch(
+                              value: activePlan.includeReturnTrip,
+                              onChanged: (value) =>
+                                  {activePlan.includeReturnTrip = value}),
+                        ],
+                      ),
                     ),
-                    Switch(
-                        value: activePlan.includeReturnTrip,
-                        onChanged: (value) =>
-                            {activePlan.includeReturnTrip = value}),
-                  ],
+                  ),
                 ),
               )
           ]),

@@ -9,7 +9,7 @@ import 'package:xcnav/models/geo.dart';
 
 class PastGroup {
   // [id] == name
-  Map<String, Pilot> pilots = {};
+  List<Pilot> pilots = [];
   late final String id;
   late final DateTime timestamp;
 
@@ -19,14 +19,14 @@ class PastGroup {
     timestamp = DateTime.fromMillisecondsSinceEpoch(json["timestamp"]);
     for (Map<String, dynamic> each in json["pilots"]) {
       Pilot _p = Pilot.fromJson(each);
-      pilots[_p.id] = _p;
+      pilots.add(_p);
     }
   }
 
   Map<String, dynamic> toJson() {
     return {
       "id": id,
-      "pilots": pilots.values.map((value) => value.toJson()).toList(),
+      "pilots": pilots.map((value) => value.toJson()).toList(),
       "timestamp": timestamp.millisecondsSinceEpoch,
     };
   }
@@ -66,7 +66,10 @@ class Group with ChangeNotifier {
   }
 
   void _appendToPastGroups() {
-    PastGroup pg = PastGroup(_currentGroupID!, DateTime.now(), pilots);
+    PastGroup pg =
+        PastGroup(_currentGroupID!, DateTime.now(), pilots.values.toList());
+    debugPrint(
+        "Appended to past groups. (id: ${pg.id}, ${pg.pilots.length} pilots)");
     pastGroups.add(pg);
   }
 
@@ -80,6 +83,8 @@ class Group with ChangeNotifier {
   void _savePastGroups() {
     prefs?.setStringList("me.pastGroups",
         pastGroups.map((e) => jsonEncode(e.toJson())).toList());
+    debugPrint(
+        "Save pastGroups: ${pastGroups.map((e) => jsonEncode(e.toJson())).toList().join(", ")}");
   }
 
   bool hasPilot(String pilotID) => pilots.containsKey(pilotID);
