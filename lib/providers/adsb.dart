@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/geo.dart';
@@ -66,13 +67,21 @@ class ADSB with ChangeNotifier {
       ttsState = TtsState.stopped;
     });
 
-    Provider.of<Settings>(context, listen: false).addListener(() {
+    Provider.of<Settings>(context, listen: false).addListener(() async {
       var settings = Provider.of<Settings>(context, listen: false);
-      debugPrint("-----");
       if (!portListening && settings.adsbEnabled) {
         // --- Start Listening
-        debugPrint("Opening ADSB listen port 4000");
-        RawDatagramSocket.bind(InternetAddress.anyIPv4, 4000).then((_sock) {
+        final info = NetworkInfo();
+        var wifiName = await info.getWifiName();
+        var wifiGateway = await info.getWifiGatewayIP();
+
+        dynamic address = InternetAddress.loopbackIPv4;
+        if (wifiName != null && wifiName.startsWith("Ping-")) {
+          address = wifiGateway;
+        }
+
+        debugPrint("Opening ADSB listen on ${address.toString()}:4000");
+        RawDatagramSocket.bind(address, 4000).then((_sock) {
           sock = _sock;
 
           _sock.listen((event) {

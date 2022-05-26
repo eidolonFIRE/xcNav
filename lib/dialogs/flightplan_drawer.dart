@@ -23,31 +23,29 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/screens/home.dart';
 
 /// Flightplan Menu
-Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
-    VoidCallback onEditWaypoint) {
-  return Consumer2<ActivePlan, MyTelemetry>(
-      builder: (context, activePlan, myTelemetry, child) {
+Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, VoidCallback onEditWaypoint) {
+  return Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
     ETA etaNext = activePlan.selectedIndex != null
-        ? activePlan.etaToWaypoint(
-            myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
+        ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
         : ETA(0, 0);
     ETA etaTrip = activePlan.etaToTripEnd(
-        myTelemetry.geo.spd,
-        activePlan.selectedIndex ?? 0,
-        Provider.of<Wind>(context, listen: false));
+        myTelemetry.geo.spd, activePlan.selectedIndex ?? 0, Provider.of<Wind>(context, listen: false));
     etaTrip += etaNext;
 
     if (activePlan.includeReturnTrip && !activePlan.isReversed) {
       // optionally include eta for return trip
-      etaTrip += activePlan.etaToTripEnd(
-          myTelemetry.geo.spd, 0, Provider.of<Wind>(context, listen: false));
+      etaTrip += activePlan.etaToTripEnd(myTelemetry.geo.spd, 0, Provider.of<Wind>(context, listen: false));
     }
 
     int etaTripMin = min(999 * 60, (etaTrip.time / 60000).ceil());
-    String etaTripValue = (etaTripMin >= 60)
-        ? (etaTripMin / 60).toStringAsFixed(1)
-        : etaTripMin.toString();
+    String etaTripValue = (etaTripMin >= 60) ? (etaTripMin / 60).toStringAsFixed(1) : etaTripMin.toString();
     String etaTripUnit = (etaTripMin >= 60) ? "hr" : "min";
+
+    // Handle infinite ETA
+    if (etaTrip.time < 0) {
+      etaTripValue = "∞";
+      etaTripUnit = "";
+    }
 
     return Column(
       children: [
@@ -62,16 +60,12 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                   Navigator.pop(context);
                   setFocusMode(FocusMode.addWaypoint);
                 },
-                icon: const ImageIcon(
-                    AssetImage("assets/images/add_waypoint_pin.png"),
-                    color: Colors.lightGreen)),
+                icon: const ImageIcon(AssetImage("assets/images/add_waypoint_pin.png"), color: Colors.lightGreen)),
             // --- Add New Path
             IconButton(
                 iconSize: 25,
                 onPressed: onNewPath,
-                icon: const ImageIcon(
-                    AssetImage("assets/images/add_waypoint_path.png"),
-                    color: Colors.yellow)),
+                icon: const ImageIcon(AssetImage("assets/images/add_waypoint_path.png"), color: Colors.yellow)),
             // --- Edit Waypoint
             // IconButton(
             //   iconSize: 25,
@@ -113,17 +107,14 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
               itemCount: activePlan.waypoints.length,
               itemBuilder: (context, i) => Slidable(
                 key: ValueKey(activePlan.waypoints[i]),
-                startActionPane: ActionPane(
-                    extentRatio: 0.14,
-                    motion: const DrawerMotion(),
-                    children: [
-                      SlidableAction(
-                        onPressed: (e) => {activePlan.removeWaypoint(i)},
-                        icon: Icons.delete,
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                    ]),
+                startActionPane: ActionPane(extentRatio: 0.14, motion: const DrawerMotion(), children: [
+                  SlidableAction(
+                    onPressed: (e) => {activePlan.removeWaypoint(i)},
+                    icon: Icons.delete,
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                ]),
                 endActionPane: ActionPane(
                   extentRatio: 0.3,
                   motion: const ScrollMotion(),
@@ -168,10 +159,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                   waypoint: activePlan.waypoints[i],
                   index: i,
                   isFaded: activePlan.selectedIndex != null &&
-                      ((activePlan.isReversed &&
-                              i > activePlan.selectedIndex!) ||
-                          (!activePlan.isReversed &&
-                              i < activePlan.selectedIndex!)),
+                      ((activePlan.isReversed && i > activePlan.selectedIndex!) ||
+                          (!activePlan.isReversed && i < activePlan.selectedIndex!)),
                   onSelect: () {
                     debugPrint("Selected $i");
                     activePlan.selectWaypoint(i);
@@ -185,8 +174,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
               onReorder: (oldIndex, newIndex) {
                 debugPrint("WP order: $oldIndex --> $newIndex");
                 activePlan.sortWaypoint(oldIndex, newIndex);
-                Provider.of<Group>(context, listen: false)
-                    .fixPilotSelectionsOnSort(oldIndex, newIndex);
+                Provider.of<Group>(context, listen: false).fixPilotSelectionsOnSort(oldIndex, newIndex);
               },
             ),
             // This shows when flight plan is empty
@@ -208,9 +196,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                   child: Container(
                     decoration: BoxDecoration(
                         color: Colors.grey.shade900,
-                        borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(40),
-                            bottomRight: Radius.circular(40))),
+                        borderRadius:
+                            const BorderRadius.only(bottomLeft: Radius.circular(40), bottomRight: Radius.circular(40))),
                     child: Padding(
                       padding: const EdgeInsets.only(left: 20, right: 10),
                       child: Row(
@@ -222,8 +209,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                           ),
                           Switch(
                               value: activePlan.includeReturnTrip,
-                              onChanged: (value) =>
-                                  {activePlan.includeReturnTrip = value}),
+                              onChanged: (value) => {activePlan.includeReturnTrip = value}),
                         ],
                       ),
                     ),
@@ -261,26 +247,19 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                     TextSpan(children: [
                       TextSpan(
                           text: convertDistValueCoarse(
-                                  Provider.of<Settings>(context, listen: false)
-                                      .displayUnitsDist,
-                                  etaTrip.distance)
+                                  Provider.of<Settings>(context, listen: false).displayUnitsDist, etaTrip.distance)
                               .toStringAsFixed(1),
                           style: instrLower),
                       TextSpan(
-                          text: unitStrDistCoarse[
-                              Provider.of<Settings>(context, listen: false)
-                                  .displayUnitsDist],
+                          text: unitStrDistCoarse[Provider.of<Settings>(context, listen: false).displayUnitsDist],
                           style: instrLabel),
                       if (myTelemetry.inFlight)
                         TextSpan(
                           text: "   " + etaTripValue,
                           style: instrLower,
                         ),
-                      if (myTelemetry.inFlight)
-                        TextSpan(text: etaTripUnit, style: instrLabel),
-                      if (myTelemetry.inFlight &&
-                          myTelemetry.fuel > 0 &&
-                          myTelemetry.fuelTimeRemaining < etaNext.time)
+                      if (myTelemetry.inFlight) TextSpan(text: etaTripUnit, style: instrLabel),
+                      if (myTelemetry.inFlight && myTelemetry.fuel > 0 && myTelemetry.fuelTimeRemaining < etaNext.time)
                         const WidgetSpan(
                             child: Padding(
                           padding: EdgeInsets.only(left: 20),
@@ -304,11 +283,9 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                     Switch(
                       value: activePlan.useWind,
                       onChanged: (value) => {activePlan.useWind = value},
-                      activeThumbImage: Provider.of<Wind>(context).result !=
-                              null
+                      activeThumbImage: Provider.of<Wind>(context).result != null
                           ? IconImageProvider(Icons.check, color: Colors.black)
-                          : IconImageProvider(Icons.question_mark,
-                              color: Colors.black),
+                          : IconImageProvider(Icons.question_mark, color: Colors.black),
                     ),
                   ],
                 ),
@@ -320,11 +297,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath,
                     ),
                     Switch(
                         value: activePlan.isReversed,
-                        activeThumbImage: IconImageProvider(Icons.arrow_upward,
-                            color: Colors.black),
-                        inactiveThumbImage: IconImageProvider(
-                            Icons.arrow_downward,
-                            color: Colors.black),
+                        activeThumbImage: IconImageProvider(Icons.arrow_upward, color: Colors.black),
+                        inactiveThumbImage: IconImageProvider(Icons.arrow_downward, color: Colors.black),
                         onChanged: (value) => {activePlan.isReversed = value}),
                   ],
                 ),

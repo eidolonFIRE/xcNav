@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/weather.dart';
-import 'package:xcnav/widgets/sounding_plot.dart';
+import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/sounding_plot_therm.dart';
+import 'package:xcnav/widgets/sounding_plot_wind.dart';
 
 class WeatherViewer extends StatefulWidget {
   const WeatherViewer({Key? key}) : super(key: key);
@@ -11,6 +16,8 @@ class WeatherViewer extends StatefulWidget {
 }
 
 class _WeatherViewerState extends State<WeatherViewer> {
+  double? selectedY;
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -26,42 +33,181 @@ class _WeatherViewerState extends State<WeatherViewer> {
               ]),
             ),
             body: TabBarView(
+              physics: const NeverScrollableScrollPhysics(),
               children: [
-                /// --- View Sounding at current geo
-                Column(
-                  // crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Text(
-                        "Sounding Here",
-                        style: Theme.of(context).textTheme.headline6,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.width,
-                        child: FutureBuilder<Sounding>(
-                          future: Provider.of<Weather>(context, listen: false)
-                              .getSounding(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              return CustomPaint(
-                                  painter: SoundingPlotPainter(snapshot.data!));
-                            } else {
-                              return CircularProgressIndicator();
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                /// === View Sounding at current geo
+                FutureBuilder<Sounding>(
+                    future: Provider.of<Weather>(context, listen: false).getSounding(),
+                    builder: (context, sounding) {
+                      if (sounding.hasData) {
+                        // Get the sample from selection
+                        SoundingSample? sample = (selectedY == null || sounding.data == null)
+                            ? null
+                            : sounding.data!.sampleBaro(pressureFromElevation(
+                                (MediaQuery.of(context).size.width - selectedY!) /
+                                    (MediaQuery.of(context).size.width) *
+                                    6000.0,
+                                1013.25));
+                        var settings = Provider.of<Settings>(context, listen: false);
+                        double myY = Provider.of<MyTelemetry>(context, listen: false).baro?.hectpascal ??
+                            pressureFromElevation(Provider.of<MyTelemetry>(context, listen: false).geo.alt, 1013.25);
+                        return Column(
+                          // crossAxisAlignment: CrossAxisAlignment.stretch,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Text(
+                                "Current Sounding",
+                                style: Theme.of(context).textTheme.headline4,
+                              ),
+                            ),
 
-                /// Weather through route
+                            // Divider(),
+
+                            /// --- Isobar values (values at altitude)
+                            Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Flex(
+                                  direction: Axis.horizontal,
+                                  children: [
+                                    Flexible(
+                                        fit: FlexFit.tight,
+                                        flex: 3,
+                                        child: sample != null
+                                            ? Text.rich(
+                                                TextSpan(children: [
+                                                  TextSpan(
+                                                      text: convertDistValueFine(settings.displayUnitsDist,
+                                                                  getElevation(sample.baroAlt, 1013.25))
+                                                              .toStringAsFixed(0) +
+                                                          unitStrDistFine[settings.displayUnitsDist]!),
+                                                  TextSpan(text: ",  "),
+                                                  TextSpan(
+                                                      style: TextStyle(color: Colors.blue),
+                                                      text: sample.dpt == null
+                                                          ? "?"
+                                                          : cToF(sample.dpt)!.toStringAsFixed(0) + " F"),
+                                                  const TextSpan(text: ",  "),
+                                                  TextSpan(
+                                                      style: const TextStyle(color: Colors.red),
+                                                      text: sample.tmp == null
+                                                          ? "?"
+                                                          : cToF(sample.tmp)!.toStringAsFixed(0) + " F"),
+                                                ]),
+                                                style: const TextStyle(fontSize: 24),
+                                                textAlign: TextAlign.center,
+                                              )
+                                            : const Text("")),
+                                    Flexible(
+                                        fit: FlexFit.tight,
+                                        flex: 1,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(left: 10),
+                                          child: Stack(children: [
+                                            if (sample != null && sample.wHdg != null)
+                                              Container(
+                                                transformAlignment: const Alignment(0, 0),
+                                                transform: Matrix4.rotationZ(sample.wHdg!),
+                                                child: SvgPicture.asset(
+                                                  "assets/images/arrow.svg",
+                                                  width: 100,
+                                                  height: 100,
+                                                  // color: Colors.blue,
+                                                ),
+                                              ),
+                                            Align(
+                                              alignment: Alignment.center,
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(top: 42, bottom: 42),
+                                                child: Text(
+                                                  (sample != null && sample.wVel != null)
+                                                      ? printValue(
+                                                          value: convertSpeedValue(
+                                                              Provider.of<Settings>(context, listen: false)
+                                                                  .displayUnitsSpeed,
+                                                              sample.wVel!),
+                                                          digits: 2,
+                                                          decimals: 0)
+                                                      : "",
+                                                  style:
+                                                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                            ),
+                                          ]),
+                                        )),
+                                  ],
+                                )),
+
+                            /// --- Graph plots
+                            Padding(
+                              padding: const EdgeInsets.only(left: 10, right: 10),
+                              child: SizedBox(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: MediaQuery.of(context).size.width,
+                                  child: Listener(
+                                    behavior: HitTestBehavior.opaque,
+                                    onPointerDown: (e) => setState(() {
+                                      selectedY = e.localPosition.dy;
+                                    }),
+                                    onPointerMove: (e) => setState(() {
+                                      selectedY = e.localPosition.dy;
+                                    }),
+                                    child: Flex(
+                                      direction: Axis.horizontal,
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        Flexible(
+                                          fit: FlexFit.tight,
+                                          flex: 3,
+                                          child: ClipRect(
+                                            child: CustomPaint(
+                                              painter: SoundingPlotThermPainter(sounding.data!, selectedY, myY),
+                                            ),
+                                          ),
+                                        ),
+                                        Flexible(
+                                          fit: FlexFit.tight,
+                                          flex: 1,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(left: 10),
+                                            child: ClipRRect(
+                                              child: CustomPaint(
+                                                painter: SoundingPlotWindPainter(sounding.data!, selectedY, myY),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  )),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Text(
+                                "NAM-NEST-conus updated  ${DateTime.now().difference(Provider.of<Weather>(context, listen: false).lastPull ?? DateTime.now()).inMinutes.toString()}  minutes ago.",
+                                style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                              ),
+                            )
+                          ],
+                        );
+                      } else {
+                        return Center(
+                            child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Padding(
+                              padding: EdgeInsets.all(10.0),
+                              child: Text("Fetching"),
+                            ),
+                            CircularProgressIndicator(),
+                          ],
+                        ));
+                      }
+                    }),
+
+                /// === Weather through route
                 Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

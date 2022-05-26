@@ -64,8 +64,7 @@ enum FocusMode {
 
 TextStyle instrLower = const TextStyle(fontSize: 35);
 TextStyle instrUpper = const TextStyle(fontSize: 40);
-TextStyle instrLabel = TextStyle(
-    fontSize: 14, color: Colors.grey[400], fontStyle: FontStyle.italic);
+TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey[400], fontStyle: FontStyle.italic);
 
 class _MyHomePageState extends State<MyHomePage> {
   late MapController mapController;
@@ -85,8 +84,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late PolyEditor polyEditor;
 
   List<Polyline> polyLines = [];
-  var editablePolyline =
-      Polyline(color: Colors.amber, points: [], strokeWidth: 5);
+  var editablePolyline = Polyline(color: Colors.amber, points: [], strokeWidth: 5);
 
   @override
   _MyHomePageState();
@@ -135,8 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
           }
           debugPrint("--- Starting Location Spoofer ---");
           Provider.of<MyTelemetry>(context, listen: false).baro = null;
-          fakeFlight.initFakeFlight(
-              Provider.of<MyTelemetry>(context, listen: false).geo);
+          fakeFlight.initFakeFlight(Provider.of<MyTelemetry>(context, listen: false).geo);
           timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
             handleGeomUpdate(context, fakeFlight.genFakeLocationFlight());
           });
@@ -171,8 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
     debugPrint("Toggle Location Service Stream");
     if (_serviceStatusStreamSubscription == null) {
       final serviceStatusStream = _geolocatorPlatform.getServiceStatusStream();
-      _serviceStatusStreamSubscription =
-          serviceStatusStream.handleError((error) {
+      _serviceStatusStreamSubscription = serviceStatusStream.handleError((error) {
         _serviceStatusStreamSubscription?.cancel();
         _serviceStatusStreamSubscription = null;
       }).listen((serviceStatus) {
@@ -180,8 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
           if (positionStreamStarted) {
             _toggleListening();
           }
-          if (defaultTargetPlatform == TargetPlatform.iOS &&
-              !positionStreamStarted) {
+          if (defaultTargetPlatform == TargetPlatform.iOS && !positionStreamStarted) {
             positionStreamStarted = true;
             _toggleListening();
           }
@@ -199,8 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
 
       // Initial start of the position stream
-      if (!positionStreamStarted &&
-          defaultTargetPlatform == TargetPlatform.android) {
+      if (!positionStreamStarted && defaultTargetPlatform == TargetPlatform.android) {
         positionStreamStarted = true;
         _toggleListening();
       }
@@ -226,8 +220,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 // TODO: this is broken in the lib right now.
                 // notificationIcon:  name: "assets/images/xcnav.logo.wing.bw.png"}));
                 enableWakeLock: true));
-      } else if (defaultTargetPlatform == TargetPlatform.iOS ||
-          defaultTargetPlatform == TargetPlatform.macOS) {
+      } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.best,
           // activityType: ActivityType.fitness,
@@ -243,8 +236,7 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       }
 
-      positionStream = _geolocatorPlatform.getPositionStream(
-          locationSettings: locationSettings);
+      positionStream = _geolocatorPlatform.getPositionStream(locationSettings: locationSettings);
     }
 
     setState(() {
@@ -274,8 +266,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (!settings.groundMode || settings.groundModeTelemetry) {
         // TODO: better way to reduce telemetry messages
         if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
-          Provider.of<Client>(context, listen: false)
-              .sendTelemetry(myTelemetry.geo, myTelemetry.fuel);
+          Provider.of<Client>(context, listen: false).sendTelemetry(myTelemetry.geo, myTelemetry.fuel);
         }
       }
     }
@@ -299,28 +290,23 @@ class _MyHomePageState extends State<MyHomePage> {
     CenterZoom? centerZoom;
 
     // --- Orient to gps heading
-    if (!northLock &&
-        (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
+    if (!northLock && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
       mapController.rotate(-geo.hdg / pi * 180);
     }
     // --- Move to center
     if (focusMode == FocusMode.me) {
-      centerZoom = CenterZoom(
-          center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
+      centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
     } else if (focusMode == FocusMode.group) {
       List<LatLng> points = Provider.of<Group>(context, listen: false)
           .pilots
           // Don't consider telemetry older than 5 minutes
           .values
-          .where((_p) =>
-              _p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
+          .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
           .map((e) => e.geo.latLng)
           .toList();
       points.add(LatLng(geo.lat, geo.lng));
-      centerZoom = mapController.centerZoomFitBounds(
-          LatLngBounds.fromPoints(points),
-          options: const FitBoundsOptions(
-              padding: EdgeInsets.all(100), maxZoom: 13, inside: true));
+      centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
+          options: const FitBoundsOptions(padding: EdgeInsets.all(100), maxZoom: 13, inside: true));
     }
     if (centerZoom != null) {
       mapController.move(centerZoom.center, centerZoom.zoom);
@@ -333,8 +319,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // --- Finish adding waypoint pin
       setFocusMode(prevFocusMode);
       editWaypoint(context, true, [latlng]);
-    } else if (focusMode == FocusMode.addPath ||
-        focusMode == FocusMode.editPath) {
+    } else if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
       // --- Add waypoint in path
       polyEditor.add(editablePolyline.points, latlng);
     }
@@ -360,11 +345,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 setFocusMode(FocusMode.addPath);
               }, () {
                 editablePolyline.points.clear();
-                editablePolyline.points.addAll(
-                    Provider.of<ActivePlan>(context, listen: false)
-                            .selectedWp
-                            ?.latlng ??
-                        []);
+                editablePolyline.points
+                    .addAll(Provider.of<ActivePlan>(context, listen: false).selectedWp?.latlng ?? []);
                 Navigator.popUntil(context, ModalRoute.withName("/home"));
                 setFocusMode(FocusMode.editPath);
               }),
@@ -408,67 +390,47 @@ class _MyHomePageState extends State<MyHomePage> {
           child: SizedBox(
             height: 64,
             child: Consumer2<MyTelemetry, Settings>(
-              builder: (context, myTelementy, settings, child) => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // --- Speedometer
-                    Text.rich(TextSpan(children: [
-                      TextSpan(
-                        text: printValue(
-                            value: convertSpeedValue(settings.displayUnitsSpeed,
-                                myTelementy.geo.spd),
-                            digits: 3,
-                            decimals: settings.displayUnitsSpeed ==
-                                    DisplayUnitsSpeed.mps
-                                ? 1
-                                : 0),
-                        style: instrUpper,
-                      ),
-                      TextSpan(
-                        text: unitStrSpeed[settings.displayUnitsSpeed],
-                        style: instrLabel,
-                      )
-                    ])),
-                    const SizedBox(
-                        height: 100,
-                        child:
-                            VerticalDivider(thickness: 2, color: Colors.black)),
-                    // --- Altimeter
-                    Text.rich(TextSpan(children: [
-                      TextSpan(
-                        text: printValue(
-                            value: convertDistValueFine(
-                                settings.displayUnitsDist, myTelementy.geo.alt),
-                            digits: 5,
-                            decimals: 0),
-                        style: instrUpper,
-                      ),
-                      TextSpan(
-                          text: unitStrDistFine[settings.displayUnitsDist],
-                          style: instrLabel)
-                    ])),
-                    const SizedBox(
-                        height: 100,
-                        child:
-                            VerticalDivider(thickness: 2, color: Colors.black)),
-                    // --- Vario
-                    Text.rich(TextSpan(children: [
-                      TextSpan(
-                        text: printValue(
-                            value: convertVarioValue(settings.displayUnitsVario,
-                                myTelementy.geo.vario),
-                            digits: 3,
-                            decimals: settings.displayUnitsVario ==
-                                    DisplayUnitsVario.fpm
-                                ? 0
-                                : 1),
-                        style: instrUpper.merge(const TextStyle(fontSize: 30)),
-                      ),
-                      TextSpan(
-                          text: unitStrVario[settings.displayUnitsVario],
-                          style: instrLabel)
-                    ])),
-                  ]),
+              builder: (context, myTelementy, settings, child) =>
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                // --- Speedometer
+                Text.rich(TextSpan(children: [
+                  TextSpan(
+                    text: printValue(
+                        value: convertSpeedValue(settings.displayUnitsSpeed, myTelementy.geo.spd),
+                        digits: 3,
+                        decimals: settings.displayUnitsSpeed == DisplayUnitsSpeed.mps ? 1 : 0),
+                    style: instrUpper,
+                  ),
+                  TextSpan(
+                    text: unitStrSpeed[settings.displayUnitsSpeed],
+                    style: instrLabel,
+                  )
+                ])),
+                const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
+                // --- Altimeter
+                Text.rich(TextSpan(children: [
+                  TextSpan(
+                    text: printValue(
+                        value: convertDistValueFine(settings.displayUnitsDist, myTelementy.geo.alt),
+                        digits: 5,
+                        decimals: 0),
+                    style: instrUpper,
+                  ),
+                  TextSpan(text: unitStrDistFine[settings.displayUnitsDist], style: instrLabel)
+                ])),
+                const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
+                // --- Vario
+                Text.rich(TextSpan(children: [
+                  TextSpan(
+                    text: printValue(
+                        value: convertVarioValue(settings.displayUnitsVario, myTelementy.geo.vario),
+                        digits: 3,
+                        decimals: settings.displayUnitsVario == DisplayUnitsVario.fpm ? 0 : 1),
+                    style: instrUpper.merge(const TextStyle(fontSize: 30)),
+                  ),
+                  TextSpan(text: unitStrVario[settings.displayUnitsVario], style: instrLabel)
+                ])),
+              ]),
             ),
           ),
         ),
@@ -493,11 +455,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     const Text("Share Position"),
                     Switch(
-                        value:
-                            Provider.of<Settings>(context).groundModeTelemetry,
+                        value: Provider.of<Settings>(context).groundModeTelemetry,
                         onChanged: (value) =>
-                            Provider.of<Settings>(context, listen: false)
-                                .groundModeTelemetry = value),
+                            Provider.of<Settings>(context, listen: false).groundModeTelemetry = value),
                   ],
                 ),
               ))
@@ -521,9 +481,7 @@ class _MyHomePageState extends State<MyHomePage> {
             automaticallyImplyLeading: true,
             leadingWidth: 35,
             toolbarHeight: 64,
-            title: Provider.of<Settings>(context).groundMode
-                ? groundControlBar(context)
-                : topInstruments(context)),
+            title: Provider.of<Settings>(context).groundMode ? groundControlBar(context) : topInstruments(context)),
         // --- Main Menu
         drawer: Drawer(
             child: ListView(
@@ -537,8 +495,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     Positioned(
                       left: 10,
                       top: 10,
-                      child:
-                          AvatarRound(Provider.of<Profile>(context).avatar, 40),
+                      child: AvatarRound(Provider.of<Profile>(context).avatar, 40),
                     ),
                     Positioned(
                       left: 100,
@@ -582,32 +539,23 @@ class _MyHomePageState extends State<MyHomePage> {
                 Icons.local_airport,
                 size: 30,
               ),
-              title: Text(" Airspace",
-                  style: Theme.of(context).textTheme.headline5),
+              title: Text(" Airspace", style: Theme.of(context).textTheme.headline5),
               trailing: Switch(
                 value: Provider.of<Settings>(context).showAirspace,
-                onChanged: (value) => {
-                  Provider.of<Settings>(context, listen: false).showAirspace =
-                      value
-                },
+                onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
               ),
             ),
 
             ListTile(
                 minVerticalPadding: 20,
                 leading: const Icon(Icons.radar, size: 30),
-                title: Text("ADSB-in",
-                    style: Theme.of(context).textTheme.headline5),
+                title: Text("ADSB-in", style: Theme.of(context).textTheme.headline5),
                 trailing: Switch(
                   value: Provider.of<Settings>(context).adsbEnabled,
-                  onChanged: (value) => {
-                    Provider.of<Settings>(context, listen: false).adsbEnabled =
-                        value
-                  },
+                  onChanged: (value) => {Provider.of<Settings>(context, listen: false).adsbEnabled = value},
                 ),
                 subtitle: Provider.of<Settings>(context).adsbEnabled
-                    ? (Provider.of<ADSB>(context).lastHeartbeat >
-                            DateTime.now().millisecondsSinceEpoch - 1000 * 10)
+                    ? (Provider.of<ADSB>(context).lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 10)
                         ? const Text.rich(TextSpan(children: [
                             WidgetSpan(
                                 child: Icon(
@@ -637,8 +585,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Icons.cloudy_snowing,
                 size: 30,
               ),
-              title:
-                  Text("Weather", style: Theme.of(context).textTheme.headline5),
+              title: Text("Weather", style: Theme.of(context).textTheme.headline5),
               onTap: () => {Navigator.pushNamed(context, "/weather")},
             ),
 
@@ -686,8 +633,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   Icons.menu_book,
                   size: 30,
                 ),
-                title: Text("History",
-                    style: Theme.of(context).textTheme.headline5)),
+                title: Text("History", style: Theme.of(context).textTheme.headline5)),
             ListTile(
                 minVerticalPadding: 20,
                 onTap: () => {Navigator.pushNamed(context, "/settings")},
@@ -695,32 +641,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   Icons.settings,
                   size: 30,
                 ),
-                title: Text("Settings",
-                    style: Theme.of(context).textTheme.headline5)),
+                title: Text("Settings", style: Theme.of(context).textTheme.headline5)),
           ],
         )),
         body: Center(
           child: Stack(alignment: Alignment.center, children: [
             Consumer3<MyTelemetry, Settings, ActivePlan>(
-                builder: (context, myTelemetry, settings, plan, child) =>
-                    FlutterMap(
+                builder: (context, myTelemetry, settings, plan, child) => FlutterMap(
                       mapController: mapController,
                       options: MapOptions(
-                        interactiveFlags: InteractiveFlag.all &
-                            (northLock
-                                ? ~InteractiveFlag.rotate
-                                : InteractiveFlag.all),
+                        interactiveFlags:
+                            InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
                         // rotation: -myTelemetry.geo.hdg,
                         center: myTelemetry.geo.latLng,
                         zoom: 12.0,
                         onTap: (tapPosition, point) => onMapTap(context, point),
-                        onLongPress: (tapPosition, point) =>
-                            onMapLongPress(context, point),
+                        onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                         onPositionChanged: (mapPosition, hasGesture) {
                           // debugPrint("$mapPosition $hasGesture");
-                          if (hasGesture &&
-                              (focusMode == FocusMode.me ||
-                                  focusMode == FocusMode.group)) {
+                          if (hasGesture && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
                             // --- Unlock any focus lock
                             setFocusMode(FocusMode.unlocked);
                           }
@@ -747,8 +686,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             maxZoom: 17,
                             tms: true,
                             subdomains: ['1', '2'],
-                            backgroundColor:
-                                const Color.fromARGB(0, 255, 255, 255),
+                            backgroundColor: const Color.fromARGB(0, 255, 255, 255),
                           ),
                         if (settings.showAirspace)
                           TileLayerOptions(
@@ -757,8 +695,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             maxZoom: 17,
                             tms: true,
                             subdomains: ['1', '2'],
-                            backgroundColor:
-                                const Color.fromARGB(0, 255, 255, 255),
+                            backgroundColor: const Color.fromARGB(0, 255, 255, 255),
                           ),
                         if (settings.showAirspace)
                           TileLayerOptions(
@@ -767,13 +704,11 @@ class _MyHomePageState extends State<MyHomePage> {
                             maxZoom: 17,
                             tms: true,
                             subdomains: ['1', '2'],
-                            backgroundColor:
-                                const Color.fromARGB(0, 255, 255, 255),
+                            backgroundColor: const Color.fromARGB(0, 255, 255, 255),
                           ),
 
                         // Flight Log
-                        PolylineLayerOptions(
-                            polylines: [myTelemetry.buildFlightTrace()]),
+                        PolylineLayerOptions(polylines: [myTelemetry.buildFlightTrace()]),
 
                         // ADSB Proximity
                         if (settings.adsbEnabled)
@@ -783,8 +718,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 color: Colors.transparent,
                                 borderStrokeWidth: 1,
                                 borderColor: Colors.black54,
-                                radius:
-                                    settings.proximityProfile.horizontalDist,
+                                radius: settings.proximityProfile.horizontalDist,
                                 useRadiusInMeter: true)
                           ]),
 
@@ -792,9 +726,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         PolylineLayerOptions(polylines: plan.buildTripSnake()),
 
                         PolylineLayerOptions(
-                          polylines: [
-                            plan.buildNextWpIndicator(myTelemetry.geo)
-                          ],
+                          polylines: [plan.buildNextWpIndicator(myTelemetry.geo)],
                         ),
 
                         // Flight plan paths
@@ -802,9 +734,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           polylines: plan.waypoints
                               .where((value) => value.latlng.length > 1)
                               .mapIndexed((i, e) => Polyline(
-                                  points: e.latlng,
-                                  strokeWidth: 6,
-                                  color: Color(e.color ?? Colors.black.value)))
+                                  points: e.latlng, strokeWidth: 6, color: Color(e.color ?? Colors.black.value)))
                               .toList(),
                         ),
 
@@ -821,12 +751,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                             plan.moveWaypoint(i, [p1])
                                           },
                                       builder: (context) => Container(
-                                          transformAlignment:
-                                              const Alignment(0, 0),
-                                          transform: Matrix4.rotationZ(
-                                              -mapController.rotation *
-                                                  pi /
-                                                  180),
+                                          transformAlignment: const Alignment(0, 0),
+                                          transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
                                           child: MapMarker(e, 60 * 0.8)))
                                   : null)
                               .whereNotNull()
@@ -842,12 +768,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                 point: myTelemetry.launchGeo!.latLng,
                                 builder: (ctx) => Container(
                                       transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.rotationZ(
-                                          -mapController.rotation * pi / 180),
+                                      transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
                                       child: Stack(children: [
                                         Container(
-                                          transform: Matrix4.translationValues(
-                                              0, -60 / 2, 0),
+                                          transform: Matrix4.translationValues(0, -60 / 2, 0),
                                           child: Image.asset(
                                             "assets/images/pin.png",
                                             color: Colors.lightGreen,
@@ -855,9 +779,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         ),
                                         Center(
                                           child: Container(
-                                            transform:
-                                                Matrix4.translationValues(
-                                                    0, -60 / 1.5, 0),
+                                            transform: Matrix4.translationValues(0, -60 / 1.5, 0),
                                             child: const Icon(
                                               Icons.flight_takeoff,
                                               size: 60 / 2,
@@ -880,11 +802,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                       height: 50.0,
                                       point: e.latlng,
                                       builder: (ctx) => Container(
-                                        transformAlignment:
-                                            const Alignment(0, 0),
+                                        transformAlignment: const Alignment(0, 0),
                                         child: e.getIcon(myTelemetry.geo),
-                                        transform:
-                                            Matrix4.rotationZ(e.hdg * pi / 180),
+                                        transform: Matrix4.rotationZ(e.hdg * pi / 180),
                                       ),
                                     ),
                                   )
@@ -896,10 +816,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               .pilots
                               // Don't see locations older than 5minutes
                               .values
-                              .where((_p) =>
-                                  _p.geo.time >
-                                  DateTime.now().millisecondsSinceEpoch -
-                                      5000 * 60)
+                              .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
                               .toList()
                               .map((pilot) => Marker(
                                   point: pilot.geo.latLng,
@@ -907,13 +824,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                   height: 40,
                                   builder: (ctx) => Container(
                                       transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.rotationZ(
-                                          -mapController.rotation * pi / 180),
+                                      transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
                                       child: AvatarRound(pilot.avatar, 40,
-                                          hdg: pilot.geo.hdg +
-                                              mapController.rotation *
-                                                  pi /
-                                                  180))))
+                                          hdg: pilot.geo.hdg + mapController.rotation * pi / 180))))
                               .toList(),
                         ),
 
@@ -926,21 +839,17 @@ class _MyHomePageState extends State<MyHomePage> {
                               point: myTelemetry.geo.latLng,
                               builder: (ctx) => Container(
                                 transformAlignment: const Alignment(0, 0),
-                                child:
-                                    Image.asset("assets/images/red_arrow.png"),
-                                transform:
-                                    Matrix4.rotationZ(myTelemetry.geo.hdg),
+                                child: Image.asset("assets/images/red_arrow.png"),
+                                transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
                               ),
                             ),
                           ],
                         ),
 
                         // Draggable line editor
-                        if (focusMode == FocusMode.addPath ||
-                            focusMode == FocusMode.editPath)
+                        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
                           PolylineLayerOptions(polylines: polyLines),
-                        if (focusMode == FocusMode.addPath ||
-                            focusMode == FocusMode.editPath)
+                        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
                           DragMarkerPluginOptions(markers: polyEditor.edit()),
                       ],
                     )),
@@ -953,12 +862,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 List<Message> bubbles = [];
                 for (int i = chat.messages.length - 1; i > 0; i--) {
                   if (chat.messages[i].timestamp >
-                          max(
-                              DateTime.now().millisecondsSinceEpoch -
-                                  1000 * numSeconds,
-                              chat.chatLastOpened) &&
-                      chat.messages[i].pilotId !=
-                          Provider.of<Profile>(context, listen: false).id) {
+                          max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
+                      chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
                     bubbles.add(chat.messages[i]);
 
                     Timer(const Duration(seconds: numSeconds), () {
@@ -970,9 +875,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
                 }
                 return Positioned(
-                    right: Provider.of<Settings>(context).mapControlsRightSide
-                        ? 70
-                        : 0,
+                    right: Provider.of<Settings>(context).mapControlsRightSide ? 70 : 0,
                     bottom: 0,
                     // left: 100,
                     child: Column(
@@ -985,11 +888,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                 false,
                                 e.text,
                                 AvatarRound(
-                                    Provider.of<Group>(context, listen: false)
-                                            .pilots[e.pilotId]
-                                            ?.avatar ??
-                                        Image.asset(
-                                            "assets/images/default_avatar.png"),
+                                    Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar ??
+                                        Image.asset("assets/images/default_avatar.png"),
                                     20),
                                 null,
                                 e.timestamp),
@@ -1017,25 +917,17 @@ class _MyHomePageState extends State<MyHomePage> {
                         )),
                         TextSpan(text: "Tap to place waypoint")
                       ]),
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
                       // textAlign: TextAlign.justify,
                     ),
                   ),
                 ),
               ),
-            if (focusMode == FocusMode.addPath ||
-                focusMode == FocusMode.editPath)
+            if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
               Positioned(
                 bottom: 15,
-                right: Provider.of<Settings>(context).mapControlsRightSide
-                    ? null
-                    : 20,
-                left: Provider.of<Settings>(context).mapControlsRightSide
-                    ? 20
-                    : null,
+                right: Provider.of<Settings>(context).mapControlsRightSide ? null : 20,
+                left: Provider.of<Settings>(context).mapControlsRightSide ? 20 : null,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1053,10 +945,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             )),
                             TextSpan(text: "Tap to add to path")
                           ]),
-                          style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
                           // textAlign: TextAlign.justify,
                         ),
                       ),
@@ -1081,8 +970,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         onPressed: () {
                           // --- finish editing path
-                          editWaypoint(context, focusMode == FocusMode.addPath,
-                              editablePolyline.points);
+                          editWaypoint(context, focusMode == FocusMode.addPath, editablePolyline.points);
                           setFocusMode(prevFocusMode);
                         },
                       ),
@@ -1092,12 +980,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
             // --- Map View Buttons
             Positioned(
-              left: Provider.of<Settings>(context).mapControlsRightSide
-                  ? null
-                  : 10,
-              right: Provider.of<Settings>(context).mapControlsRightSide
-                  ? 10
-                  : null,
+              left: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
+              right: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
               top: 10,
               bottom: 10,
               child: Column(
@@ -1107,37 +991,27 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     // --- Compass
                     MapButton(
-                        child: Stack(
-                            fit: StackFit.expand,
-                            clipBehavior: Clip.none,
-                            children: [
-                              StreamBuilder(
-                                  stream: mapController.mapEventStream,
-                                  builder: (context, event) => Container(
-                                        transformAlignment:
-                                            const Alignment(0, 0),
-                                        transform: mapReady
-                                            ? Matrix4.rotationZ(
-                                                mapController.rotation *
-                                                    pi /
-                                                    180)
-                                            : Matrix4.rotationZ(0),
-                                        child: SvgPicture.asset(
-                                          "assets/images/compass.svg",
-                                          fit: BoxFit.none,
-                                          color: northLock ? Colors.grey : null,
-                                        ),
-                                      )),
-                              if (northLock)
-                                const Center(
-                                    child: Text(
-                                  "- N -",
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold),
-                                )),
-                            ]),
+                        child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
+                          StreamBuilder(
+                              stream: mapController.mapEventStream,
+                              builder: (context, event) => Container(
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: mapReady
+                                        ? Matrix4.rotationZ(mapController.rotation * pi / 180)
+                                        : Matrix4.rotationZ(0),
+                                    child: SvgPicture.asset(
+                                      "assets/images/compass.svg",
+                                      fit: BoxFit.none,
+                                      color: northLock ? Colors.grey : null,
+                                    ),
+                                  )),
+                          if (northLock)
+                            const Center(
+                                child: Text(
+                              "- N -",
+                              style: TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold),
+                            )),
+                        ]),
                         size: 60,
                         onPressed: () => {
                               setState(
@@ -1155,13 +1029,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         MapButton(
                           size: 60,
                           selected: focusMode == FocusMode.me,
-                          child: SvgPicture.asset(
-                              "assets/images/icon_controls_centermap_me.svg"),
-                          onPressed: () => setFocusMode(
-                              FocusMode.me,
-                              Provider.of<MyTelemetry>(context, listen: false)
-                                  .geo
-                                  .latLng),
+                          child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                          onPressed: () =>
+                              setFocusMode(FocusMode.me, Provider.of<MyTelemetry>(context, listen: false).geo.latLng),
                         ),
                         //
                         SizedBox(
@@ -1175,8 +1045,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           size: 60,
                           selected: focusMode == FocusMode.group,
                           onPressed: () => setFocusMode(FocusMode.group),
-                          child: SvgPicture.asset(
-                              "assets/images/icon_controls_centermap_group.svg"),
+                          child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
                         ),
                       ],
                     ),
@@ -1185,12 +1054,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       MapButton(
                         size: 60,
                         selected: false,
-                        onPressed: () => {
-                          mapController.move(
-                              mapController.center, mapController.zoom + 1)
-                        },
-                        child: SvgPicture.asset(
-                            "assets/images/icon_controls_zoom_in.svg"),
+                        onPressed: () => {mapController.move(mapController.center, mapController.zoom + 1)},
+                        child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
                       ),
                       //
                       SizedBox(
@@ -1203,12 +1068,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       MapButton(
                         size: 60,
                         selected: false,
-                        onPressed: () => {
-                          mapController.move(
-                              mapController.center, mapController.zoom - 1)
-                        },
-                        child: SvgPicture.asset(
-                            "assets/images/icon_controls_zoom_out.svg"),
+                        onPressed: () => {mapController.move(mapController.center, mapController.zoom - 1)},
+                        child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
                       ),
                     ]),
                     // --- Chat button
@@ -1217,8 +1078,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         MapButton(
                           size: 60,
                           selected: false,
-                          onPressed: () =>
-                              {Navigator.pushNamed(context, "/party")},
+                          onPressed: () => {Navigator.pushNamed(context, "/party")},
                           child: const Icon(
                             Icons.chat,
                             size: 30,
@@ -1231,9 +1091,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               right: 0,
                               child: Container(
                                   decoration: const BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.all(
-                                          Radius.circular(10))),
+                                      color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(10))),
                                   child: Padding(
                                     padding: const EdgeInsets.all(4.0),
                                     child: Text(
@@ -1258,9 +1116,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         transformAlignment: const Alignment(0, 0),
                         transform: mapReady
                             ? Matrix4.rotationZ(
-                                mapController.rotation * pi / 180 +
-                                    Provider.of<Wind>(context).result!.windHdg +
-                                    pi / 2)
+                                mapController.rotation * pi / 180 + Provider.of<Wind>(context).result!.windHdg)
                             : Matrix4.rotationZ(0),
                         child: SvgPicture.asset(
                           "assets/images/arrow.svg",
@@ -1278,9 +1134,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     padding: const EdgeInsets.all(42),
                     child: Text(
                       printValue(
-                          value: convertSpeedValue(
-                              Provider.of<Settings>(context, listen: false)
-                                  .displayUnitsSpeed,
+                          value: convertSpeedValue(Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
                               Provider.of<Wind>(context).result!.windSpd),
                           digits: 2,
                           decimals: 0),
@@ -1304,10 +1158,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               size: 20,
                               color: Colors.black,
                             )),
-                            TextSpan(
-                                text: "  connecting",
-                                style: TextStyle(
-                                    color: Colors.black, fontSize: 20)),
+                            TextSpan(text: "  connecting", style: TextStyle(color: Colors.black, fontSize: 20)),
                           ]),
                         ),
                       )))
@@ -1315,18 +1166,14 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
 
         // --- Bottom Instruments
-        bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(
-            builder: (context, activePlan, myTelemetry, child) {
+        bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
           // debugPrint("Update ETA");
           ETA etaNext = activePlan.selectedIndex != null
-              ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd,
-                  activePlan.selectedIndex!)
+              ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
               : ETA(0, 0);
 
           int etaNextMin = min(999 * 60, (etaNext.time / 60000).ceil());
-          String etaNextValue = (etaNextMin >= 60)
-              ? (etaNextMin / 60).toStringAsFixed(1)
-              : etaNextMin.toString();
+          String etaNextValue = (etaNextMin >= 60) ? (etaNextMin / 60).toStringAsFixed(1) : etaNextMin.toString();
           String etaNextUnit = (etaNextMin >= 60) ? "hr" : "min";
 
           final curWp = activePlan.selectedWp;
@@ -1340,12 +1187,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   // --- Previous Waypoint
                   IconButton(
                     onPressed: () {
-                      if (activePlan.selectedIndex != null &&
-                          activePlan.selectedIndex! > 0) {
+                      if (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0) {
                         // (Skip optional waypoints)
-                        for (int i = activePlan.selectedIndex! - 1;
-                            i >= 0;
-                            i--) {
+                        for (int i = activePlan.selectedIndex! - 1; i >= 0; i--) {
                           if (!activePlan.waypoints[i].isOptional) {
                             activePlan.selectWaypoint(i);
                             break;
@@ -1354,8 +1198,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       }
                     },
                     iconSize: 40,
-                    color: (activePlan.selectedIndex != null &&
-                            activePlan.selectedIndex! > 0)
+                    color: (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0)
                         ? Colors.white
                         : Colors.grey.shade800,
                     icon: activePlan.isReversed
@@ -1364,9 +1207,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           )
                         : SvgPicture.asset(
                             "assets/images/reverse_back.svg",
-                            color: ((activePlan.selectedIndex ?? 0) > 0)
-                                ? Colors.white
-                                : Colors.grey.shade800,
+                            color: ((activePlan.selectedIndex ?? 0) > 0) ? Colors.white : Colors.grey.shade800,
                           ),
                   ),
 
@@ -1391,31 +1232,22 @@ class _MyHomePageState extends State<MyHomePage> {
                                           // if (curWp.icon != null)
                                           WidgetSpan(
                                             child: Container(
-                                              transform:
-                                                  Matrix4.translationValues(
-                                                      0, 15, 0),
-                                              child: SizedBox(
-                                                  width: 20,
-                                                  height: 30,
-                                                  child: MapMarker(curWp, 30)),
+                                              transform: Matrix4.translationValues(0, 15, 0),
+                                              child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
                                             ),
                                           ),
                                           // if (curWp.icon != null)
                                           const TextSpan(text: "  "),
                                           TextSpan(
                                             text: curWp.name,
-                                            style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 30),
+                                            style: const TextStyle(color: Colors.white, fontSize: 30),
                                           ),
                                         ]),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width /
-                                                2,
+                                        width: MediaQuery.of(context).size.width / 2,
                                         child: Divider(
                                           thickness: 1,
                                           height: 8,
@@ -1427,36 +1259,26 @@ class _MyHomePageState extends State<MyHomePage> {
                                         TextSpan(children: [
                                           TextSpan(
                                               text: convertDistValueCoarse(
-                                                      Provider.of<Settings>(
-                                                              context,
-                                                              listen: false)
-                                                          .displayUnitsDist,
+                                                      Provider.of<Settings>(context, listen: false).displayUnitsDist,
                                                       etaNext.distance)
                                                   .toStringAsFixed(1),
                                               style: instrLower),
                                           TextSpan(
                                               text: unitStrDistCoarse[
-                                                  Provider.of<Settings>(context,
-                                                          listen: false)
-                                                      .displayUnitsDist],
+                                                  Provider.of<Settings>(context, listen: false).displayUnitsDist],
                                               style: instrLabel),
                                           if (myTelemetry.inFlight)
                                             TextSpan(
                                               text: "   " + etaNextValue,
                                               style: instrLower,
                                             ),
-                                          if (myTelemetry.inFlight)
-                                            TextSpan(
-                                                text: etaNextUnit,
-                                                style: instrLabel),
+                                          if (myTelemetry.inFlight) TextSpan(text: etaNextUnit, style: instrLabel),
                                           if (myTelemetry.inFlight &&
                                               myTelemetry.fuel > 0 &&
-                                              myTelemetry.fuelTimeRemaining <
-                                                  etaNext.time)
+                                              myTelemetry.fuelTimeRemaining < etaNext.time)
                                             const WidgetSpan(
                                                 child: Padding(
-                                              padding:
-                                                  EdgeInsets.only(left: 20),
+                                              padding: EdgeInsets.only(left: 20),
                                               child: FuelWarning(35),
                                             )),
                                         ]),
@@ -1471,12 +1293,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   IconButton(
                     onPressed: () {
                       if (activePlan.selectedIndex != null &&
-                          activePlan.selectedIndex! <
-                              activePlan.waypoints.length - 1) {
+                          activePlan.selectedIndex! < activePlan.waypoints.length - 1) {
                         // (Skip optional waypoints)
-                        for (int i = activePlan.selectedIndex! + 1;
-                            i < activePlan.waypoints.length;
-                            i++) {
+                        for (int i = activePlan.selectedIndex! + 1; i < activePlan.waypoints.length; i++) {
                           if (!activePlan.waypoints[i].isOptional) {
                             activePlan.selectWaypoint(i);
                             break;
@@ -1486,8 +1305,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     },
                     iconSize: 40,
                     color: (activePlan.selectedIndex != null &&
-                            activePlan.selectedIndex! <
-                                activePlan.waypoints.length - 1)
+                            activePlan.selectedIndex! < activePlan.waypoints.length - 1)
                         ? Colors.white
                         : Colors.grey.shade800,
                     icon: !activePlan.isReversed
@@ -1496,8 +1314,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           )
                         : SvgPicture.asset(
                             "assets/images/reverse_forward.svg",
-                            color: ((activePlan.selectedIndex ?? -1) <
-                                    activePlan.waypoints.length - 1)
+                            color: ((activePlan.selectedIndex ?? -1) < activePlan.waypoints.length - 1)
                                 ? Colors.white
                                 : Colors.grey.shade800,
                           ),
