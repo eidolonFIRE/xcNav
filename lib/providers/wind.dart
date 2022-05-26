@@ -8,14 +8,16 @@ import 'package:xcnav/providers/my_telemetry.dart';
 class WindSolveResult {
   late final double airspeed;
   late final double windSpd;
+
+  /// Radians
   final double windHdg;
   final Offset circleCenter;
   final double maxSpd;
   late final int timestamp;
   List<double> samplesX;
   List<double> samplesY;
-  WindSolveResult(this.airspeed, this.windSpd, this.windHdg, this.circleCenter,
-      this.maxSpd, this.samplesX, this.samplesY) {
+  WindSolveResult(
+      this.airspeed, this.windSpd, this.windHdg, this.circleCenter, this.maxSpd, this.samplesX, this.samplesY) {
     timestamp = DateTime.now().millisecondsSinceEpoch;
   }
 }
@@ -45,19 +47,13 @@ class Wind with ChangeNotifier {
       final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
       final cardinality = myTelemetry.recordGeo.length;
       // Conditions for skipping the solve
-      if (cardinality < 2 ||
-          windSampleFirst == null ||
-          ((windSampleFirst ?? cardinality) > cardinality - 3)) return;
+      if (cardinality < 2 || windSampleFirst == null || ((windSampleFirst ?? cardinality) > cardinality - 3)) return;
 
       final firstIndex = min(
           cardinality - 1,
           max(
               0,
-              max(
-                  ((isRecording || windSampleLast == null)
-                          ? cardinality - 1
-                          : windSampleLast!) -
-                      maxSamples,
+              max(((isRecording || windSampleLast == null) ? cardinality - 1 : windSampleLast!) - maxSamples,
                   windSampleFirst!)));
 
       // clamp
@@ -65,16 +61,12 @@ class Wind with ChangeNotifier {
         windSampleLast = min(cardinality - 1, windSampleLast!);
       }
 
-      final List<Geo> samples =
-          myTelemetry.recordGeo.sublist(firstIndex, windSampleLast);
+      final List<Geo> samples = myTelemetry.recordGeo.sublist(firstIndex, windSampleLast);
       if (samples.isNotEmpty) {
-        final samplesX =
-            samples.map((e) => cos(e.hdg - pi / 2) * e.spd).toList();
-        final samplesY =
-            samples.map((e) => sin(e.hdg - pi / 2) * e.spd).toList();
+        final samplesX = samples.map((e) => cos(e.hdg - pi / 2) * e.spd).toList();
+        final samplesY = samples.map((e) => sin(e.hdg - pi / 2) * e.spd).toList();
 
-        final maxSpd =
-            samples.reduce((a, b) => a.spd > b.spd ? a : b).spd * 1.1;
+        final maxSpd = samples.reduce((a, b) => a.spd > b.spd ? a : b).spd * 1.1;
 
         solve(samplesX, samplesY, maxSpd);
       }
@@ -119,13 +111,8 @@ class Wind with ChangeNotifier {
     final double covXY = mXX * mYY - mXY * mXY;
     final double a3 = 4 * mZ;
     final double a2 = -3 * mZ * mZ - mZZ;
-    final double a1 =
-        mZZ * mZ + 4 * covXY * mZ - mXZ * mXZ - mYZ * mYZ - mZ * mZ * mZ;
-    final double a0 = mXZ * mXZ * mYY +
-        mYZ * mYZ * mXX -
-        mZZ * covXY -
-        2 * mXZ * mYZ * mXY +
-        mZ * mZ * covXY;
+    final double a1 = mZZ * mZ + 4 * covXY * mZ - mXZ * mXZ - mYZ * mYZ - mZ * mZ * mZ;
+    final double a0 = mXZ * mXZ * mYY + mYZ * mYZ * mXX - mZZ * covXY - 2 * mXZ * mYZ * mXY + mZ * mZ * covXY;
     final double a22 = a2 + a2;
     final double a33 = a3 + a3 + a3;
 
@@ -164,10 +151,9 @@ class Wind with ChangeNotifier {
     xCenter += xMean;
     yCenter += yMean;
     final windSpd = sqrt(pow(xCenter, 2) + pow(yCenter, 2));
-    final windHdg = atan2(yCenter, xCenter) % (2 * pi);
+    final windHdg = atan2(xCenter, yCenter) % (2 * pi);
 
-    _result = WindSolveResult(radius, windSpd, windHdg,
-        Offset(xCenter, yCenter), maxSpd, samplesX, samplesY);
+    _result = WindSolveResult(radius, windSpd, windHdg, Offset(xCenter, yCenter), maxSpd, samplesX, samplesY);
     notifyListeners();
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/painting.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -38,6 +39,7 @@ class Geo {
   double vario = 0;
 
   LatLng get latLng => LatLng(lat, lng);
+  Offset get latLngOffset => Offset(lng, lat);
 
   Geo();
   Geo.fromValues(

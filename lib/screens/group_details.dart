@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/leave_group.dart';
+import 'package:xcnav/dialogs/selectPastGroup.dart';
 
 // Providers
 import 'package:xcnav/providers/group.dart';
@@ -55,6 +56,9 @@ class _GroupDetailsState extends State<GroupDetails> {
             const VerticalDivider(
               thickness: 2,
             ),
+            IconButton(
+                onPressed: () => {selectPastGroup(context)},
+                icon: const Icon(Icons.history)),
             IconButton(
                 onPressed: () => {promptLeaveGroup(context)},
                 icon: const Icon(

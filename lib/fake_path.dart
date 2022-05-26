@@ -70,13 +70,11 @@ class FakeFlight {
   Position genFakeLocationFlight() {
     hdg += randomCentered() * 30 + 10;
 
-    latlng = latlngCalc.offset(
-        latlng, (spd + randomCentered()) * 5, hdg + randomCentered());
-    latlng = latlngCalc.offset(
-        latlng, windSpd * 5 + randomCentered(), windHdg + randomCentered());
+    latlng = latlngCalc.offset(latlng, (spd + randomCentered()) * 5, hdg + randomCentered());
+    latlng = latlngCalc.offset(latlng, windSpd * 5 + randomCentered(), windHdg + randomCentered());
 
-    vario = min(10, max(-10, vario + randomCentered())) * 0.95;
-    alt = max(0, alt * 0.99 + vario);
+    vario = min(5, max(-5, vario + randomCentered() / 2)) * 0.99;
+    alt = max(0, alt * 0.999 + vario);
 
     return fakeGeoToLoc(FakeGeo(latlng.longitude, latlng.latitude, alt));
   }

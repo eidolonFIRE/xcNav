@@ -72,12 +72,12 @@ class MyTelemetry with ChangeNotifier {
 
   Future saveFlight() async {
     Directory tempDir = await getApplicationDocumentsDirectory();
-    File logFile =
-        File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
+    File logFile = File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
     debugPrint("Writing ${logFile.uri} with ${recordGeo.length} samples");
     // TODO: save out the current flight plan as well!
-    await logFile.create(recursive: true).then((value) => logFile.writeAsString(
-        jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
+    await logFile
+        .create(recursive: true)
+        .then((value) => logFile.writeAsString(jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
   }
 
   void updateGeo(Position position, {bool? bypassRecording}) {
@@ -90,8 +90,8 @@ class MyTelemetry with ChangeNotifier {
       baroAmbientRequested = true;
       try {
         http
-            .get(Uri.parse(
-                "https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
+            .get(
+                Uri.parse("https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
             .then((responseXY) {
           // nearest stations
           var msgXY = jsonDecode(responseXY.body);
@@ -99,10 +99,7 @@ class MyTelemetry with ChangeNotifier {
           var y = msgXY["properties"]["gridY"];
           var gridId = msgXY["properties"]["gridId"];
 
-          http
-              .get(Uri.parse(
-                  "https://api.weather.gov/gridpoints/$gridId/$x,$y/stations"))
-              .then((responsePoint) async {
+          http.get(Uri.parse("https://api.weather.gov/gridpoints/$gridId/$x,$y/stations")).then((responsePoint) async {
             var msgPoint = jsonDecode(responsePoint.body);
             // check each for pressure
             stationFound = false;
@@ -111,27 +108,20 @@ class MyTelemetry with ChangeNotifier {
               List<dynamic> stationList = msgPoint["observationStations"];
               for (String each in stationList) {
                 if (stationFound) break;
-                await http
-                    .get(Uri.parse(each + "/observations/latest"))
-                    .then((responseStation) {
+                await http.get(Uri.parse(each + "/observations/latest")).then((responseStation) {
                   try {
                     var msgStation = jsonDecode(responseStation.body);
                     if (msgStation["properties"] != null &&
-                        msgStation["properties"]["seaLevelPressure"]["value"] !=
-                            null) {
-                      double pressure = msgStation["properties"]
-                              ["barometricPressure"]["value"] /
-                          100;
-                      debugPrint(
-                          "Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
+                        msgStation["properties"]["seaLevelPressure"]["value"] != null) {
+                      double pressure = msgStation["properties"]["barometricPressure"]["value"] / 100;
+                      debugPrint("Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
                       baroAmbient = BarometerValue(pressure);
                       baroAmbientRequested = false;
                       stationFound = true;
                     }
                   } catch (e) {
                     debugPrint("Failed to get station info. $e");
-                    debugPrint(
-                        Uri.parse(each + "/observations/latest").toString());
+                    debugPrint(Uri.parse(each + "/observations/latest").toString());
                     debugPrint(responseStation.body);
                   }
                 });
@@ -153,7 +143,7 @@ class MyTelemetry with ChangeNotifier {
     } else {
       triggerHyst = 0;
     }
-    if (triggerHyst > 1000 * 20) {
+    if (triggerHyst > 1000 * 30) {
       inFlight = !inFlight;
       triggerHyst = 0;
       if (inFlight) {
@@ -175,14 +165,11 @@ class MyTelemetry with ChangeNotifier {
 
     if (inFlight) {
       // --- burn fuel
-      fuel =
-          max(0, fuel - fuelBurnRate * (geo.time - geoPrev!.time) / 3600000.0);
+      fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev!.time) / 3600000.0);
 
       // --- Record path
       if (!(bypassRecording ?? false)) recordGeo.add(geo);
-      if (flightTrace.isEmpty ||
-          (flightTrace.isNotEmpty &&
-              latlngCalc.distance(flightTrace.last, geo.latLng) > 50)) {
+      if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo.latLng) > 50)) {
         flightTrace.add(geo.latLng);
         // --- keep list from bloating
         if (flightTrace.length > 10000) {
@@ -224,10 +211,6 @@ class MyTelemetry with ChangeNotifier {
   int get fuelTimeRemaining => ((fuel / fuelBurnRate) * 3600000).ceil();
 
   Polyline buildFlightTrace() {
-    return Polyline(
-        points: flightTrace,
-        strokeWidth: 6,
-        color: const Color.fromARGB(100, 255, 50, 50),
-        isDotted: true);
+    return Polyline(points: flightTrace, strokeWidth: 6, color: const Color.fromARGB(100, 255, 50, 50), isDotted: true);
   }
 }

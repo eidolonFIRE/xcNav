@@ -19,6 +19,7 @@ class FlightLogSummary extends StatelessWidget {
     mapBounds =
         LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
     mapBounds.pad(0.2);
+    debugPrint("Built log: ${log.filename}");
   }
 
   @override
@@ -139,8 +140,10 @@ class FlightLogSummary extends StatelessWidget {
                     options: MapOptions(
                       interactiveFlags: InteractiveFlag.none,
                       bounds: mapBounds,
-                      // allowPanningOnScrollingParent: false,
-                      // allowPanning: false,
+                      // center: mapBounds.center,
+                      // zoom: mapBounds,
+                      allowPanningOnScrollingParent: false,
+                      allowPanning: false,
                     ),
                     layers: [
                       TileLayerOptions(

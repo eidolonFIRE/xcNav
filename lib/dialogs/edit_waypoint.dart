@@ -14,9 +14,17 @@ import 'package:xcnav/widgets/map_marker.dart';
 final TextEditingController newWaypointName = TextEditingController();
 
 void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
-    {VoidCallback? editPointsCallback}) {
-  Waypoint? currentWp =
-      Provider.of<ActivePlan>(context, listen: false).selectedWp;
+    {VoidCallback? editPointsCallback, int? waypointIndex}) {
+  Waypoint? currentWp;
+  if (waypointIndex == null) {
+    currentWp = Provider.of<ActivePlan>(context, listen: false).selectedWp;
+  } else {
+    currentWp = Provider.of<ActivePlan>(context, listen: false)
+        .waypoints[waypointIndex];
+  }
+
+  debugPrint("$waypointIndex");
+
   if (!isNew) {
     if (currentWp != null) {
       // --- Load in currently selected waypoint options
