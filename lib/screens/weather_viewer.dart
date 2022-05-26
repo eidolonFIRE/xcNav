@@ -36,10 +36,10 @@ class _WeatherViewerState extends State<WeatherViewer> {
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 /// === View Sounding at current geo
-                FutureBuilder<Sounding>(
+                FutureBuilder<Sounding?>(
                     future: Provider.of<Weather>(context, listen: false).getSounding(),
                     builder: (context, sounding) {
-                      if (sounding.hasData) {
+                      if (sounding.hasData && sounding.data != null) {
                         // Get the sample from selection
                         SoundingSample? sample = (selectedY == null || sounding.data == null)
                             ? null
@@ -82,9 +82,9 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                                                   getElevation(sample.baroAlt, 1013.25))
                                                               .toStringAsFixed(0) +
                                                           unitStrDistFine[settings.displayUnitsDist]!),
-                                                  TextSpan(text: ",  "),
+                                                  const TextSpan(text: ",  "),
                                                   TextSpan(
-                                                      style: TextStyle(color: Colors.blue),
+                                                      style: const TextStyle(color: Colors.blue),
                                                       text: sample.dpt == null
                                                           ? "?"
                                                           : cToF(sample.dpt)!.toStringAsFixed(0) + " F"),
