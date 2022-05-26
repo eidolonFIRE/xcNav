@@ -130,10 +130,10 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "1bb3447eec13b3bd4e1d3bdca7fb33f37db0be66"
+      resolved-ref: ef0a769c046fbdfc9ea5bdff8542a218846069f1
       url: "git@github.com:eidolonFIRE/flutter_barometer.git"
     source: git
-    version: "0.1.1+4"
+    version: "0.1.2+5"
   flutter_image_compress:
     dependency: "direct main"
     description:
