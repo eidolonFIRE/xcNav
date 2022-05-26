@@ -122,7 +122,7 @@ List<Section> parseRawFile(Uint8List data) {
     final prodCat = d[9];
     final prodParam = d[10];
     final prodName = lutProduct[prodCat.toString() + "," + prodParam.toString()] ?? "Unknown";
-
+    final surfaceType = d[22];
     // debugPrint("Surface Type: ${lutSurfaceType[d[22]] ?? "Unknown"}");
 
     // debugPrint("Surface offset: ${(d[5] << 8) + d[6]}");
@@ -218,7 +218,8 @@ List<Section> parseRawFile(Uint8List data) {
       // }
 
       _s.product = prodName;
-      _s.baroElev = scaleV / 100;
+      // For surface type 103, force to ground level (default ambient barometric pressure)
+      _s.baroElev = surfaceType == 103 ? 1013.25 : scaleV / 100;
       _s.data = bitmap;
     }
   }

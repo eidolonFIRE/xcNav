@@ -49,7 +49,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                     6000.0,
                                 1013.25));
                         var settings = Provider.of<Settings>(context, listen: false);
-                        double myY = Provider.of<MyTelemetry>(context, listen: false).baro?.hectpascal ??
+                        double myBaro = Provider.of<MyTelemetry>(context, listen: false).baro?.hectpascal ??
                             pressureFromElevation(Provider.of<MyTelemetry>(context, listen: false).geo.alt, 1013.25);
                         return Column(
                           // crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -163,7 +163,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                           flex: 3,
                                           child: ClipRect(
                                             child: CustomPaint(
-                                              painter: SoundingPlotThermPainter(sounding.data!, selectedY, myY),
+                                              painter: SoundingPlotThermPainter(sounding.data!, selectedY, myBaro),
                                             ),
                                           ),
                                         ),
@@ -174,7 +174,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                             padding: const EdgeInsets.only(left: 10),
                                             child: ClipRRect(
                                               child: CustomPaint(
-                                                painter: SoundingPlotWindPainter(sounding.data!, selectedY, myY),
+                                                painter: SoundingPlotWindPainter(sounding.data!, selectedY, myBaro),
                                               ),
                                             ),
                                           ),

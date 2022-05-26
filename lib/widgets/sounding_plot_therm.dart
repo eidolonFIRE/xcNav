@@ -16,9 +16,9 @@ class SoundingPlotThermPainter extends CustomPainter {
   final Sounding sounding;
 
   late double? selectedY;
-  late double myY;
+  late double myBaro;
 
-  SoundingPlotThermPainter(this.sounding, this.selectedY, this.myY) {
+  SoundingPlotThermPainter(this.sounding, this.selectedY, this.myBaro) {
     _paintTmp = Paint()
       ..color = Colors.red
       ..style = PaintingStyle.stroke
@@ -150,13 +150,14 @@ class SoundingPlotThermPainter extends CustomPainter {
       canvas.drawLine(Offset(4, selectedY!), Offset(size.width - 4, selectedY!), _paintGrid);
     }
 
-    // --- My Current Isobar
-    myY = max(0, min(size.height, myY));
-    canvas.drawLine(Offset(4, myY), Offset(size.width - 4, myY), _paintGrid..strokeWidth = 2);
+    final myBaroY =
+        max(0, min(size.height, size.height - getElevation(myBaro, 1013.25) * size.height / ceil)).toDouble();
+    canvas.drawLine(Offset(4, myBaroY), Offset(size.width - 4, myBaroY), _paintGrid..strokeWidth = 2);
     var _path = Path();
-    _path.addPolygon([Offset(2, myY + 5), Offset(10, myY), Offset(2, myY - 5)], true);
+    _path.addPolygon([Offset(2, myBaroY + 5), Offset(10, myBaroY), Offset(2, myBaroY - 5)], true);
     _path.addPolygon(
-        [Offset(size.width - 2, myY + 5), Offset(size.width - 10, myY), Offset(size.width - 2, myY - 5)], true);
+        [Offset(size.width - 2, myBaroY + 5), Offset(size.width - 10, myBaroY), Offset(size.width - 2, myBaroY - 5)],
+        true);
     canvas.drawPath(_path, _paintBarb);
   }
 
