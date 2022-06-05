@@ -32,8 +32,7 @@ class FlightLog {
       title = DateFormat("MMM d - yyyy").format(date);
 
       // --- Calculate Stuff
-      durationTime =
-          Duration(milliseconds: samples.last.time - samples[0].time);
+      durationTime = Duration(milliseconds: samples.last.time - samples[0].time);
 
       durationDist = 0;
       for (int i = 0; i < samples.length - 1; i++) {
@@ -79,11 +78,10 @@ class FlightLog {
     const polyColor = "7f0f0f0f";
 
     // generate pallet of styles
-    const numStyles = 16;
+    const numStyles = 1;
     List<String> styles = [];
     for (int i = 0; i < numStyles; i++) {
-      final String lineColor =
-          "ff" + colorWheel(-i / (numStyles - 1) * 2 / 3 + 1 / 3);
+      final String lineColor = "ff" + colorWheel(-i / (max(1, numStyles - 1)) * 2 / 3 + 1 / 3);
 
       styles.add("""<Style id="style$i">
     <LineStyle>
@@ -99,40 +97,14 @@ class FlightLog {
 
     List<String> linestrings = [];
 
-    const step = 6;
-    const velRange = [5, 25];
-    for (int i = 0; i < samples.length; i += step) {
-      // assemble kml point list
-      List<String> points = [];
-      for (int t = 0; t <= step; t++) {
-        if (i + t >= samples.length) continue;
-        final p = samples[i + t];
-        points.add("${p.lng},${p.lat},${p.alt}");
-      }
-      final pointsString = points.join("\n");
+    // assemble kml point list
+    List<String> points = samples.map((p) => "${p.lng},${p.lat},${p.alt}").toList();
+    final pointsString = points.join("\n");
 
-      // calc data for this segment
-      final start = samples[i];
-      final end = samples[min(samples.length - 1, i + step)];
-      final dist =
-          calc.distance(LatLng(start.lat, start.lng), LatLng(end.lat, end.lng));
-      final time = end.time - start.time;
-      final avgSpeed = dist / time * km2Miles;
-
-      // select line style (color) based on the segment's average speed
-      final style = "style" +
-          (max(
-                  0,
-                  min(
-                      numStyles - 1,
-                      (numStyles *
-                              (avgSpeed - velRange[0]) /
-                              (velRange[1] - velRange[0]))
-                          .floor())))
-              .toString();
-      linestrings.add("""<Placemark>
-    <name>$i</name>
-    <styleUrl>#$style</styleUrl>
+    // select line style (color) based on the segment's average speed
+    linestrings.add("""<Placemark>
+    <name>MyPath</name>
+    <styleUrl>#style0</styleUrl>
     <LineString>
     <extrude>1</extrude>
     <tessellate>1</tessellate>
@@ -142,7 +114,6 @@ class FlightLog {
     </coordinates>
     </LineString>
     </Placemark>""");
-    }
 
     return """<?xml version="1.0"?>
     <kml xmlns="http://www.opengis.net/kml/2.2">

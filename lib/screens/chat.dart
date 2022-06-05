@@ -57,23 +57,18 @@ class _ChatState extends State<Chat> {
 
   void sendChatMessage(String text) {
     if (text.trim() != "") {
-      Provider.of<Client>(context, listen: false)
-          .sendchatMessage(text, isEmergency: false);
+      Provider.of<Client>(context, listen: false).sendchatMessage(text, isEmergency: false);
       chatInput.clear();
 
       Provider.of<ChatMessages>(context, listen: false).processSentMessage(
-          DateTime.now().millisecondsSinceEpoch,
-          Provider.of<Profile>(context, listen: false).id ?? "",
-          text,
-          false);
+          DateTime.now().millisecondsSinceEpoch, Provider.of<Profile>(context, listen: false).id ?? "", text, false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
@@ -102,52 +97,32 @@ class _ChatState extends State<Chat> {
                                       )
                                     : SimpleDialogOption(
                                         child: Text(
-                                          msg.startsWith("Emergency:")
-                                              ? msg.substring(11)
-                                              : msg,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline6!
-                                              .merge(TextStyle(
-                                                  color: msg.startsWith(
-                                                          "Emergency:")
-                                                      ? Colors.red
-                                                      : Colors.white)),
+                                          msg.startsWith("Emergency:") ? msg.substring(11) : msg,
+                                          style: Theme.of(context).textTheme.headline6!.merge(TextStyle(
+                                              color: msg.startsWith("Emergency:") ? Colors.red : Colors.white)),
                                         ),
-                                        onPressed: () =>
-                                            Navigator.pop(context, msg),
+                                        onPressed: () => Navigator.pop(context, msg),
                                       ))
                                 .toList());
                       },
-                    ).then(
-                        (value) => {if (value != null) sendChatMessage(value)})
+                    ).then((value) => {if (value != null) sendChatMessage(value)})
                   }),
         ),
         // --- Chat Bubble List
         body: Center(
           child: Consumer<ChatMessages>(builder: (context, chat, child) {
-            // TODO: this isn't super reliable
-            chat.chatLastOpened = DateTime.now().millisecondsSinceEpoch;
-            chat.numUnread = 0;
             return ListView.builder(
                 itemCount: chat.messages.length,
                 reverse: true,
                 itemBuilder: (context, i) {
                   final reversedIndex = chat.messages.length - 1 - i;
                   Message msg = chat.messages[reversedIndex];
-                  Pilot? pilot = Provider.of<Group>(context, listen: false)
-                      .pilots[msg.pilotId];
+                  Pilot? pilot = Provider.of<Group>(context, listen: false).pilots[msg.pilotId];
                   return ChatBubble(
-                    msg.pilotId ==
-                        Provider.of<Profile>(context, listen: false).id,
+                    msg.pilotId == Provider.of<Profile>(context, listen: false).id,
                     msg.text,
-                    AvatarRound(
-                        pilot?.avatar ??
-                            Image.asset("assets/images/default_avatar.png"),
-                        20),
-                    Provider.of<Group>(context, listen: false)
-                        .pilots[msg.pilotId]
-                        ?.name,
+                    AvatarRound(pilot?.avatar ?? Image.asset("assets/images/default_avatar.png"), 20),
+                    Provider.of<Group>(context, listen: false).pilots[msg.pilotId]?.name,
                     msg.timestamp,
                   );
                 });
@@ -166,9 +141,7 @@ class _ChatState extends State<Chat> {
                   controller: chatInput,
                   autofocus: true,
                   focusNode: inputFieldNode,
-                  decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.all(10)),
+                  decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.all(10)),
                   onSubmitted: (value) {
                     sendChatMessage(value);
                     if (inputFieldNode != null) {
@@ -181,10 +154,8 @@ class _ChatState extends State<Chat> {
             ElevatedButton(
                 onPressed: () => {sendChatMessage(chatInput.text)},
                 style: ButtonStyle(
-                  side: MaterialStateProperty.resolveWith<BorderSide>(
-                      (states) => const BorderSide(color: Colors.blue)),
-                  backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                      (states) => Colors.blue),
+                  side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.blue)),
+                  backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.blue),
                 ),
                 child: const Icon(Icons.send)),
           ],

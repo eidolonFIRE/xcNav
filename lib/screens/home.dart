@@ -869,7 +869,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     bubbles.add(chat.messages[i]);
 
                     Timer(const Duration(seconds: numSeconds), () {
-                      // "self destruct" the message after several seconds
+                      // "self destruct" the message after several seconds by triggering a refresh
                       chat.refresh();
                     });
                   } else {
@@ -1080,7 +1080,10 @@ class _MyHomePageState extends State<MyHomePage> {
                         MapButton(
                           size: 60,
                           selected: false,
-                          onPressed: () => {Navigator.pushNamed(context, "/party")},
+                          onPressed: () {
+                            Provider.of<ChatMessages>(context, listen: false).markAllRead();
+                            Navigator.pushNamed(context, "/party");
+                          },
                           child: const Icon(
                             Icons.chat,
                             size: 30,

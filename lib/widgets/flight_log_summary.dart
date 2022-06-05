@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:open_file/open_file.dart';
 
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
@@ -16,8 +16,7 @@ class FlightLogSummary extends StatelessWidget {
   late final LatLngBounds mapBounds;
 
   FlightLogSummary(this.log, this.onDelete, {Key? key}) : super(key: key) {
-    mapBounds =
-        LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
+    mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
     mapBounds.pad(0.2);
     debugPrint("Built log: ${log.filename}");
   }
@@ -37,8 +36,10 @@ class FlightLogSummary extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 4),
                 child: Text(
                   log.title,
-                  style: Theme.of(context).textTheme.headline6!.merge(TextStyle(
-                      color: log.goodFile ? Colors.white : Colors.red)),
+                  style: Theme.of(context)
+                      .textTheme
+                      .headline6!
+                      .merge(TextStyle(color: log.goodFile ? Colors.white : Colors.red)),
                 ),
               ),
               // --- Action buttons
@@ -49,27 +50,29 @@ class FlightLogSummary extends StatelessWidget {
                       visualDensity: VisualDensity.compact,
                       iconSize: 16,
                       onPressed: () {
-                        final filename = DateFormat("yyyy_MM_dd_hh_mm").format(
-                            DateTime.fromMillisecondsSinceEpoch(
-                                log.samples[0].time));
+                        final filename = DateFormat("yyyy_MM_dd_hh_mm")
+                            .format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
                         (Platform.isIOS
                                 ? getApplicationDocumentsDirectory()
-                                : Future(() =>
-                                    Directory('/storage/emulated/0/Documents')))
+                                : Future(() => Directory('/storage/emulated/0/Documents')))
                             .then((Directory path) {
-                          var outFile =
-                              File(path.path + "/xcNav_kml/$filename.kml");
-                          outFile.create(recursive: true).then((value) => value
-                              .writeAsString(log.toKML())
-                              .then((value) => showDialog(
+                          var outFile = File(path.path + "/xcNav_kml/$filename.kml");
+                          outFile
+                              .create(recursive: true)
+                              .then((value) => value.writeAsString(log.toKML()).then((value) => showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
                                         title: const Text("File Exported to:"),
-                                        content: Text(outFile.path),
+                                        content: GestureDetector(
+                                            onTap: () => OpenFile.open(outFile.path),
+                                            child: Text(
+                                              outFile.path,
+                                              style: const TextStyle(
+                                                  color: Colors.blue, decoration: TextDecoration.underline),
+                                            )),
                                         actions: [
                                           IconButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context),
+                                              onPressed: () => Navigator.pop(context),
                                               icon: const Icon(
                                                 Icons.check,
                                                 color: Colors.green,
@@ -92,8 +95,7 @@ class FlightLogSummary extends StatelessWidget {
                             builder: (BuildContext ctx) {
                               return AlertDialog(
                                 title: const Text('Please Confirm'),
-                                content: const Text(
-                                    'Are you sure you want to delete this log?'),
+                                content: const Text('Are you sure you want to delete this log?'),
                                 actions: [
                                   // The "Yes" button
                                   TextButton.icon(
@@ -121,8 +123,7 @@ class FlightLogSummary extends StatelessWidget {
                               );
                             });
                       },
-                      icon:
-                          const Icon(Icons.delete, color: Colors.red, size: 24))
+                      icon: const Icon(Icons.delete, color: Colors.red, size: 24))
                 ],
               )
             ],
@@ -170,19 +171,14 @@ class FlightLogSummary extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Table(
-                    columnWidths: const {
-                      1: FlexColumnWidth(),
-                      2: FlexColumnWidth()
-                    },
+                    columnWidths: const {1: FlexColumnWidth(), 2: FlexColumnWidth()},
                     children: [
                       TableRow(children: [
                         const TableCell(child: Text("Duration")),
                         TableCell(
                             child: log.durationTime != null
                                 ? Text(
-                                    (log.durationTime!.inMilliseconds / 3600000)
-                                            .toStringAsFixed(1) +
-                                        " hr",
+                                    (log.durationTime!.inMilliseconds / 3600000).toStringAsFixed(1) + " hr",
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -196,15 +192,11 @@ class FlightLogSummary extends StatelessWidget {
                             child: log.durationDist != null
                                 ? Text(
                                     convertDistValueCoarse(
-                                                Provider.of<Settings>(context,
-                                                        listen: false)
-                                                    .displayUnitsDist,
+                                                Provider.of<Settings>(context, listen: false).displayUnitsDist,
                                                 log.durationDist!)
                                             .toStringAsFixed(1) +
-                                        unitStrDistCoarse[Provider.of<Settings>(
-                                                context,
-                                                listen: false)
-                                            .displayUnitsDist]!,
+                                        unitStrDistCoarse[
+                                            Provider.of<Settings>(context, listen: false).displayUnitsDist]!,
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -217,16 +209,11 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.maxAlt != null
                                 ? Text(
-                                    convertDistValueFine(
-                                                Provider.of<Settings>(context,
-                                                        listen: false)
-                                                    .displayUnitsDist,
+                                    convertDistValueFine(Provider.of<Settings>(context, listen: false).displayUnitsDist,
                                                 log.maxAlt!)
                                             .toStringAsFixed(1) +
-                                        unitStrDistFine[Provider.of<Settings>(
-                                                context,
-                                                listen: false)
-                                            .displayUnitsDist]!,
+                                        unitStrDistFine[
+                                            Provider.of<Settings>(context, listen: false).displayUnitsDist]!,
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -234,14 +221,10 @@ class FlightLogSummary extends StatelessWidget {
                                     textAlign: TextAlign.end,
                                   )),
                       ]),
-                      const TableRow(children: [
-                        TableCell(child: Text("")),
-                        TableCell(child: Text(""))
-                      ]),
+                      const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
                       const TableRow(children: [
                         TableCell(
-                          child: Text(
-                              "...Request what else you want to see here..."),
+                          child: Text("...Request what else you want to see here..."),
                         ),
                         TableCell(child: Text(""))
                       ])
