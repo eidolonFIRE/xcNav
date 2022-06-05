@@ -7,10 +7,7 @@ class ChatBubble extends StatelessWidget {
   final Widget user;
   final int? timestamp;
 
-  const ChatBubble(
-      this.isMe, this.text, this.user, this.pilotName, this.timestamp,
-      {Key? key})
-      : super(key: key);
+  const ChatBubble(this.isMe, this.text, this.user, this.pilotName, this.timestamp, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,31 +16,23 @@ class ChatBubble extends StatelessWidget {
       child: Column(
         children: [
           Row(
-              mainAxisAlignment:
-                  isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
+              mainAxisAlignment: isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.end,
               // mainAxisSize: MainAxisSize.min,
               mainAxisSize: MainAxisSize.max,
               children: [
                 ConstrainedBox(
-                  constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.8),
+                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 120),
                   child: Card(
                     color: text.toLowerCase().startsWith("emergency:")
                         ? Colors.red
-                        : (isMe
-                            ? Colors.blue
-                            : const Color.fromARGB(255, 230, 230, 230)),
+                        : (isMe ? Colors.blue : const Color.fromARGB(255, 230, 230, 230)),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(10),
-                            bottomLeft: isMe
-                                ? const Radius.circular(1)
-                                : const Radius.circular(10),
+                            bottomLeft: isMe ? const Radius.circular(1) : const Radius.circular(10),
                             topRight: const Radius.circular(10),
-                            bottomRight: isMe
-                                ? const Radius.circular(10)
-                                : const Radius.circular(1))),
+                            bottomRight: isMe ? const Radius.circular(10) : const Radius.circular(1))),
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
@@ -51,8 +40,7 @@ class ChatBubble extends StatelessWidget {
                         maxLines: 15,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.start,
-                        style:
-                            const TextStyle(fontSize: 18, color: Colors.black),
+                        style: const TextStyle(fontSize: 18, color: Colors.black),
                       ),
                     ),
                   ),
@@ -64,8 +52,7 @@ class ChatBubble extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 50, right: 50),
             child: Row(
-              mainAxisAlignment:
-                  isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
+              mainAxisAlignment: isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
               children: [
                 if (pilotName != null)
                   Text(
