@@ -816,9 +816,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         MarkerLayerOptions(
                           markers: Provider.of<Group>(context)
                               .pilots
-                              // Don't see locations older than 5minutes
+                              // Don't see locations older than 10minutes
                               .values
-                              .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
+                              .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
                               .toList()
                               .map((pilot) => Marker(
                                   point: pilot.geo.latLng,
@@ -827,8 +827,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                   builder: (ctx) => Container(
                                       transformAlignment: const Alignment(0, 0),
                                       transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
-                                      child: AvatarRound(pilot.avatar, 40,
-                                          hdg: pilot.geo.hdg + mapController.rotation * pi / 180))))
+                                      child: AvatarRound(
+                                        pilot.avatar,
+                                        40,
+                                        hdg: pilot.geo.hdg + mapController.rotation * pi / 180,
+                                        relAlt: pilot.geo.alt - myTelemetry.geo.alt,
+                                      ))))
                               .toList(),
                         ),
 

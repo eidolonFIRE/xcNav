@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/leave_group.dart';
-import 'package:xcnav/dialogs/selectPastGroup.dart';
+import 'package:xcnav/dialogs/select_past_group.dart';
 
 // Providers
 import 'package:xcnav/providers/group.dart';
@@ -56,9 +56,7 @@ class _GroupDetailsState extends State<GroupDetails> {
             const VerticalDivider(
               thickness: 2,
             ),
-            IconButton(
-                onPressed: () => {selectPastGroup(context)},
-                icon: const Icon(Icons.history)),
+            IconButton(onPressed: () => {selectPastGroup(context)}, icon: const Icon(Icons.history)),
             IconButton(
                 onPressed: () => {promptLeaveGroup(context)},
                 icon: const Icon(
@@ -76,49 +74,29 @@ class _GroupDetailsState extends State<GroupDetails> {
                             _p.name,
                             style: Theme.of(context).textTheme.headline5,
                           ),
-                          subtitle: (_p.geo.time >
-                                  DateTime.now().millisecondsSinceEpoch -
-                                      5000 * 60)
+                          subtitle: (_p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
                               ? Text.rich(TextSpan(children: [
                                   // dist
                                   TextSpan(
                                       style: valueStyle,
-                                      text: convertDistValueCoarse(
-                                              settings.displayUnitsDist,
-                                              _p.geo.distanceTo(
-                                                  Provider.of<MyTelemetry>(
-                                                          context)
-                                                      .geo))
+                                      text: convertDistValueCoarse(settings.displayUnitsDist,
+                                              _p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo))
                                           .toStringAsFixed(1)),
-                                  TextSpan(
-                                      style: unitStyle,
-                                      text: unitStrDistCoarse[
-                                          settings.displayUnitsDist]),
-                                  TextSpan(
-                                      style: fillStyle, text: " away, going "),
+                                  TextSpan(style: unitStyle, text: unitStrDistCoarse[settings.displayUnitsDist]),
+                                  TextSpan(style: fillStyle, text: " away, going "),
                                   // speed
                                   TextSpan(
                                       style: valueStyle,
-                                      text: convertSpeedValue(
-                                              settings.displayUnitsSpeed,
-                                              _p.geo.spd)
-                                          .toStringAsFixed(0)),
-                                  TextSpan(
-                                      style: unitStyle,
-                                      text: unitStrSpeed[
-                                          settings.displayUnitsSpeed]),
+                                      text:
+                                          convertSpeedValue(settings.displayUnitsSpeed, _p.geo.spd).toStringAsFixed(0)),
+                                  TextSpan(style: unitStyle, text: unitStrSpeed[settings.displayUnitsSpeed]),
                                   TextSpan(style: fillStyle, text: ", at "),
                                   // alt
                                   TextSpan(
                                       style: valueStyle,
-                                      text: convertDistValueFine(
-                                              settings.displayUnitsDist,
-                                              _p.geo.alt)
+                                      text: convertDistValueFine(settings.displayUnitsDist, _p.geo.alt)
                                           .toStringAsFixed(0)),
-                                  TextSpan(
-                                      style: unitStyle,
-                                      text: unitStrDistFine[
-                                          settings.displayUnitsDist]),
+                                  TextSpan(style: unitStyle, text: unitStrDistFine[settings.displayUnitsDist]),
                                   // TextSpan(style: fillStyle, text: " alt"),
                                 ]))
                               : const Text("( outdated telemetry )"),
