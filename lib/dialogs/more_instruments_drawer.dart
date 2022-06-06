@@ -31,35 +31,21 @@ Widget moreInstrumentsDrawer() {
                 leading: const Icon(Icons.flight_takeoff),
                 title: myTelemetry.takeOff != null
                     ? Builder(builder: (context) {
-                        int remMin = ((DateTime.now().millisecondsSinceEpoch -
-                                    myTelemetry
-                                        .takeOff!.millisecondsSinceEpoch) /
-                                60000)
-                            .ceil();
-                        String value = (remMin >= 60)
-                            ? (remMin / 60).toStringAsFixed(1)
-                            : remMin.toString();
+                        int remMin =
+                            ((DateTime.now().millisecondsSinceEpoch - myTelemetry.takeOff!.millisecondsSinceEpoch) /
+                                    60000)
+                                .ceil();
+                        String value = (remMin >= 60) ? (remMin / 60).toStringAsFixed(1) : remMin.toString();
                         String unit = (remMin >= 60) ? " hr" : " min";
                         return Text.rich(TextSpan(children: [
-                          const TextSpan(
-                              text: "Launched   ",
-                              style: TextStyle(color: Colors.grey)),
+                          const TextSpan(text: "Launched   ", style: TextStyle(color: Colors.grey)),
                           TextSpan(
-                              text: DateFormat("h:mm a")
-                                  .format(myTelemetry.takeOff!),
+                              text: DateFormat("h:mm a").format(myTelemetry.takeOff!),
                               style: Theme.of(context).textTheme.headline5),
-                          const TextSpan(
-                              text: " ,    ",
-                              style: TextStyle(color: Colors.grey)),
-                          TextSpan(
-                              text: value,
-                              style: Theme.of(context).textTheme.headline5),
-                          TextSpan(
-                              text: unit,
-                              style: Theme.of(context).textTheme.headline6),
-                          const TextSpan(
-                              text: "  ago.",
-                              style: TextStyle(color: Colors.grey)),
+                          const TextSpan(text: " ,    ", style: TextStyle(color: Colors.grey)),
+                          TextSpan(text: value, style: Theme.of(context).textTheme.headline5),
+                          TextSpan(text: unit, style: Theme.of(context).textTheme.headline6),
+                          const TextSpan(text: "  ago.", style: TextStyle(color: Colors.grey)),
                         ]));
                       })
                     : const Text(
@@ -77,15 +63,8 @@ Widget moreInstrumentsDrawer() {
                     color: Colors.grey[800],
                     child: (myTelemetry.fuel > 0)
                         ? Builder(builder: (context) {
-                            int remMin = min(
-                                999 * 60,
-                                (myTelemetry.fuel /
-                                        myTelemetry.fuelBurnRate *
-                                        60)
-                                    .ceil());
-                            String value = (remMin >= 60)
-                                ? (remMin / 60).toStringAsFixed(1)
-                                : remMin.toString();
+                            int remMin = min(999 * 60, (myTelemetry.fuel / myTelemetry.fuelBurnRate * 60).ceil());
+                            String value = (remMin >= 60) ? (remMin / 60).toStringAsFixed(1) : remMin.toString();
                             String unit = (remMin >= 60) ? "hr" : "min";
                             return Row(
                               mainAxisSize: MainAxisSize.max,
@@ -96,17 +75,11 @@ Widget moreInstrumentsDrawer() {
                                     children: [
                                       TextSpan(
                                           text: convertFuelValue(
-                                                  Provider.of<Settings>(context)
-                                                      .displayUnitsFuel,
-                                                  myTelemetry.fuel)
+                                                  Provider.of<Settings>(context).displayUnitsFuel, myTelemetry.fuel)
                                               .toStringAsFixed(1),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline4),
+                                          style: Theme.of(context).textTheme.headline4),
                                       TextSpan(
-                                          text: unitStrFuel[
-                                              Provider.of<Settings>(context)
-                                                  .displayUnitsFuel],
+                                          text: unitStrFuel[Provider.of<Settings>(context).displayUnitsFuel],
                                           style: instrLabel)
                                     ],
                                   ),
@@ -115,11 +88,7 @@ Widget moreInstrumentsDrawer() {
                                 Text.rich(
                                   TextSpan(
                                     children: [
-                                      TextSpan(
-                                          text: value,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline4),
+                                      TextSpan(text: value, style: Theme.of(context).textTheme.headline4),
                                       TextSpan(text: unit, style: instrLabel)
                                     ],
                                   ),
@@ -170,25 +139,17 @@ Widget moreInstrumentsDrawer() {
                                         style: const TextStyle(fontSize: 30),
                                         text: printValue(
                                             value: convertSpeedValue(
-                                                Provider.of<Settings>(context,
-                                                        listen: false)
-                                                    .displayUnitsSpeed,
+                                                Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
                                                 wind.result!.airspeed),
                                             digits: 3,
-                                            decimals: Provider.of<Settings>(
-                                                            context,
-                                                            listen: false)
-                                                        .displayUnitsSpeed ==
+                                            decimals: Provider.of<Settings>(context, listen: false).displayUnitsSpeed ==
                                                     DisplayUnitsSpeed.mps
                                                 ? 1
                                                 : 0)),
                                     TextSpan(
-                                        style: const TextStyle(
-                                            fontSize: 14, color: Colors.grey),
+                                        style: const TextStyle(fontSize: 14, color: Colors.grey),
                                         text: unitStrSpeed[
-                                            Provider.of<Settings>(context,
-                                                    listen: false)
-                                                .displayUnitsSpeed]!)
+                                            Provider.of<Settings>(context, listen: false).displayUnitsSpeed]!)
                                   ]))
                                 : const Text("?"),
                           ),
@@ -202,25 +163,17 @@ Widget moreInstrumentsDrawer() {
                                         ),
                                         text: printValue(
                                             value: convertSpeedValue(
-                                                Provider.of<Settings>(context,
-                                                        listen: false)
-                                                    .displayUnitsSpeed,
+                                                Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
                                                 wind.result!.windSpd),
                                             digits: 3,
-                                            decimals: Provider.of<Settings>(
-                                                            context,
-                                                            listen: false)
-                                                        .displayUnitsSpeed ==
+                                            decimals: Provider.of<Settings>(context, listen: false).displayUnitsSpeed ==
                                                     DisplayUnitsSpeed.mps
                                                 ? 1
                                                 : 0)),
                                     TextSpan(
-                                        style: const TextStyle(
-                                            fontSize: 14, color: Colors.grey),
+                                        style: const TextStyle(fontSize: 14, color: Colors.grey),
                                         text: unitStrSpeed[
-                                            Provider.of<Settings>(context,
-                                                    listen: false)
-                                                .displayUnitsSpeed]!)
+                                            Provider.of<Settings>(context, listen: false).displayUnitsSpeed]!)
                                   ]))
                                 : const Text("?"),
                           ),
@@ -229,34 +182,24 @@ Widget moreInstrumentsDrawer() {
                             children: [
                               Text("Hold",
                                   style: TextStyle(
-                                    color: wind.isRecording
-                                        ? Colors.grey[700]
-                                        : Colors.white,
+                                    color: wind.isRecording ? Colors.grey[700] : Colors.white,
                                   )),
                               Switch(
                                   value: wind.isRecording,
-                                  inactiveThumbImage: IconImageProvider(
-                                      Icons.pause,
-                                      color: Colors.black),
-                                  activeThumbImage: IconImageProvider(
-                                      Icons.play_arrow,
-                                      color: Colors.black),
+                                  inactiveThumbImage: IconImageProvider(Icons.pause, color: Colors.black),
+                                  activeThumbImage: IconImageProvider(Icons.play_arrow, color: Colors.black),
                                   onChanged: (value) {
                                     if (value) {
-                                      wind.windSampleFirst =
-                                          myTelemetry.recordGeo.length - 1;
-                                      wind.windSampleLast = null;
+                                      wind.windSampleFirst = myTelemetry.recordGeo.length - 1;
+                                      wind.clearResult();
                                     } else {
-                                      wind.windSampleLast =
-                                          myTelemetry.recordGeo.length - 1;
+                                      wind.windSampleLast = myTelemetry.recordGeo.length - 1;
                                     }
                                     wind.isRecording = value;
                                   }),
                               Text("Active",
                                   style: TextStyle(
-                                    color: wind.isRecording
-                                        ? Colors.white
-                                        : Colors.grey[700],
+                                    color: wind.isRecording ? Colors.white : Colors.grey[700],
                                   )),
                             ],
                           ),
@@ -281,10 +224,22 @@ Widget moreInstrumentsDrawer() {
                               wind.result == null
                                   ? Center(
                                       child: wind.isRecording
-                                          ? const CircularProgressIndicator(
-                                              strokeWidth: 3,
+                                          ? Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: const [
+                                                Padding(
+                                                  padding: EdgeInsets.all(10.0),
+                                                  child: Text("Slowly Turn 1/4 Circle"),
+                                                ),
+                                                CircularProgressIndicator(
+                                                  strokeWidth: 3,
+                                                )
+                                              ],
                                             )
-                                          : const Text("???"))
+                                          : const Text(
+                                              "Activate to\nBegin",
+                                              textAlign: TextAlign.center,
+                                            ))
                                   : ClipRect(
                                       child: CustomPaint(
                                         painter: WindPlotPainter(
@@ -297,18 +252,10 @@ Widget moreInstrumentsDrawer() {
                                             wind.isRecording),
                                       ),
                                     ),
-                              const Align(
-                                  alignment: Alignment.topCenter,
-                                  child: Text("N")),
-                              const Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: Text("S")),
-                              const Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text("W")),
-                              const Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Text("E")),
+                              const Align(alignment: Alignment.topCenter, child: Text("N")),
+                              const Align(alignment: Alignment.bottomCenter, child: Text("S")),
+                              const Align(alignment: Alignment.centerLeft, child: Text("W")),
+                              const Align(alignment: Alignment.centerRight, child: Text("E")),
                             ],
                           ),
                         ),
@@ -330,28 +277,21 @@ Widget moreInstrumentsDrawer() {
                       charts.Series<Geo, DateTime>(
                         id: "Altitude",
                         data: myTelemetry.recordGeo,
-                        colorFn: (_, __) =>
-                            charts.MaterialPalette.blue.shadeDefault,
-                        domainFn: (value, _) =>
-                            DateTime.fromMillisecondsSinceEpoch(value.time),
+                        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+                        domainFn: (value, _) => DateTime.fromMillisecondsSinceEpoch(value.time),
                         measureFn: (value, _) => convertDistValueFine(
-                            Provider.of<Settings>(context, listen: false)
-                                .displayUnitsDist,
-                            value.alt),
+                            Provider.of<Settings>(context, listen: false).displayUnitsDist, value.alt),
                       )
                     ],
-                    defaultRenderer: charts.LineRendererConfig(
-                        includeArea: true, stacked: true),
+                    defaultRenderer: charts.LineRendererConfig(includeArea: true, stacked: true),
                     animate: false,
 
                     behaviors: [
                       charts.ChartTitle(
                           "Altitude   (${unitStrDistFine[Provider.of<Settings>(context).displayUnitsDist]} )",
                           behaviorPosition: charts.BehaviorPosition.start,
-                          titleOutsideJustification:
-                              charts.OutsideJustification.middleDrawArea,
-                          titleStyleSpec: const charts.TextStyleSpec(
-                              color: charts.MaterialPalette.white)),
+                          titleOutsideJustification: charts.OutsideJustification.middleDrawArea,
+                          titleStyleSpec: const charts.TextStyleSpec(color: charts.MaterialPalette.white)),
                     ],
 
                     domainAxis: const charts.DateTimeAxisSpec(
@@ -363,13 +303,11 @@ Widget moreInstrumentsDrawer() {
                                 color: charts.MaterialPalette.white),
 
                             // Change the line colors to match text color.
-                            lineStyle: charts.LineStyleSpec(
-                                color: charts.MaterialPalette.white))),
+                            lineStyle: charts.LineStyleSpec(color: charts.MaterialPalette.white))),
 
                     /// Assign a custom style for the measure axis.
                     primaryMeasureAxis: const charts.NumericAxisSpec(
-                        tickProviderSpec: charts.BasicNumericTickProviderSpec(
-                            desiredMinTickCount: 4),
+                        tickProviderSpec: charts.BasicNumericTickProviderSpec(desiredMinTickCount: 4),
                         renderSpec: charts.GridlineRendererSpec(
 
                             // Tick and Label styling here.
@@ -378,8 +316,7 @@ Widget moreInstrumentsDrawer() {
                                 color: charts.MaterialPalette.white),
 
                             // Change the line colors to match text color.
-                            lineStyle: charts.LineStyleSpec(
-                                color: charts.MaterialPalette.white))),
+                            lineStyle: charts.LineStyleSpec(color: charts.MaterialPalette.white))),
                   ),
                 ),
               ),

@@ -2,12 +2,6 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ui' as UI;
-
-import 'package:flutter/services.dart';
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/weather.dart';
 
 class SoundingPlotWindPainter extends CustomPainter {

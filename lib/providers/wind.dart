@@ -33,12 +33,18 @@ class Wind with ChangeNotifier {
   int? windSampleFirst;
   int? windSampleLast;
 
-  /// At 5s/sample, this is 20minutes
-  static const maxSamples = 240;
+  /// At 5s/sample, this is 10minutes
+  static const maxSamples = 120;
 
   bool get isRecording => _isRecording;
   set isRecording(bool value) {
     _isRecording = value;
+    notifyListeners();
+  }
+
+  void clearResult() {
+    windSampleLast = null;
+    _result = null;
     notifyListeners();
   }
 
@@ -63,24 +69,33 @@ class Wind with ChangeNotifier {
 
       final List<Geo> samples = myTelemetry.recordGeo.sublist(firstIndex, windSampleLast);
       if (samples.isNotEmpty) {
-        final samplesX = samples.map((e) => cos(e.hdg - pi / 2) * e.spd).toList();
-        final samplesY = samples.map((e) => sin(e.hdg - pi / 2) * e.spd).toList();
+        // Check sampled field-of-view is sufficient for confidence
+        var prev = samples.first.hdg;
+        var left = prev;
+        var right = prev;
+        for (var each in samples) {
+          var cur = each.hdg;
+          while (cur - prev > pi) {
+            cur -= 2 * pi;
+          }
+          while (cur - prev < -pi) {
+            cur += 2 * pi;
+          }
+          left = min(left, cur);
+          right = max(right, cur);
+          prev = cur;
+        }
+        final fov = right - left;
+        // debugPrint("FOV: $fov  (${samples.length} samples)");
 
-        final maxSpd = samples.reduce((a, b) => a.spd > b.spd ? a : b).spd * 1.1;
-
-        solve(samplesX, samplesY, maxSpd);
+        if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
       }
     });
   }
 
   /// #Solve wind direction from GPS samples.
   /// https://people.cas.uab.edu/~mosya/cl/
-  void solve(List<double> samplesX, List<double> samplesY, double maxSpd) {
-    // massage the samples into cartesian
-    final xMean = samplesX.reduce((a, b) => a + b) / samplesX.length;
-    final yMean = samplesY.reduce((a, b) => a + b) / samplesY.length;
-
-    // run the algorithm
+  void solve(List<Geo> samples) {
     double mXX = 0;
     double mYY = 0;
     double mXY = 0;
@@ -88,6 +103,14 @@ class Wind with ChangeNotifier {
     double mYZ = 0;
     double mZZ = 0;
 
+    // Transform to cartesian
+    final samplesX = samples.map((e) => cos(e.hdg - pi / 2) * e.spd).toList();
+    final samplesY = samples.map((e) => sin(e.hdg - pi / 2) * e.spd).toList();
+    final maxSpd = samples.reduce((a, b) => a.spd > b.spd ? a : b).spd * 1.1;
+
+    // Remove DC offset (translate to cener over origin)
+    final xMean = samplesX.reduce((a, b) => a + b) / samplesX.length;
+    final yMean = samplesY.reduce((a, b) => a + b) / samplesY.length;
     for (int i = 0; i < samplesX.length; i++) {
       final xI = samplesX[i] - xMean;
       final yI = samplesY[i] - yMean;
@@ -124,8 +147,9 @@ class Wind with ChangeNotifier {
     for (int iter = 1; iter < iterMax; iter++) {
       double yold = ynew;
       ynew = a0 + xnew * (a1 + xnew * (a2 + xnew * a3));
+      // debugPrint("ynew: $ynew, xnew: $xnew");
       if ((ynew).abs() > (yold).abs()) {
-        debugPrint("Newton-Taubin goes wrong direction: |ynew| > |yold|");
+        // debugPrint("Newton-Taubin goes wrong direction: |ynew| > |yold|");
         xnew = 0;
         break;
       }
@@ -134,11 +158,11 @@ class Wind with ChangeNotifier {
       xnew = xold - ynew / dY;
       if (((xnew - xold) / xnew).abs() < epsilon) break;
       if (iter >= iterMax) {
-        debugPrint("Newton-Taubin will not converge");
+        // debugPrint("Newton-Taubin will not converge");
         xnew = 0;
       }
       if (xnew < 0) {
-        debugPrint("Newton-Taubin negative root:  x=$xnew");
+        // debugPrint("Newton-Taubin negative root:  x=$xnew");
         xnew = 0;
       }
     }

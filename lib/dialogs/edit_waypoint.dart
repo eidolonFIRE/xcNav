@@ -19,8 +19,7 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
   if (waypointIndex == null) {
     currentWp = Provider.of<ActivePlan>(context, listen: false).selectedWp;
   } else {
-    currentWp = Provider.of<ActivePlan>(context, listen: false)
-        .waypoints[waypointIndex];
+    currentWp = Provider.of<ActivePlan>(context, listen: false).waypoints[waypointIndex];
   }
 
   debugPrint("$waypointIndex");
@@ -38,13 +37,11 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
   showDialog(
       context: context,
       builder: (context) {
-        Color? selectedColor =
-            isNew ? null : Color(currentWp?.color ?? Colors.black.value);
+        Color? selectedColor = isNew ? null : Color(currentWp?.color ?? Colors.black.value);
         String? selectedIcon = isNew ? null : currentWp?.icon;
 
-        bool showIconOptions = isNew
-            ? (latlngs.length == 1)
-            : (currentWp != null ? currentWp.latlng.length <= 1 : true);
+        bool showIconOptions =
+            isNew ? (latlngs.length == 1) : (currentWp != null ? currentWp.latlng.length <= 1 : true);
 
         return StatefulBuilder(builder: (context, setState) {
           // --- Build color selection buttons
@@ -70,21 +67,17 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                   color: selectedIcon == key ? selectedColor : Colors.grey,
                   icon: Container(
                     decoration: BoxDecoration(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(20)),
+                        borderRadius: const BorderRadius.all(Radius.circular(20)),
                         border: Border.all(
                             style: BorderStyle.solid,
                             width: 2,
-                            color: (selectedIcon == key)
-                                ? Colors.white
-                                : Colors.transparent)),
+                            color: (selectedIcon == key) ? Colors.white : Colors.transparent)),
                     child: Padding(
                       padding: const EdgeInsets.all(4.0),
                       child: Icon(
                         value,
                         size: 30,
-                        color:
-                            (selectedIcon == key) ? Colors.white : Colors.grey,
+                        color: (selectedIcon == key) ? Colors.white : Colors.grey,
                       ),
                     ),
                   ),
@@ -145,10 +138,7 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                       ),
                       label: Text(
                         "Edit Path Points",
-                        style: Theme.of(context)
-                            .textTheme
-                            .button!
-                            .merge(const TextStyle(fontSize: 20)),
+                        style: Theme.of(context).textTheme.button!.merge(const TextStyle(fontSize: 20)),
                       ))
               ],
             ),
@@ -159,14 +149,13 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                     if (newWaypointName.text.isNotEmpty) {
                       if (isNew) {
                         // --- Make new waypoint
-                        Provider.of<ActivePlan>(context, listen: false)
-                            .insertWaypoint(null, newWaypointName.text, latlngs,
-                                false, selectedIcon, selectedColor?.value);
+                        var plan = Provider.of<ActivePlan>(context, listen: false);
+                        plan.insertWaypoint(plan.waypoints.length, newWaypointName.text, latlngs, false, selectedIcon,
+                            selectedColor?.value);
                       } else {
                         // --- Update selected waypoint
                         Provider.of<ActivePlan>(context, listen: false)
-                            .updateWaypoint(null, newWaypointName.text,
-                                selectedIcon, selectedColor?.value, latlngs);
+                            .updateWaypoint(null, newWaypointName.text, selectedIcon, selectedColor?.value, latlngs);
                       }
                       Navigator.pop(context);
                     }

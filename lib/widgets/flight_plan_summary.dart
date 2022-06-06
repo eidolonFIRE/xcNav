@@ -51,8 +51,10 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                 padding: const EdgeInsets.only(left: 4),
                 child: Text(
                   widget.plan.title,
-                  style: Theme.of(context).textTheme.headline6!.merge(TextStyle(
-                      color: widget.plan.goodFile ? Colors.white : Colors.red)),
+                  style: Theme.of(context)
+                      .textTheme
+                      .headline6!
+                      .merge(TextStyle(color: widget.plan.goodFile ? Colors.white : Colors.red)),
                 ),
               ),
               // --- Action buttons
@@ -87,15 +89,13 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                             builder: (BuildContext ctx) {
                               return AlertDialog(
                                 title: const Text('Please Confirm'),
-                                content: const Text(
-                                    'Are you sure you want to delete this plan?'),
+                                content: const Text('Are you sure you want to delete this plan?'),
                                 actions: [
                                   // The "Yes" button
                                   TextButton.icon(
                                       onPressed: () {
                                         // Delete Log File
-                                        File planFile =
-                                            File(widget.plan.filename);
+                                        File planFile = File(widget.plan.filename);
                                         planFile.exists().then((value) {
                                           planFile.delete();
                                           Navigator.of(context).pop();
@@ -156,21 +156,13 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                                 ),
                                 MarkerLayerOptions(
                                   markers: widget.plan.waypoints
-                                      .where(
-                                          (value) => value.latlng.length == 1)
+                                      .where((value) => value.latlng.length == 1)
                                       .mapIndexed((i, e) => Marker(
                                           point: e.latlng[0],
                                           height: i == selectedIndex ? 40 : 30,
-                                          width:
-                                              (i == selectedIndex ? 40 : 30) *
-                                                  2 /
-                                                  3,
-                                          builder: (context) => Center(
-                                              child: MapMarker(
-                                                  e,
-                                                  i == selectedIndex
-                                                      ? 40
-                                                      : 30))))
+                                          width: (i == selectedIndex ? 40 : 30) * 2 / 3,
+                                          builder: (context) =>
+                                              Center(child: MapMarker(e, i == selectedIndex ? 40 : 30))))
                                       .toList(),
                                 ),
                                 // Flight plan markers
@@ -181,8 +173,7 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                                       .mapIndexed((i, e) => Polyline(
                                           points: e.latlng,
                                           strokeWidth: 6,
-                                          color: Color(
-                                              e.color ?? Colors.black.value)))
+                                          color: Color(e.color ?? Colors.black.value)))
                                       .toList(),
                                 ),
                                 // TODO: show other things like take-off, landing, and flight plan
@@ -201,10 +192,7 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Table(
-                          columnWidths: const {
-                            1: FlexColumnWidth(),
-                            2: FlexColumnWidth()
-                          },
+                          columnWidths: const {1: FlexColumnWidth(), 2: FlexColumnWidth()},
                           children: [
                             // TableRow(children: [
                             //   const TableCell(child: Text("Duration")),
@@ -268,14 +256,14 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                   },
                   onAdd: () {
                     debugPrint("Add waypoint $i to active");
-                    Provider.of<ActivePlan>(context, listen: false)
-                        .insertWaypoint(
-                            null,
-                            widget.plan.waypoints[i].name,
-                            widget.plan.waypoints[i].latlng,
-                            widget.plan.waypoints[i].isOptional,
-                            widget.plan.waypoints[i].icon,
-                            widget.plan.waypoints[i].color);
+                    var plan = Provider.of<ActivePlan>(context, listen: false);
+                    plan.insertWaypoint(
+                        plan.waypoints.length,
+                        widget.plan.waypoints[i].name,
+                        widget.plan.waypoints[i].latlng,
+                        widget.plan.waypoints[i].isOptional,
+                        widget.plan.waypoints[i].icon,
+                        widget.plan.waypoints[i].color);
                   },
                   isSelected: i == selectedIndex,
                 ),

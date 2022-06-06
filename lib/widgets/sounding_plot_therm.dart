@@ -2,7 +2,6 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/weather.dart';
 
 class SoundingPlotThermPainter extends CustomPainter {
@@ -108,7 +107,7 @@ class SoundingPlotThermPainter extends CustomPainter {
         final newTemp = prevTemp + (p - prevP) * moistGradientT(p, prevTemp);
 
         final x = toX(newTemp - celsiusToK);
-        ;
+
         _points.add(Offset(x + skew * y, size.height - y));
         prevP = p;
         prevTemp = newTemp;

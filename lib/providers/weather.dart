@@ -11,13 +11,13 @@ import 'package:xcnav/models/grib2.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 
 // Gas constant for dry air at the surface of the Earth
-const Rd = 287;
+const rd = 287;
 // Specific heat at constant pressure for dry air
-const Cpd = 1005;
+const cpd = 1005;
 // Molecular weight ratio
 const epsilon = 18.01528 / 28.9644;
 // Heat of vaporization of water
-const Lv = 2501000;
+const lv = 2501000;
 // Ratio of the specific gas constant of dry air to the specific gas constant for water vapour
 const satPressure0c = 6.112;
 // C + celsiusToK -> K
@@ -28,7 +28,7 @@ const g = 9.80665;
 /// Computes the temperature at the given pressure assuming dry processes.
 /// t0 is the starting temperature at p0 (degree Celsius).
 double dryLapse(double p, double t0, double p0) {
-  return (t0 + celsiusToK) * pow(p / p0, Rd / Cpd) - celsiusToK;
+  return (t0 + celsiusToK) * pow(p / p0, rd / cpd) - celsiusToK;
 }
 
 double pressureFromElevation(double e, double refp) {
@@ -39,7 +39,7 @@ double pressureFromElevation(double e, double refp) {
 double getElevation(double p, double p0) {
   const t0 = 288.15;
   //const p0 = 1013.25;
-  return (t0 / L) * (pow(p / p0, (-L * Rd) / g) - 1);
+  return (t0 / L) * (pow(p / p0, (-L * rd) / g) - 1);
 }
 
 /// Computes the mixing ration of a gas.
@@ -61,8 +61,8 @@ double saturationVaporPressure(double tK) {
 /// Computes the temperature gradient assuming liquid saturation process.
 double moistGradientT(double p, double tK) {
   final rs = saturationMixingRatio(p, tK);
-  final n = Rd * tK + Lv * rs;
-  final d = Cpd + (pow(Lv, 2) * rs * epsilon) / (Rd * pow(tK, 2));
+  final n = rd * tK + lv * rs;
+  final d = cpd + (pow(lv, 2) * rs * epsilon) / (rd * pow(tK, 2));
   return (1 / p) * (n / d);
 }
 
@@ -185,7 +185,7 @@ class Weather with ChangeNotifier {
     // forecast ahead number of hours
     final aheadTime = (DateTime.now().toUtc().difference(genTime).inHours).floor().toString().padLeft(2, "0");
     String uri =
-        "https://nomads.ncep.noaa.gov/cgi-bin/filter_nam_conusnest.pl?file=nam.t${genTime.hour.toString().padLeft(2, "0")}z.conusnest.hiresf${aheadTime}.tm00.grib2&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_1000_mb=on&lev_500_mb=on&lev_525_mb=on&lev_550_mb=on&lev_575_mb=on&lev_600_mb=on&lev_625_mb=on&lev_650_mb=on&lev_675_mb=on&lev_700_mb=on&lev_725_mb=on&lev_750_mb=on&lev_775_mb=on&lev_800_mb=on&lev_825_mb=on&lev_850_mb=on&lev_875_mb=on&lev_900_mb=on&lev_925_mb=on&lev_950_mb=on&lev_975_mb=on&var_RH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=${bounds.left.toStringAsFixed(2)}&rightlon=${bounds.right.toStringAsFixed(2)}&toplat=${bounds.bottom.toStringAsFixed(2)}&bottomlat=${bounds.top.toStringAsFixed(2)}&dir=%2Fnam.$dateStr";
+        "https://nomads.ncep.noaa.gov/cgi-bin/filter_nam_conusnest.pl?file=nam.t${genTime.hour.toString().padLeft(2, "0")}z.conusnest.hiresf$aheadTime.tm00.grib2&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_1000_mb=on&lev_500_mb=on&lev_525_mb=on&lev_550_mb=on&lev_575_mb=on&lev_600_mb=on&lev_625_mb=on&lev_650_mb=on&lev_675_mb=on&lev_700_mb=on&lev_725_mb=on&lev_750_mb=on&lev_775_mb=on&lev_800_mb=on&lev_825_mb=on&lev_850_mb=on&lev_875_mb=on&lev_900_mb=on&lev_925_mb=on&lev_950_mb=on&lev_975_mb=on&var_RH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=${bounds.left.toStringAsFixed(2)}&rightlon=${bounds.right.toStringAsFixed(2)}&toplat=${bounds.bottom.toStringAsFixed(2)}&bottomlat=${bounds.top.toStringAsFixed(2)}&dir=%2Fnam.$dateStr";
     debugPrint(uri);
     final response = await http.get(Uri.parse(uri));
 

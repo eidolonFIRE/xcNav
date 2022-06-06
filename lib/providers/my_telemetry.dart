@@ -15,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 
-class MyTelemetry with ChangeNotifier {
+class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo geo = Geo();
 
   /// Liters
@@ -46,13 +46,20 @@ class MyTelemetry with ChangeNotifier {
   bool stationFound = false;
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached && inFlight) saveFlight();
+  }
+
+  @override
   void dispose() {
     _save();
+    WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
   }
 
   MyTelemetry() {
     _load();
+    WidgetsBinding.instance!.addObserver(this);
   }
 
   void _load() async {

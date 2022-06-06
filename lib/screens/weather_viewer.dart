@@ -144,44 +144,62 @@ class _WeatherViewerState extends State<WeatherViewer> {
                             Padding(
                               padding: const EdgeInsets.only(left: 10, right: 10),
                               child: SizedBox(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: MediaQuery.of(context).size.width,
-                                  child: Listener(
+                                width: MediaQuery.of(context).size.width,
+                                height: MediaQuery.of(context).size.width,
+                                child: Listener(
                                     behavior: HitTestBehavior.opaque,
                                     onPointerDown: (e) => setState(() {
-                                      selectedY = e.localPosition.dy;
-                                    }),
+                                          selectedY = e.localPosition.dy;
+                                        }),
                                     onPointerMove: (e) => setState(() {
-                                      selectedY = e.localPosition.dy;
-                                    }),
-                                    child: Flex(
-                                      direction: Axis.horizontal,
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      children: [
-                                        Flexible(
-                                          fit: FlexFit.tight,
-                                          flex: 3,
-                                          child: ClipRect(
-                                            child: CustomPaint(
-                                              painter: SoundingPlotThermPainter(sounding.data!, selectedY, myBaro),
-                                            ),
-                                          ),
-                                        ),
-                                        Flexible(
-                                          fit: FlexFit.tight,
-                                          flex: 1,
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(left: 10),
-                                            child: ClipRRect(
+                                          selectedY = e.localPosition.dy;
+                                        }),
+                                    child: Stack(fit: StackFit.loose, children: [
+                                      Flex(
+                                        direction: Axis.horizontal,
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          Flexible(
+                                            fit: FlexFit.tight,
+                                            flex: 3,
+                                            child: ClipRect(
                                               child: CustomPaint(
-                                                painter: SoundingPlotWindPainter(sounding.data!, selectedY, myBaro),
+                                                painter: SoundingPlotThermPainter(sounding.data!, selectedY, myBaro),
                                               ),
                                             ),
                                           ),
-                                        )
-                                      ],
-                                    ),
-                                  )),
+                                          Flexible(
+                                            fit: FlexFit.tight,
+                                            flex: 1,
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(left: 10),
+                                              child: ClipRRect(
+                                                child: CustomPaint(
+                                                  painter: SoundingPlotWindPainter(sounding.data!, selectedY, myBaro),
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                      if (selectedY == null)
+                                        const Align(
+                                          alignment: Alignment.center,
+                                          child: Text.rich(
+                                            TextSpan(children: [
+                                              WidgetSpan(
+                                                  child: Icon(
+                                                Icons.touch_app,
+                                                size: 26,
+                                              )),
+                                              TextSpan(text: "  Select an Altitude")
+                                            ]),
+                                            style: TextStyle(
+                                                fontSize: 18, shadows: [Shadow(color: Colors.black, blurRadius: 20)]),
+                                          ),
+                                        ),
+                                    ])),
+                              ),
                             ),
                             Padding(
                               padding: const EdgeInsets.all(10.0),

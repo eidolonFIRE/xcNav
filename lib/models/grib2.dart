@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 
 class GridConfig {
   final int numX;
@@ -70,7 +70,7 @@ List<Section> parseRawFile(Uint8List data) {
 
     // --- Identification
     // debugPrint("--- ${d[4]}) Identification (${_int32(0, d)})");
-    final timestamp = DateTime((d[12] << 8) + (d[13]), d[14], d[15], d[16], d[17], d[18]);
+    // final timestamp = DateTime((d[12] << 8) + (d[13]), d[14], d[15], d[16], d[17], d[18]);
     // debugPrint("Date: ${timestamp.toString()}");
     d = d.sublist(_int32(0, d));
 
@@ -148,7 +148,7 @@ List<Section> parseRawFile(Uint8List data) {
     final binScale = (d[15] << 8) + d[16];
     final decScale = (d[17] << 8) + d[18];
     final bitWidth = d[19];
-    final dataType = d[20] == 0 ? "Float" : "Int";
+    // final dataType = d[20] == 0 ? "Float" : "Int";
     // debugPrint("Grid Config... Ref:$refValue, Bin:$binScale, Dec:$decScale, BW:$bitWidth, DT:$dataType");
 
     d = d.sublist(_int32(0, d));

@@ -265,7 +265,6 @@ class _MyHomePageState extends State<MyHomePage> {
       myTelemetry.updateGeo(position, bypassRecording: settings.groundMode);
 
       if (!settings.groundMode || settings.groundModeTelemetry) {
-        // TODO: better way to reduce telemetry messages
         if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
           Provider.of<Client>(context, listen: false).sendTelemetry(myTelemetry.geo, myTelemetry.fuel);
         }
