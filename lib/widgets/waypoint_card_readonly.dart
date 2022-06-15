@@ -24,20 +24,21 @@ class WaypointCardReadOnly extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: isSelected ? Colors.blue[600] : Colors.grey[800],
+      color: isSelected ? Colors.blue.shade600 : Colors.grey.shade900,
       key: ValueKey(waypoint),
       margin: const EdgeInsets.all(1),
       child: ListTile(
           selected: isSelected,
           selectedColor: Colors.black,
           contentPadding: EdgeInsets.zero,
-          leading: AspectRatio(
-            aspectRatio: 1,
+          leading: SizedBox(
+            width: 40,
             child: Image.asset(
               "assets/images/wp" +
                   (waypoint.latlng.length > 1 ? "_path" : "") +
                   (waypoint.isOptional ? "_optional" : "") +
                   ".png",
+              height: 55,
               color: Color(waypoint.color ?? Colors.black.value),
             ),
           ),
@@ -62,8 +63,7 @@ class WaypointCardReadOnly extends StatelessWidget {
                           if (waypoint.icon != null) const TextSpan(text: " "),
                           TextSpan(
                             text: waypoint.name,
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 20),
+                            style: const TextStyle(color: Colors.white, fontSize: 20),
                           ),
                         ]),
                       )),

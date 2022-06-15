@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -24,7 +25,8 @@ class PlansViewer extends StatefulWidget {
 }
 
 class _PlansViewerState extends State<PlansViewer> {
-  List<FlightPlan> plans = [];
+  Map<String, FlightPlan> plans = {};
+  bool loaded = false;
 
   @override
   void initState() {
@@ -39,23 +41,32 @@ class _PlansViewerState extends State<PlansViewer> {
 
   void refreshPlansFromDirectory() async {
     final Directory _appDocDir = await getApplicationDocumentsDirectory();
-    final Directory _appDocDirFolder =
-        Directory("${_appDocDir.path}/flight_plans/");
+    final Directory _appDocDirFolder = Directory("${_appDocDir.path}/flight_plans/");
     if (await _appDocDirFolder.exists()) {
+      setState(() {
+        loaded = false;
+      });
       //if folder already exists return path
       plans.clear();
       // Async load in all the files
-      // TODO: ensure some sorted order (atm it's race)
-      _appDocDirFolder
-          .list(recursive: false, followLinks: false)
-          .forEach((each) {
+
+      var files = await _appDocDirFolder.list(recursive: false, followLinks: false).toList();
+      debugPrint("${files.length} log files found.");
+      List<Completer> completers = [];
+      for (var each in files) {
+        var _completer = Completer();
+        completers.add(_completer);
         File.fromUri(each.uri).readAsString().then((value) {
-          setState(() {
-            plans.add(FlightPlan.fromJson(each.path, jsonDecode(value)));
-          });
+          plans[each.uri.path] = FlightPlan.fromJson(each.path, jsonDecode(value));
+          _completer.complete();
+        });
+      }
+      debugPrint("${completers.length} completers created.");
+      Future.wait(completers.map((e) => e.future).toList()).then((value) {
+        setState(() {
+          loaded = true;
         });
       });
-      setState(() {});
     } else {
       debugPrint('"flight_plans" directory doesn\'t exist yet!');
     }
@@ -71,7 +82,7 @@ class _PlansViewerState extends State<PlansViewer> {
         // TODO: notify if broken file
         if (newPlan.goodFile) {
           setState(() {
-            plans.add(newPlan);
+            plans[result.files.single.path!] = newPlan;
           });
         }
       });
@@ -82,26 +93,22 @@ class _PlansViewerState extends State<PlansViewer> {
 
   @override
   Widget build(BuildContext context) {
+    var keys = plans.keys.toList();
+    keys.sort((a, b) => b.compareTo(a));
     return Scaffold(
       appBar: AppBar(
         title: const Text("Flight Plans"),
         // centerTitle: true,
         actions: [
           IconButton(
-              onPressed: () => {
-                    savePlan(context)
-                        .then((value) => refreshPlansFromDirectory())
-                  },
+              onPressed: () => {savePlan(context).then((value) => refreshPlansFromDirectory())},
               icon: const Icon(Icons.save_as)),
-          IconButton(
-              onPressed: () => {selectKmlImport()},
-              icon: const Icon(Icons.file_upload_outlined))
+          IconButton(onPressed: () => {selectKmlImport()}, icon: const Icon(Icons.file_upload_outlined))
         ],
       ),
-      body: ListView(
-        children: plans
-            .map((e) => FlightPlanSummary(e, refreshPlansFromDirectory))
-            .toList(),
+      body: ListView.builder(
+        itemCount: plans.length,
+        itemBuilder: (context, index) => FlightPlanSummary(plans[keys[index]]!, refreshPlansFromDirectory),
       ),
     );
   }

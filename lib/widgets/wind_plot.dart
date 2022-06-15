@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 
 import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ui' as UI;
+import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 
-UI.Image? _arrow;
+ui.Image? _arrow;
 
 class WindPlotPainter extends CustomPainter {
   late final Paint _paint;
@@ -26,8 +26,8 @@ class WindPlotPainter extends CustomPainter {
 
   late final bool isActive;
 
-  WindPlotPainter(double width, this.dataX, this.dataY, this.maxValue,
-      this.circleCenter, this.circleRadius, this.isActive) {
+  WindPlotPainter(
+      double width, this.dataX, this.dataY, this.maxValue, this.circleCenter, this.circleRadius, this.isActive) {
     _paint = Paint()..color = Colors.red;
     _paint.style = PaintingStyle.fill;
 
@@ -53,15 +53,14 @@ class WindPlotPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     if (_arrow == null) {
-      loadUiImage("./assets/images/red_arrow.png")
-          .then((value) => _arrow = value);
+      loadUiImage("./assets/images/red_arrow.png").then((value) => _arrow = value);
     }
   }
 
-  Future<UI.Image> loadUiImage(String imageAssetPath) async {
+  Future<ui.Image> loadUiImage(String imageAssetPath) async {
     final ByteData data = await rootBundle.load(imageAssetPath);
-    final Completer<UI.Image> completer = Completer();
-    UI.decodeImageFromList(Uint8List.view(data.buffer), (UI.Image img) {
+    final Completer<ui.Image> completer = Completer();
+    ui.decodeImageFromList(Uint8List.view(data.buffer), (ui.Image img) {
       return completer.complete(img);
     });
     return completer.future;
@@ -74,20 +73,18 @@ class WindPlotPainter extends CustomPainter {
 
     // Paint grid
     const _pad = 0.9;
-    canvas.drawLine(Offset(size.width * (1 - _pad), size.height / 2),
-        Offset(size.width * _pad, size.height / 2), _paintGrid);
-    canvas.drawLine(Offset(size.width / 2, size.height * (1 - _pad)),
-        Offset(size.width / 2, size.height * _pad), _paintGrid);
+    canvas.drawLine(
+        Offset(size.width * (1 - _pad), size.height / 2), Offset(size.width * _pad, size.height / 2), _paintGrid);
+    canvas.drawLine(
+        Offset(size.width / 2, size.height * (1 - _pad)), Offset(size.width / 2, size.height * _pad), _paintGrid);
 
     // Paint Wind fit
     final _circleCenter = circleCenter * maxSize / maxValue + center;
-    canvas.drawCircle(
-        _circleCenter, circleRadius * maxSize / maxValue, circlePaint);
+    canvas.drawCircle(_circleCenter, circleRadius * maxSize / maxValue, circlePaint);
 
     // Paint samples
     for (int i = 0; i < dataX.length; i++) {
-      canvas.drawCircle(
-          Offset(dataX[i], dataY[i]) * maxSize / maxValue + center, 3, _paint);
+      canvas.drawCircle(Offset(dataX[i], dataY[i]) * maxSize / maxValue + center, 3, _paint);
     }
 
     // Wind barb
@@ -96,16 +93,14 @@ class WindPlotPainter extends CustomPainter {
         PointMode.polygon,
         [
           _circleCenter +
-              Offset(cos(circleCenter.direction - pi / 1.2),
-                      sin(circleCenter.direction - pi / 1.2)) *
+              Offset(cos(circleCenter.direction - pi / 1.2), sin(circleCenter.direction - pi / 1.2)) *
                   circleCenter.distance *
                   maxSize /
                   maxValue /
                   3,
           _circleCenter,
           _circleCenter +
-              Offset(cos(circleCenter.direction + pi / 1.2),
-                      sin(circleCenter.direction + pi / 1.2)) *
+              Offset(cos(circleCenter.direction + pi / 1.2), sin(circleCenter.direction + pi / 1.2)) *
                   circleCenter.distance *
                   maxSize /
                   maxValue /
@@ -121,14 +116,8 @@ class WindPlotPainter extends CustomPainter {
       if (_arrow != null) {
         canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
         canvas.rotate(lastPoint.direction + pi / 2);
-        canvas.drawImageRect(
-            _arrow!,
-            const Rect.fromLTWH(0, 0, 128, 130),
-            Rect.fromCenter(
-                center: const Offset(0, 0),
-                width: maxSize / 3,
-                height: maxSize / 3),
-            Paint());
+        canvas.drawImageRect(_arrow!, const Rect.fromLTWH(0, 0, 128, 130),
+            Rect.fromCenter(center: const Offset(0, 0), width: maxSize / 3, height: maxSize / 3), Paint());
       }
     }
   }

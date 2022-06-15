@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -28,10 +26,11 @@ import 'package:xcnav/screens/settings_editor.dart';
 import 'package:xcnav/screens/flight_log_viewer.dart';
 import 'package:xcnav/screens/plans_viewer.dart';
 import 'package:xcnav/screens/group_details.dart';
+import 'package:xcnav/screens/about.dart';
+import 'package:xcnav/screens/weather_viewer.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
-import 'package:xcnav/screens/weather_viewer.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -167,6 +166,7 @@ class MyApp extends StatelessWidget {
         "/plans": (context) => const PlansViewer(),
         "/groupDetails": (context) => const GroupDetails(),
         "/weather": (context) => const WeatherViewer(),
+        "/about": (context) => const About(),
       },
     );
   }

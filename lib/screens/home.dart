@@ -491,6 +491,7 @@ class _MyHomePageState extends State<MyHomePage> {
             SizedBox(
               height: 110,
               child: DrawerHeader(
+                  decoration: BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: Colors.grey.shade700))),
                   padding: EdgeInsets.zero,
                   child: Stack(children: [
                     Positioned(
@@ -575,25 +576,9 @@ class _MyHomePageState extends State<MyHomePage> {
                           ]))
                     : null),
 
-            const Divider(
-              height: 0,
-            ),
+            Divider(height: 0, thickness: 1, color: Colors.grey.shade700),
 
-            /// Weather
-            ListTile(
-              minVerticalPadding: 20,
-              leading: const Icon(
-                Icons.cloudy_snowing,
-                size: 30,
-              ),
-              title: Text("Weather", style: Theme.of(context).textTheme.headline5),
-              onTap: () => {Navigator.pushNamed(context, "/weather")},
-            ),
-
-            const Divider(
-              height: 0,
-            ),
-
+            /// Group
             ListTile(
               minVerticalPadding: 20,
               onTap: () => {Navigator.pushNamed(context, "/groupDetails")},
@@ -612,6 +597,17 @@ class _MyHomePageState extends State<MyHomePage> {
                     Icons.qr_code_scanner,
                     color: Colors.lightBlue,
                   )),
+            ),
+
+            /// Weather
+            ListTile(
+              minVerticalPadding: 20,
+              leading: const Icon(
+                Icons.cloudy_snowing,
+                size: 30,
+              ),
+              title: Text("Weather", style: Theme.of(context).textTheme.headline5),
+              onTap: () => {Navigator.pushNamed(context, "/weather")},
             ),
 
             ListTile(
@@ -643,6 +639,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   size: 30,
                 ),
                 title: Text("Settings", style: Theme.of(context).textTheme.headline5)),
+
+            Divider(height: 0, thickness: 1, color: Colors.grey.shade700),
+
+            ListTile(
+              minVerticalPadding: 20,
+              onTap: () => {Navigator.pushNamed(context, "/about")},
+              leading: const Icon(Icons.info, size: 30),
+              title: Text("About", style: Theme.of(context).textTheme.headline5),
+            )
           ],
         )),
         body: Center(
@@ -1208,21 +1213,21 @@ class _MyHomePageState extends State<MyHomePage> {
                     iconSize: 40,
                     color: (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0)
                         ? Colors.white
-                        : Colors.grey.shade800,
+                        : Colors.grey.shade700,
                     icon: activePlan.isReversed
                         ? const Icon(
                             Icons.skip_previous,
                           )
                         : SvgPicture.asset(
                             "assets/images/reverse_back.svg",
-                            color: ((activePlan.selectedIndex ?? 0) > 0) ? Colors.white : Colors.grey.shade800,
+                            color: ((activePlan.selectedIndex ?? 0) > 0) ? Colors.white : Colors.grey.shade700,
                           ),
                   ),
 
                   // --- Next Waypoint Info
                   Expanded(
                     child: GestureDetector(
-                      onPanDown: (details) => showFlightPlan(),
+                      onPanDown: (_) => showFlightPlan(),
                       // onTap: showFlightPlan,
                       child: Container(
                         constraints: const BoxConstraints(minHeight: 60),
@@ -1235,23 +1240,23 @@ class _MyHomePageState extends State<MyHomePage> {
                               children: (curWp != null)
                                   ? [
                                       // --- Current Waypoint Label
+                                      // RichText(
                                       Text.rich(
                                         TextSpan(children: [
-                                          // if (curWp.icon != null)
                                           WidgetSpan(
                                             child: Container(
                                               transform: Matrix4.translationValues(0, 15, 0),
                                               child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
                                             ),
                                           ),
-                                          // if (curWp.icon != null)
                                           const TextSpan(text: "  "),
                                           TextSpan(
                                             text: curWp.name,
                                             style: const TextStyle(color: Colors.white, fontSize: 30),
                                           ),
                                         ]),
-                                        maxLines: 1,
+                                        maxLines: 2,
+                                        textAlign: TextAlign.center,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       SizedBox(
@@ -1315,7 +1320,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     color: (activePlan.selectedIndex != null &&
                             activePlan.selectedIndex! < activePlan.waypoints.length - 1)
                         ? Colors.white
-                        : Colors.grey.shade800,
+                        : Colors.grey.shade700,
                     icon: !activePlan.isReversed
                         ? const Icon(
                             Icons.skip_next,
@@ -1324,7 +1329,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             "assets/images/reverse_forward.svg",
                             color: ((activePlan.selectedIndex ?? -1) < activePlan.waypoints.length - 1)
                                 ? Colors.white
-                                : Colors.grey.shade800,
+                                : Colors.grey.shade700,
                           ),
                   ),
                 ],

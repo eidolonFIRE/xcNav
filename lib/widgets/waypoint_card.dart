@@ -39,23 +39,16 @@ class WaypointCard extends StatelessWidget {
         selected: isSelected,
         selectedColor: Colors.black,
         contentPadding: EdgeInsets.zero,
-        // visualDensity: VisualDensity.compact,
         leading: GestureDetector(
           onTap: onToggleOptional,
-          // padding: EdgeInsets.zero,
-          // iconSize: 55,
-
           child: SizedBox(
             width: 40,
-            // height: 60,
             child: Image.asset(
               "assets/images/wp" +
                   (waypoint.latlng.length > 1 ? "_path" : "") +
                   (waypoint.isOptional ? "_optional" : "") +
                   ".png",
-              // fit: BoxFit.none,
               height: 55,
-
               color: Color(waypoint.color ?? Colors.black.value),
             ),
           ),
@@ -91,9 +84,7 @@ class WaypointCard extends StatelessWidget {
                           child: Icon(
                             iconOptions[waypoint.icon],
                             size: 24,
-                            color: isSelected
-                                ? Colors.black
-                                : (isFaded ? Colors.grey[600] : Colors.white),
+                            color: isSelected ? Colors.black : (isFaded ? Colors.grey[600] : Colors.white),
                           ),
                         ),
                       if (waypoint.icon != null) const TextSpan(text: " "),
@@ -101,9 +92,7 @@ class WaypointCard extends StatelessWidget {
                       TextSpan(
                         text: waypoint.name,
                         style: TextStyle(
-                            color: isSelected
-                                ? Colors.black
-                                : (isFaded ? Colors.grey[600] : Colors.white),
+                            color: isSelected ? Colors.black : (isFaded ? Colors.grey[600] : Colors.white),
                             fontSize: 24),
                       ),
                     ]),
@@ -118,14 +107,12 @@ class WaypointCard extends StatelessWidget {
 
             /// Pilot Avatars
             Consumer<Group>(builder: (context, group, child) {
-              var pilots = group.pilots.values
-                  .where((element) => element.selectedWaypoint == index);
+              var pilots = group.pilots.values.where((element) => element.selectedWaypoint == index);
 
               if (pilots.isEmpty) return Container();
 
-              final width = min(MediaQuery.of(context).size.width / 3,
-                      pilots.length * 48 / pow(pilots.length, 0.3))
-                  .toDouble();
+              final width =
+                  min(MediaQuery.of(context).size.width / 3, pilots.length * 48 / pow(pilots.length, 0.3)).toDouble();
               return SizedBox(
                 width: width,
                 height: 48,
@@ -134,8 +121,7 @@ class WaypointCard extends StatelessWidget {
                       .map((e) => AvatarRound(e.avatar, 24))
                       .mapIndexed(
                         (index, element) => Positioned(
-                          left:
-                              (width - 48) / max(1, pilots.length - 1) * index,
+                          left: (width - 48) / max(1, pilots.length - 1) * index,
                           child: element,
                         ),
                       )
