@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 
 import 'package:xcnav/models/geo.dart';
 
@@ -24,6 +27,7 @@ class Pilot {
   Image? avatar;
   String? avatarHash;
   List<Geo> flightTrace = [];
+  Color color = Colors.grey.shade800;
 
   // Flightplan
   int? selectedWaypoint;
@@ -52,15 +56,15 @@ class Pilot {
   void updateTelemetry(dynamic telemetry, int timestamp) {
     Map<String, dynamic> gps = telemetry["gps"];
     fuel = (telemetry["fuel"] ?? 0.0) + 0.0;
-    // Don't use LatLng(0,0)
+    // Don't use LatLng value of (0, 0)
     if (gps["lat"] != 0.0 || gps["lng"] != 0.0) {
       geo = Geo.fromPosition(
           Position(
-            longitude: gps["lng"],
-            latitude: gps["lat"],
+            longitude: gps["lng"] as double,
+            latitude: gps["lat"] as double,
             timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp),
             accuracy: 1,
-            altitude: gps["alt"],
+            altitude: gps["alt"] is int ? (gps["alt"] as int).toDouble() : gps["alt"],
             heading: 0,
             speed: 0,
             speedAccuracy: 1,
@@ -68,8 +72,34 @@ class Pilot {
           geo,
           null,
           null);
+      flightTrace.add(geo);
     } else {
       debugPrint("skipped");
+    }
+  }
+
+  void _updateColor(Uint8List bytes) {
+    img.Image? image = img.decodeJpg(bytes.toList());
+
+    if (image != null) {
+      // Update color from avatar
+      int redBucket = 0;
+      int greenBucket = 0;
+      int blueBucket = 0;
+      int pixelCount = 100;
+
+      for (int y = 0; y < image.height; y++) {
+        for (int x = 0; x < image.width; x++) {
+          int c = image.getPixel(x, y);
+
+          pixelCount++;
+          redBucket += img.getRed(c);
+          greenBucket += img.getGreen(c);
+          blueBucket += img.getBlue(c);
+        }
+      }
+
+      color = Color.fromRGBO(redBucket ~/ pixelCount ~/ 2, greenBucket ~/ pixelCount, blueBucket ~/ pixelCount, 1);
     }
   }
 
@@ -88,6 +118,7 @@ class Pilot {
           // cache hit
           debugPrint("Loaded avatar from cache");
           avatar = Image.memory(loadedBytes);
+          _updateColor(loadedBytes);
           avatarHash = loadedHash;
         }
       }
@@ -98,11 +129,10 @@ class Pilot {
           Uint8List bytes = base64Decode(value["avatar"]);
           avatar = Image.memory(bytes);
           avatarHash = md5.convert(bytes).toString();
+          _updateColor(bytes);
 
           // save file to the temp file
-          fileAvatar
-              .create(recursive: true)
-              .then((value) => fileAvatar.writeAsBytes(bytes));
+          fileAvatar.create(recursive: true).then((value) => fileAvatar.writeAsBytes(bytes));
         });
       }
     } else {
@@ -112,8 +142,8 @@ class Pilot {
   }
 
   Future _fetchAvatarS3(String pilotID) async {
-    Uri uri = Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com",
-        "/xcnav_avatar_service", {"pilot_id": pilotID});
+    Uri uri =
+        Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com", "/xcnav_avatar_service", {"pilot_id": pilotID});
     return http
         .get(
       uri,
@@ -126,5 +156,12 @@ class Pilot {
       }
       return json.decode(response.body);
     });
+  }
+
+  Polyline buildFlightTrace() {
+    return Polyline(
+        points: flightTrace.map((e) => e.latLng).toList().sublist(max(0, flightTrace.length - 40)),
+        strokeWidth: 4,
+        color: color.withAlpha(150));
   }
 }

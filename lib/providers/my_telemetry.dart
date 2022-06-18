@@ -218,6 +218,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   int get fuelTimeRemaining => ((fuel / fuelBurnRate) * 3600000).ceil();
 
   Polyline buildFlightTrace() {
-    return Polyline(points: flightTrace, strokeWidth: 6, color: const Color.fromARGB(100, 255, 50, 50), isDotted: true);
+    return Polyline(points: flightTrace, strokeWidth: 5, color: const Color.fromARGB(150, 255, 50, 50));
   }
 }

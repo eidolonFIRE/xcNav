@@ -713,6 +713,17 @@ class _MyHomePageState extends State<MyHomePage> {
                             backgroundColor: const Color.fromARGB(0, 255, 255, 255),
                           ),
 
+                        // Other Pilot path trace
+                        PolylineLayerOptions(
+                            polylines: Provider.of<Group>(context)
+                                .pilots
+                                // Don't see locations older than 10minutes
+                                .values
+                                .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
+                                .toList()
+                                .map((e) => e.buildFlightTrace())
+                                .toList()),
+
                         // Flight Log
                         PolylineLayerOptions(polylines: [myTelemetry.buildFlightTrace()]),
 
