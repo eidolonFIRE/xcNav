@@ -136,6 +136,8 @@ class MyApp extends StatelessWidget {
           // child: ElevatedButton(onPressed: () {}, child: Text('label')),
         ),
 
+        popupMenuTheme: PopupMenuThemeData(textStyle: Theme.of(context).textTheme.bodyMedium),
+
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
             foregroundColor: MaterialStateProperty.all(Colors.white),

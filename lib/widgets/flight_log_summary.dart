@@ -15,6 +15,8 @@ class FlightLogSummary extends StatelessWidget {
   final Function onDelete;
   late final LatLngBounds mapBounds;
 
+  final dateFormat = DateFormat("h:mm a");
+
   FlightLogSummary(this.log, this.onDelete, {Key? key}) : super(key: key) {
     mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
     mapBounds.pad(0.2);
@@ -174,13 +176,52 @@ class FlightLogSummary extends StatelessWidget {
                     columnWidths: const {1: FlexColumnWidth(), 2: FlexColumnWidth()},
                     children: [
                       TableRow(children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: TableCell(
+                              child: Text.rich(
+                            TextSpan(children: [
+                              const WidgetSpan(
+                                  child: Icon(
+                                Icons.flight_takeoff,
+                                size: 18,
+                              )),
+                              TextSpan(
+                                  text: "  " +
+                                      dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time))),
+                            ]),
+                            textAlign: TextAlign.center,
+                          )),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: TableCell(
+                              child: Text.rich(
+                            TextSpan(children: [
+                              const WidgetSpan(child: Icon(Icons.flight_land, size: 18)),
+                              TextSpan(
+                                text: "  " +
+                                    dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.last.time)),
+                              )
+                            ]),
+                            textAlign: TextAlign.center,
+                          )),
+                        )
+                      ]),
+                      TableRow(children: [
                         const TableCell(child: Text("Duration")),
                         TableCell(
                             child: log.durationTime != null
-                                ? Text(
-                                    (log.durationTime!.inMilliseconds / 3600000).toStringAsFixed(1) + " hr",
-                                    textAlign: TextAlign.end,
-                                  )
+                                ? Text.rich(
+                                    richHrMin(
+                                        duration: log.durationTime,
+                                        longUnits: true,
+                                        valueStyle: Theme.of(context).textTheme.bodyMedium!,
+                                        unitStyle: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall!
+                                            .merge(const TextStyle(color: Colors.white38))),
+                                    textAlign: TextAlign.end)
                                 : const Text(
                                     "?",
                                     textAlign: TextAlign.end,
@@ -222,12 +263,6 @@ class FlightLogSummary extends StatelessWidget {
                                   )),
                       ]),
                       const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
-                      const TableRow(children: [
-                        TableCell(
-                          child: Text("...Request what else you want to see here..."),
-                        ),
-                        TableCell(child: Text(""))
-                      ])
                     ],
                   ),
                 ),

@@ -447,7 +447,7 @@ class _MyHomePageState extends State<MyHomePage> {
         children: [
           Text("Ground Support", style: instrLabel),
           Card(
-              color: Colors.grey[700],
+              color: Colors.grey.shade700,
               child: Padding(
                 padding: const EdgeInsets.only(left: 8),
                 child: Row(
@@ -1185,9 +1185,11 @@ class _MyHomePageState extends State<MyHomePage> {
               ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
               : ETA(0, 0);
 
-          int etaNextMin = min(999 * 60, (etaNext.time / 60000).ceil());
-          String etaNextValue = (etaNextMin >= 60) ? (etaNextMin / 60).toStringAsFixed(1) : etaNextMin.toString();
-          String etaNextUnit = (etaNextMin >= 60) ? "hr" : "min";
+          int etaTime = min(999 * 60000, etaNext.time);
+
+          // int etaNextMin = min(999 * 60, (etaNext.time / 60000).ceil());
+          // String etaNextValue = (etaNextMin >= 60) ? (etaNextMin / 60).toStringAsFixed(1) : etaNextMin.toString();
+          // String etaNextUnit = (etaNextMin >= 60) ? "hr" : "min";
 
           final curWp = activePlan.selectedWp;
 
@@ -1280,12 +1282,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                               text: unitStrDistCoarse[
                                                   Provider.of<Settings>(context, listen: false).displayUnitsDist],
                                               style: instrLabel),
+                                          if (myTelemetry.inFlight) const TextSpan(text: "    "),
                                           if (myTelemetry.inFlight)
-                                            TextSpan(
-                                              text: "   " + etaNextValue,
-                                              style: instrLower,
-                                            ),
-                                          if (myTelemetry.inFlight) TextSpan(text: etaNextUnit, style: instrLabel),
+                                            richHrMin(
+                                                milliseconds: etaTime, valueStyle: instrLower, unitStyle: instrLabel),
                                           if (myTelemetry.inFlight &&
                                               myTelemetry.fuel > 0 &&
                                               myTelemetry.fuelTimeRemaining < etaNext.time)

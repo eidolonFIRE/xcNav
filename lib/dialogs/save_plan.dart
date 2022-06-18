@@ -1,9 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/models/flight_plan.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
@@ -30,19 +27,7 @@ Future savePlan(BuildContext context) {
         ElevatedButton.icon(
             label: const Text("Save"),
             onPressed: () {
-              getApplicationDocumentsDirectory().then((tempDir) {
-                File logFile =
-                    File("${tempDir.path}/flight_plans/${filename.text}.json");
-
-                logFile
-                    .create(recursive: true)
-                    .then((value) => logFile.writeAsString(jsonEncode({
-                          "title": filename.text,
-                          "waypoints":
-                              plan.waypoints.map((e) => e.toJson()).toList()
-                        })));
-              });
-              Navigator.pop(context);
+              FlightPlan.fromActivePlan(plan, filename.text).saveToFile().then((_) => Navigator.pop(context));
             },
             icon: const Icon(
               Icons.save,

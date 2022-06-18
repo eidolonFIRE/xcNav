@@ -1,5 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/dialogs/save_plan.dart';
+import 'package:xcnav/providers/active_plan.dart';
 import 'package:xml/xml.dart';
 
 // --- Models
@@ -7,13 +14,21 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 class FlightPlan {
-  late final String _filename;
+  late String _name;
   late bool goodFile;
-  late String title;
   late final List<Waypoint> waypoints;
   double? length;
 
-  get filename => _filename;
+  get name => _name;
+
+  /// Path and filename
+  Future<String> getFilename() {
+    Completer<String> completer = Completer();
+    getApplicationDocumentsDirectory().then((tempDir) {
+      completer.complete("${tempDir.path}/flight_plans/$name.json");
+    });
+    return completer.future;
+  }
 
   void _calcLength() {
     // --- Calculate Stuff
@@ -37,54 +52,52 @@ class FlightPlan {
     length = _length;
   }
 
-  FlightPlan.fromJson(String filename, dynamic data) {
-    _filename = filename;
+  FlightPlan.fromActivePlan(ActivePlan activePlan, String name) {
+    waypoints = activePlan.waypoints.toList();
+    _name = name;
+    _calcLength();
+    goodFile = true;
+  }
+
+  FlightPlan.fromJson(String name, dynamic data) {
+    _name = name;
 
     try {
       List<dynamic> _dataSamples = data["waypoints"];
       waypoints = _dataSamples.map((e) => Waypoint.fromJson(e)).toList();
 
-      title = data["title"];
-
       _calcLength();
 
       goodFile = true;
     } catch (e) {
-      title = "Broken File!";
       goodFile = false;
     }
   }
 
-  FlightPlan.fromKml(String filename, String rawData) {
-    _filename = filename;
+  FlightPlan.fromKml(String name, String rawData) {
+    _name = name;
     waypoints = [];
 
     // try {
-    final document =
-        XmlDocument.parse(rawData).getElement("kml")!.getElement("Document");
-
-    title = document!.getElement("name")?.text ?? "Untitled";
+    var document = XmlDocument.parse(rawData).getElement("kml")!.getElement("Document")!;
 
     document.findAllElements("Placemark").forEach((element) {
       final String name = element.getElement("name")!.text;
-      if (element.getElement("Point") != null ||
-          element.getElement("LineString") != null) {
-        final List<LatLng> points =
-            (element.getElement("Point") ?? element.getElement("LineString"))!
-                .getElement("coordinates")!
-                .text
-                .trim()
-                .split("\n")
-                .map((e) {
+      if (element.getElement("Point") != null || element.getElement("LineString") != null) {
+        final List<LatLng> points = (element.getElement("Point") ?? element.getElement("LineString"))!
+            .getElement("coordinates")!
+            .text
+            .trim()
+            .split("\n")
+            .map((e) {
           final _raw = e.split(",");
           return LatLng(double.parse(_raw[1]), double.parse(_raw[0]));
         }).toList();
 
-        final styleElement = document.findAllElements("Style").where((_e) => _e
-            .getAttribute("id")!
-            .startsWith(element.getElement("styleUrl")!.text.substring(1)));
-        String? colorText = (styleElement.first.getElement("IconStyle") ??
-                styleElement.first.getElement("LineStyle"))
+        final styleElement = document
+            .findAllElements("Style")
+            .where((_e) => _e.getAttribute("id")!.startsWith(element.getElement("styleUrl")!.text.substring(1)));
+        String? colorText = (styleElement.first.getElement("IconStyle") ?? styleElement.first.getElement("LineStyle"))
             ?.getElement("color")
             ?.text;
         if (colorText != null) {
@@ -93,13 +106,10 @@ class FlightPlan {
               colorText.substring(4, 6) +
               colorText.substring(2, 4);
         }
-        final int color =
-            int.parse((colorText ?? Colors.black.value.toString()), radix: 16) |
-                0xff000000;
+        final int color = int.parse((colorText ?? Colors.black.value.toString()), radix: 16) | 0xff000000;
 
         if (points.isNotEmpty) {
-          waypoints.add(Waypoint(
-              name, points, name.toLowerCase().startsWith("opt"), null, color));
+          waypoints.add(Waypoint(name, points, name.toLowerCase().startsWith("opt"), null, color));
         } else {
           debugPrint("Dropping $name with no points.");
         }
@@ -113,5 +123,32 @@ class FlightPlan {
     //   title = "Broken File!";
     //   goodFile = false;
     // }
+  }
+
+  Future rename(String name) {
+    // remove old file
+    getFilename().then((filename) {
+      File planFile = File(filename);
+      planFile.exists().then((value) {
+        planFile.delete();
+      });
+    });
+
+    _name = name;
+
+    // save to new name
+    return saveToFile();
+  }
+
+  Future saveToFile() {
+    Completer completer = Completer();
+    getFilename().then((filename) {
+      File file = File(filename);
+
+      file.create(recursive: true).then((value) => file
+          .writeAsString(jsonEncode({"title": name, "waypoints": waypoints.map((e) => e.toJson()).toList()}))
+          .then((_) => completer.complete()));
+    });
+    return completer.future;
   }
 }

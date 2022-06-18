@@ -1,5 +1,6 @@
 import 'dart:math';
-
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:xcnav/models/geo.dart';
 
 enum DisplayUnitsSpeed {
@@ -56,17 +57,53 @@ const Map<DisplayUnitsFuel, String> unitStrFuel = {
   DisplayUnitsFuel.gal: " gal",
 };
 
-String printValue(
-    {required double value, required int digits, required int decimals}) {
+String printHrMin({Duration? duration, int? milliseconds}) {
+  int t = milliseconds ?? duration?.inMilliseconds ?? 0;
+
+  int hr = (t / 3600000).floor();
+  int min = ((t - hr * 3600000) / 60000).floor();
+
+  if (hr > 0) {
+    return "${hr}h ${min}m";
+  } else {
+    return "$min min";
+  }
+}
+
+TextSpan richHrMin(
+    {Duration? duration,
+    int? milliseconds,
+    required TextStyle valueStyle,
+    TextStyle? unitStyle,
+    bool longUnits = false}) {
+  int t = milliseconds ?? duration?.inMilliseconds ?? 0;
+
+  int hr = (t / 3600000).floor();
+  int min = ((t - hr * 3600000) / 60000).floor();
+
+  if (hr > 0) {
+    return TextSpan(children: [
+      TextSpan(text: hr.toString(), style: valueStyle),
+      TextSpan(text: longUnits ? "hr " : "h ", style: unitStyle ?? valueStyle),
+      TextSpan(text: min.toString(), style: valueStyle),
+      TextSpan(text: longUnits ? "min" : "m", style: unitStyle ?? valueStyle),
+    ]);
+  } else {
+    return TextSpan(children: [
+      TextSpan(text: min.toString(), style: valueStyle),
+      TextSpan(text: "min", style: unitStyle ?? valueStyle),
+    ]);
+  }
+}
+
+String printValue({required double value, required int digits, required int decimals}) {
   if (!value.isFinite) return "?";
   final int mag = (pow(10, digits) - 1).round();
   final double decPwr = pow(10, decimals).toDouble();
-  return ((min(mag, max(-mag, value)) * decPwr).round() / decPwr)
-      .toStringAsFixed(decimals);
+  return ((min(mag, max(-mag, value)) * decPwr).round() / decPwr).toStringAsFixed(decimals);
 }
 
-double convertDistValueFine(DisplayUnitsDist mode, double value,
-    {int? clampDigits}) {
+double convertDistValueFine(DisplayUnitsDist mode, double value, {int? clampDigits}) {
   switch (mode) {
     case DisplayUnitsDist.imperial:
       return value * meters2Feet;

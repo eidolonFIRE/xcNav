@@ -24,7 +24,7 @@ class WaypointCardReadOnly extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: isSelected ? Colors.blue.shade600 : Colors.grey.shade900,
+      color: isSelected ? Colors.grey.shade200 : Colors.grey.shade900,
       key: ValueKey(waypoint),
       margin: const EdgeInsets.all(1),
       child: ListTile(
@@ -56,14 +56,14 @@ class WaypointCardReadOnly extends StatelessWidget {
                             WidgetSpan(
                               child: Icon(
                                 iconOptions[waypoint.icon],
-                                size: 20,
-                                color: Colors.white,
+                                size: 26,
+                                color: isSelected ? Colors.black : Colors.white,
                               ),
                             ),
                           if (waypoint.icon != null) const TextSpan(text: " "),
                           TextSpan(
                             text: waypoint.name,
-                            style: const TextStyle(color: Colors.white, fontSize: 20),
+                            style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontSize: 20),
                           ),
                         ]),
                       )),

@@ -46,22 +46,22 @@ class _PlansViewerState extends State<PlansViewer> {
       setState(() {
         loaded = false;
       });
-      //if folder already exists return path
       plans.clear();
       // Async load in all the files
 
       var files = await _appDocDirFolder.list(recursive: false, followLinks: false).toList();
-      debugPrint("${files.length} log files found.");
+      // debugPrint("${files.length} log files found.");
       List<Completer> completers = [];
       for (var each in files) {
         var _completer = Completer();
         completers.add(_completer);
         File.fromUri(each.uri).readAsString().then((value) {
-          plans[each.uri.path] = FlightPlan.fromJson(each.path, jsonDecode(value));
+          plans[each.uri.path] =
+              FlightPlan.fromJson(each.uri.pathSegments.last.replaceAll(".json", ""), jsonDecode(value));
           _completer.complete();
         });
       }
-      debugPrint("${completers.length} completers created.");
+      // debugPrint("${completers.length} completers created.");
       Future.wait(completers.map((e) => e.future).toList()).then((value) {
         setState(() {
           loaded = true;
@@ -78,7 +78,8 @@ class _PlansViewerState extends State<PlansViewer> {
     if (result != null) {
       File file = File(result.files.single.path!);
       file.readAsString().then((data) {
-        var newPlan = FlightPlan.fromKml(result.files.single.path!, data);
+        // TODO: remove extension
+        var newPlan = FlightPlan.fromKml(result.files.single.name, data);
         // TODO: notify if broken file
         if (newPlan.goodFile) {
           setState(() {
@@ -106,10 +107,14 @@ class _PlansViewerState extends State<PlansViewer> {
           IconButton(onPressed: () => {selectKmlImport()}, icon: const Icon(Icons.file_upload_outlined))
         ],
       ),
-      body: ListView.builder(
-        itemCount: plans.length,
-        itemBuilder: (context, index) => FlightPlanSummary(plans[keys[index]]!, refreshPlansFromDirectory),
-      ),
+      body: !loaded
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : ListView.builder(
+              itemCount: plans.length,
+              itemBuilder: (context, index) => FlightPlanSummary(plans[keys[index]]!, refreshPlansFromDirectory),
+            ),
     );
   }
 }
