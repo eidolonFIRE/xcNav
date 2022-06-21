@@ -271,7 +271,7 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Table(
-                          columnWidths: const {1: FlexColumnWidth(), 2: FlexColumnWidth()},
+                          columnWidths: const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
                           children: [
                             // TableRow(children: [
                             //   const TableCell(child: Text("Duration")),

@@ -34,7 +34,7 @@ class _GroupDetailsState extends State<GroupDetails> {
 
   static const valueStyle = TextStyle(fontSize: 22, color: Colors.white);
   static const unitStyle = TextStyle(fontSize: 16, color: Colors.white);
-  static final fillStyle = TextStyle(fontSize: 14, color: Colors.grey[600]);
+  static final fillStyle = TextStyle(fontSize: 14, color: Colors.grey.shade600);
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +97,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                                       text: convertDistValueFine(settings.displayUnitsDist, _p.geo.alt)
                                           .toStringAsFixed(0)),
                                   TextSpan(style: unitStyle, text: unitStrDistFine[settings.displayUnitsDist]),
-                                  // TextSpan(style: fillStyle, text: " alt"),
+                                  TextSpan(style: fillStyle, text: " MSL"),
                                 ]))
                               : const Text("( outdated telemetry )"),
                         ))

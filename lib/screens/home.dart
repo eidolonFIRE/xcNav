@@ -14,6 +14,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:xcnav/dialogs/pilot_info.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -842,11 +843,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                   builder: (ctx) => Container(
                                       transformAlignment: const Alignment(0, 0),
                                       transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
-                                      child: AvatarRound(
-                                        pilot.avatar,
-                                        40,
-                                        hdg: pilot.geo.hdg + mapController.rotation * pi / 180,
-                                        relAlt: pilot.geo.alt - myTelemetry.geo.alt,
+                                      child: GestureDetector(
+                                        onTap: () => {showPilotInfo(context, pilot.id)},
+                                        child: AvatarRound(
+                                          pilot.avatar,
+                                          40,
+                                          hdg: pilot.geo.hdg + mapController.rotation * pi / 180,
+                                          relAlt: pilot.geo.alt - myTelemetry.geo.alt,
+                                        ),
                                       ))))
                               .toList(),
                         ),
@@ -1284,10 +1288,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                       Text.rich(
                                         TextSpan(children: [
                                           TextSpan(
-                                              text: convertDistValueCoarse(
+                                              text: printValue(
+                                                  value: convertDistValueCoarse(
                                                       Provider.of<Settings>(context, listen: false).displayUnitsDist,
-                                                      etaNext.distance)
-                                                  .toStringAsFixed(1),
+                                                      etaNext.distance),
+                                                  digits: 4,
+                                                  decimals: 1),
                                               style: instrLower),
                                           TextSpan(
                                               text: unitStrDistCoarse[

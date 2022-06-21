@@ -1,6 +1,9 @@
 /// When time is -1, there is no solution... (infinite eta)
 class ETA {
+  /// Meters
   late double distance;
+
+  /// Milliseconds
   late int time;
 
   ETA(this.distance, this.time);
