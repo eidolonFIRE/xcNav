@@ -15,6 +15,7 @@ class Settings with ChangeNotifier {
   // --- UI
   bool _showAirspace = false;
   bool _mapControlsRightSide = false;
+  bool _showPilotNames = false;
 
   // --- Units
   var _displayUnitsSpeed = DisplayUnitsSpeed.mph;
@@ -26,14 +27,10 @@ class Settings with ChangeNotifier {
   bool _adsbEnabled = false;
   final Map<String, ProximityConfig> proximityProfileOptions = {
     "Off": ProximityConfig(vertical: 0, horizontalDist: 0, horizontalTime: 0),
-    "Small":
-        ProximityConfig(vertical: 200, horizontalDist: 300, horizontalTime: 30),
-    "Medium":
-        ProximityConfig(vertical: 400, horizontalDist: 600, horizontalTime: 45),
-    "Large": ProximityConfig(
-        vertical: 800, horizontalDist: 1200, horizontalTime: 60),
-    "X-Large": ProximityConfig(
-        vertical: 1000, horizontalDist: 2000, horizontalTime: 90),
+    "Small": ProximityConfig(vertical: 200, horizontalDist: 300, horizontalTime: 30),
+    "Medium": ProximityConfig(vertical: 400, horizontalDist: 600, horizontalTime: 45),
+    "Large": ProximityConfig(vertical: 800, horizontalDist: 1200, horizontalTime: 60),
+    "X-Large": ProximityConfig(vertical: 1000, horizontalDist: 2000, horizontalTime: 90),
   };
   late ProximityConfig proximityProfile;
   late String proximityProfileName;
@@ -45,24 +42,18 @@ class Settings with ChangeNotifier {
 
   _loadSettings() {
     SharedPreferences.getInstance().then((prefs) {
-      _displayUnitsSpeed = DisplayUnitsSpeed
-          .values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
-      _displayUnitsVario = DisplayUnitsVario
-          .values[prefs.getInt("settings.displayUnitsVario") ?? 0];
-      _displayUnitsDist = DisplayUnitsDist
-          .values[prefs.getInt("settings.displayUnitsDist") ?? 0];
-      _mapControlsRightSide =
-          prefs.getBool("settings.mapControlsRightSide") ?? false;
-      _displayUnitsFuel = DisplayUnitsFuel
-          .values[prefs.getInt("settings.displayUnitsFuel") ?? 0];
+      _displayUnitsSpeed = DisplayUnitsSpeed.values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
+      _displayUnitsVario = DisplayUnitsVario.values[prefs.getInt("settings.displayUnitsVario") ?? 0];
+      _displayUnitsDist = DisplayUnitsDist.values[prefs.getInt("settings.displayUnitsDist") ?? 0];
+      _mapControlsRightSide = prefs.getBool("settings.mapControlsRightSide") ?? false;
+      _showPilotNames = prefs.getBool("settings.showPilotNames") ?? false;
+      _displayUnitsFuel = DisplayUnitsFuel.values[prefs.getInt("settings.displayUnitsFuel") ?? 0];
 
       _groundMode = prefs.getBool("settings.groundMode") ?? false;
-      _groundModeTelemetry =
-          prefs.getBool("settings.groundModeTelemetry") ?? false;
+      _groundModeTelemetry = prefs.getBool("settings.groundModeTelemetry") ?? false;
 
       // --- ADSB
-      selectProximityConfig(
-          prefs.getString("settings.adsbProximityProfile") ?? "Medium");
+      selectProximityConfig(prefs.getString("settings.adsbProximityProfile") ?? "Medium");
       _adsbEnabled = prefs.getBool("settings.adsbEnabled") ?? false;
     });
   }
@@ -73,6 +64,16 @@ class Settings with ChangeNotifier {
     _mapControlsRightSide = value;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setBool("settings.mapControlsRightSide", _mapControlsRightSide);
+    });
+    notifyListeners();
+  }
+
+  // --- showPilotNames
+  bool get showPilotNames => _showPilotNames;
+  set showPilotNames(bool value) {
+    _showPilotNames = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.showPilotNames", _showPilotNames);
     });
     notifyListeners();
   }
@@ -146,8 +147,7 @@ class Settings with ChangeNotifier {
 
   // --- ADSB
   void selectProximityConfig(String name) {
-    proximityProfile =
-        proximityProfileOptions[name] ?? proximityProfileOptions["Medium"]!;
+    proximityProfile = proximityProfileOptions[name] ?? proximityProfileOptions["Medium"]!;
     proximityProfileName = name;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setString("settings.adsbProximityProfile", name);

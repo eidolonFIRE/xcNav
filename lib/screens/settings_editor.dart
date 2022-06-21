@@ -53,70 +53,46 @@ class _SettingsEditorState extends State<SettingsEditor> {
                 SettingsTile.navigation(
                   title: const Text("Fuel"),
                   trailing: DropdownButton<DisplayUnitsFuel>(
-                      onChanged: (value) => {
-                            settings.displayUnitsFuel =
-                                value ?? DisplayUnitsFuel.liter
-                          },
+                      onChanged: (value) => {settings.displayUnitsFuel = value ?? DisplayUnitsFuel.liter},
                       value: settings.displayUnitsFuel,
                       items: const [
-                        DropdownMenuItem(
-                            value: DisplayUnitsFuel.liter, child: Text("L")),
-                        DropdownMenuItem(
-                            value: DisplayUnitsFuel.gal, child: Text("Gal")),
+                        DropdownMenuItem(value: DisplayUnitsFuel.liter, child: Text("L")),
+                        DropdownMenuItem(value: DisplayUnitsFuel.gal, child: Text("Gal")),
                       ]),
                   leading: const Icon(Icons.local_gas_station),
                 ),
                 SettingsTile.navigation(
                   title: const Text("Distance"),
                   trailing: DropdownButton<DisplayUnitsDist>(
-                      onChanged: (value) => {
-                            settings.displayUnitsDist =
-                                value ?? DisplayUnitsDist.imperial
-                          },
+                      onChanged: (value) => {settings.displayUnitsDist = value ?? DisplayUnitsDist.imperial},
                       value: settings.displayUnitsDist,
                       items: const [
-                        DropdownMenuItem(
-                            value: DisplayUnitsDist.imperial,
-                            child: Text("Imperial")),
-                        DropdownMenuItem(
-                            value: DisplayUnitsDist.metric,
-                            child: Text("Metric")),
+                        DropdownMenuItem(value: DisplayUnitsDist.imperial, child: Text("Imperial")),
+                        DropdownMenuItem(value: DisplayUnitsDist.metric, child: Text("Metric")),
                       ]),
                   leading: const Icon(Icons.architecture),
                 ),
                 SettingsTile.navigation(
                   title: const Text("Speed"),
                   trailing: DropdownButton<DisplayUnitsSpeed>(
-                      onChanged: (value) => {
-                            settings.displayUnitsSpeed =
-                                value ?? DisplayUnitsSpeed.mph
-                          },
+                      onChanged: (value) => {settings.displayUnitsSpeed = value ?? DisplayUnitsSpeed.mph},
                       value: settings.displayUnitsSpeed,
                       items: const [
-                        DropdownMenuItem(
-                            value: DisplayUnitsSpeed.mph, child: Text("mph")),
-                        DropdownMenuItem(
-                            value: DisplayUnitsSpeed.kph, child: Text("kph")),
-                        DropdownMenuItem(
-                            value: DisplayUnitsSpeed.kts, child: Text("kts")),
-                        DropdownMenuItem(
-                            value: DisplayUnitsSpeed.mps, child: Text("m/s")),
+                        DropdownMenuItem(value: DisplayUnitsSpeed.mph, child: Text("mph")),
+                        DropdownMenuItem(value: DisplayUnitsSpeed.kph, child: Text("kph")),
+                        DropdownMenuItem(value: DisplayUnitsSpeed.kts, child: Text("kts")),
+                        DropdownMenuItem(value: DisplayUnitsSpeed.mps, child: Text("m/s")),
                       ]),
                   leading: const Icon(Icons.timer),
                 ),
                 SettingsTile.navigation(
                   title: const Text("Vario"),
                   trailing: DropdownButton<DisplayUnitsVario>(
-                      onChanged: (value) => {
-                            settings.displayUnitsVario =
-                                value ?? DisplayUnitsVario.fpm
-                          },
+                      onChanged: (value) => {settings.displayUnitsVario = value ?? DisplayUnitsVario.fpm},
                       value: settings.displayUnitsVario,
                       items: const [
-                        DropdownMenuItem(
-                            value: DisplayUnitsVario.fpm, child: Text("ft/m")),
-                        DropdownMenuItem(
-                            value: DisplayUnitsVario.mps, child: Text("m/s")),
+                        DropdownMenuItem(value: DisplayUnitsVario.fpm, child: Text("ft/m")),
+                        DropdownMenuItem(value: DisplayUnitsVario.mps, child: Text("m/s")),
                       ]),
                   leading: const Icon(Icons.trending_up),
                 ),
@@ -134,6 +110,14 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     //     "Move map control buttons to the right side."),
                   ),
                   SettingsTile.switchTile(
+                    initialValue: settings.showPilotNames,
+                    onToggle: (value) => settings.showPilotNames = value,
+                    title: const Text("Always Show Pilot Names"),
+                    leading: const Icon(Icons.abc),
+                    // description: const Text(
+                    //     "Move map control buttons to the right side."),
+                  ),
+                  SettingsTile.switchTile(
                     initialValue: settings.groundMode,
                     onToggle: (value) => settings.groundMode = value,
                     title: const Text("Ground Support Mode"),
@@ -146,17 +130,14 @@ class _SettingsEditorState extends State<SettingsEditor> {
               // --- ADSB options
               SettingsSection(title: const Text("ADSB"), tiles: [
                 SettingsTile.navigation(
-                  title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Proximity Profile"),
-                        // const Divider(),
-                        Text(
-                          settings.proximityProfile.toMultilineString(settings),
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.white60),
-                        )
-                      ]),
+                  title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text("Proximity Profile"),
+                    // const Divider(),
+                    Text(
+                      settings.proximityProfile.toMultilineString(settings),
+                      style: const TextStyle(fontSize: 12, color: Colors.white60),
+                    )
+                  ]),
                   leading: const Icon(Icons.radar),
                   trailing: DropdownButton<String>(
                     onChanged: (value) {
@@ -164,8 +145,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     },
                     value: settings.proximityProfileName,
                     items: settings.proximityProfileOptions.entries
-                        .map((each) => DropdownMenuItem(
-                            value: each.key, child: Text(each.key)))
+                        .map((each) => DropdownMenuItem(value: each.key, child: Text(each.key)))
                         .toList(),
                   ),
                 ),
@@ -173,8 +153,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                 SettingsTile.navigation(
                   title: const Text("Test Warning Audio"),
                   leading: const Icon(Icons.volume_up),
-                  onPressed: (event) =>
-                      {Provider.of<ADSB>(context, listen: false).testWarning()},
+                  onPressed: (event) => {Provider.of<ADSB>(context, listen: false).testWarning()},
                 ),
               ]),
 
@@ -203,12 +182,8 @@ class _SettingsEditorState extends State<SettingsEditor> {
                         color: Colors.red,
                       ),
                       onPressed: (_) {
-                        Provider.of<MyTelemetry>(context, listen: false)
-                            .recordGeo
-                            .clear();
-                        Provider.of<MyTelemetry>(context, listen: false)
-                            .flightTrace
-                            .clear();
+                        Provider.of<MyTelemetry>(context, listen: false).recordGeo.clear();
+                        Provider.of<MyTelemetry>(context, listen: false).flightTrace.clear();
                       },
                     ),
                     // --- Erase Identity
@@ -226,25 +201,18 @@ class _SettingsEditorState extends State<SettingsEditor> {
                             builder: (BuildContext ctx) {
                               return AlertDialog(
                                 title: const Text('Please Confirm'),
-                                content: const Text(
-                                    'Are you sure you want to clear your Identity?'),
+                                content: const Text('Are you sure you want to clear your Identity?'),
                                 actions: [
                                   // The "Yes" button
                                   TextButton.icon(
                                       onPressed: () {
                                         // Clear Profile
-                                        Provider.of<Profile>(context,
-                                                listen: false)
-                                            .eraseIdentity();
+                                        Provider.of<Profile>(context, listen: false).eraseIdentity();
 
                                         // Remove Avatar saved file
-                                        path_provider
-                                            .getTemporaryDirectory()
-                                            .then((tempDir) {
-                                          var outfile = File(
-                                              tempDir.path + "/avatar.jpg");
-                                          outfile.exists().then((value) =>
-                                              {if (value) outfile.delete()});
+                                        path_provider.getTemporaryDirectory().then((tempDir) {
+                                          var outfile = File(tempDir.path + "/avatar.jpg");
+                                          outfile.exists().then((value) => {if (value) outfile.delete()});
                                         });
 
                                         // Close the dialog
@@ -272,8 +240,8 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     title: const Text("Version"),
                     trailing: FutureBuilder<PackageInfo>(
                         future: PackageInfo.fromPlatform(),
-                        builder: (context, version) => Text(
-                            "${version.data?.version ?? "?"} - ( ${version.data?.buildNumber ?? "?"} )")))
+                        builder: (context, version) =>
+                            Text("${version.data?.version ?? "?"} - ( ${version.data?.buildNumber ?? "?"} )")))
               ]),
             ],
           ));

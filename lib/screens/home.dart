@@ -47,6 +47,7 @@ import 'package:xcnav/models/message.dart';
 // misc
 import 'package:xcnav/fake_path.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/pilot_marker.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -845,8 +846,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                       transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
                                       child: GestureDetector(
                                         onTap: () => {showPilotInfo(context, pilot.id)},
-                                        child: AvatarRound(
-                                          pilot.avatar,
+                                        child: PilotMarker(
+                                          pilot,
                                           40,
                                           hdg: pilot.geo.hdg + mapController.rotation * pi / 180,
                                           relAlt: pilot.geo.alt - myTelemetry.geo.alt,
