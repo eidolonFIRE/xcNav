@@ -204,7 +204,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                 content: const Text('Are you sure you want to clear your Identity?'),
                                 actions: [
                                   // The "Yes" button
-                                  TextButton.icon(
+                                  ElevatedButton.icon(
                                       onPressed: () {
                                         // Clear Profile
                                         Provider.of<Profile>(context, listen: false).eraseIdentity();
@@ -223,7 +223,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                         color: Colors.red,
                                       ),
                                       label: const Text('Yes')),
-                                  TextButton(
+                                  ElevatedButton(
                                       onPressed: () {
                                         // Close the dialog
                                         Navigator.of(context).pop();
@@ -233,11 +233,61 @@ class _SettingsEditorState extends State<SettingsEditor> {
                               );
                             }),
                       },
-                    )
+                    ),
+                    // --- Erase all cached avatars
+                    SettingsTile.navigation(
+                      title: const Text("Clear cached avatars"),
+                      leading: const Icon(
+                        Icons.account_circle,
+                        color: Colors.red,
+                      ),
+                      onPressed: (value) => {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext ctx) {
+                              return AlertDialog(
+                                title: const Text('Please Confirm'),
+                                content: const Text('Are you sure you want to clear all cached avatars?'),
+                                actions: [
+                                  // The "Yes" button
+                                  ElevatedButton.icon(
+                                      onPressed: () {
+                                        // // Clear Profile
+                                        // Provider.of<Profile>(context, listen: false).eraseIdentity();
+
+                                        // // Remove Avatar saved file
+                                        // path_provider.getTemporaryDirectory().then((tempDir) {
+                                        //   var outfile = File(tempDir.path + "/avatar.jpg");
+                                        //   outfile.exists().then((value) => {if (value) outfile.delete()});
+                                        // });
+                                        path_provider.getTemporaryDirectory().then((tempDir) {
+                                          var fileAvatar = Directory("${tempDir.path}/avatars/");
+                                          fileAvatar.delete(recursive: true);
+                                        });
+
+                                        // Close the dialog
+                                        Navigator.of(context).pop();
+                                      },
+                                      icon: const Icon(
+                                        Icons.delete_forever,
+                                        color: Colors.red,
+                                      ),
+                                      label: const Text('Yes')),
+                                  ElevatedButton(
+                                      onPressed: () {
+                                        // Close the dialog
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('No'))
+                                ],
+                              );
+                            }),
+                      },
+                    ),
                   ]),
               SettingsSection(tiles: [
                 SettingsTile(
-                    title: const Text("Version"),
+                    title: const Text("xcNav Version"),
                     trailing: FutureBuilder<PackageInfo>(
                         future: PackageInfo.fromPlatform(),
                         builder: (context, version) =>

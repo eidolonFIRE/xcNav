@@ -25,7 +25,7 @@ class Pilot {
 
   // visuals
   Image? avatar;
-  String? avatarHash;
+  late final String? avatarHash;
   List<Geo> flightTrace = [];
   Color color = Colors.grey.shade800;
 
@@ -116,27 +116,29 @@ class Pilot {
 
         if (loadedHash == avatarHash) {
           // cache hit
-          debugPrint("Loaded avatar from cache");
+          debugPrint("Loaded avatar $id.jpg from local cache");
           avatar = Image.memory(loadedBytes);
           _updateColor(loadedBytes);
-          avatarHash = loadedHash;
         }
-      }
-
-      if (avatarHash == null) {
+      } else {
         // - cache miss, load from S3
         _fetchAvatarS3(id).then((value) {
           Uint8List bytes = base64Decode(value["avatar"]);
           avatar = Image.memory(bytes);
-          avatarHash = md5.convert(bytes).toString();
           _updateColor(bytes);
 
           // save file to the temp file
-          fileAvatar.create(recursive: true).then((value) => fileAvatar.writeAsBytes(bytes));
+          fileAvatar.create(recursive: true).then((value) {
+            fileAvatar.writeAsBytes(bytes);
+            debugPrint("Pulled avatar $id.jpg from remote source");
+          });
+        }, onError: (error) {
+          debugPrint("Failed to fetch avatar $id.jpg... $error");
         });
       }
     } else {
       // - fallback on default avatar
+      debugPrint("Avatar Hash was null for $id");
       avatar = Image.asset("assets/images/default_avatar.png");
     }
   }

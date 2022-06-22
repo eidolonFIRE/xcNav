@@ -316,7 +316,6 @@ class _MyHomePageState extends State<MyHomePage> {
       mapController.move(centerZoom.center, centerZoom.zoom);
     }
     mapAspectRatio = mapKey.currentContext!.size!.aspectRatio;
-    debugPrint("Aspect ratio ${mapAspectRatio}");
   }
 
   bool markerIsInView(LatLng point) {
@@ -875,14 +874,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                   builder: (ctx) => Container(
                                       transformAlignment: const Alignment(0, 0),
                                       transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
-                                      child: GestureDetector(
-                                        onTap: () => {showPilotInfo(context, pilot.id)},
-                                        child: PilotMarker(
-                                          pilot,
-                                          40,
-                                          hdg: pilot.geo.hdg + mapController.rotation * pi / 180,
-                                          relAlt: pilot.geo.alt - myTelemetry.geo.alt,
-                                        ),
+                                      child: PilotMarker(
+                                        pilot,
+                                        20,
+                                        hdg: pilot.geo.hdg + mapController.rotation * pi / 180,
+                                        relAlt: pilot.geo.alt - myTelemetry.geo.alt,
                                       ))))
                               .toList(),
                         ),
@@ -952,9 +948,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                                     color: Colors.black,
                                                     size: 40,
                                                   )),
-                                              GestureDetector(
-                                                behavior: HitTestBehavior.opaque,
-                                                onTap: () => showPilotInfo(context, e.id),
+                                              Container(
+                                                transformAlignment: const Alignment(0, 0),
                                                 child: PilotMarker(
                                                   e,
                                                   20,

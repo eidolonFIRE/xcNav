@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/dialogs/pilot_info.dart';
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
@@ -38,17 +39,21 @@ class PilotMarker extends StatelessWidget {
             ),
           ),
         ),
-      CircleAvatar(
-        radius: radius,
-        backgroundColor: Colors.black,
-        child: Padding(
-          padding: const EdgeInsets.all(2),
-          child: ClipOval(
-            child: SizedBox(
-                width: radius * 2,
-                height: radius * 2,
-                child: FittedBox(
-                    fit: BoxFit.fill, child: pilot.avatar ?? Image.asset("assets/images/default_avatar.png"))),
+      GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => showPilotInfo(context, pilot.id),
+        child: CircleAvatar(
+          radius: radius,
+          backgroundColor: Colors.black,
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: ClipOval(
+              child: SizedBox(
+                  width: radius * 2,
+                  height: radius * 2,
+                  child: FittedBox(
+                      fit: BoxFit.fill, child: pilot.avatar ?? Image.asset("assets/images/default_avatar.png"))),
+            ),
           ),
         ),
       ),
@@ -56,7 +61,7 @@ class PilotMarker extends StatelessWidget {
       /// --- Relative Altitude
       if (relAlt != null)
         Container(
-            transform: Matrix4.translationValues(radius + 5, 0, 0),
+            transform: Matrix4.translationValues(radius * 2, 0, 0),
             // transformAlignment: const Alignment(0, 0),
             child: Text.rich(
               TextSpan(children: [
@@ -85,7 +90,7 @@ class PilotMarker extends StatelessWidget {
       /// --- Show name
       if (pilot.avatar == null || settings.showPilotNames)
         Container(
-          transform: Matrix4.translationValues(radius + 10, 18, 0),
+          transform: Matrix4.translationValues(radius * 2 + 5, 18, 0),
           child: Text(
             pilot.name,
             maxLines: 1,
