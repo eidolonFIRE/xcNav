@@ -67,7 +67,7 @@ enum FocusMode {
 
 TextStyle instrLower = const TextStyle(fontSize: 35);
 TextStyle instrUpper = const TextStyle(fontSize: 40);
-TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey[400], fontStyle: FontStyle.italic);
+TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic);
 
 class _MyHomePageState extends State<MyHomePage> {
   late MapController mapController;
@@ -388,6 +388,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void showMoreInstruments(BuildContext context) {
+    Provider.of<Wind>(context, listen: false).clearStopTrigger();
     showGeneralDialog(
       context: context,
       barrierLabel: "Instruments",
@@ -398,7 +399,11 @@ class _MyHomePageState extends State<MyHomePage> {
           resizeDuration: const Duration(milliseconds: 10),
           child: moreInstrumentsDrawer(),
           direction: DismissDirection.up,
-          onDismissed: (event) => {Navigator.pop(context)},
+          onDismissed: (event) {
+            Navigator.pop(context);
+            final wind = Provider.of<Wind>(context, listen: false);
+            wind.stop(waitTillSolution: true);
+          },
         );
       },
       // TODO: this could use some tuning

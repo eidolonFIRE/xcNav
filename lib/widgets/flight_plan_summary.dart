@@ -136,7 +136,6 @@ class _FlightPlanSummaryState extends State<FlightPlanSummary> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      // color: Colors.grey[700],
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(children: [

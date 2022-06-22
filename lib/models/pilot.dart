@@ -139,7 +139,6 @@ class Pilot {
     } else {
       // - fallback on default avatar
       debugPrint("Avatar Hash was null for $id");
-      avatar = Image.asset("assets/images/default_avatar.png");
     }
   }
 

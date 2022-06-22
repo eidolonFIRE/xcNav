@@ -47,13 +47,11 @@ class GA {
 
     Color color = warning
         ? Colors.red
-        : Colors.amber[600]!.withAlpha(max(
+        : Colors.amber.shade600.withAlpha(max(
             minTransparency,
             min(
                 255,
-                (255 -
-                        max(0, (relative.alt - alt).abs() - verticalClose) *
-                            ((255 - minTransparency) / verticalFade))
+                (255 - max(0, (relative.alt - alt).abs() - verticalClose) * ((255 - minTransparency) / verticalFade))
                     .round())));
 
     switch (type) {
@@ -66,6 +64,5 @@ class GA {
     }
   }
 
-  GA(this.id, this.latlng, this.alt, this.spd, this.hdg, this.type,
-      this.timestamp);
+  GA(this.id, this.latlng, this.alt, this.spd, this.hdg, this.type, this.timestamp);
 }

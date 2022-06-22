@@ -60,7 +60,7 @@ Widget moreInstrumentsDrawer() {
                 title: GestureDetector(
                   onTap: () => {showFuelDialog(context)},
                   child: Card(
-                    color: Colors.grey[800],
+                    color: Colors.grey.shade800,
                     child: (myTelemetry.fuel > 0)
                         ? Builder(builder: (context) {
                             int remMin = min(999 * 60, (myTelemetry.fuel / myTelemetry.fuelBurnRate * 60).ceil());
@@ -182,7 +182,7 @@ Widget moreInstrumentsDrawer() {
                             children: [
                               Text("Hold",
                                   style: TextStyle(
-                                    color: wind.isRecording ? Colors.grey[700] : Colors.white,
+                                    color: wind.isRecording ? Colors.grey.shade700 : Colors.white,
                                   )),
                               Switch(
                                   value: wind.isRecording,
@@ -190,16 +190,14 @@ Widget moreInstrumentsDrawer() {
                                   activeThumbImage: IconImageProvider(Icons.play_arrow, color: Colors.black),
                                   onChanged: (value) {
                                     if (value) {
-                                      wind.windSampleFirst = myTelemetry.recordGeo.length - 1;
-                                      wind.clearResult();
+                                      wind.start();
                                     } else {
-                                      wind.windSampleLast = myTelemetry.recordGeo.length - 1;
+                                      wind.stop();
                                     }
-                                    wind.isRecording = value;
                                   }),
                               Text("Active",
                                   style: TextStyle(
-                                    color: wind.isRecording ? Colors.white : Colors.grey[700],
+                                    color: wind.isRecording ? Colors.white : Colors.grey.shade700,
                                   )),
                             ],
                           ),
@@ -229,17 +227,15 @@ Widget moreInstrumentsDrawer() {
                                               children: const [
                                                 Padding(
                                                   padding: EdgeInsets.all(10.0),
-                                                  child: Text("Slowly Turn 1/4 Circle"),
+                                                  child: Text("Slowly Turn 1/4 Circle", style: TextStyle(fontSize: 18)),
                                                 ),
                                                 CircularProgressIndicator(
                                                   strokeWidth: 3,
                                                 )
                                               ],
                                             )
-                                          : const Text(
-                                              "Activate to\nBegin",
-                                              textAlign: TextAlign.center,
-                                            ))
+                                          : const Text("Activate to\nBegin",
+                                              textAlign: TextAlign.center, style: TextStyle(fontSize: 18)))
                                   : ClipRect(
                                       child: CustomPaint(
                                         painter: WindPlotPainter(

@@ -23,11 +23,14 @@ class WindSolveResult {
 }
 
 class Wind with ChangeNotifier {
+  late final BuildContext _context;
+
   /// Most recent wind calculation performed
   WindSolveResult? _result;
   WindSolveResult? get result => _result;
 
   bool _isRecording = false;
+  bool _triggerStop = false;
 
   // Recorded
   int? windSampleFirst;
@@ -48,7 +51,28 @@ class Wind with ChangeNotifier {
     notifyListeners();
   }
 
+  void start() {
+    windSampleFirst = Provider.of<MyTelemetry>(_context, listen: false).recordGeo.length - 1;
+    clearResult();
+    isRecording = true;
+  }
+
+  void stop({bool waitTillSolution = false}) {
+    if (waitTillSolution && _result == null) {
+      _triggerStop = true;
+    } else {
+      windSampleLast = Provider.of<MyTelemetry>(_context, listen: false).recordGeo.length - 1;
+      _triggerStop = false;
+      isRecording = false;
+    }
+  }
+
+  void clearStopTrigger() {
+    _triggerStop = false;
+  }
+
   Wind(BuildContext context) {
+    _context = context;
     Provider.of<MyTelemetry>(context, listen: false).addListener(() {
       final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
       final cardinality = myTelemetry.recordGeo.length;
@@ -177,7 +201,12 @@ class Wind with ChangeNotifier {
     final windSpd = sqrt(pow(xCenter, 2) + pow(yCenter, 2));
     final windHdg = atan2(xCenter, -yCenter) % (2 * pi);
 
-    _result = WindSolveResult(radius, windSpd, windHdg, Offset(xCenter, yCenter), maxSpd, samplesX, samplesY);
-    notifyListeners();
+    // More conditions for good result
+    if (windSpd < 90 && radius < 40) {
+      _result = WindSolveResult(radius, windSpd, windHdg, Offset(xCenter, yCenter), maxSpd, samplesX, samplesY);
+      notifyListeners();
+
+      if (_triggerStop) stop();
+    }
   }
 }

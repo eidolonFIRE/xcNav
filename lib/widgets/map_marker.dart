@@ -20,11 +20,11 @@ const iconOptions = {
 
 var colorOptions = {
   "black": Colors.black,
-  "red": Colors.red[700],
-  "orange": Colors.amber[900],
-  "blue": Colors.blue[800],
-  "green": Colors.green[800],
-  "purple": Colors.purple[700],
+  "red": Colors.red.shade700,
+  "orange": Colors.amber.shade900,
+  "blue": Colors.blue.shade800,
+  "green": Colors.green.shade800,
+  "purple": Colors.purple.shade700,
 };
 
 class MapMarker extends StatelessWidget {

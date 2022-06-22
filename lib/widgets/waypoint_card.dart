@@ -84,7 +84,7 @@ class WaypointCard extends StatelessWidget {
                           child: Icon(
                             iconOptions[waypoint.icon],
                             size: 24,
-                            color: isSelected ? Colors.black : (isFaded ? Colors.grey[600] : Colors.white),
+                            color: isSelected ? Colors.black : (isFaded ? Colors.grey.shade600 : Colors.white),
                           ),
                         ),
                       if (waypoint.icon != null) const TextSpan(text: " "),
@@ -92,7 +92,7 @@ class WaypointCard extends StatelessWidget {
                       TextSpan(
                         text: waypoint.name,
                         style: TextStyle(
-                            color: isSelected ? Colors.black : (isFaded ? Colors.grey[600] : Colors.white),
+                            color: isSelected ? Colors.black : (isFaded ? Colors.grey.shade600 : Colors.white),
                             fontSize: 24),
                       ),
                     ]),
