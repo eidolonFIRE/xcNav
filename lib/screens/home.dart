@@ -316,6 +316,7 @@ class _MyHomePageState extends State<MyHomePage> {
       mapController.move(centerZoom.center, centerZoom.zoom);
     }
     mapAspectRatio = mapKey.currentContext!.size!.aspectRatio;
+    debugPrint("Aspect ratio ${mapAspectRatio}");
   }
 
   bool markerIsInView(LatLng point) {
@@ -331,19 +332,14 @@ class _MyHomePageState extends State<MyHomePage> {
       final bw = (mapController.bounds!.west - mapController.bounds!.east).abs();
       final bh = (mapController.bounds!.north - mapController.bounds!.south).abs();
 
-      // sample gradient for map projection correction
-      final projectedRatio = latlngCalc.distance(center, LatLng(center.latitude + 0.1, center.longitude)) /
-          latlngCalc.distance(center, LatLng(center.latitude, center.longitude + 0.1));
-
       // solve for inscribed rectangle
       final a = mapAspectRatio!;
       final w = (a * bw) / (a * cos(theta) + sin(theta));
       final h = bh / (a * sin(theta) + cos(theta));
 
       // make bounding box and sample
-      final fakeBounds = LatLngBounds(
-          LatLng(center.latitude - w / 2 * projectedRatio, center.longitude - h / 2 / projectedRatio),
-          LatLng(center.latitude + w / 2 * projectedRatio, center.longitude + h / 2 / projectedRatio));
+      final fakeBounds = LatLngBounds(LatLng(center.latitude - h / 2, center.longitude - w / 2),
+          LatLng(center.latitude + h / 2, center.longitude + w / 2));
       return fakeBounds.contains(transformedPoint);
     } else {
       return false;
@@ -932,16 +928,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                             90) *
                                         pi /
                                         180;
-                                    final hypo = MediaQuery.of(context).size.width / 2 - 40;
+                                    final hypo = MediaQuery.of(context).size.width * 0.8 - 40;
                                     final dist = latlngCalc.distance(mapController.center, e.geo.latLng);
 
                                     return Opacity(
                                         opacity: 0.5,
-                                        child:
-                                            //   Container(
-                                            // transformAlignment: const Alignment(0, 0),
-                                            // transform: Matrix4.translationValues(cos(theta) * hypo, sin(theta) * hypo, 0),
-                                            Padding(
+                                        child: Padding(
                                           padding: EdgeInsets.fromLTRB(
                                             max(0, cos(theta) * hypo),
                                             max(0, sin(theta) * hypo),
