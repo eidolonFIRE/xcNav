@@ -175,7 +175,7 @@ class Wind with ChangeNotifier {
     xCenter += xMean;
     yCenter += yMean;
     final windSpd = sqrt(pow(xCenter, 2) + pow(yCenter, 2));
-    final windHdg = atan2(xCenter, yCenter) % (2 * pi);
+    final windHdg = atan2(xCenter, -yCenter) % (2 * pi);
 
     _result = WindSolveResult(radius, windSpd, windHdg, Offset(xCenter, yCenter), maxSpd, samplesX, samplesY);
     notifyListeners();
