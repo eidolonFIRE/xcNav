@@ -71,6 +71,8 @@ TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey[400], fontStyl
 
 class _MyHomePageState extends State<MyHomePage> {
   late MapController mapController;
+  final mapKey = GlobalKey(debugLabel: "mainMap");
+  double? mapAspectRatio;
   bool mapReady = false;
   FocusMode focusMode = FocusMode.me;
   FocusMode prevFocusMode = FocusMode.me;
@@ -312,6 +314,39 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     if (centerZoom != null) {
       mapController.move(centerZoom.center, centerZoom.zoom);
+    }
+    mapAspectRatio = mapKey.currentContext!.size!.aspectRatio;
+  }
+
+  bool markerIsInView(LatLng point) {
+    if (mapReady && mapController.bounds != null && mapAspectRatio != null) {
+      // transform point into north-up reference frame
+      final vectorHdg = latlngCalc.bearing(mapController.center, point) + mapController.rotation;
+      final vectorHypo = latlngCalc.distance(mapController.center, point);
+      final transformedPoint = latlngCalc.offset(mapController.center, vectorHypo, ((vectorHdg + 180) % 360) - 180);
+      final center = mapController.center;
+      final theta = (((mapController.rotation.abs() % 180) - 90).abs() - 90).abs() * pi / 180;
+
+      // super bounding box
+      final bw = (mapController.bounds!.west - mapController.bounds!.east).abs();
+      final bh = (mapController.bounds!.north - mapController.bounds!.south).abs();
+
+      // sample gradient for map projection correction
+      final projectedRatio = latlngCalc.distance(center, LatLng(center.latitude + 0.1, center.longitude)) /
+          latlngCalc.distance(center, LatLng(center.latitude, center.longitude + 0.1));
+
+      // solve for inscribed rectangle
+      final a = mapAspectRatio!;
+      final w = (a * bw) / (a * cos(theta) + sin(theta));
+      final h = bh / (a * sin(theta) + cos(theta));
+
+      // make bounding box and sample
+      final fakeBounds = LatLngBounds(
+          LatLng(center.latitude - w / 2 * projectedRatio, center.longitude - h / 2 / projectedRatio),
+          LatLng(center.latitude + w / 2 * projectedRatio, center.longitude + h / 2 / projectedRatio));
+      return fakeBounds.contains(transformedPoint);
+    } else {
+      return false;
     }
   }
 
@@ -656,11 +691,11 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Stack(alignment: Alignment.center, children: [
             Consumer3<MyTelemetry, Settings, ActivePlan>(
                 builder: (context, myTelemetry, settings, plan, child) => FlutterMap(
+                      key: mapKey,
                       mapController: mapController,
                       options: MapOptions(
                         interactiveFlags:
                             InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
-                        // rotation: -myTelemetry.geo.hdg,
                         center: myTelemetry.geo.latLng,
                         zoom: 12.0,
                         onTap: (tapPosition, point) => onMapTap(context, point),
@@ -878,6 +913,91 @@ class _MyHomePageState extends State<MyHomePage> {
                         if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
                           DragMarkerPluginOptions(markers: polyEditor.edit()),
                       ],
+                    )),
+
+            // --- Pilot Direction Markers (for when pilots are out of view)
+            StreamBuilder(
+                stream: mapController.mapEventStream,
+                builder: (context, mapEvent) => Center(
+                      child: Stack(
+                          // fit: StackFit.expand,
+                          children: Provider.of<Group>(context)
+                              .pilots
+                              .values
+                              .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
+                              .where((e) => !markerIsInView(e.geo.latLng))
+                              .map((e) => Builder(builder: (context) {
+                                    final theta = (latlngCalc.bearing(mapController.center, e.geo.latLng) +
+                                            mapController.rotation -
+                                            90) *
+                                        pi /
+                                        180;
+                                    final hypo = MediaQuery.of(context).size.width / 2 - 40;
+                                    final dist = latlngCalc.distance(mapController.center, e.geo.latLng);
+
+                                    return Opacity(
+                                        opacity: 0.5,
+                                        child:
+                                            //   Container(
+                                            // transformAlignment: const Alignment(0, 0),
+                                            // transform: Matrix4.translationValues(cos(theta) * hypo, sin(theta) * hypo, 0),
+                                            Padding(
+                                          padding: EdgeInsets.fromLTRB(
+                                            max(0, cos(theta) * hypo),
+                                            max(0, sin(theta) * hypo),
+                                            max(0, cos(theta) * -hypo),
+                                            max(0, sin(theta) * -hypo),
+                                          ),
+                                          child: Stack(
+                                            children: [
+                                              Container(
+                                                  transformAlignment: const Alignment(0, 0),
+                                                  transform:
+                                                      Matrix4.translationValues(cos(theta) * 30, sin(theta) * 30, 0)
+                                                        ..rotateZ(theta),
+                                                  child: const Icon(
+                                                    Icons.east,
+                                                    color: Colors.black,
+                                                    size: 40,
+                                                  )),
+                                              GestureDetector(
+                                                behavior: HitTestBehavior.opaque,
+                                                onTap: () => showPilotInfo(context, e.id),
+                                                child: PilotMarker(
+                                                  e,
+                                                  20,
+                                                ),
+                                              ),
+                                              Container(
+                                                  width: 40,
+                                                  // transformAlignment: const Alignment(0, 0),
+                                                  transform: Matrix4.translationValues(0, 40, 0),
+                                                  child: Text.rich(
+                                                    TextSpan(children: [
+                                                      TextSpan(
+                                                          style: const TextStyle(color: Colors.black, fontSize: 18),
+                                                          text: printValue(
+                                                              value: convertDistValueCoarse(
+                                                                  Provider.of<Settings>(context, listen: false)
+                                                                      .displayUnitsDist,
+                                                                  dist),
+                                                              digits: 4,
+                                                              decimals: 1)),
+                                                      TextSpan(
+                                                          style: const TextStyle(color: Colors.black87, fontSize: 14),
+                                                          text: unitStrDistCoarse[
+                                                              Provider.of<Settings>(context, listen: false)
+                                                                  .displayUnitsDist]),
+                                                    ]),
+                                                    softWrap: false,
+                                                    textAlign: TextAlign.center,
+                                                    overflow: TextOverflow.visible,
+                                                  ))
+                                            ],
+                                          ),
+                                        ));
+                                  }))
+                              .toList()),
                     )),
 
             // --- Chat bubbles
