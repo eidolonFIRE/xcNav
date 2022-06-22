@@ -163,6 +163,7 @@ class Pilot {
     return Polyline(
         points: flightTrace.map((e) => e.latLng).toList().sublist(max(0, flightTrace.length - 40)),
         strokeWidth: 4,
-        color: color.withAlpha(150));
+        color: color.withAlpha(150),
+        isDotted: true);
   }
 }

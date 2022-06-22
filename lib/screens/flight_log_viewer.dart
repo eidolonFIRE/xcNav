@@ -35,8 +35,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
 
   void refreshLogsFromDirectory() async {
     final Directory _appDocDir = await getApplicationDocumentsDirectory();
-    final Directory _appDocDirFolder =
-        Directory("${_appDocDir.path}/flight_logs/");
+    final Directory _appDocDirFolder = Directory("${_appDocDir.path}/flight_logs/");
     if (await _appDocDirFolder.exists()) {
       //if folder already exists return path
       setState(() {
@@ -46,21 +45,18 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
       logs.clear();
 
       // Async load in all the files
-      var files = await _appDocDirFolder
-          .list(recursive: false, followLinks: false)
-          .toList();
-      debugPrint("${files.length} log files found.");
+      var files = await _appDocDirFolder.list(recursive: false, followLinks: false).toList();
+      // debugPrint("${files.length} log files found.");
       List<Completer> completers = [];
       for (var each in files) {
         var _completer = Completer();
         completers.add(_completer);
         File.fromUri(each.uri).readAsString().then((value) {
-          logs[each.uri.path] =
-              FlightLog.fromJson(each.path, jsonDecode(value));
+          logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
           _completer.complete();
         });
       }
-      debugPrint("${completers.length} completers created.");
+      // debugPrint("${completers.length} completers created.");
       Future.wait(completers.map((e) => e.future).toList()).then((value) {
         setState(() {
           loaded = true;
@@ -88,8 +84,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
             )
           : ListView.builder(
               itemCount: keys.length,
-              itemBuilder: (context, index) => FlightLogSummary(
-                  logs[keys[index]]!, refreshLogsFromDirectory),
+              itemBuilder: (context, index) => FlightLogSummary(logs[keys[index]]!, refreshLogsFromDirectory),
             ),
     );
   }

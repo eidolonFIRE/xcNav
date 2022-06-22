@@ -29,6 +29,7 @@ import 'package:xcnav/providers/adsb.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
+import 'package:xcnav/widgets/makePathBarbs.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
 import 'package:xcnav/widgets/map_marker.dart';
@@ -305,12 +306,12 @@ class _MyHomePageState extends State<MyHomePage> {
           .pilots
           // Don't consider telemetry older than 5 minutes
           .values
-          .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
+          .where((_p) => _p.geo.time > DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch)
           .map((e) => e.geo.latLng)
           .toList();
       points.add(LatLng(geo.lat, geo.lng));
       centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
-          options: const FitBoundsOptions(padding: EdgeInsets.all(100), maxZoom: 13, inside: true));
+          options: const FitBoundsOptions(padding: EdgeInsets.all(150), maxZoom: 13, inside: false));
     }
     if (centerZoom != null) {
       mapController.move(centerZoom.center, centerZoom.zoom);
@@ -791,6 +792,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                   points: e.latlng, strokeWidth: 6, color: Color(e.color ?? Colors.black.value)))
                               .toList(),
                         ),
+
+                        // Flight plan paths - directional barbs
+                        MarkerLayerOptions(markers: makePathBarbs(plan)),
 
                         // Flight plan markers
                         DragMarkerPluginOptions(

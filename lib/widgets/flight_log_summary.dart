@@ -176,36 +176,38 @@ class FlightLogSummary extends StatelessWidget {
                     columnWidths: const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
                     children: [
                       TableRow(children: [
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: TableCell(
-                              child: Text.rich(
-                            TextSpan(children: [
-                              const WidgetSpan(
-                                  child: Icon(
-                                Icons.flight_takeoff,
-                                size: 18,
-                              )),
-                              TextSpan(
-                                  text: "  " +
-                                      dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time))),
-                            ]),
-                            textAlign: TextAlign.center,
-                          )),
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: Text.rich(
+                              TextSpan(children: [
+                                const WidgetSpan(
+                                    child: Icon(
+                                  Icons.flight_takeoff,
+                                  size: 18,
+                                )),
+                                TextSpan(
+                                    text: "  " +
+                                        dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time))),
+                              ]),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: TableCell(
-                              child: Text.rich(
-                            TextSpan(children: [
-                              const WidgetSpan(child: Icon(Icons.flight_land, size: 18)),
-                              TextSpan(
-                                text: "  " +
-                                    dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.last.time)),
-                              )
-                            ]),
-                            textAlign: TextAlign.center,
-                          )),
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: Text.rich(
+                              TextSpan(children: [
+                                const WidgetSpan(child: Icon(Icons.flight_land, size: 18)),
+                                TextSpan(
+                                  text: "  " +
+                                      dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.last.time)),
+                                )
+                              ]),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         )
                       ]),
                       TableRow(children: [

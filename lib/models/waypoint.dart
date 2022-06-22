@@ -18,15 +18,10 @@ String hashFlightPlanData(List<Waypoint> waypoints) {
 
   for (int i = 0; i < waypoints.length; i++) {
     Waypoint wp = waypoints[i];
-    str += i.toString() +
-        wp.name +
-        (wp.icon ?? "") +
-        (wp.color?.toString() ?? "") +
-        (wp.isOptional ? "O" : "X");
+    str += i.toString() + wp.name + (wp.icon ?? "") + (wp.color?.toString() ?? "") + (wp.isOptional ? "O" : "X");
     for (LatLng g in wp.latlng) {
       // large tolerance for floats
-      str +=
-          "${g.latitude.toStringAsFixed(5)}${g.longitude.toStringAsFixed(5)}";
+      str += "${g.latitude.toStringAsFixed(5)}${g.longitude.toStringAsFixed(5)}";
     }
   }
 
@@ -39,33 +34,49 @@ String hashFlightPlanData(List<Waypoint> waypoints) {
   return (hash < 0 ? hash * -2 : hash).toRadixString(16);
 }
 
+class Barb {
+  LatLng latlng;
+
+  /// Radians
+  double hdg;
+  Barb(this.latlng, this.hdg);
+}
+
 class Waypoint {
   late String name;
-  late List<LatLng> latlng;
+  late List<LatLng> _latlng;
   late bool isOptional;
   late String? icon;
   late int? color;
 
   double? _length;
+  List<Barb>? _barbs;
 
-  Waypoint(this.name, this.latlng, this.isOptional, this.icon, this.color);
+  Waypoint(this.name, this._latlng, this.isOptional, this.icon, this.color);
 
   Waypoint.fromJson(json) {
     name = json["name"];
     isOptional = json["optional"];
     icon = json["icon"];
     color = json["color"];
-    latlng = [];
+    _latlng = [];
     List<dynamic> rawList = json["latlng"];
     for (List<dynamic> e in rawList) {
       List<double> raw = e.cast<double>();
-      latlng.add(LatLng(raw[0], raw[1]));
+      _latlng.add(LatLng(raw[0], raw[1]));
     }
   }
 
   @override
   String toString() {
     return jsonEncode(toJson());
+  }
+
+  List<LatLng> get latlng => _latlng;
+  set latlng(List<LatLng> newLatlngs) {
+    _latlng = newLatlngs;
+    _length = null;
+    _barbs = null;
   }
 
   /// Get full waypoint length.
@@ -75,6 +86,10 @@ class Waypoint {
     return _length ??= lengthBetweenIndexs(0, latlng.length - 1);
   }
 
+  List<Barb> get barbs {
+    return _barbs ??= makeBarbs();
+  }
+
   double lengthBetweenIndexs(int start, int end) {
     // TODO: cache distances between all the points (vs recalculating every time)
     double dist = 0;
@@ -82,6 +97,24 @@ class Waypoint {
       dist += latlngCalc.distance(latlng[t], latlng[t + 1]);
     }
     return dist;
+  }
+
+  List<Barb> makeBarbs() {
+    if (latlng.length < 2) return [];
+
+    List<Barb> barbs = [];
+
+    // Add head and tail
+    barbs.add(Barb(latlng.first, latlngCalc.bearing(latlng.first, latlng[1]) * pi / 180));
+    barbs.add(Barb(latlng.last, latlngCalc.bearing(latlng[latlng.length - 2], latlng.last) * pi / 180));
+
+    // Add intermediary points
+    for (int i = 0; i < latlng.length - 1; i++) {
+      final brg = latlngCalc.bearing(latlng[i], latlng[i + 1]);
+      final dist = latlngCalc.distance(latlng[i], latlng[i + 1]);
+      barbs.add(Barb(latlngCalc.offset(latlng[i], dist / 2, brg), brg * pi / 180));
+    }
+    return barbs;
   }
 
   dynamic toJson() {
