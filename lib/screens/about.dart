@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// widgets
-import 'package:xcnav/widgets/dashed_line.dart';
-
 class About extends StatefulWidget {
   const About({Key? key}) : super(key: key);
 
@@ -128,7 +125,7 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      "Top Contributors",
+                      "Code Contributors",
                       style: TextStyle(fontSize: 24),
                     ),
                     SizedBox(

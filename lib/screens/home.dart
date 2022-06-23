@@ -614,7 +614,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ]))
                     : null),
 
-            Divider(height: 0, thickness: 1, color: Colors.grey.shade700),
+            Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 
             /// Group
             ListTile(
@@ -669,6 +669,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   size: 30,
                 ),
                 title: Text("History", style: Theme.of(context).textTheme.headline5)),
+
+            Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
+
             ListTile(
                 minVerticalPadding: 20,
                 onTap: () => {Navigator.pushNamed(context, "/settings")},
@@ -677,8 +680,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   size: 30,
                 ),
                 title: Text("Settings", style: Theme.of(context).textTheme.headline5)),
-
-            Divider(height: 0, thickness: 1, color: Colors.grey.shade700),
 
             ListTile(
               minVerticalPadding: 20,
