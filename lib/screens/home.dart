@@ -73,6 +73,7 @@ TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey.shade400, font
 
 class _MyHomePageState extends State<MyHomePage> {
   late MapController mapController;
+  DateTime? lastMapChange;
   final mapKey = GlobalKey(debugLabel: "mainMap");
   double? mapAspectRatio;
   bool mapReady = false;
@@ -311,8 +312,13 @@ class _MyHomePageState extends State<MyHomePage> {
           .map((e) => e.geo.latLng)
           .toList();
       points.add(LatLng(geo.lat, geo.lng));
-      centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
-          options: const FitBoundsOptions(padding: EdgeInsets.all(150), maxZoom: 13, inside: false));
+      if (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now())) {
+        centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
+            options: const FitBoundsOptions(padding: EdgeInsets.all(150), maxZoom: 10, inside: false));
+      } else {
+        // Preserve zoom if it has been recently overriden
+        centerZoom = CenterZoom(center: LatLngBounds.fromPoints(points).center, zoom: mapController.zoom);
+      }
     }
     if (centerZoom != null) {
       mapController.move(centerZoom.center, centerZoom.zoom);
@@ -709,6 +715,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           // debugPrint("$mapPosition $hasGesture");
                           if (hasGesture && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
                             // --- Unlock any focus lock
+                            lastMapChange = DateTime.now();
                             setFocusMode(FocusMode.unlocked);
                           }
                         },
@@ -1246,7 +1253,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       MapButton(
                         size: 60,
                         selected: false,
-                        onPressed: () => {mapController.move(mapController.center, mapController.zoom + 1)},
+                        onPressed: () {
+                          mapController.move(mapController.center, mapController.zoom + 1);
+                          lastMapChange = DateTime.now();
+                        },
                         child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
                       ),
                       //
@@ -1260,7 +1270,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       MapButton(
                         size: 60,
                         selected: false,
-                        onPressed: () => {mapController.move(mapController.center, mapController.zoom - 1)},
+                        onPressed: () {
+                          mapController.move(mapController.center, mapController.zoom - 1);
+                          lastMapChange = DateTime.now();
+                        },
                         child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
                       ),
                     ]),
