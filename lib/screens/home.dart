@@ -1198,18 +1198,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                     transform: mapReady
                                         ? Matrix4.rotationZ(mapController.rotation * pi / 180)
                                         : Matrix4.rotationZ(0),
-                                    child: SvgPicture.asset(
-                                      "assets/images/compass.svg",
-                                      fit: BoxFit.none,
-                                      color: northLock ? Colors.grey : null,
-                                    ),
+                                    child: northLock
+                                        ? SvgPicture.asset("assets/images/compass_north.svg", fit: BoxFit.none)
+                                        : SvgPicture.asset(
+                                            "assets/images/compass.svg",
+                                            fit: BoxFit.none,
+                                          ),
                                   )),
-                          if (northLock)
-                            const Center(
-                                child: Text(
-                              "- N -",
-                              style: TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold),
-                            )),
                         ]),
                         size: 60,
                         onPressed: () => {

@@ -40,17 +40,21 @@ class _WeatherViewerState extends State<WeatherViewer> {
                     future: Provider.of<Weather>(context, listen: false).getSounding(),
                     builder: (context, sounding) {
                       if (sounding.hasData && sounding.data != null) {
-                        // Get the sample from selection
-                        SoundingSample? sample = (selectedY == null || sounding.data == null)
-                            ? null
-                            : sounding.data!.sampleBaro(pressureFromElevation(
-                                (MediaQuery.of(context).size.width - selectedY!) /
-                                    (MediaQuery.of(context).size.width) *
-                                    6000.0,
-                                1013.25));
-                        var settings = Provider.of<Settings>(context, listen: false);
                         double myBaro = Provider.of<MyTelemetry>(context, listen: false).baro?.hectpascal ??
                             pressureFromElevation(Provider.of<MyTelemetry>(context, listen: false).geo.alt, 1013.25);
+                        // Get the sample from selection
+                        SoundingSample? sample;
+                        if (selectedY != null) {
+                          sample = sounding.data!.sampleBaro(pressureFromElevation(
+                              (MediaQuery.of(context).size.width - selectedY!) /
+                                  (MediaQuery.of(context).size.width) *
+                                  6000.0,
+                              1013.25));
+                        } else {
+                          sample = sounding.data!.sampleBaro(myBaro);
+                        }
+                        var settings = Provider.of<Settings>(context, listen: false);
+
                         return Column(
                           // crossAxisAlignment: CrossAxisAlignment.stretch,
                           mainAxisSize: MainAxisSize.max,

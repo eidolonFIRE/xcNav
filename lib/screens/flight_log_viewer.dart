@@ -52,7 +52,16 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
         var _completer = Completer();
         completers.add(_completer);
         File.fromUri(each.uri).readAsString().then((value) {
-          logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
+          try {
+            logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
+          } catch (e) {
+            debugPrint(e.toString());
+            if (logs[each.uri.path] != null) {
+              logs[each.uri.path]!.goodFile = false;
+            } else {
+              debugPrint("Failed to load log: ${each.uri.path}");
+            }
+          }
           _completer.complete();
         });
       }

@@ -29,13 +29,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   List<LatLng> flightTrace = [];
   DateTime? takeOff;
   Geo? launchGeo;
+  DateTime? lastSavedLog;
 
   // in-flight hysterisis
   int triggerHyst = 0;
   bool inFlight = false;
 
   // fuel save interval
-  double? lastSaved;
+  double? lastSavedFuelLevel;
 
   /// Latest Barometric Reading
   BarometerValue? baro;
@@ -65,7 +66,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   void _load() async {
     final prefs = await SharedPreferences.getInstance();
     fuel = prefs.getDouble("me.fuel") ?? 0;
-    lastSaved = fuel;
+    lastSavedFuelLevel = fuel;
     fuelBurnRate = prefs.getDouble("me.fuelBurnRate") ?? 4;
   }
 
@@ -74,10 +75,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     prefs.setDouble("me.fuel", fuel);
     prefs.setDouble("me.fuelBurnRate", fuelBurnRate);
-    lastSaved = fuel;
+    lastSavedFuelLevel = fuel;
   }
 
   Future saveFlight() async {
+    lastSavedLog = DateTime.now();
     Directory tempDir = await getApplicationDocumentsDirectory();
     File logFile = File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
     debugPrint("Writing ${logFile.uri} with ${recordGeo.length} samples");
@@ -85,6 +87,50 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     await logFile
         .create(recursive: true)
         .then((value) => logFile.writeAsString(jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
+  }
+
+  void fetchAmbPressure() {
+    http
+        .get(Uri.parse("https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
+        .then((responseXY) {
+      // nearest stations
+      var msgXY = jsonDecode(responseXY.body);
+      var x = msgXY["properties"]["gridX"];
+      var y = msgXY["properties"]["gridY"];
+      var gridId = msgXY["properties"]["gridId"];
+
+      http.get(Uri.parse("https://api.weather.gov/gridpoints/$gridId/$x,$y/stations")).then((responsePoint) async {
+        var msgPoint = jsonDecode(responsePoint.body);
+        // check each for pressure
+        stationFound = false;
+
+        if (msgPoint["observationStations"] != null) {
+          List<dynamic> stationList = msgPoint["observationStations"];
+          for (String each in stationList) {
+            if (stationFound) break;
+            await http.get(Uri.parse(each + "/observations/latest")).then((responseStation) {
+              try {
+                var msgStation = jsonDecode(responseStation.body);
+                if (msgStation["properties"] != null && msgStation["properties"]["seaLevelPressure"]["value"] != null) {
+                  double pressure = msgStation["properties"]["barometricPressure"]["value"] / 100;
+                  debugPrint("Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
+                  baroAmbient = BarometerValue(pressure);
+                  baroAmbientRequested = false;
+                  stationFound = true;
+                }
+              } catch (e) {
+                debugPrint("Failed to get station info. $e");
+                debugPrint(Uri.parse(each + "/observations/latest").toString());
+                debugPrint(responseStation.body);
+              }
+            });
+          }
+        } else {
+          debugPrint("No stations found for point $gridId, $x, $y");
+          // debugPrint(responsePoint.body);
+        }
+      });
+    });
   }
 
   void updateGeo(Position position, {bool? bypassRecording}) {
@@ -96,51 +142,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (baroAmbient == null && !baroAmbientRequested) {
       baroAmbientRequested = true;
       try {
-        http
-            .get(
-                Uri.parse("https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
-            .then((responseXY) {
-          // nearest stations
-          var msgXY = jsonDecode(responseXY.body);
-          var x = msgXY["properties"]["gridX"];
-          var y = msgXY["properties"]["gridY"];
-          var gridId = msgXY["properties"]["gridId"];
-
-          http.get(Uri.parse("https://api.weather.gov/gridpoints/$gridId/$x,$y/stations")).then((responsePoint) async {
-            var msgPoint = jsonDecode(responsePoint.body);
-            // check each for pressure
-            stationFound = false;
-
-            if (msgPoint["observationStations"] != null) {
-              List<dynamic> stationList = msgPoint["observationStations"];
-              for (String each in stationList) {
-                if (stationFound) break;
-                await http.get(Uri.parse(each + "/observations/latest")).then((responseStation) {
-                  try {
-                    var msgStation = jsonDecode(responseStation.body);
-                    if (msgStation["properties"] != null &&
-                        msgStation["properties"]["seaLevelPressure"]["value"] != null) {
-                      double pressure = msgStation["properties"]["barometricPressure"]["value"] / 100;
-                      debugPrint("Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
-                      baroAmbient = BarometerValue(pressure);
-                      baroAmbientRequested = false;
-                      stationFound = true;
-                    }
-                  } catch (e) {
-                    debugPrint("Failed to get station info. $e");
-                    debugPrint(Uri.parse(each + "/observations/latest").toString());
-                    debugPrint(responseStation.body);
-                  }
-                });
-              }
-            } else {
-              debugPrint("No stations found for point $gridId, $x, $y");
-              // debugPrint(responsePoint.body);
-            }
-          });
-        });
+        fetchAmbPressure();
       } catch (e) {
-        debugPrint("Failed to fetch ambient pressure. $e");
+        debugPrint("Failed to fetch ambient pressure... $e");
       }
     }
 
@@ -155,6 +159,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       triggerHyst = 0;
       if (inFlight) {
         takeOff = DateTime.now();
+        lastSavedLog = DateTime.now();
         launchGeo = geo;
         debugPrint("In Flight!!!");
       } else {
@@ -183,6 +188,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           flightTrace.removeRange(0, 100);
         }
       }
+
+      // --- Periodically save log
+      if (lastSavedLog != null && lastSavedLog!.add(const Duration(minutes: 5)).isBefore(DateTime.now())) {
+        saveFlight();
+      }
     }
 
     notifyListeners();
@@ -191,7 +201,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   void updateFuel(double delta) {
     fuel = max(0, fuel + delta);
     // every so often, save the fuel level in case the app crashes
-    if ((fuel - (lastSaved ?? fuel)).abs() > .2) _save();
+    if ((fuel - (lastSavedFuelLevel ?? fuel)).abs() > .2) _save();
     notifyListeners();
   }
 
