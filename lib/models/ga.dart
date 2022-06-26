@@ -19,6 +19,14 @@ Map<GAtype, String> gaTypeStr = {
   GAtype.heli: "helicopter",
 };
 
+double getGAtransparency(double relativeAlt) {
+  const verticalClose = 300;
+  const verticalFade = 800;
+  const minTransparency = 0.3;
+  return max(minTransparency,
+      min(1.0, (1.0 - max(0, relativeAlt.abs() - verticalClose) * ((1.0 - minTransparency) / verticalFade))));
+}
+
 class GA {
   final int id;
   final LatLng latlng;
@@ -41,18 +49,7 @@ class GA {
   /// - Fade transparency with vertical separation
   /// - Red Icon when on warning & close vertical range.
   SvgPicture getIcon(Geo relative) {
-    const verticalClose = 400;
-    const verticalFade = 800;
-    const minTransparency = 100;
-
-    Color color = warning
-        ? Colors.red
-        : Colors.amber.shade600.withAlpha(max(
-            minTransparency,
-            min(
-                255,
-                (255 - max(0, (relative.alt - alt).abs() - verticalClose) * ((255 - minTransparency) / verticalFade))
-                    .round())));
+    Color color = warning ? Colors.red : Colors.amber.shade600;
 
     switch (type) {
       case GAtype.small:

@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:xcnav/dialogs/pilot_info.dart';
+import 'package:xcnav/models/ga.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -598,19 +599,21 @@ class _MyHomePageState extends State<MyHomePage> {
                     ? (Provider.of<ADSB>(context).lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 10)
                         ? const Text.rich(TextSpan(children: [
                             WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
                                 child: Icon(
-                              Icons.check,
-                              color: Colors.green,
-                            )),
-                            TextSpan(text: "Connected")
+                                  Icons.check,
+                                  color: Colors.green,
+                                )),
+                            TextSpan(text: "  Connected")
                           ]))
                         : const Text.rich(TextSpan(children: [
                             WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
                                 child: Icon(
-                              Icons.link_off,
-                              color: Colors.amber,
-                            )),
-                            TextSpan(text: "No Data")
+                                  Icons.link_off,
+                                  color: Colors.amber,
+                                )),
+                            TextSpan(text: "  No Data")
                           ]))
                     : null),
 
@@ -862,8 +865,54 @@ class _MyHomePageState extends State<MyHomePage> {
                                       point: e.latlng,
                                       builder: (ctx) => Container(
                                         transformAlignment: const Alignment(0, 0),
-                                        child: e.getIcon(myTelemetry.geo),
-                                        transform: Matrix4.rotationZ(e.hdg * pi / 180),
+                                        transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                        child: Opacity(
+                                          opacity: getGAtransparency(e.alt - myTelemetry.geo.alt),
+                                          child: Stack(
+                                            children: [
+                                              /// --- GA icon
+                                              Container(
+                                                transformAlignment: const Alignment(0, 0),
+                                                child: e.getIcon(myTelemetry.geo),
+                                                transform:
+                                                    Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
+                                              ),
+
+                                              /// --- Relative Altitude
+                                              Container(
+                                                  transform: Matrix4.translationValues(40, 0, 0),
+                                                  transformAlignment: const Alignment(0, 0),
+                                                  child: Text.rich(
+                                                    TextSpan(children: [
+                                                      WidgetSpan(
+                                                        child: Icon(
+                                                          (e.alt - myTelemetry.geo.alt) > 0
+                                                              ? Icons.keyboard_arrow_up
+                                                              : Icons.keyboard_arrow_down,
+                                                          color: Colors.black,
+                                                          size: 21,
+                                                        ),
+                                                      ),
+                                                      TextSpan(
+                                                        text: printValue(
+                                                            value: convertDistValueFine(settings.displayUnitsDist,
+                                                                (e.alt - myTelemetry.geo.alt).abs()),
+                                                            digits: 5,
+                                                            decimals: 0),
+                                                        style: const TextStyle(color: Colors.black),
+                                                      ),
+                                                      TextSpan(
+                                                          text: unitStrDistFine[settings.displayUnitsDist],
+                                                          style: TextStyle(color: Colors.grey.shade700, fontSize: 12))
+                                                    ]),
+                                                    overflow: TextOverflow.visible,
+                                                    softWrap: false,
+                                                    maxLines: 1,
+                                                    style: const TextStyle(fontSize: 16),
+                                                  )),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   )

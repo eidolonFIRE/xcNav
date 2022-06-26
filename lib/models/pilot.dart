@@ -99,7 +99,7 @@ class Pilot {
         }
       }
 
-      color = Color.fromRGBO(redBucket ~/ pixelCount ~/ 2, greenBucket ~/ pixelCount, blueBucket ~/ pixelCount, 1);
+      color = Color.fromRGBO(redBucket ~/ pixelCount, greenBucket ~/ pixelCount, blueBucket ~/ pixelCount, 1);
     }
   }
 
@@ -161,7 +161,7 @@ class Pilot {
 
   Polyline buildFlightTrace() {
     return Polyline(
-        points: flightTrace.map((e) => e.latLng).toList().sublist(max(0, flightTrace.length - 40)),
+        points: flightTrace.map((e) => e.latLng).toList().sublist(max(0, flightTrace.length - 60)),
         strokeWidth: 4,
         color: color.withAlpha(150),
         isDotted: true);

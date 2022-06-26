@@ -22,10 +22,7 @@ class ProximityConfig {
   final double horizontalTime;
 
   /// Units in meters and seconds
-  ProximityConfig(
-      {required this.vertical,
-      required this.horizontalDist,
-      required this.horizontalTime});
+  ProximityConfig({required this.vertical, required this.horizontalDist, required this.horizontalTime});
 
   String toMultilineString(Settings settings) {
     return "Vertical: ${(convertDistValueFine(settings.displayUnitsDist, vertical) / 50).ceil() * 50}${unitStrDistFine[settings.displayUnitsDist]}\n"
@@ -129,8 +126,7 @@ class ADSB with ChangeNotifier {
     final double lng = decode24bit(data.sublist(7, 10)) * 180.0 / 0x7fffff;
 
     final Uint8List _altRaw = data.sublist(10, 12);
-    final double alt =
-        ((((_altRaw[0] << 4) + (_altRaw[1] >> 4)) * 25) - 1000) / meters2Feet;
+    final double alt = ((((_altRaw[0] << 4) + (_altRaw[1] >> 4)) * 25) - 1000) / meters2Feet;
 
     final double hdg = data[16] * 360 / 256.0;
     final double spd = ((data[13] << 4) + (data[14] >> 4)) * 0.51444;
@@ -146,16 +142,15 @@ class ADSB with ChangeNotifier {
       type = GAtype.large;
     }
 
-    debugPrint(
-        "GA $id (${type.toString()}): $lat, $lng, $spd m/s  $alt m, $hdg deg");
+    debugPrint("GA $id (${type.toString()}): $lat, $lng, $spd m/s  $alt m, $hdg deg");
 
-    if (type.index > 0 &&
-        type.index < 22 &&
-        (lat != 0 || lng != 0) &&
-        (lat < 90 && lat > -90)) {
-      planes[id] = GA(id, LatLng(lat, lng), alt, spd, hdg, type,
-          DateTime.now().millisecondsSinceEpoch);
+    if (type.index > 0 && type.index < 22 && (lat != 0 || lng != 0) && (lat < 90 && lat > -90)) {
+      planes[id] = GA(id, LatLng(lat, lng), alt, spd, hdg, type, DateTime.now().millisecondsSinceEpoch);
     }
+  }
+
+  void heartbeat() {
+    lastHeartbeat = DateTime.now().millisecondsSinceEpoch;
   }
 
   void decodeGDL90(Uint8List data) {
@@ -163,14 +158,13 @@ class ADSB with ChangeNotifier {
       case 0:
         // --- heartbeat
         // debugPrint("ADSB heartbeat ${data[2].toRadixString(2)}");
-        if (data[2] & 0x50 == 0) {
-          lastHeartbeat = DateTime.now().millisecondsSinceEpoch;
-        }
-
+        if (data[2] & 0x50 == 0) {}
+        heartbeat();
         break;
       case 20:
         // --- traffic
         decodeTraffic(data.sublist(2));
+        heartbeat();
         break;
       default:
         break;
@@ -190,8 +184,7 @@ class ADSB with ChangeNotifier {
   }
 
   void checkProximity(Geo observer) {
-    ProximityConfig config =
-        Provider.of<Settings>(context, listen: false).proximityProfile;
+    ProximityConfig config = Provider.of<Settings>(context, listen: false).proximityProfile;
 
     for (GA each in planes.values) {
       final double dist = latlngCalc.distance(each.latlng, observer.latLng);
@@ -204,14 +197,10 @@ class ADSB with ChangeNotifier {
 
       // TODO: deduce speed if not provided?
       final double? eta =
-          (each.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist)
-              ? dist / each.spd
-              : null;
+          (each.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist) ? dist / each.spd : null;
 
-      final bool warning =
-          (((eta ?? double.infinity) < config.horizontalTime) ||
-                  dist < config.horizontalDist) &&
-              altOffset.abs() < config.vertical;
+      final bool warning = (((eta ?? double.infinity) < config.horizontalTime) || dist < config.horizontalDist) &&
+          altOffset.abs() < config.vertical;
 
       planes[each.id]!.warning = warning;
 
@@ -222,15 +211,13 @@ class ADSB with ChangeNotifier {
   }
 
   void testWarning() {
-    ProximityConfig config =
-        Provider.of<Settings>(context, listen: false).proximityProfile;
+    ProximityConfig config = Provider.of<Settings>(context, listen: false).proximityProfile;
     var rand = Random(DateTime.now().millisecondsSinceEpoch);
     var observer = LatLng(0, 0);
 
     var ga = GA(
         0,
-        latlngCalc.offset(LatLng(0, 0), 10 + rand.nextDouble() * 3000,
-            rand.nextDouble() * 360),
+        latlngCalc.offset(LatLng(0, 0), 10 + rand.nextDouble() * 3000, rand.nextDouble() * 360),
         rand.nextDouble() * 200 - 100,
         35 + rand.nextDouble() * 50,
         rand.nextDouble() * 360,
@@ -243,14 +230,11 @@ class ADSB with ChangeNotifier {
     final double delta = deltaHdg(bearing, ga.hdg).abs();
 
     final double tangentOffset = sin(delta * pi / 180) * dist;
-    final double? eta =
-        (ga.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist)
-            ? dist / ga.spd
-            : null;
+    final double? eta = (ga.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist) ? dist / ga.spd : null;
     speakWarning(
         ga,
-        Geo.fromValues(0, 0, 0, DateTime.now().millisecondsSinceEpoch,
-            rand.nextDouble() * 2 * pi, 11.15 + 4.5 * rand.nextDouble(), 0),
+        Geo.fromValues(0, 0, 0, DateTime.now().millisecondsSinceEpoch, rand.nextDouble() * 2 * pi,
+            11.15 + 4.5 * rand.nextDouble(), 0),
         eta);
   }
 
@@ -258,25 +242,18 @@ class ADSB with ChangeNotifier {
     final settings = Provider.of<Settings>(context, listen: false);
 
     // direction
-    final int oclock = (((deltaHdg(
-                            latlngCalc.bearing(observer.latLng, ga.latlng),
-                            observer.hdg * 180 / pi) /
-                        360.0 *
-                        12.0)
-                    .round() +
-                11) %
-            12) +
-        1;
+    final int oclock =
+        (((deltaHdg(latlngCalc.bearing(observer.latLng, ga.latlng), observer.hdg * 180 / pi) / 360.0 * 12.0).round() +
+                    11) %
+                12) +
+            1;
 
     // distance, eta
-    final int dist = convertDistValueCoarse(settings.displayUnitsDist,
-            latlngCalc.distance(ga.latlng, observer.latLng))
-        .toInt();
+    final int dist =
+        convertDistValueCoarse(settings.displayUnitsDist, latlngCalc.distance(ga.latlng, observer.latLng)).toInt();
     final String distMsg =
-        ((dist > 0) ? dist.toStringAsFixed(0) : "less than one") +
-            unitStrDistCoarseVerbal[settings.displayUnitsDist]!;
-    final String? etaStr =
-        eta != null ? eta.toStringAsFixed(0) + " seconds out" : null;
+        ((dist > 0) ? dist.toStringAsFixed(0) : "less than one") + unitStrDistCoarseVerbal[settings.displayUnitsDist]!;
+    final String? etaStr = eta != null ? eta.toStringAsFixed(0) + " seconds out" : null;
 
     // vertical separation
     String vertSep = ".";
@@ -287,8 +264,7 @@ class ADSB with ChangeNotifier {
     // Type
     final String typeStr = gaTypeStr[ga.type] ?? "";
 
-    String msg =
-        "Warning! $typeStr $oclock o'clock$vertSep ${etaStr ?? distMsg}... ";
+    String msg = "Warning! $typeStr $oclock o'clock$vertSep ${etaStr ?? distMsg}... ";
     debugPrint(msg);
     flutterTts.setVolume(1);
     flutterTts.speak(msg);
