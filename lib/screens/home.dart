@@ -119,10 +119,10 @@ class _MyHomePageState extends State<MyHomePage> {
       points: editablePolyline.points,
       pointIcon: const Icon(
         Icons.crop_square,
-        size: 23,
+        size: 20,
         color: Colors.black,
       ),
-      intermediateIcon: const Icon(Icons.lens, size: 15, color: Colors.black),
+      intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
       callbackRefresh: () => {setState(() {})},
     );
 
@@ -288,6 +288,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       prevFocusMode = focusMode;
       focusMode = mode;
+      if (mode != FocusMode.editPath) editingIndex = null;
       debugPrint("FocusMode = $mode");
     });
     refreshMapView();
@@ -387,13 +388,16 @@ class _MyHomePageState extends State<MyHomePage> {
               resizeDuration: const Duration(milliseconds: 10),
               onDismissed: (event) => Navigator.pop(context),
               child: flightPlanDrawer(setFocusMode, () {
+                // onNewPath
                 editablePolyline.points.clear();
-                Navigator.pop(context);
+                Navigator.popUntil(context, ModalRoute.withName("/home"));
                 setFocusMode(FocusMode.addPath);
-              }, () {
+              }, (int index) {
+                // onEditPointsCallback
+                debugPrint("Editing Index $index");
+                editingIndex = index;
                 editablePolyline.points.clear();
-                editablePolyline.points
-                    .addAll(Provider.of<ActivePlan>(context, listen: false).selectedWp?.latlng ?? []);
+                editablePolyline.points.addAll(Provider.of<ActivePlan>(context, listen: false).waypoints[index].latlng);
                 Navigator.popUntil(context, ModalRoute.withName("/home"));
                 setFocusMode(FocusMode.editPath);
               }),
@@ -810,8 +814,17 @@ class _MyHomePageState extends State<MyHomePage> {
                               .toList(),
                         ),
 
-                        // Flight plan paths - directional barbs
-                        MarkerLayerOptions(markers: makePathBarbs(plan.waypoints, plan.isReversed, 40)),
+                        // Polyline Directional Barbs
+                        MarkerLayerOptions(
+                            markers: makePathBarbs(
+                                editingIndex != null
+                                    ? (plan.waypoints.toList()
+                                      ..removeAt(editingIndex!)
+                                      ..add(Waypoint(plan.waypoints[editingIndex!].name, editablePolyline.points, false,
+                                          null, plan.waypoints[editingIndex!].color)))
+                                    : plan.waypoints,
+                                false,
+                                45)),
 
                         // Flight plan markers
                         DragMarkerPluginOptions(
@@ -1120,7 +1133,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         WidgetSpan(
                             child: Icon(
                           Icons.touch_app,
-                          size: 20,
+                          size: 18,
                           color: Colors.black,
                         )),
                         TextSpan(text: "Tap to place waypoint")
@@ -1133,9 +1146,9 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
               Positioned(
-                bottom: 15,
-                right: Provider.of<Settings>(context).mapControlsRightSide ? null : 20,
-                left: Provider.of<Settings>(context).mapControlsRightSide ? 20 : null,
+                bottom: 10,
+                right: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
+                left: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1148,7 +1161,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             WidgetSpan(
                                 child: Icon(
                               Icons.touch_app,
-                              size: 20,
+                              size: 18,
                               color: Colors.black,
                             )),
                             TextSpan(text: "Tap to add to path")
@@ -1159,10 +1172,27 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ),
                     IconButton(
-                      iconSize: 45,
+                      iconSize: 40,
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
+                        Icons.swap_horizontal_circle,
+                        size: 40,
+                        color: Colors.black,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          var _tmp = editablePolyline.points.toList();
+                          editablePolyline.points.clear();
+                          editablePolyline.points.addAll(_tmp.reversed);
+                        });
+                      },
+                    ),
+                    IconButton(
+                      iconSize: 40,
+                      padding: EdgeInsets.zero,
                       icon: const Icon(
                         Icons.cancel,
-                        size: 45,
+                        size: 40,
                         color: Colors.red,
                       ),
                       onPressed: () => {setFocusMode(prevFocusMode)},
@@ -1170,24 +1200,27 @@ class _MyHomePageState extends State<MyHomePage> {
                     if (editablePolyline.points.length > 1)
                       IconButton(
                         padding: EdgeInsets.zero,
-                        iconSize: 45,
+                        iconSize: 40,
                         icon: const Icon(
                           Icons.check_circle,
-                          size: 45,
+                          size: 40,
                           color: Colors.green,
                         ),
                         onPressed: () {
                           // --- finish editing path
                           var plan = Provider.of<ActivePlan>(context, listen: false);
-                          // TODO
-                          // editWaypoint(context, waypointToEdit, focusMode == FocusMode.addPath, editablePolyline.points)
-                          //     ?.then((newWaypoint) {
-                          //   if (newWaypoint != null) {
-
-                          //     plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false,
-                          //         newWaypoint.icon, newWaypoint.color);
-                          //   }
-                          // });
+                          if (editingIndex == null) {
+                            var _temp = Waypoint("", editablePolyline.points.toList(), false, null, null);
+                            editWaypoint(context, _temp, isNew: focusMode == FocusMode.addPath)?.then((newWaypoint) {
+                              if (newWaypoint != null) {
+                                plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false,
+                                    newWaypoint.icon, newWaypoint.color);
+                              }
+                            });
+                          } else {
+                            plan.waypoints[editingIndex!].latlng = editablePolyline.points.toList();
+                            editingIndex = null;
+                          }
                           setFocusMode(prevFocusMode);
                         },
                       ),

@@ -1,37 +1,30 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:file_picker/file_picker.dart';
+
 import 'package:latlong2/latlong.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:provider/provider.dart';
-import 'package:xcnav/dialogs/edit_waypoint.dart';
-
-// --- Dialogs
-import 'package:xcnav/dialogs/save_plan.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/providers/settings.dart';
+
+// --- Misc
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/makePathBarbs.dart';
-import 'package:xcnav/widgets/map_button.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/dialogs/edit_waypoint.dart';
 
 // --- Providers
-// import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/settings.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
+import 'package:xcnav/widgets/makePathBarbs.dart';
+import 'package:xcnav/widgets/map_marker.dart';
 
 class PlanEditor extends StatefulWidget {
   const PlanEditor({Key? key}) : super(key: key);
@@ -63,7 +56,7 @@ class _PlanEditorState extends State<PlanEditor> {
         size: 22,
         color: Colors.black,
       ),
-      intermediateIcon: const Icon(Icons.lens, size: 12, color: Colors.black),
+      intermediateIcon: const Icon(Icons.circle_outlined, size: 12, color: Colors.black),
       callbackRefresh: () => {setState(() {})},
     );
   }

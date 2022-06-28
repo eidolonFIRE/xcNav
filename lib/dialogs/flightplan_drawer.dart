@@ -24,7 +24,7 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/screens/home.dart';
 
 /// Flightplan Menu
-Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, VoidCallback onEditWaypoint) {
+Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function onEditPoints) {
   return Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
     ETA etaNext = activePlan.selectedIndex != null
         ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
@@ -104,7 +104,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, VoidCallb
                         editWaypoint(
                           context,
                           activePlan.waypoints[i],
-                          editPointsCallback: onEditWaypoint,
+                          editPointsCallback: () => onEditPoints(i),
                         )?.then((newWaypoint) {
                           if (newWaypoint != null) {
                             // --- Update selected waypoint
