@@ -1,47 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
 
 // --- Models
 import 'package:xcnav/models/waypoint.dart';
-
-// --- Providers
-import 'package:xcnav/providers/active_plan.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/map_marker.dart';
 
 final TextEditingController newWaypointName = TextEditingController();
 
-void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
-    {VoidCallback? editPointsCallback, int? waypointIndex}) {
-  Waypoint? currentWp;
-  if (waypointIndex == null) {
-    currentWp = Provider.of<ActivePlan>(context, listen: false).selectedWp;
-  } else {
-    currentWp = Provider.of<ActivePlan>(context, listen: false).waypoints[waypointIndex];
-  }
+Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
+    {VoidCallback? editPointsCallback, bool isPath = false, bool isNew = false}) {
+  newWaypointName.value = TextEditingValue(text: waypoint.name);
+  var formKey = GlobalKey<FormState>();
 
-  debugPrint("$waypointIndex");
-
-  if (!isNew) {
-    if (currentWp != null) {
-      // --- Load in currently selected waypoint options
-      newWaypointName.value = TextEditingValue(text: currentWp.name);
-    } else {
-      // no waypoint selected to edit!
-      return;
-    }
-  }
-
-  showDialog(
+  return showDialog<Waypoint?>(
       context: context,
       builder: (context) {
-        Color? selectedColor = isNew ? null : Color(currentWp?.color ?? Colors.black.value);
-        String? selectedIcon = isNew ? null : currentWp?.icon;
+        Color selectedColor = waypoint.getColor();
+        String? selectedIcon = waypoint.icon;
 
-        bool showIconOptions =
-            isNew ? (latlngs.length == 1) : (currentWp != null ? currentWp.latlng.length <= 1 : true);
+        bool showIconOptions = waypoint.latlng.length < 2 && !isPath;
 
         return StatefulBuilder(builder: (context, setState) {
           // --- Build color selection buttons
@@ -94,14 +74,23 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
               mainAxisSize: MainAxisSize.min,
               children: [
                 // --- Edit Name
-                TextField(
-                  controller: newWaypointName,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: "waypoint name",
-                    border: OutlineInputBorder(),
+                Form(
+                  key: formKey,
+                  child: TextFormField(
+                    controller: newWaypointName,
+                    autofocus: true,
+                    validator: (value) {
+                      if (value != null) {
+                        if (value.trim().isEmpty || value.isEmpty) return "Must not be empty";
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      hintText: "waypoint name",
+                      border: OutlineInputBorder(),
+                    ),
+                    style: const TextStyle(fontSize: 20),
                   ),
-                  style: const TextStyle(fontSize: 20),
                 ),
                 const Divider(
                   height: 20,
@@ -129,9 +118,14 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
                     ),
                   ),
 
-                if (!showIconOptions)
+                if (!showIconOptions && editPointsCallback != null)
                   TextButton.icon(
-                      onPressed: editPointsCallback ?? (() => {}),
+                      onPressed: () {
+                        var newWaypoint = Waypoint(newWaypointName.text, waypoint.latlng, waypoint.isOptional,
+                            selectedIcon, selectedColor.value);
+                        Navigator.pop(context, newWaypoint);
+                        editPointsCallback();
+                      },
                       icon: const Icon(
                         Icons.edit,
                         color: Colors.white,
@@ -146,18 +140,11 @@ void editWaypoint(BuildContext context, bool isNew, List<LatLng> latlngs,
               ElevatedButton.icon(
                   label: Text(isNew ? "Add" : "Update"),
                   onPressed: () {
-                    if (newWaypointName.text.isNotEmpty) {
-                      if (isNew) {
-                        // --- Make new waypoint
-                        var plan = Provider.of<ActivePlan>(context, listen: false);
-                        plan.insertWaypoint(plan.waypoints.length, newWaypointName.text, latlngs, false, selectedIcon,
-                            selectedColor?.value);
-                      } else {
-                        // --- Update selected waypoint
-                        Provider.of<ActivePlan>(context, listen: false)
-                            .updateWaypoint(null, newWaypointName.text, selectedIcon, selectedColor?.value, latlngs);
-                      }
-                      Navigator.pop(context);
+                    if (formKey.currentState?.validate() ?? false) {
+                      var newWaypoint = Waypoint(newWaypointName.text, waypoint.latlng, waypoint.isOptional,
+                          selectedIcon, selectedColor.value);
+
+                      Navigator.pop(context, newWaypoint);
                     }
                   },
                   icon: const Icon(

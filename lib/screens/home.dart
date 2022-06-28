@@ -14,8 +14,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:xcnav/dialogs/pilot_info.dart';
-import 'package:xcnav/models/ga.dart';
+import 'package:xcnav/models/waypoint.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -35,6 +34,7 @@ import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/fuel_warning.dart';
+import 'package:xcnav/widgets/pilot_marker.dart';
 
 // dialogs
 import 'package:xcnav/dialogs/edit_waypoint.dart';
@@ -45,11 +45,11 @@ import 'package:xcnav/dialogs/more_instruments_drawer.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/message.dart';
+import 'package:xcnav/models/ga.dart';
 
 // misc
 import 'package:xcnav/fake_path.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/pilot_marker.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
@@ -89,6 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
   StreamSubscription<ServiceStatus>? _serviceStatusStreamSubscription;
   bool positionStreamStarted = false;
 
+  int? editingIndex;
   late PolyEditor polyEditor;
 
   List<Polyline> polyLines = [];
@@ -358,7 +359,13 @@ class _MyHomePageState extends State<MyHomePage> {
     if (focusMode == FocusMode.addWaypoint) {
       // --- Finish adding waypoint pin
       setFocusMode(prevFocusMode);
-      editWaypoint(context, true, [latlng]);
+      editWaypoint(context, Waypoint("", [latlng], false, null, null), isNew: true)?.then((newWaypoint) {
+        if (newWaypoint != null) {
+          var plan = Provider.of<ActivePlan>(context, listen: false);
+          plan.insertWaypoint(
+              plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false, newWaypoint.icon, newWaypoint.color);
+        }
+      });
     } else if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
       // --- Add waypoint in path
       polyEditor.add(editablePolyline.points, latlng);
@@ -799,13 +806,12 @@ class _MyHomePageState extends State<MyHomePage> {
                         PolylineLayerOptions(
                           polylines: plan.waypoints
                               .where((value) => value.latlng.length > 1)
-                              .mapIndexed((i, e) => Polyline(
-                                  points: e.latlng, strokeWidth: 6, color: Color(e.color ?? Colors.black.value)))
+                              .mapIndexed((i, e) => Polyline(points: e.latlng, strokeWidth: 6, color: e.getColor()))
                               .toList(),
                         ),
 
                         // Flight plan paths - directional barbs
-                        MarkerLayerOptions(markers: makePathBarbs(plan)),
+                        MarkerLayerOptions(markers: makePathBarbs(plan.waypoints, plan.isReversed, 40)),
 
                         // Flight plan markers
                         DragMarkerPluginOptions(
@@ -815,6 +821,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                       point: e.latlng[0],
                                       height: 60 * 0.8,
                                       width: 40 * 0.8,
+                                      updateMapNearEdge: true,
+                                      offset: const Offset(0, -30 * 0.8),
+                                      feedbackOffset: const Offset(0, -30 * 0.8),
                                       onTap: (_) => plan.selectWaypoint(i),
                                       onDragEnd: (p0, p1) => {
                                             plan.moveWaypoint(i, [p1])
@@ -1100,11 +1109,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
             // --- Map overlay layers
             if (focusMode == FocusMode.addWaypoint)
-              const Positioned(
+              Positioned(
                 bottom: 15,
                 child: Card(
-                  color: Colors.amber,
-                  child: Padding(
+                  color: Colors.amber.shade400,
+                  child: const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Text.rich(
                       TextSpan(children: [
@@ -1130,9 +1139,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Card(
-                      color: Colors.amber,
-                      child: Padding(
+                    Card(
+                      color: Colors.amber.shade400,
+                      child: const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: Text.rich(
                           TextSpan(children: [
@@ -1169,7 +1178,16 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         onPressed: () {
                           // --- finish editing path
-                          editWaypoint(context, focusMode == FocusMode.addPath, editablePolyline.points);
+                          var plan = Provider.of<ActivePlan>(context, listen: false);
+                          // TODO
+                          // editWaypoint(context, waypointToEdit, focusMode == FocusMode.addPath, editablePolyline.points)
+                          //     ?.then((newWaypoint) {
+                          //   if (newWaypoint != null) {
+
+                          //     plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false,
+                          //         newWaypoint.icon, newWaypoint.color);
+                          //   }
+                          // });
                           setFocusMode(prevFocusMode);
                         },
                       ),
@@ -1436,10 +1454,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       Text.rich(
                                         TextSpan(children: [
                                           WidgetSpan(
-                                            child: Container(
-                                              transform: Matrix4.translationValues(0, 15, 0),
-                                              child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
-                                            ),
+                                            child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
                                           ),
                                           const TextSpan(text: "  "),
                                           TextSpan(

@@ -39,7 +39,7 @@ class WaypointCardReadOnly extends StatelessWidget {
                   (waypoint.isOptional ? "_optional" : "") +
                   ".png",
               height: 55,
-              color: Color(waypoint.color ?? Colors.black.value),
+              color: waypoint.getColor(),
             ),
           ),
           title: Row(

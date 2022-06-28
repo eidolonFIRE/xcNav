@@ -1,7 +1,9 @@
 import 'dart:math';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
@@ -9,7 +11,6 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/fuel_warning.dart';
@@ -66,28 +67,6 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, VoidCallb
                 iconSize: 25,
                 onPressed: onNewPath,
                 icon: const ImageIcon(AssetImage("assets/images/add_waypoint_path.png"), color: Colors.yellow)),
-            // --- Edit Waypoint
-            // IconButton(
-            //   iconSize: 25,
-            //   onPressed: () => editWaypoint(
-            //     context,
-            //     false,
-            //     activePlan.selectedWp?.latlng ?? [],
-            //     editPointsCallback: onEditWaypoint,
-            //   ),
-            //   icon: const Icon(Icons.edit),
-            // ),
-            // --- Delete Selected Waypoint
-
-            // GestureDetector(
-            //   onDoubleTap: () => activePlan.removeSelectedWaypoint(),
-            //   onLongPress: () => activePlan.removeSelectedWaypoint(),
-            //   child: const Padding(
-            //     padding: EdgeInsets.all(8.0),
-            //     child: Icon(Icons.delete, color: Colors.red, size: 25),
-            //   ),
-            // )
-            // onPressed: () => activePlan.removeSelectedWaypoint(),
           ],
         ),
 
@@ -107,7 +86,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, VoidCallb
               itemCount: activePlan.waypoints.length,
               itemBuilder: (context, i) => Slidable(
                 key: ValueKey(activePlan.waypoints[i]),
-                startActionPane: ActionPane(extentRatio: 0.14, motion: const DrawerMotion(), children: [
+                dragStartBehavior: DragStartBehavior.start,
+                startActionPane: ActionPane(extentRatio: 0.14, motion: const ScrollMotion(), children: [
                   SlidableAction(
                     onPressed: (e) => {activePlan.removeWaypoint(i)},
                     icon: Icons.delete,
@@ -119,21 +99,19 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, VoidCallb
                   extentRatio: 0.3,
                   motion: const ScrollMotion(),
                   children: [
-                    // SlidableAction(
-                    //   onPressed: (e) => {},
-                    //   icon: Icons.drag_handle,
-                    //   backgroundColor: Colors.grey.shade400,
-                    //   foregroundColor: Colors.black,
-                    // )
                     SlidableAction(
-                      onPressed: (e) => {
+                      onPressed: (e) {
                         editWaypoint(
                           context,
-                          false,
-                          activePlan.selectedWp?.latlng ?? [],
-                          waypointIndex: i,
+                          activePlan.waypoints[i],
                           editPointsCallback: onEditWaypoint,
-                        )
+                        )?.then((newWaypoint) {
+                          if (newWaypoint != null) {
+                            // --- Update selected waypoint
+                            Provider.of<ActivePlan>(context, listen: false).updateWaypoint(
+                                i, newWaypoint.name, newWaypoint.icon, newWaypoint.color, newWaypoint.latlng);
+                          }
+                        });
                       },
                       icon: Icons.edit,
                       backgroundColor: Colors.grey.shade400,

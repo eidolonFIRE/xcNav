@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/geo.dart';
 
@@ -88,6 +89,10 @@ class Waypoint {
 
   List<Barb> get barbs {
     return _barbs ??= makeBarbs();
+  }
+
+  Color getColor() {
+    return Color(color ?? Colors.black.value);
   }
 
   double lengthBetweenIndexs(int start, int end) {

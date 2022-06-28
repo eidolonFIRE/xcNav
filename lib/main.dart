@@ -20,6 +20,7 @@ import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/screens/loading.dart';
 import 'package:xcnav/screens/chat.dart';
+import 'package:xcnav/screens/plan_editor.dart';
 import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
 import 'package:xcnav/screens/settings_editor.dart';
@@ -166,6 +167,7 @@ class MyApp extends StatelessWidget {
         "/settings": (context) => const SettingsEditor(),
         "/flightLogs": (context) => const FlightLogViewer(),
         "/plans": (context) => const PlansViewer(),
+        "/planEditor": (context) => const PlanEditor(),
         "/groupDetails": (context) => const GroupDetails(),
         "/weather": (context) => const WeatherViewer(),
         "/about": (context) => const About(),

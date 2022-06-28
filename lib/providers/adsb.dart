@@ -73,7 +73,7 @@ class ADSB with ChangeNotifier {
         var wifiGateway = await info.getWifiGatewayIP();
 
         dynamic address = InternetAddress.loopbackIPv4;
-        if (wifiName != null && wifiName.startsWith("Ping-")) {
+        if (wifiName != null && (wifiName.startsWith("Ping-") || wifiName.startsWith("Sentry_"))) {
           address = wifiGateway;
         }
 

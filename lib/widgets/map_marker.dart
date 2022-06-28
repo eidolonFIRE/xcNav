@@ -36,17 +36,14 @@ class MapMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
-      Container(
-        transform: Matrix4.translationValues(0, -size / 2, 0),
-        child: Image.asset(
-          "assets/images/pin.png",
-          color: waypoint.color == null ? Colors.black : Color(waypoint.color!),
-        ),
+      Image.asset(
+        "assets/images/pin.png",
+        color: waypoint.color == null ? Colors.black : Color(waypoint.color!),
       ),
       if (waypoint.icon != null)
         Center(
           child: Container(
-            transform: Matrix4.translationValues(0, -size / 1.5, 0),
+            transform: Matrix4.translationValues(0, -size / 5.5, 0),
             child: Icon(
               iconOptions[waypoint.icon],
               size: size / 2,

@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/providers/active_plan.dart';
 
 Marker makeBarb(Waypoint waypoint, Barb barb, double size, bool reversed) {
   return Marker(
@@ -16,17 +15,17 @@ Marker makeBarb(Waypoint waypoint, Barb barb, double size, bool reversed) {
           child: Icon(
             Icons.arrow_drop_up,
             size: size,
-            color: Color(waypoint.color ?? Colors.black.value),
+            color: waypoint.getColor(),
           )));
 }
 
-List<Marker> makePathBarbs(ActivePlan plan) {
+List<Marker> makePathBarbs(List<Waypoint> waypoints, bool isReversed, double size) {
   List<Marker> markers = [];
 
-  for (final waypoint in plan.waypoints) {
+  for (final waypoint in waypoints) {
     if (waypoint.latlng.length < 2) continue;
     for (final barb in waypoint.barbs) {
-      markers.add(makeBarb(waypoint, barb, 40, plan.isReversed));
+      markers.add(makeBarb(waypoint, barb, size, isReversed));
     }
   }
 

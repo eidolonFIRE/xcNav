@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:xcnav/dialogs/save_plan.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xml/xml.dart';
 
@@ -17,9 +17,18 @@ class FlightPlan {
   late String _name;
   late bool goodFile;
   late final List<Waypoint> waypoints;
-  double? length;
+  double? _length;
 
   get name => _name;
+
+  double get length {
+    return _length ??= _calcLength();
+  }
+
+  // TODO: refactor this to be more elegant
+  void refreshLength() {
+    _length = _calcLength();
+  }
 
   /// Path and filename
   Future<String> getFilename() {
@@ -30,7 +39,52 @@ class FlightPlan {
     return completer.future;
   }
 
-  void _calcLength() {
+  LatLngBounds getBounds() {
+    List<LatLng> points = [];
+    for (final wp in waypoints) {
+      points.addAll(wp.latlng);
+    }
+    return LatLngBounds.fromPoints(points)..pad(0.4);
+  }
+
+  void sortWaypoint(int oldIndex, int newIndex) {
+    Waypoint temp = waypoints[oldIndex];
+    waypoints.removeAt(oldIndex);
+    waypoints.insert(newIndex, temp);
+  }
+
+  Polyline _buildTripSnakeSegment(List<LatLng> points) {
+    return Polyline(
+      points: points,
+      color: Colors.black,
+      strokeWidth: 3,
+    );
+  }
+
+  List<Polyline> buildTripSnake() {
+    List<Polyline> retval = [];
+
+    List<LatLng> points = [];
+    for (Waypoint wp in waypoints) {
+      // skip optional waypoints
+      if (wp.isOptional) continue;
+
+      if (wp.latlng.isNotEmpty) {
+        points.add(wp.latlng[0]);
+      }
+      if (wp.latlng.length > 1) {
+        // pinch off trip snake
+        retval.add(_buildTripSnakeSegment(points));
+        // start again at last point
+        points = [wp.latlng[wp.latlng.length - 1]];
+      }
+    }
+
+    if (points.length > 1) retval.add(_buildTripSnakeSegment(points));
+    return retval;
+  }
+
+  double _calcLength() {
     // --- Calculate Stuff
     double _length = 0;
     int? prevIndex;
@@ -49,7 +103,7 @@ class FlightPlan {
       }
       prevIndex = i;
     }
-    length = _length;
+    return _length;
   }
 
   FlightPlan.fromActivePlan(ActivePlan activePlan, String name) {

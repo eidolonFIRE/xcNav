@@ -15,7 +15,7 @@ import 'package:xcnav/models/flight_plan.dart';
 // import 'package:xcnav/providers/active_plan.dart';
 
 // --- Widgets
-import 'package:xcnav/widgets/flight_plan_summary.dart';
+import 'package:xcnav/widgets/plan_card.dart';
 
 class PlansViewer extends StatefulWidget {
   const PlansViewer({Key? key}) : super(key: key);
@@ -56,8 +56,17 @@ class _PlansViewerState extends State<PlansViewer> {
         var _completer = Completer();
         completers.add(_completer);
         File.fromUri(each.uri).readAsString().then((value) {
-          plans[each.uri.path] =
-              FlightPlan.fromJson(each.uri.pathSegments.last.replaceAll(".json", ""), jsonDecode(value));
+          var _plan = FlightPlan.fromJson(each.uri.pathSegments.last.replaceAll(".json", ""), jsonDecode(value));
+          if (_plan.waypoints.isNotEmpty) {
+            plans[each.uri.path] = _plan;
+          } else {
+            // plan was empty, delete it
+            File planFile = File.fromUri(each.uri);
+            planFile.exists().then((value) {
+              planFile.delete();
+            });
+          }
+
           _completer.complete();
         });
       }
@@ -102,9 +111,10 @@ class _PlansViewerState extends State<PlansViewer> {
         // centerTitle: true,
         actions: [
           IconButton(
+              iconSize: 30,
               onPressed: () => {savePlan(context).then((value) => refreshPlansFromDirectory())},
               icon: const Icon(Icons.save_as)),
-          IconButton(onPressed: () => {selectKmlImport()}, icon: const Icon(Icons.file_upload_outlined))
+          IconButton(iconSize: 30, onPressed: () => {selectKmlImport()}, icon: const Icon(Icons.file_upload_outlined))
         ],
       ),
       body: !loaded
@@ -113,7 +123,7 @@ class _PlansViewerState extends State<PlansViewer> {
             )
           : ListView.builder(
               itemCount: plans.length,
-              itemBuilder: (context, index) => FlightPlanSummary(plans[keys[index]]!, refreshPlansFromDirectory),
+              itemBuilder: (context, index) => PlanCard(plans[keys[index]]!, refreshPlansFromDirectory),
             ),
     );
   }
