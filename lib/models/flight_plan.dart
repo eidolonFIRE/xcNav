@@ -39,7 +39,8 @@ class FlightPlan {
     return completer.future;
   }
 
-  LatLngBounds getBounds() {
+  LatLngBounds? getBounds() {
+    if (waypoints.isEmpty) return null;
     List<LatLng> points = [];
     for (final wp in waypoints) {
       points.addAll(wp.latlng);
@@ -104,6 +105,12 @@ class FlightPlan {
       prevIndex = i;
     }
     return _length;
+  }
+
+  FlightPlan.new(String name) {
+    waypoints = [];
+    _name = name;
+    goodFile = true;
   }
 
   FlightPlan.fromActivePlan(ActivePlan activePlan, String name) {

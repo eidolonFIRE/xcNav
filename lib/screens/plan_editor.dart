@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 
 // --- Misc
 import 'package:xcnav/screens/home.dart';
@@ -65,14 +66,6 @@ class _PlanEditorState extends State<PlanEditor> {
   void dispose() {
     plan?.saveToFile();
     super.dispose();
-  }
-
-  LatLngBounds refreshMapBounds(FlightPlan plan) {
-    List<LatLng> points = [];
-    for (final wp in plan.waypoints) {
-      points.addAll(wp.latlng);
-    }
-    return LatLngBounds.fromPoints(points)..pad(0.4);
   }
 
   void setFocusMode(FocusMode mode) {
@@ -132,7 +125,12 @@ class _PlanEditorState extends State<PlanEditor> {
   Widget build(BuildContext context) {
     if (plan == null) {
       plan = ModalRoute.of(context)!.settings.arguments as FlightPlan;
-      mapBounds = refreshMapBounds(plan!);
+      mapBounds = plan!.getBounds() ??
+          LatLngBounds.fromPoints([
+            Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
+            Provider.of<MyTelemetry>(context, listen: false).geo.latLng..longitude += 0.05
+          ])
+        ..pad(2);
     }
     return Scaffold(
       appBar: AppBar(
@@ -247,20 +245,24 @@ class _PlanEditorState extends State<PlanEditor> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text.rich(
-                        TextSpan(children: [
-                          const TextSpan(text: "Total Length: "),
-                          TextSpan(
-                              text: convertDistValueCoarse(
-                                      Provider.of<Settings>(context, listen: false).displayUnitsDist, plan!.length)
-                                  .toStringAsFixed(1)),
-                          TextSpan(
-                              text: unitStrDistCoarse[Provider.of<Settings>(context, listen: false).displayUnitsDist]),
-                        ]),
-                        style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.end,
+                    Card(
+                      color: Colors.white54,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text.rich(
+                          TextSpan(children: [
+                            const TextSpan(text: "Total Length: ", style: TextStyle(fontWeight: FontWeight.normal)),
+                            TextSpan(
+                                text: convertDistValueCoarse(
+                                        Provider.of<Settings>(context, listen: false).displayUnitsDist, plan!.length)
+                                    .toStringAsFixed(1)),
+                            TextSpan(
+                                text:
+                                    unitStrDistCoarse[Provider.of<Settings>(context, listen: false).displayUnitsDist]),
+                          ]),
+                          style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.end,
+                        ),
                       ),
                     )
                   ],

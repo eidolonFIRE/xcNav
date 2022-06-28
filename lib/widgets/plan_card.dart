@@ -7,7 +7,6 @@ import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
 
 // --- Models
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';

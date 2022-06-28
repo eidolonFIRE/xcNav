@@ -112,6 +112,14 @@ class _PlansViewerState extends State<PlansViewer> {
         actions: [
           IconButton(
               iconSize: 30,
+              onPressed: () {
+                var _plan = FlightPlan.new("Unamed");
+                Navigator.pop(context);
+                Navigator.pushNamed(context, "/planEditor", arguments: _plan);
+              },
+              icon: const Icon(Icons.add)),
+          IconButton(
+              iconSize: 30,
               onPressed: () => {savePlan(context).then((value) => refreshPlansFromDirectory())},
               icon: const Icon(Icons.save_as)),
           IconButton(iconSize: 30, onPressed: () => {selectKmlImport()}, icon: const Icon(Icons.file_upload_outlined))

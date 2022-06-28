@@ -98,6 +98,7 @@ class ADSB with ChangeNotifier {
       } else if (portListening && !settings.adsbEnabled) {
         // --- Stop Listening
         debugPrint("Closing ADSB listen port");
+        lastHeartbeat = 0;
         sock?.close();
         portListening = false;
       }
