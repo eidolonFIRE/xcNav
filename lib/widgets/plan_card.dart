@@ -36,7 +36,7 @@ class _PlanCardState extends State<PlanCard> {
             content: const Text('Are you sure you want to delete this plan?'),
             actions: [
               // The "Yes" button
-              TextButton.icon(
+              ElevatedButton.icon(
                   onPressed: () {
                     // Delete the file
                     widget.plan.getFilename().then((filename) {
@@ -54,7 +54,7 @@ class _PlanCardState extends State<PlanCard> {
                     color: Colors.red,
                   ),
                   label: const Text('Delete')),
-              TextButton(
+              ElevatedButton(
                   onPressed: () {
                     // Close the dialog
                     Navigator.of(context).pop();

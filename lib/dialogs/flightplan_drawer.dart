@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:xcnav/dialogs/save_plan.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
@@ -67,6 +68,14 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                 iconSize: 25,
                 onPressed: onNewPath,
                 icon: const ImageIcon(AssetImage("assets/images/add_waypoint_path.png"), color: Colors.yellow)),
+            // --- Save Plan
+            IconButton(
+                iconSize: 30,
+                onPressed: () {
+                  savePlan(context);
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.save_as)),
           ],
         ),
 

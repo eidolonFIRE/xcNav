@@ -271,26 +271,30 @@ class _PlanEditorState extends State<PlanEditor> {
                 ? [
                     Align(
                         alignment: Alignment.bottomCenter,
-                        child: Card(
-                            color: Colors.amber.shade400,
-                            child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Text.rich(
-                                  TextSpan(children: [
-                                    WidgetSpan(
-                                        child: Icon(
-                                      Icons.touch_app,
-                                      size: 18,
-                                      color: Colors.black,
-                                    )),
-                                    TextSpan(text: "Tap to add to path")
-                                  ]),
-                                  style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
-                                )))),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Card(
+                              color: Colors.amber.shade400,
+                              child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text.rich(
+                                    TextSpan(children: [
+                                      WidgetSpan(
+                                          child: Icon(
+                                        Icons.touch_app,
+                                        size: 18,
+                                        color: Colors.black,
+                                      )),
+                                      TextSpan(text: "Tap to add to path")
+                                    ]),
+                                    style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+                                  ))),
+                        )),
                     Align(
                         alignment: Alignment.bottomRight,
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
                           IconButton(
+                            padding: EdgeInsets.zero,
                             iconSize: 35,
                             icon: const Icon(
                               Icons.cancel,

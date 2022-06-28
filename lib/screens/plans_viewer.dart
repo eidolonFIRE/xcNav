@@ -104,7 +104,7 @@ class _PlansViewerState extends State<PlansViewer> {
   @override
   Widget build(BuildContext context) {
     var keys = plans.keys.toList();
-    keys.sort((a, b) => b.compareTo(a));
+    keys.sort((a, b) => a.compareTo(b));
     return Scaffold(
       appBar: AppBar(
         title: const Text("Flight Plans"),
