@@ -98,7 +98,7 @@ class Waypoint {
   double lengthBetweenIndexs(int start, int end) {
     // TODO: cache distances between all the points (vs recalculating every time)
     double dist = 0;
-    for (int t = start; t < min(latlng.length - 1, end); t++) {
+    for (int t = max(0, min(start, end)); t < min(latlng.length - 1, max(start, end)); t++) {
       dist += latlngCalc.distance(latlng[t], latlng[t + 1]);
     }
     return dist;

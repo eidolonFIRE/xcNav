@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/leave_group.dart';
 import 'package:xcnav/dialogs/select_past_group.dart';
+import 'package:xcnav/patreon.dart';
 
 // Providers
 import 'package:xcnav/providers/group.dart';
@@ -32,7 +33,7 @@ class _GroupDetailsState extends State<GroupDetails> {
     super.dispose();
   }
 
-  static const valueStyle = TextStyle(fontSize: 22, color: Colors.white);
+  static const valueStyle = TextStyle(fontSize: 20, color: Colors.white);
   static const unitStyle = TextStyle(fontSize: 16, color: Colors.white);
   static final fillStyle = TextStyle(fontSize: 14, color: Colors.grey.shade600);
 
@@ -69,21 +70,20 @@ class _GroupDetailsState extends State<GroupDetails> {
             builder: (context, group, settings, child) => ListView(
                 children: group.pilots.values
                     .map((_p) => ListTile(
-                          leading: AvatarRound(_p.avatar, 28),
-                          title: Text(
-                            _p.name,
-                            style: Theme.of(context).textTheme.headline5,
-                          ),
+                          leading: AvatarRound(_p.avatar, 28, tier: _p.tier),
+                          title: Row(children: [
+                            Text(
+                              _p.name,
+                              style: Theme.of(context).textTheme.headline5,
+                            ),
+                            if (isTierRecognized(_p.tier))
+                              Padding(
+                                padding: const EdgeInsets.only(left: 10),
+                                child: tierBadge(_p.tier),
+                              )
+                          ]),
                           subtitle: (_p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
                               ? Text.rich(TextSpan(children: [
-                                  // dist
-                                  TextSpan(
-                                      style: valueStyle,
-                                      text: convertDistValueCoarse(settings.displayUnitsDist,
-                                              _p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo))
-                                          .toStringAsFixed(1)),
-                                  TextSpan(style: unitStyle, text: unitStrDistCoarse[settings.displayUnitsDist]),
-                                  TextSpan(style: fillStyle, text: " away, going "),
                                   // speed
                                   TextSpan(
                                       style: valueStyle,
@@ -97,7 +97,15 @@ class _GroupDetailsState extends State<GroupDetails> {
                                       text: convertDistValueFine(settings.displayUnitsDist, _p.geo.alt)
                                           .toStringAsFixed(0)),
                                   TextSpan(style: unitStyle, text: unitStrDistFine[settings.displayUnitsDist]),
-                                  TextSpan(style: fillStyle, text: " MSL"),
+                                  TextSpan(style: fillStyle, text: " MSL, "),
+                                  // dist
+                                  TextSpan(
+                                      style: valueStyle,
+                                      text: convertDistValueCoarse(settings.displayUnitsDist,
+                                              _p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo))
+                                          .toStringAsFixed(1)),
+                                  TextSpan(style: unitStyle, text: unitStrDistCoarse[settings.displayUnitsDist]),
+                                  TextSpan(style: fillStyle, text: " away"),
                                 ]))
                               : const Text("( outdated telemetry )"),
                         ))

@@ -45,6 +45,9 @@ class Wind with ChangeNotifier {
     notifyListeners();
   }
 
+  static double remainingHeadway(double theta, double mySpd, double wSpd) =>
+      sqrt(pow(mySpd, 2) - pow(wSpd * sin(theta), 2)) - cos(theta) * wSpd;
+
   void clearResult() {
     windSampleLast = null;
     _result = null;

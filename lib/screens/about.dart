@@ -22,7 +22,7 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
     // minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
     padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(20)),
     shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
-      return RoundedRectangleBorder(borderRadius: BorderRadius.circular(1));
+      return RoundedRectangleBorder(borderRadius: BorderRadius.circular(2));
     }),
     textStyle:
         MaterialStateProperty.resolveWith<TextStyle>((states) => const TextStyle(color: Colors.white, fontSize: 22)),

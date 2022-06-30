@@ -28,11 +28,12 @@ class Pilot {
   late final String? avatarHash;
   List<Geo> flightTrace = [];
   Color color = Colors.grey.shade800;
+  String? tier;
 
   // Flightplan
   int? selectedWaypoint;
 
-  Pilot.new(this.id, this.name, this.avatarHash, this.geo) {
+  Pilot.new(this.id, this.name, this.avatarHash, this.geo, this.tier) {
     // Load Avatar
     _loadAvatar();
   }
@@ -40,7 +41,8 @@ class Pilot {
   Pilot.fromJson(Map<String, dynamic> json) {
     id = json["id"];
     name = json["name"];
-    avatarHash = json["avatarHash"];
+    avatarHash = json["avatar_hash"];
+    tier = json["tier"];
     geo = Geo();
     _loadAvatar();
   }
@@ -49,7 +51,8 @@ class Pilot {
     return {
       "id": id,
       "name": name,
-      "avatarHash": avatarHash,
+      "avatar_hash": avatarHash,
+      "tier": tier,
     };
   }
 

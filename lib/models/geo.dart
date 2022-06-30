@@ -14,9 +14,8 @@ Distance latlngCalc = const Distance(roundResult: false);
 
 class PathIntercept {
   final int index;
-  final double ratio;
   final LatLng latlng;
-  PathIntercept(this.index, this.ratio, this.latlng);
+  PathIntercept(this.index, this.latlng);
 }
 
 class Geo {
@@ -106,7 +105,7 @@ class Geo {
         // debugPrint("match: $index) $dist  $angleToNext");
       }
     }
-    return PathIntercept(matchIndex, matchdist, path[matchIndex]);
+    return PathIntercept(matchIndex, path[matchIndex]);
   }
 
   double distanceTo(Geo other) {

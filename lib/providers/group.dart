@@ -66,25 +66,20 @@ class Group with ChangeNotifier {
   }
 
   void _appendToPastGroups() {
-    PastGroup pg =
-        PastGroup(_currentGroupID!, DateTime.now(), pilots.values.toList());
-    debugPrint(
-        "Appended to past groups. (id: ${pg.id}, ${pg.pilots.length} pilots)");
+    PastGroup pg = PastGroup(_currentGroupID!, DateTime.now(), pilots.values.toList());
+    debugPrint("Appended to past groups. (id: ${pg.id}, ${pg.pilots.length} pilots)");
     pastGroups.add(pg);
   }
 
   /// Remove the current groupID from history
   void _cleanPastGroups() {
-    pastGroups =
-        pastGroups.where((element) => element.id != _currentGroupID).toList();
+    pastGroups = pastGroups.where((element) => element.id != _currentGroupID).toList();
     _savePastGroups();
   }
 
   void _savePastGroups() {
-    prefs?.setStringList("me.pastGroups",
-        pastGroups.map((e) => jsonEncode(e.toJson())).toList());
-    debugPrint(
-        "Save pastGroups: ${pastGroups.map((e) => jsonEncode(e.toJson())).toList().join(", ")}");
+    prefs?.setStringList("me.pastGroups", pastGroups.map((e) => jsonEncode(e.toJson())).toList());
+    debugPrint("Save pastGroups: ${pastGroups.map((e) => jsonEncode(e.toJson())).toList().join(", ")}");
   }
 
   bool hasPilot(String pilotID) => pilots.containsKey(pilotID);
@@ -96,16 +91,13 @@ class Group with ChangeNotifier {
       // Load past groups
       var _pastGroupsRaw = prefs!.getStringList("me.pastGroups");
       if (_pastGroupsRaw != null) {
-        pastGroups = _pastGroupsRaw
-            .map((e) => PastGroup.fromJson(jsonDecode(e)))
-            .toList();
+        pastGroups = _pastGroupsRaw.map((e) => PastGroup.fromJson(jsonDecode(e))).toList();
 
         debugPrint("Loaded ${pastGroups.length} past groups.");
 
         // remove any groups too old
         pastGroups = pastGroups
-            .where((each) => each.timestamp
-                .isAfter(DateTime.now().subtract(const Duration(hours: 24))))
+            .where((each) => each.timestamp.isAfter(DateTime.now().subtract(const Duration(hours: 24))))
             .toList();
       }
     });
@@ -126,9 +118,7 @@ class Group with ChangeNotifier {
 
   /// Add or Replace local pilot instance
   void processNewPilot(dynamic p) async {
-    Pilot newPilot =
-        Pilot(p["id"], p["name"] ?? "Anonymous", p["avatar_hash"], Geo());
-    pilots[p["id"]] = newPilot;
+    pilots[p["id"]] = Pilot.fromJson(p);
     notifyListeners();
   }
 
@@ -160,11 +150,9 @@ class Group with ChangeNotifier {
       if (_p.selectedWaypoint != null) {
         if (_p.selectedWaypoint == oldIndex) {
           _p.selectedWaypoint = newIndex;
-        } else if (newIndex <= _p.selectedWaypoint! &&
-            oldIndex > _p.selectedWaypoint!) {
+        } else if (newIndex <= _p.selectedWaypoint! && oldIndex > _p.selectedWaypoint!) {
           _p.selectedWaypoint = _p.selectedWaypoint! + 1;
-        } else if (_p.selectedWaypoint! <= newIndex &&
-            _p.selectedWaypoint! > oldIndex) {
+        } else if (_p.selectedWaypoint! <= newIndex && _p.selectedWaypoint! > oldIndex) {
           _p.selectedWaypoint = _p.selectedWaypoint! - 1;
         }
       }

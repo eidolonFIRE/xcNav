@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/patreon.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -553,7 +554,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     Positioned(
                       left: 10,
                       top: 10,
-                      child: AvatarRound(Provider.of<Profile>(context).avatar, 40),
+                      child: AvatarRound(
+                        Provider.of<Profile>(context).avatar,
+                        40,
+                        tier: Provider.of<Profile>(context, listen: false).tier,
+                      ),
                     ),
                     Positioned(
                       left: 100,
@@ -586,7 +591,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           onPressed: () {
                             Navigator.pushNamed(context, "/profileEditor");
                           },
-                        ))
+                        )),
+                    if (isTierRecognized(Provider.of<Profile>(context, listen: false).tier))
+                      Positioned(
+                          top: 10, right: 10, child: tierBadge(Provider.of<Profile>(context, listen: false).tier)),
                   ])),
             ),
 
@@ -810,7 +818,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         PolylineLayerOptions(
                           polylines: plan.waypoints
                               .where((value) => value.latlng.length > 1)
-                              .mapIndexed((i, e) => Polyline(points: e.latlng, strokeWidth: 6, color: e.getColor()))
+                              .mapIndexed((i, e) => Polyline(
+                                  points: e.latlng, strokeWidth: 6, color: e.getColor(), isDotted: e.isOptional))
                               .toList(),
                         ),
 
@@ -823,7 +832,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       ..add(Waypoint(plan.waypoints[editingIndex!].name, editablePolyline.points, false,
                                           null, plan.waypoints[editingIndex!].color)))
                                     : plan.waypoints,
-                                false,
+                                Provider.of<ActivePlan>(context).isReversed,
                                 45)),
 
                         // Flight plan markers
@@ -1108,10 +1117,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             (e) => ChatBubble(
                                 false,
                                 e.text,
-                                AvatarRound(
-                                    Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar ??
-                                        Image.asset("assets/images/default_avatar.png"),
-                                    20),
+                                AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20,
+                                    tier: Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.tier),
                                 null,
                                 e.timestamp),
                           )

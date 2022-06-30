@@ -3,8 +3,10 @@ import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/pilot_info.dart';
 import 'package:xcnav/models/pilot.dart';
+import 'package:xcnav/patreon.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/avatar_round.dart';
 
 class PilotMarker extends StatelessWidget {
   final Pilot pilot;
@@ -36,27 +38,14 @@ class PilotMarker extends StatelessWidget {
               clipBehavior: Clip.none,
               // width: radius,
               // height: radius,
+              color: tierColors[pilot.tier],
             ),
           ),
         ),
       GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => showPilotInfo(context, pilot.id),
-        child: CircleAvatar(
-          radius: radius,
-          backgroundColor: Colors.black,
-          child: Padding(
-            padding: const EdgeInsets.all(2),
-            child: ClipOval(
-              child: SizedBox(
-                  width: radius * 2,
-                  height: radius * 2,
-                  child: FittedBox(
-                      fit: BoxFit.fill, child: pilot.avatar ?? Image.asset("assets/images/default_avatar.png"))),
-            ),
-          ),
-        ),
-      ),
+          behavior: HitTestBehavior.opaque,
+          onTap: () => showPilotInfo(context, pilot.id),
+          child: AvatarRound(pilot.avatar, radius, tier: pilot.tier)),
 
       /// --- Relative Altitude
       if (relAlt != null)

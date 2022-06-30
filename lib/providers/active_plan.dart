@@ -62,6 +62,7 @@ class ActivePlan with ChangeNotifier {
   bool get useWind => _useWind;
   set useWind(bool value) {
     _useWind = value;
+    debugPrint("Used wind: $value");
     notifyListeners();
   }
 
@@ -326,64 +327,46 @@ class ActivePlan with ChangeNotifier {
 
         if (prevIndex != null && wpIndex.latlng.isNotEmpty && waypoints[prevIndex].latlng.isNotEmpty) {
           // Will take the last point of the current waypoint, first point of the next
-          LatLng prevLatlng = isReversed ? waypoints[prevIndex].latlng.last : waypoints[prevIndex].latlng.first;
-          final nextLatLng = isReversed ? wpIndex.latlng.last : wpIndex.latlng.first;
+          final prevLatlng = isReversed ? waypoints[prevIndex].latlng.first : waypoints[prevIndex].latlng.last;
+          final nextLatlng = isReversed ? wpIndex.latlng.first : wpIndex.latlng.last;
 
           if (wind.result != null && useWind) {
             if (wind.result!.windSpd >= wind.result!.airspeed) {
               // NO SOLUTION!
               debugPrint("No solution!");
-              retval += ETA(latlngCalc.distance(nextLatLng, prevLatlng) + wpIndex.length, -1);
+              retval += ETA(latlngCalc.distance(nextLatlng, prevLatlng) + wpIndex.length, -1);
             } else {
               /// This works by first canceling lateral speed loss by rotating our vector to compensate.
               /// Then, account for forward loss of speed.
-              double remainingHeadway(double theta, double mySpd, double wSpd) =>
-                  sqrt(pow(mySpd, 2) - pow(wSpd * sin(theta), 2)) - cos(theta) * wSpd;
+
               double relativeHdg =
-                  wind.result!.windHdg - latlngCalc.bearing(prevLatlng, nextLatLng) * pi / 180 + (isReversed ? 0 : pi);
+                  wind.result!.windHdg - latlngCalc.bearing(prevLatlng, nextLatlng) * pi / 180 + (isReversed ? 0 : pi);
 
-              debugPrint("Relative headings: ${relativeHdg % (2 * pi)}");
+              // debugPrint("Relative headings: ${relativeHdg % (2 * pi)}");
 
-              retval += ETA.fromSpeed(latlngCalc.distance(nextLatLng, prevLatlng),
-                  remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
-
-              if (wpIndex.length > 0) {
-                // Account for path lenths
-                double relativeHdg = wind.result!.windHdg -
-                    latlngCalc.bearing(wpIndex.latlng.first, wpIndex.latlng.last) * pi / 180 +
-                    (isReversed ? 0 : pi);
-
-                retval += ETA.fromSpeed(
-                    wpIndex.length, remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
-              }
+              retval += ETA.fromSpeed(latlngCalc.distance(nextLatlng, prevLatlng),
+                  Wind.remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
             }
           } else {
             // use your current speed
-            retval += ETA.fromSpeed(latlngCalc.distance(nextLatLng, prevLatlng), speed);
+            retval += ETA.fromSpeed(latlngCalc.distance(nextLatlng, prevLatlng), speed);
+          }
+        }
+
+        // Account for path lenths
+        if (wpIndex.length > 0 && i != waypointIndex) {
+          if (wind.result != null && useWind) {
+            double relativeHdg = wind.result!.windHdg -
+                latlngCalc.bearing(wpIndex.latlng.first, wpIndex.latlng.last) * pi / 180 +
+                (isReversed ? 0 : pi);
+
+            retval += ETA.fromSpeed(
+                wpIndex.length, Wind.remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
+          } else {
             retval += ETA.fromSpeed(wpIndex.length, speed);
           }
-
-          // retval += ETA.fromSpeed(
-          //     latlngCalc.distance(nextLatLng, prevLatlng),
-          //     wind.result != null && useWind
-          //         ? (wind.result!.airspeed -
-          //             cos(latlngCalc.bearing(prevLatlng, nextLatLng) * pi / 180 -
-          //                     wind.result!.windHdg +
-          //                     (isReversed ? pi : 0)) *
-          //                 wind.result!.windSpd)
-          //         : speed);
-
-          // // add path distance
-          // retval += ETA.fromSpeed(
-          //     wpIndex.length,
-          //     wind.result != null && useWind
-          //         ? (wind.result!.airspeed -
-          //             cos(latlngCalc.bearing(wpIndex.latlng.first, wpIndex.latlng.last) * pi / 180 -
-          //                     wind.result!.windHdg +
-          //                     (isReversed ? pi : 0)) *
-          //                 wind.result!.windSpd)
-          //         : speed);
         }
+
         prevIndex = i;
       }
       return retval;

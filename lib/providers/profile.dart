@@ -15,6 +15,7 @@ class Profile with ChangeNotifier {
   Image avatar = Image.asset("assets/images/default_avatar.png");
   Uint8List? _avatarRaw;
   String? avatarHash;
+  String? _tier;
 
   late String hash;
 
@@ -33,6 +34,7 @@ class Profile with ChangeNotifier {
     name = prefs.getString("profile.name");
     id = prefs.getString("profile.id");
     secretID = prefs.getString("profile.secretID");
+    tier = prefs.getString("profile.tier");
 
     _avatarRaw = base64Decode(prefs.getString("profile.avatar") ?? "");
     if (_avatarRaw != null) {
@@ -42,8 +44,7 @@ class Profile with ChangeNotifier {
     }
     updateAvatarHash();
 
-    debugPrint(
-        "Loaded Profile: $name, $id, $secretID, avatar: ${_avatarRaw?.length ?? 0}");
+    debugPrint("Loaded Profile: $name, $id, $secretID, avatar: ${_avatarRaw?.length ?? 0}");
 
     hash = _hash();
   }
@@ -53,6 +54,7 @@ class Profile with ChangeNotifier {
     prefs.remove("profile.id");
     prefs.remove("profile.secretID");
     prefs.remove("profile.avatar");
+    prefs.remove("profile.tier");
   }
 
   updateAvatarHash() {
@@ -60,6 +62,16 @@ class Profile with ChangeNotifier {
       avatarHash = md5.convert(_avatarRaw!).toString();
     } else {
       avatarHash = null;
+    }
+  }
+
+  String? get tier => _tier;
+  set tier(String? newTier) {
+    _tier = newTier;
+    if (_tier == null) {
+      prefs.remove("profile.tier");
+    } else {
+      prefs.setString("profile.tier", _tier!);
     }
   }
 
@@ -85,12 +97,9 @@ class Profile with ChangeNotifier {
 
   Future pushAvatar() async {
     return http
-        .post(
-            Uri.parse(
-                "https://gx49w49rb4.execute-api.us-west-1.amazonaws.com/xcnav_avatar_service"),
+        .post(Uri.parse("https://gx49w49rb4.execute-api.us-west-1.amazonaws.com/xcnav_avatar_service"),
             headers: {"Content-Type": "application/json"},
-            body: jsonEncode(
-                {"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
+            body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
         .then((http.Response response) {
       final int statusCode = response.statusCode;
 
@@ -118,7 +127,7 @@ class Profile with ChangeNotifier {
 
   String _hash() {
     // build long string
-    String str = "Meta" + (name ?? "") + (id ?? "") + (avatarHash ?? "");
+    String str = "Meta" + (name ?? "") + (id ?? "") + (avatarHash ?? "") + (tier ?? "");
 
     // fold string into hash
     int hash = 0;

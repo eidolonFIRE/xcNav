@@ -35,6 +35,10 @@ class Settings with ChangeNotifier {
   late ProximityConfig proximityProfile;
   late String proximityProfileName;
 
+  // --- Patreon
+  String _patreonName = "";
+  String _patreonEmail = "";
+
   Settings() {
     selectProximityConfig("Medium");
     _loadSettings();
@@ -55,6 +59,10 @@ class Settings with ChangeNotifier {
       // --- ADSB
       selectProximityConfig(prefs.getString("settings.adsbProximityProfile") ?? "Medium");
       _adsbEnabled = prefs.getBool("settings.adsbEnabled") ?? false;
+
+      // --- Patreon
+      _patreonName = prefs.getString("settings.patreonName") ?? "";
+      _patreonEmail = prefs.getString("settings.patreonEmail") ?? "";
     });
   }
 
@@ -160,6 +168,25 @@ class Settings with ChangeNotifier {
     _adsbEnabled = value;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setBool("settings.adsbEnabled", _adsbEnabled);
+    });
+    notifyListeners();
+  }
+
+  // --- Patreon
+  String get patreonName => _patreonName;
+  set patreonName(String value) {
+    _patreonName = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString("settings.patreonName", _patreonName);
+    });
+    notifyListeners();
+  }
+
+  String get patreonEmail => _patreonEmail;
+  set patreonEmail(String value) {
+    _patreonEmail = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString("settings.patreonEmail", _patreonEmail);
     });
     notifyListeners();
   }

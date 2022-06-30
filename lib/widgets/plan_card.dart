@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +7,9 @@ import 'package:provider/provider.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/client.dart';
+import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/makePathBarbs.dart';
@@ -42,7 +44,6 @@ class _PlanCardState extends State<PlanCard> {
                       File planFile = File(filename);
                       planFile.exists().then((value) {
                         planFile.delete();
-                        // Navigator.of(context).pop();
                         widget.onDelete();
                       });
                       Navigator.popUntil(context, ModalRoute.withName("/plans"));
@@ -64,14 +65,51 @@ class _PlanCardState extends State<PlanCard> {
         });
   }
 
-  void rename(BuildContext context) {
+  void _replacePlan(BuildContext context) {
+    // TODO: prompt to save before replacing data?
+    final activePlan = Provider.of<ActivePlan>(context, listen: false);
+    activePlan.waypoints.clear();
+    activePlan.waypoints.addAll(widget.plan.waypoints);
+
+    Provider.of<Client>(context, listen: false).pushFlightPlan();
+  }
+
+  Future<bool?> replacePlanDialog(BuildContext context) {
+    return showDialog<bool?>(
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            title: const Text('Please Confirm'),
+            content: const Text('This will replace the plan for everyone in the group.'),
+            actions: [
+              // The "Yes" button
+              ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  },
+                  icon: const Icon(
+                    Icons.check,
+                    color: Colors.amber,
+                  ),
+                  label: const Text('Replace')),
+              ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                  child: const Text('Cancel'))
+            ],
+          );
+        });
+  }
+
+  Future rename(BuildContext context, {bool deleteOld = true}) {
     TextEditingController filename = TextEditingController();
     filename.text = widget.plan.name;
 
-    showDialog(
+    return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Rename Plan"),
+        title: Text(deleteOld ? "Rename Plan" : "Save Plan"),
         content: Form(
           key: formKey,
           child: TextFormField(
@@ -97,7 +135,7 @@ class _PlanCardState extends State<PlanCard> {
               onPressed: () {
                 if (formKey.currentState?.validate() ?? false) {
                   widget.plan
-                      .rename(filename.text)
+                      .rename(filename.text, deleteOld: deleteOld)
                       .then((value) => Navigator.popUntil(context, ModalRoute.withName("/plans")));
                 }
                 setState(() {});
@@ -147,16 +185,49 @@ class _PlanCardState extends State<PlanCard> {
                 children: [
                   PopupMenuButton(
                     icon: const Icon(Icons.more_horiz),
-                    itemBuilder: (context) => [
-                      // --- Option: Rename
+                    itemBuilder: (context) => <PopupMenuEntry>[
+                      // --- Option: Add All
                       PopupMenuItem(
                           child: TextButton.icon(
-                              label: const Text("Rename"),
-                              icon: const Icon(Icons.edit),
+                              label: const Text(
+                                "Append",
+                                style: TextStyle(color: Colors.lightGreen),
+                              ),
                               onPressed: () {
                                 Navigator.pop(context);
-                                rename(context);
-                              })),
+                                Provider.of<ActivePlan>(context, listen: false).waypoints.addAll(widget.plan.waypoints);
+                                Provider.of<Client>(context, listen: false).pushFlightPlan();
+                              },
+                              icon: const Icon(
+                                Icons.playlist_add,
+                                size: 28,
+                                color: Colors.lightGreen,
+                              ))),
+                      // --- Option: Replace
+                      PopupMenuItem(
+                          child: TextButton.icon(
+                              label: const Text(
+                                "Replace",
+                                style: TextStyle(color: Colors.amber),
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
+                                  replacePlanDialog(context).then((value) {
+                                    if (value ?? false) _replacePlan(context);
+                                  });
+                                } else {
+                                  _replacePlan(context);
+                                }
+                              },
+                              icon: const Icon(
+                                Icons.playlist_remove,
+                                size: 28,
+                                color: Colors.amber,
+                              ))),
+
+                      const PopupMenuDivider(),
+
                       // --- Option: Edit
                       PopupMenuItem(
                           child: TextButton.icon(
@@ -167,8 +238,34 @@ class _PlanCardState extends State<PlanCard> {
                               },
                               icon: const Icon(
                                 Icons.pin_drop,
+                                size: 28,
                                 // color: Colors.blue,
                               ))),
+                      // --- Option: Rename
+                      PopupMenuItem(
+                          child: TextButton.icon(
+                              label: const Text("Rename"),
+                              icon: const Icon(Icons.edit, size: 30),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                rename(context);
+                              })),
+                      // --- Option: Duplicate
+                      PopupMenuItem(
+                          child: TextButton.icon(
+                              label: const Text("Duplicate"),
+                              icon: const Icon(
+                                Icons.copy_all,
+                                size: 28,
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                rename(context, deleteOld: false).then((value) => widget.onDelete());
+                                // widget.onDelete();
+                              })),
+
+                      const PopupMenuDivider(),
+
                       // --- Option: Delete
                       PopupMenuItem(
                           child: TextButton.icon(
@@ -182,6 +279,7 @@ class _PlanCardState extends State<PlanCard> {
                               },
                               icon: const Icon(
                                 Icons.delete,
+                                size: 28,
                                 color: Colors.red,
                               )))
                     ],
@@ -207,9 +305,9 @@ class _PlanCardState extends State<PlanCard> {
                           height: MediaQuery.of(context).size.width / 2,
                           child: FlutterMap(
                               options: MapOptions(
-                                interactiveFlags: InteractiveFlag.none,
-                                bounds: widget.plan.getBounds(),
-                              ),
+                                  interactiveFlags: InteractiveFlag.none,
+                                  bounds: widget.plan.getBounds(),
+                                  allowPanningOnScrollingParent: false),
                               layers: [
                                 TileLayerOptions(
                                   // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -228,7 +326,11 @@ class _PlanCardState extends State<PlanCard> {
                                   polylines: widget.plan.waypoints
                                       // .where((value) => value.latlng.length > 1)
                                       .mapIndexed((i, e) => e.latlng.length > 1
-                                          ? Polyline(points: e.latlng, strokeWidth: 4, color: e.getColor())
+                                          ? Polyline(
+                                              points: e.latlng,
+                                              strokeWidth: 4,
+                                              color: e.getColor(),
+                                              isDotted: e.isOptional)
                                           : null)
                                       .whereNotNull()
                                       .toList(),

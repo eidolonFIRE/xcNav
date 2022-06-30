@@ -126,11 +126,11 @@ class _PlanEditorState extends State<PlanEditor> {
     if (plan == null) {
       plan = ModalRoute.of(context)!.settings.arguments as FlightPlan;
       mapBounds = plan!.getBounds() ??
-          LatLngBounds.fromPoints([
+          (LatLngBounds.fromPoints([
             Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
             Provider.of<MyTelemetry>(context, listen: false).geo.latLng..longitude += 0.05
           ])
-        ..pad(2);
+            ..pad(2));
     }
     return Scaffold(
       appBar: AppBar(
@@ -165,7 +165,11 @@ class _PlanEditorState extends State<PlanEditor> {
                       polylines: plan!.waypoints
                           // .where((value) => value.latlng.length > 1)
                           .mapIndexed((i, e) => e.latlng.length > 1 && i != editingIndex
-                              ? Polyline(points: e.latlng, strokeWidth: i == selectedIndex ? 6 : 4, color: e.getColor())
+                              ? Polyline(
+                                  points: e.latlng,
+                                  strokeWidth: i == selectedIndex ? 6 : 4,
+                                  color: e.getColor(),
+                                  isDotted: e.isOptional)
                               : null)
                           .whereNotNull()
                           .toList(),
@@ -476,6 +480,7 @@ class _PlanEditorState extends State<PlanEditor> {
                             onToggleOptional: () {
                               setState(() {
                                 plan!.waypoints[i].isOptional = !plan!.waypoints[i].isOptional;
+                                plan!.refreshLength();
                               });
                             },
                             isSelected: i == selectedIndex,
@@ -487,6 +492,7 @@ class _PlanEditorState extends State<PlanEditor> {
                             debugPrint("WP order: $oldIndex --> $newIndex");
                             selectedIndex = null;
                             plan!.sortWaypoint(oldIndex, newIndex);
+                            plan!.refreshLength();
                           });
                         },
                       )),

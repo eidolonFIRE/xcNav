@@ -5,7 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
-import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:email_validator/email_validator.dart';
 
 // Providers
 import 'package:xcnav/providers/profile.dart';
@@ -14,6 +14,8 @@ import 'package:xcnav/providers/adsb.dart';
 
 //
 import 'package:xcnav/units.dart';
+import 'package:xcnav/dialogs/patreon_info.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 
 class SettingsEditor extends StatefulWidget {
   const SettingsEditor({Key? key}) : super(key: key);
@@ -24,6 +26,7 @@ class SettingsEditor extends StatefulWidget {
 
 class _SettingsEditorState extends State<SettingsEditor> {
   final TextEditingController searchInput = TextEditingController();
+  var emailFormKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +159,54 @@ class _SettingsEditorState extends State<SettingsEditor> {
                   onPressed: (event) => {Provider.of<ADSB>(context, listen: false).testWarning()},
                 ),
               ]),
+
+              /// --- Patreon Info
+              // TODO: validation should consider both fields at the same time... need both or neither
+              SettingsSection(
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("Patreon Identity"),
+                      IconButton(
+                          onPressed: () => {showPatreonInfoDialog(context)},
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          iconSize: 20,
+                          icon: const Icon(
+                            Icons.help,
+                            size: 20,
+                            color: Colors.lightBlue,
+                          ))
+                    ],
+                  ),
+                  tiles: [
+                    SettingsTile.navigation(
+                      title: TextFormField(
+                          initialValue: settings.patreonName,
+                          decoration: const InputDecoration(label: Text("First Name")),
+                          onFieldSubmitted: (value) {
+                            settings.patreonName = value;
+                          }),
+                      trailing: Container(),
+                    ),
+                    SettingsTile.navigation(
+                      title: Form(
+                        key: emailFormKey,
+                        child: TextFormField(
+                          initialValue: settings.patreonEmail,
+                          validator: (value) =>
+                              EmailValidator.validate(value ?? "") || value == "" ? null : "Not a valid email",
+                          decoration: const InputDecoration(label: Text("Email")),
+                          onFieldSubmitted: (value) {
+                            if (emailFormKey.currentState?.validate() ?? false) {
+                              settings.patreonEmail = value;
+                            }
+                          },
+                        ),
+                      ),
+                      trailing: Container(),
+                    ),
+                  ]),
 
               // --- Debug Tools
               SettingsSection(

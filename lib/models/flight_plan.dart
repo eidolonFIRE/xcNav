@@ -95,13 +95,14 @@ class FlightPlan {
       if (wpIndex.isOptional) continue;
 
       if (prevIndex != null) {
-        // Will take the last point of the current waypoint, nearest point of the next
-        LatLng prevLatlng = waypoints[prevIndex].latlng.first;
+        // Will take the last point of the previous waypoint
+        LatLng prevLatlng = waypoints[prevIndex].latlng.last;
         _length += latlngCalc.distance(wpIndex.latlng.first, prevLatlng);
-
-        // add path distance
-        _length += wpIndex.length;
       }
+
+      // include lengths for paths
+      _length += wpIndex.length;
+
       prevIndex = i;
     }
     return _length;
@@ -186,14 +187,16 @@ class FlightPlan {
     // }
   }
 
-  Future rename(String name) {
-    // remove old file
-    getFilename().then((filename) {
-      File planFile = File(filename);
-      planFile.exists().then((value) {
-        planFile.delete();
+  Future rename(String name, {bool deleteOld = true}) async {
+    if (deleteOld) {
+      // remove old file
+      await getFilename().then((filename) {
+        File planFile = File(filename);
+        planFile.exists().then((value) {
+          planFile.delete();
+        });
       });
-    });
+    }
 
     _name = name;
 
