@@ -93,6 +93,30 @@ class ActivePlan with ChangeNotifier {
     notifyListeners();
   }
 
+  int? findNextWaypoint() {
+    if (selectedIndex != null && selectedIndex! < waypoints.length - 1) {
+      // (Skip optional waypoints)
+      for (int i = selectedIndex! + 1; i < waypoints.length; i++) {
+        if (!waypoints[i].isOptional) {
+          return i;
+        }
+      }
+    }
+    return null;
+  }
+
+  int? findPrevWaypoint() {
+    if (selectedIndex != null && selectedIndex! > 0) {
+      // (Skip optional waypoints)
+      for (int i = selectedIndex! - 1; i >= 0; i--) {
+        if (!waypoints[i].isOptional) {
+          return i;
+        }
+      }
+    }
+    return null;
+  }
+
   void parseFlightPlanSync(List<dynamic> planData) {
     waypoints.clear();
     // add back each waypoint

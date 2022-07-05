@@ -19,10 +19,10 @@ class ChatMessages with ChangeNotifier {
     notifyListeners();
   }
 
-  void markAllRead() {
+  void markAllRead(bool refresh) {
     chatLastOpened = DateTime.now().millisecondsSinceEpoch;
     numUnread = 0;
-    notifyListeners();
+    if (refresh) notifyListeners();
   }
 
   void processMessageFromServer(dynamic msg) {

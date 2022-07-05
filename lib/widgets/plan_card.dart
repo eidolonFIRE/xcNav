@@ -4,6 +4,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/dialogs/save_plan.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
@@ -66,12 +67,20 @@ class _PlanCardState extends State<PlanCard> {
   }
 
   void _replacePlan(BuildContext context) {
-    // TODO: prompt to save before replacing data?
     final activePlan = Provider.of<ActivePlan>(context, listen: false);
     activePlan.waypoints.clear();
     activePlan.waypoints.addAll(widget.plan.waypoints);
-
     Provider.of<Client>(context, listen: false).pushFlightPlan();
+  }
+
+  void _replacePlanDialog(BuildContext context) {
+    if (Provider.of<ActivePlan>(context, listen: false).waypoints.isNotEmpty) {
+      savePlan(context).then((value) {
+        _replacePlan(context);
+      });
+    } else {
+      _replacePlan(context);
+    }
   }
 
   Future<bool?> replacePlanDialog(BuildContext context) {
@@ -186,6 +195,14 @@ class _PlanCardState extends State<PlanCard> {
                   PopupMenuButton(
                     icon: const Icon(Icons.more_horiz),
                     itemBuilder: (context) => <PopupMenuEntry>[
+                      // TODO: determine if this is still needed (or find something more elegant)
+                      const PopupMenuItem(
+                        enabled: false,
+                        height: 20,
+                        child: Text(
+                          "To the Active Plan:",
+                        ),
+                      ),
                       // --- Option: Add All
                       PopupMenuItem(
                           child: TextButton.icon(
@@ -214,10 +231,10 @@ class _PlanCardState extends State<PlanCard> {
                                 Navigator.pop(context);
                                 if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
                                   replacePlanDialog(context).then((value) {
-                                    if (value ?? false) _replacePlan(context);
+                                    if (value ?? false) _replacePlanDialog(context);
                                   });
                                 } else {
-                                  _replacePlan(context);
+                                  _replacePlanDialog(context);
                                 }
                               },
                               icon: const Icon(

@@ -42,6 +42,7 @@ class ADSB with ChangeNotifier {
   int lastHeartbeat = 0;
 
   bool portListening = false;
+  bool _enabled = false;
 
   ADSB(BuildContext ctx) {
     context = ctx;
@@ -64,45 +65,14 @@ class ADSB with ChangeNotifier {
       ttsState = TtsState.stopped;
     });
 
-    Provider.of<Settings>(context, listen: false).addListener(() async {
-      var settings = Provider.of<Settings>(context, listen: false);
-      if (!portListening && settings.adsbEnabled) {
-        // --- Start Listening
-        final info = NetworkInfo();
-        var wifiName = await info.getWifiName();
-        var wifiGateway = await info.getWifiGatewayIP();
+    Provider.of<Settings>(context, listen: false).addListener(() async {});
+  }
 
-        dynamic address = InternetAddress.loopbackIPv4;
-        if (wifiName != null && (wifiName.startsWith("Ping-") || wifiName.startsWith("Sentry_"))) {
-          address = wifiGateway;
-        }
-
-        debugPrint("Opening ADSB listen on ${address.toString()}:4000");
-        RawDatagramSocket.bind(address, 4000).then((_sock) {
-          sock = _sock;
-
-          _sock.listen((event) {
-            // debugPrint("ADSB event: ${event.toString()}");
-            Datagram? dg = _sock.receive();
-            if (dg != null) {
-              // debugPrint("${dg.data.toString()}");
-              decodeGDL90(dg.data);
-            }
-          }, onError: (error) {
-            debugPrint("ADSB socket error: ${error.toString()}");
-          }, onDone: () {
-            debugPrint("ADSB socket done.");
-          });
-        });
-        portListening = true;
-      } else if (portListening && !settings.adsbEnabled) {
-        // --- Stop Listening
-        debugPrint("Closing ADSB listen port");
-        lastHeartbeat = 0;
-        sock?.close();
-        portListening = false;
-      }
-    });
+  bool get enabled => _enabled;
+  set enabled(bool value) {
+    _enabled = value;
+    refreshSocket();
+    notifyListeners();
   }
 
   @override
@@ -110,6 +80,45 @@ class ADSB with ChangeNotifier {
     if (sock != null) sock!.close();
     super.dispose();
     flutterTts.stop();
+  }
+
+  void refreshSocket() async {
+    if (!portListening && _enabled) {
+      // --- Start Listening
+      final info = NetworkInfo();
+      var wifiName = await info.getWifiName();
+      var wifiGateway = await info.getWifiGatewayIP();
+
+      dynamic address = InternetAddress.loopbackIPv4;
+      if (wifiName != null && (wifiName.startsWith("Ping-") || wifiName.startsWith("Sentry_"))) {
+        address = wifiGateway;
+      }
+
+      debugPrint("Opening ADSB listen on ${address.toString()}:4000");
+      RawDatagramSocket.bind(address, 4000).then((_sock) {
+        sock = _sock;
+
+        _sock.listen((event) {
+          // debugPrint("ADSB event: ${event.toString()}");
+          Datagram? dg = _sock.receive();
+          if (dg != null) {
+            // debugPrint("${dg.data.toString()}");
+            decodeGDL90(dg.data);
+          }
+        }, onError: (error) {
+          debugPrint("ADSB socket error: ${error.toString()}");
+        }, onDone: () {
+          debugPrint("ADSB socket done.");
+        });
+      });
+      portListening = true;
+    } else if (portListening && !_enabled) {
+      // --- Stop Listening
+      debugPrint("Closing ADSB listen port");
+      lastHeartbeat = 0;
+      sock?.close();
+      portListening = false;
+    }
   }
 
   int decode24bit(Uint8List data) {

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
@@ -19,25 +21,18 @@ class PilotMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var settings = Provider.of<Settings>(context, listen: false);
+    final offsetInfo = (max(0, sin(hdg ?? 0)) * radius / 2 + radius * 2).toDouble();
     return Stack(fit: StackFit.loose, children: [
       // Relative Altitude Indicator
 
       if (hdg != null)
         Container(
-          // width: radius * 3,
-          // height: radius * 3,
-          // color: Colors.amber.withAlpha(100),
           transformAlignment: const Alignment(0, 0),
           transform: Matrix4.rotationZ(hdg!) * Matrix4.translationValues(0, -12, 0),
           child: SizedBox(
-            // width: radius * 3,
-            // height: radius * 3,
             child: SvgPicture.asset(
               "assets/images/pilot_direction_arrow.svg",
-              // fit: BoxFit.none,
               clipBehavior: Clip.none,
-              // width: radius,
-              // height: radius,
               color: tierColors[pilot.tier],
             ),
           ),
@@ -50,7 +45,7 @@ class PilotMarker extends StatelessWidget {
       /// --- Relative Altitude
       if (relAlt != null)
         Container(
-            transform: Matrix4.translationValues(radius * 2, 0, 0),
+            transform: Matrix4.translationValues(offsetInfo, 0, 0),
             // transformAlignment: const Alignment(0, 0),
             child: Text.rich(
               TextSpan(children: [
@@ -79,7 +74,7 @@ class PilotMarker extends StatelessWidget {
       /// --- Show name
       if (pilot.avatar == null || settings.showPilotNames)
         Container(
-          transform: Matrix4.translationValues(radius * 2 + 5, 18, 0),
+          transform: Matrix4.translationValues(offsetInfo + 5, 18, 0),
           child: Text(
             pilot.name,
             maxLines: 1,

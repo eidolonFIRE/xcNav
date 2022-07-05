@@ -65,7 +65,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
           }
           return AlertDialog(
             title: Text(
-              isNew ? "Add Waypoint" : "Edit Waypoint",
+              (isNew ? "Add " : "Edit ") + (isPath ? "Path" : "Waypoint"),
               style: Theme.of(context).textTheme.titleSmall,
             ),
             titlePadding: const EdgeInsets.all(10),

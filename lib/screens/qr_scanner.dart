@@ -54,9 +54,7 @@ class _QRScannerState extends State<QRScanner> {
                   enableIMEPersonalizedLearning: false,
                   keyboardType: TextInputType.name,
                   decoration: const InputDecoration(hintText: "Group Code"),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9]"))
-                  ],
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9]"))],
                   controller: inputGroupId,
                   textInputAction: TextInputAction.go,
                   onSubmitted: (text) => {joinCode(text)},
@@ -64,9 +62,7 @@ class _QRScannerState extends State<QRScanner> {
               ),
             ),
           ),
-          IconButton(
-              onPressed: () => {joinCode(inputGroupId.text)},
-              icon: const Icon(Icons.arrow_forward))
+          IconButton(onPressed: () => {joinCode(inputGroupId.text)}, icon: const Icon(Icons.arrow_forward))
         ]),
       ),
       body: Column(
@@ -85,8 +81,7 @@ class _QRScannerState extends State<QRScanner> {
                       borderLength: 30,
                       borderWidth: 10,
                       cutOutSize: MediaQuery.of(context).size.width / 2),
-                  onPermissionSet: (ctrl, p) =>
-                      _onPermissionSet(context, ctrl, p),
+                  onPermissionSet: (ctrl, p) => _onPermissionSet(context, ctrl, p),
                 ),
                 Positioned(
                     right: 10,
@@ -133,21 +128,13 @@ class _QRScannerState extends State<QRScanner> {
                         bottom: 0,
                         width: MediaQuery.of(context).size.width,
                         child: TextButton.icon(
-                          onPressed: () => {
-                            Share.share(
-                                Provider.of<Group>(context, listen: false)
-                                        .currentGroupID ??
-                                    "")
-                          },
+                          onPressed: () =>
+                              {Share.share(Provider.of<Group>(context, listen: false).currentGroupID ?? "")},
                           icon: const Icon(
                             Icons.share,
                             color: Colors.black,
                           ),
-                          label: Text(
-                              Provider.of<Group>(context)
-                                      .currentGroupID
-                                      ?.toUpperCase() ??
-                                  "",
+                          label: Text(Provider.of<Group>(context).currentGroupID?.toUpperCase() ?? "",
                               style: const TextStyle(color: Colors.black)),
                         )),
                   ]))),
@@ -158,8 +145,8 @@ class _QRScannerState extends State<QRScanner> {
 
   void joinCode(String code) {
     controller!.pauseCamera().then((value) {
-      Provider.of<Client>(context, listen: false).joinGroup(code);
       Navigator.pop<bool>(context, true);
+      Provider.of<Client>(context, listen: false).joinGroup(context, code);
     });
   }
 

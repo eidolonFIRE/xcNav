@@ -78,38 +78,36 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                     Flexible(
                                         fit: FlexFit.tight,
                                         flex: 3,
-                                        child: sample != null
-                                            ? Text.rich(
-                                                TextSpan(children: [
-                                                  TextSpan(
-                                                      text: convertDistValueFine(settings.displayUnitsDist,
-                                                                  getElevation(sample.baroAlt, 1013.25))
-                                                              .toStringAsFixed(0) +
-                                                          unitStrDistFine[settings.displayUnitsDist]!),
-                                                  const TextSpan(text: ",  "),
-                                                  TextSpan(
-                                                      style: const TextStyle(color: Colors.blue),
-                                                      text: sample.dpt == null
-                                                          ? "?"
-                                                          : cToF(sample.dpt)!.toStringAsFixed(0) + " F"),
-                                                  const TextSpan(text: ",  "),
-                                                  TextSpan(
-                                                      style: const TextStyle(color: Colors.red),
-                                                      text: sample.tmp == null
-                                                          ? "?"
-                                                          : cToF(sample.tmp)!.toStringAsFixed(0) + " F"),
-                                                ]),
-                                                style: const TextStyle(fontSize: 24),
-                                                textAlign: TextAlign.center,
-                                              )
-                                            : const Text("")),
+                                        child: Text.rich(
+                                          TextSpan(children: [
+                                            TextSpan(
+                                                text: convertDistValueFine(settings.displayUnitsDist,
+                                                            getElevation(sample.baroAlt, 1013.25))
+                                                        .toStringAsFixed(0) +
+                                                    unitStrDistFine[settings.displayUnitsDist]!),
+                                            const TextSpan(text: ",  "),
+                                            TextSpan(
+                                                style: const TextStyle(color: Colors.blue),
+                                                text: sample.dpt == null
+                                                    ? "?"
+                                                    : cToF(sample.dpt)!.toStringAsFixed(0) + " F"),
+                                            const TextSpan(text: ",  "),
+                                            TextSpan(
+                                                style: const TextStyle(color: Colors.red),
+                                                text: sample.tmp == null
+                                                    ? "?"
+                                                    : cToF(sample.tmp)!.toStringAsFixed(0) + " F"),
+                                          ]),
+                                          style: const TextStyle(fontSize: 24),
+                                          textAlign: TextAlign.center,
+                                        )),
                                     Flexible(
                                         fit: FlexFit.tight,
                                         flex: 1,
                                         child: Padding(
                                           padding: const EdgeInsets.only(left: 10),
                                           child: Stack(children: [
-                                            if (sample != null && sample.wHdg != null)
+                                            if (sample.wHdg != null)
                                               Container(
                                                 transformAlignment: const Alignment(0, 0),
                                                 transform: Matrix4.rotationZ(sample.wHdg!),
@@ -125,7 +123,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                               child: Padding(
                                                 padding: const EdgeInsets.only(top: 42, bottom: 42),
                                                 child: Text(
-                                                  (sample != null && sample.wVel != null)
+                                                  (sample.wVel != null)
                                                       ? printValue(
                                                           value: convertSpeedValue(
                                                               Provider.of<Settings>(context, listen: false)

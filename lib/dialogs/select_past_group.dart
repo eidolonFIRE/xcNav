@@ -65,7 +65,8 @@ void selectPastGroup(BuildContext context) {
                                 IconButton(
                                     visualDensity: VisualDensity.comfortable,
                                     onPressed: () {
-                                      Provider.of<Client>(context, listen: false).joinGroup(group.pastGroups[index].id);
+                                      Provider.of<Client>(context, listen: false)
+                                          .joinGroup(context, group.pastGroups[index].id);
                                       Navigator.pop(context);
                                     },
                                     icon: const Icon(

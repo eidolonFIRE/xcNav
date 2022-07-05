@@ -15,16 +15,14 @@ void showFuelDialog(BuildContext context) {
           return Dismissible(
             key: const Key("fuelEditorDialog"),
             direction: DismissDirection.vertical,
-            onDismissed: (event) =>
-                Navigator.popUntil(context, ModalRoute.withName("/home")),
+            onDismissed: (event) => Navigator.popUntil(context, ModalRoute.withName("/home")),
             child: AlertDialog(
               actions: [
                 IconButton(
-                  onPressed: () =>
-                      Navigator.popUntil(context, ModalRoute.withName("/home")),
+                  onPressed: () => Navigator.popUntil(context, ModalRoute.withName("/home")),
                   icon: const Icon(
-                    Icons.close,
-                    color: Colors.red,
+                    Icons.check,
+                    color: Colors.lightGreen,
                     size: 30,
                   ),
                 )
@@ -63,9 +61,7 @@ void showFuelDialog(BuildContext context) {
                                 color: Colors.lightGreen,
                               )),
                           Text(
-                            ((myTelemetry.fuel * 10).round() / 10)
-                                .floor()
-                                .toString(),
+                            ((myTelemetry.fuel * 10).round() / 10).floor().toString(),
                             style: numbers,
                             textAlign: TextAlign.center,
                           ),
@@ -111,22 +107,18 @@ void showFuelDialog(BuildContext context) {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                              onPressed: () =>
-                                  {myTelemetry.updateFuelBurnRate(1)},
+                              onPressed: () => {myTelemetry.updateFuelBurnRate(1)},
                               icon: const Icon(
                                 Icons.keyboard_arrow_up,
                                 color: Colors.lightGreen,
                               )),
                           Text(
-                            ((myTelemetry.fuelBurnRate * 10).round() / 10)
-                                .floor()
-                                .toString(),
+                            ((myTelemetry.fuelBurnRate * 10).round() / 10).floor().toString(),
                             style: numbers,
                             textAlign: TextAlign.center,
                           ),
                           IconButton(
-                              onPressed: () =>
-                                  {myTelemetry.updateFuelBurnRate(-1)},
+                              onPressed: () => {myTelemetry.updateFuelBurnRate(-1)},
                               icon: const Icon(
                                 Icons.keyboard_arrow_down,
                                 color: Colors.red,
@@ -142,21 +134,18 @@ void showFuelDialog(BuildContext context) {
                       ),
                       Column(mainAxisSize: MainAxisSize.min, children: [
                         IconButton(
-                            onPressed: () =>
-                                {myTelemetry.updateFuelBurnRate(0.1)},
+                            onPressed: () => {myTelemetry.updateFuelBurnRate(0.1)},
                             icon: const Icon(
                               Icons.keyboard_arrow_up,
                               color: Colors.lightGreen,
                             )),
                         Text(
-                          ((myTelemetry.fuelBurnRate * 10).round() % 10)
-                              .toString(),
+                          ((myTelemetry.fuelBurnRate * 10).round() % 10).toString(),
                           style: numbers,
                           textAlign: TextAlign.center,
                         ),
                         IconButton(
-                            onPressed: () =>
-                                {myTelemetry.updateFuelBurnRate(-0.1)},
+                            onPressed: () => {myTelemetry.updateFuelBurnRate(-0.1)},
                             icon: const Icon(
                               Icons.keyboard_arrow_down,
                               color: Colors.red,

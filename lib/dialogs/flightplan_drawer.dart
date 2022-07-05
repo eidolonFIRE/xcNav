@@ -72,8 +72,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
             IconButton(
                 iconSize: 30,
                 onPressed: () {
-                  savePlan(context);
                   Navigator.pop(context);
+                  savePlan(context);
                 },
                 icon: const Icon(Icons.save_as)),
           ],

@@ -67,19 +67,20 @@ class _ChatState extends State<Chat> {
 
   @override
   Widget build(BuildContext context) {
+    Provider.of<ChatMessages>(context, listen: false).markAllRead(false);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          // title: Consumer<Group>(
-          //     builder: (context, group, child) => Row(
-          //           children: group.pilots.values
-          //               .toList()
-          //               .map((e) => AvatarRound(e.avatar, 20))
-          //               .toList(),
-          //         ))
           centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Provider.of<ChatMessages>(context, listen: false).markAllRead(true);
+              Navigator.of(context).pop();
+            },
+          ),
           title: IconButton(
               icon: const Icon(Icons.auto_awesome),
               onPressed: () => {
@@ -88,7 +89,6 @@ class _ChatState extends State<Chat> {
                       builder: (BuildContext context) {
                         return SimpleDialog(
                             alignment: Alignment.topCenter,
-                            // title: const Text("Quick Message"),
                             children: quickchat
                                 .map((msg) => (msg == "")
                                     ? const Divider(

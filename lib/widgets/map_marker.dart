@@ -24,7 +24,7 @@ var colorOptions = {
   "orange": Colors.amber.shade900,
   "blue": Colors.blue.shade800,
   "green": Colors.green.shade800,
-  "purple": Colors.purple.shade700,
+  "purple": Colors.purple.shade600,
 };
 
 class MapMarker extends StatelessWidget {

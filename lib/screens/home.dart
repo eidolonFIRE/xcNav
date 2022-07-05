@@ -290,6 +290,7 @@ class _MyHomePageState extends State<MyHomePage> {
       prevFocusMode = focusMode;
       focusMode = mode;
       if (mode != FocusMode.editPath) editingIndex = null;
+      if (mode == FocusMode.group) lastMapChange = null;
       debugPrint("FocusMode = $mode");
     });
     refreshMapView();
@@ -315,9 +316,10 @@ class _MyHomePageState extends State<MyHomePage> {
           .map((e) => e.geo.latLng)
           .toList();
       points.add(LatLng(geo.lat, geo.lng));
-      if (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now())) {
+      if (lastMapChange == null ||
+          (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
         centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
-            options: const FitBoundsOptions(padding: EdgeInsets.all(150), maxZoom: 10, inside: false));
+            options: const FitBoundsOptions(padding: EdgeInsets.all(100), maxZoom: 13, inside: false));
       } else {
         // Preserve zoom if it has been recently overriden
         centerZoom = CenterZoom(center: LatLngBounds.fromPoints(points).center, zoom: mapController.zoom);
@@ -605,7 +607,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Icons.local_airport,
                 size: 30,
               ),
-              title: Text(" Airspace", style: Theme.of(context).textTheme.headline5),
+              title: Text("Airspace", style: Theme.of(context).textTheme.headline5),
               trailing: Switch(
                 value: Provider.of<Settings>(context).showAirspace,
                 onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
@@ -617,11 +619,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 leading: const Icon(Icons.radar, size: 30),
                 title: Text("ADSB-in", style: Theme.of(context).textTheme.headline5),
                 trailing: Switch(
-                  value: Provider.of<Settings>(context).adsbEnabled,
-                  onChanged: (value) => {Provider.of<Settings>(context, listen: false).adsbEnabled = value},
+                  value: Provider.of<ADSB>(context).enabled,
+                  onChanged: (value) => {Provider.of<ADSB>(context, listen: false).enabled = value},
                 ),
-                subtitle: Provider.of<Settings>(context).adsbEnabled
-                    ? (Provider.of<ADSB>(context).lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 10)
+                subtitle: Provider.of<ADSB>(context).enabled
+                    ? (Provider.of<ADSB>(context).lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 20)
                         ? const Text.rich(TextSpan(children: [
                             WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
@@ -734,7 +736,6 @@ class _MyHomePageState extends State<MyHomePage> {
                           // debugPrint("$mapPosition $hasGesture");
                           if (hasGesture && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
                             // --- Unlock any focus lock
-                            lastMapChange = DateTime.now();
                             setFocusMode(FocusMode.unlocked);
                           }
                         },
@@ -796,7 +797,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         PolylineLayerOptions(polylines: [myTelemetry.buildFlightTrace()]),
 
                         // ADSB Proximity
-                        if (settings.adsbEnabled)
+                        if (Provider.of<ADSB>(context, listen: false).enabled)
                           CircleLayerOptions(circles: [
                             CircleMarker(
                                 point: myTelemetry.geo.latLng,
@@ -891,7 +892,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ]),
 
                         // GA planes (ADSB IN)
-                        if (settings.adsbEnabled)
+                        if (Provider.of<ADSB>(context, listen: false).enabled)
                           MarkerLayerOptions(
                               markers: Provider.of<ADSB>(context, listen: false)
                                   .planes
@@ -1337,8 +1338,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           size: 60,
                           selected: false,
                           onPressed: () {
-                            Provider.of<ChatMessages>(context, listen: false).markAllRead();
-                            Navigator.pushNamed(context, "/party");
+                            Navigator.pushNamed(context, "/chat");
                           },
                           child: const Icon(
                             Icons.chat,
@@ -1428,16 +1428,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
         // --- Bottom Instruments
         bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
-          // debugPrint("Update ETA");
           ETA etaNext = activePlan.selectedIndex != null
               ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
               : ETA(0, 0);
 
           int etaTime = min(999 * 60000, etaNext.time);
-
-          // int etaNextMin = min(999 * 60, (etaNext.time / 60000).ceil());
-          // String etaNextValue = (etaNextMin >= 60) ? (etaNextMin / 60).toStringAsFixed(1) : etaNextMin.toString();
-          // String etaNextUnit = (etaNextMin >= 60) ? "hr" : "min";
 
           final curWp = activePlan.selectedWp;
 
@@ -1450,28 +1445,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   // --- Previous Waypoint
                   IconButton(
                     onPressed: () {
-                      if (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0) {
-                        // (Skip optional waypoints)
-                        for (int i = activePlan.selectedIndex! - 1; i >= 0; i--) {
-                          if (!activePlan.waypoints[i].isOptional) {
-                            activePlan.selectWaypoint(i);
-                            break;
-                          }
-                        }
-                      }
+                      final wp = activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
+                      if (wp != null) activePlan.selectWaypoint(wp);
                     },
                     iconSize: 40,
                     color: (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0)
                         ? Colors.white
                         : Colors.grey.shade700,
-                    icon: activePlan.isReversed
-                        ? const Icon(
-                            Icons.skip_previous,
-                          )
-                        : SvgPicture.asset(
-                            "assets/images/reverse_back.svg",
-                            color: ((activePlan.selectedIndex ?? 0) > 0) ? Colors.white : Colors.grey.shade700,
-                          ),
+                    icon: SvgPicture.asset(
+                      "assets/images/reverse_back.svg",
+                      color: ((activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint()) !=
+                              null)
+                          ? Colors.white
+                          : Colors.grey.shade700,
+                    ),
                   ),
 
                   // --- Next Waypoint Info
@@ -1551,34 +1538,22 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   // --- Next Waypoint
                   IconButton(
-                    onPressed: () {
-                      if (activePlan.selectedIndex != null &&
-                          activePlan.selectedIndex! < activePlan.waypoints.length - 1) {
-                        // (Skip optional waypoints)
-                        for (int i = activePlan.selectedIndex! + 1; i < activePlan.waypoints.length; i++) {
-                          if (!activePlan.waypoints[i].isOptional) {
-                            activePlan.selectWaypoint(i);
-                            break;
-                          }
-                        }
-                      }
-                    },
-                    iconSize: 40,
-                    color: (activePlan.selectedIndex != null &&
-                            activePlan.selectedIndex! < activePlan.waypoints.length - 1)
-                        ? Colors.white
-                        : Colors.grey.shade700,
-                    icon: !activePlan.isReversed
-                        ? const Icon(
-                            Icons.skip_next,
-                          )
-                        : SvgPicture.asset(
-                            "assets/images/reverse_forward.svg",
-                            color: ((activePlan.selectedIndex ?? -1) < activePlan.waypoints.length - 1)
-                                ? Colors.white
-                                : Colors.grey.shade700,
-                          ),
-                  ),
+                      onPressed: () {
+                        final wp =
+                            !activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
+                        if (wp != null) activePlan.selectWaypoint(wp);
+                      },
+                      iconSize: 40,
+                      color: (activePlan.selectedIndex != null &&
+                              (!activePlan.isReversed
+                                      ? activePlan.findNextWaypoint()
+                                      : activePlan.findPrevWaypoint()) !=
+                                  null)
+                          ? Colors.white
+                          : Colors.grey.shade700,
+                      icon: const Icon(
+                        Icons.skip_next,
+                      )),
                 ],
               ),
             ),

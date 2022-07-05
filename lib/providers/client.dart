@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:xcnav/dialogs/save_plan.dart';
 
 // --- Models
 import 'package:xcnav/models/error_code.dart';
@@ -213,11 +214,19 @@ class Client with ChangeNotifier {
     }
   }
 
-  void joinGroup(String reqGroupID) {
+  void _joinGroup(String reqGroupID) {
     sendToAWS("joinGroupRequest", {
       "group": reqGroupID.toLowerCase(),
     });
     debugPrint("Requesting Join Group $reqGroupID");
+  }
+
+  void joinGroup(BuildContext context, String reqGroupID) {
+    if (Provider.of<ActivePlan>(context, listen: false).waypoints.isNotEmpty) {
+      savePlan(context, isSavingFirst: true).then((value) => _joinGroup(reqGroupID));
+    } else {
+      _joinGroup(reqGroupID);
+    }
   }
 
   void leaveGroup(bool promptSplit) {
@@ -419,7 +428,6 @@ class Client with ChangeNotifier {
         }
       });
 
-      // TODO: prompt to save before replacing data?
       // Clear out waypoints
       ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
       if (msg["flight_plan"] != null && msg["flight_plan"].isNotEmpty) {

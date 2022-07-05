@@ -162,7 +162,7 @@ class MyApp extends StatelessWidget {
         "/": (context) => const LoadingScreen(),
         "/home": (context) => const MyHomePage(),
         "/profileEditor": (context) => const ProfileEditor(),
-        "/party": (context) => const Chat(),
+        "/chat": (context) => const Chat(),
         "/qrScanner": (context) => const QRScanner(),
         "/settings": (context) => const SettingsEditor(),
         "/flightLogs": (context) => const FlightLogViewer(),

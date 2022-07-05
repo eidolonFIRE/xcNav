@@ -24,7 +24,6 @@ class Settings with ChangeNotifier {
   var _displayUnitsFuel = DisplayUnitsFuel.liter;
 
   // --- ADSB
-  bool _adsbEnabled = false;
   final Map<String, ProximityConfig> proximityProfileOptions = {
     "Off": ProximityConfig(vertical: 0, horizontalDist: 0, horizontalTime: 0),
     "Small": ProximityConfig(vertical: 200, horizontalDist: 300, horizontalTime: 30),
@@ -58,7 +57,6 @@ class Settings with ChangeNotifier {
 
       // --- ADSB
       selectProximityConfig(prefs.getString("settings.adsbProximityProfile") ?? "Medium");
-      _adsbEnabled = prefs.getBool("settings.adsbEnabled") ?? false;
 
       // --- Patreon
       _patreonName = prefs.getString("settings.patreonName") ?? "";
@@ -159,15 +157,6 @@ class Settings with ChangeNotifier {
     proximityProfileName = name;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setString("settings.adsbProximityProfile", name);
-    });
-    notifyListeners();
-  }
-
-  bool get adsbEnabled => _adsbEnabled;
-  set adsbEnabled(bool value) {
-    _adsbEnabled = value;
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setBool("settings.adsbEnabled", _adsbEnabled);
     });
     notifyListeners();
   }
