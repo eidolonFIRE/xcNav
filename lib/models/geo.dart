@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:geolocator/geolocator.dart';

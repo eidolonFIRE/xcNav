@@ -23,7 +23,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   /// Liter/Hour
   double fuelBurnRate = 4;
-  Geo? geoPrev;
+  Geo geoPrev = Geo();
 
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
@@ -150,7 +150,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     // --- In-Flight detector
     if ((geo.spd > 2.5 || geo.vario.abs() > 1.0) ^ inFlight) {
-      triggerHyst += geo.time - geoPrev!.time;
+      triggerHyst += geo.time - geoPrev.time;
     } else {
       triggerHyst = 0;
     }
@@ -177,7 +177,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     if (inFlight) {
       // --- burn fuel
-      fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev!.time) / 3600000.0);
+      fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev.time) / 3600000.0);
 
       // --- Record path
       if (!(bypassRecording ?? false)) recordGeo.add(geo);
@@ -201,7 +201,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   void updateFuel(double delta) {
     fuel = max(0, fuel + delta);
     // every so often, save the fuel level in case the app crashes
-    if ((fuel - (lastSavedFuelLevel ?? fuel)).abs() > .2) _save();
+    if ((fuel - (lastSavedFuelLevel ?? fuel)).abs() > 0.2) _save();
     notifyListeners();
   }
 

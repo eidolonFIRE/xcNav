@@ -601,24 +601,64 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
             // --- Map Options
-            ListTile(
-              minVerticalPadding: 20,
-              leading: const Icon(
-                Icons.local_airport,
-                size: 30,
+            Builder(builder: (context) {
+              final settings = Provider.of<Settings>(context, listen: false);
+              return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: settings.mapTileThumbnails.keys
+                      .map((e) => SizedBox(
+                            width: 100,
+                            height: 60,
+                            child: GestureDetector(
+                                onTap: () => {settings.curMapTiles = e},
+                                child: Container(
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                            color: e == settings.curMapTiles ? Colors.lightBlue : Colors.grey.shade900,
+                                            width: 4)),
+                                    margin: const EdgeInsets.all(4),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: settings.mapTileThumbnails[e]))),
+                          ))
+                      .toList());
+            }),
+
+            // --- Map opacity slider
+            if (Provider.of<Settings>(context).curMapTiles != "topo")
+              Builder(builder: (context) {
+                final settings = Provider.of<Settings>(context, listen: false);
+                return Slider(
+                    label: "Opacity",
+                    activeColor: Colors.lightBlue,
+                    value: settings.mapOpacity(settings.curMapTiles),
+                    onChanged: (value) => settings.setMapOpacity(settings.curMapTiles, value));
+              }),
+
+            // --- Toggle airspace overlay
+            if (Provider.of<Settings>(context).curMapTiles == "topo")
+              ListTile(
+                minVerticalPadding: 20,
+                leading: const Icon(
+                  Icons.local_airport,
+                  size: 30,
+                ),
+                title: Text("Airspace", style: Theme.of(context).textTheme.headline5),
+                trailing: Switch(
+                  activeColor: Colors.lightBlueAccent,
+                  value: Provider.of<Settings>(context).showAirspace,
+                  onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
+                ),
               ),
-              title: Text("Airspace", style: Theme.of(context).textTheme.headline5),
-              trailing: Switch(
-                value: Provider.of<Settings>(context).showAirspace,
-                onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
-              ),
-            ),
 
             ListTile(
                 minVerticalPadding: 20,
                 leading: const Icon(Icons.radar, size: 30),
                 title: Text("ADSB-in", style: Theme.of(context).textTheme.headline5),
                 trailing: Switch(
+                  activeColor: Colors.lightBlueAccent,
                   value: Provider.of<ADSB>(context).enabled,
                   onChanged: (value) => {Provider.of<ADSB>(context, listen: false).enabled = value},
                 ),
@@ -719,572 +759,594 @@ class _MyHomePageState extends State<MyHomePage> {
             )
           ],
         )),
-        body: Center(
-          child: Stack(alignment: Alignment.center, children: [
-            Consumer3<MyTelemetry, Settings, ActivePlan>(
-                builder: (context, myTelemetry, settings, plan, child) => FlutterMap(
-                      key: mapKey,
-                      mapController: mapController,
-                      options: MapOptions(
-                        interactiveFlags:
-                            InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
-                        center: myTelemetry.geo.latLng,
-                        zoom: 12.0,
-                        onTap: (tapPosition, point) => onMapTap(context, point),
-                        onLongPress: (tapPosition, point) => onMapLongPress(context, point),
-                        onPositionChanged: (mapPosition, hasGesture) {
-                          // debugPrint("$mapPosition $hasGesture");
-                          if (hasGesture && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
-                            // --- Unlock any focus lock
-                            setFocusMode(FocusMode.unlocked);
-                          }
-                        },
-                        allowPanningOnScrollingParent: false,
-                        plugins: [
-                          DragMarkerPlugin(),
-                        ],
-                      ),
-                      layers: [
-                        TileLayerOptions(
-                          // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                          // subdomains: ['a', 'b', 'c'],
-                          urlTemplate:
-                              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                          // tileSize: 512,
-                          // zoomOffset: -1,
+        body: Container(
+          color: Colors.white,
+          child: Center(
+            child: Stack(alignment: Alignment.center, children: [
+              Consumer3<MyTelemetry, Settings, ActivePlan>(
+                  builder: (context, myTelemetry, settings, plan, child) => FlutterMap(
+                        key: mapKey,
+                        mapController: mapController,
+                        options: MapOptions(
+                          interactiveFlags:
+                              InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
+                          center: myTelemetry.geo.latLng,
+                          zoom: 12.0,
+                          onTap: (tapPosition, point) => onMapTap(context, point),
+                          onLongPress: (tapPosition, point) => onMapLongPress(context, point),
+                          onPositionChanged: (mapPosition, hasGesture) {
+                            // debugPrint("$mapPosition $hasGesture");
+                            if (hasGesture && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
+                              // --- Unlock any focus lock
+                              setFocusMode(FocusMode.unlocked);
+                            }
+                          },
+                          allowPanningOnScrollingParent: false,
+                          plugins: [
+                            DragMarkerPlugin(),
+                          ],
                         ),
+                        layers: [
+                          settings.getMapTileLayer(settings.curMapTiles),
 
-                        if (settings.showAirspace)
-                          TileLayerOptions(
-                            urlTemplate:
-                                'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                            maxZoom: 17,
-                            tms: true,
-                            subdomains: ['1', '2'],
-                            backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                          ),
-                        if (settings.showAirspace)
-                          TileLayerOptions(
-                            urlTemplate:
-                                'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                            maxZoom: 17,
-                            tms: true,
-                            subdomains: ['1', '2'],
-                            backgroundColor: const Color.fromARGB(0, 255, 255, 255),
-                          ),
-                        if (settings.showAirspace)
-                          TileLayerOptions(
-                            urlTemplate:
-                                'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
-                            maxZoom: 17,
-                            tms: true,
-                            subdomains: ['1', '2'],
-                            backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                          if (settings.showAirspace && settings.curMapTiles == "topo")
+                            TileLayerOptions(
+                              urlTemplate:
+                                  'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                              maxZoom: 17,
+                              tms: true,
+                              subdomains: ['1', '2'],
+                              backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                            ),
+                          if (settings.showAirspace && settings.curMapTiles == "topo")
+                            TileLayerOptions(
+                              urlTemplate:
+                                  'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                              maxZoom: 17,
+                              tms: true,
+                              subdomains: ['1', '2'],
+                              backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                            ),
+                          if (settings.showAirspace && settings.curMapTiles == "topo")
+                            TileLayerOptions(
+                              urlTemplate:
+                                  'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
+                              maxZoom: 17,
+                              tms: true,
+                              subdomains: ['1', '2'],
+                              backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                            ),
+
+                          // Other Pilot path trace
+                          PolylineLayerOptions(
+                              polylines: Provider.of<Group>(context)
+                                  .pilots
+                                  // Don't see locations older than 10minutes
+                                  .values
+                                  .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
+                                  .toList()
+                                  .map((e) => e.buildFlightTrace())
+                                  .toList()),
+
+                          // Flight Log
+                          PolylineLayerOptions(polylines: [myTelemetry.buildFlightTrace()]),
+
+                          // ADSB Proximity
+                          if (Provider.of<ADSB>(context, listen: false).enabled)
+                            CircleLayerOptions(circles: [
+                              CircleMarker(
+                                  point: myTelemetry.geo.latLng,
+                                  color: Colors.transparent,
+                                  borderStrokeWidth: 1,
+                                  borderColor: Colors.black54,
+                                  radius: settings.proximityProfile.horizontalDist,
+                                  useRadiusInMeter: true)
+                            ]),
+
+                          // Trip snake lines
+                          PolylineLayerOptions(polylines: plan.buildTripSnake()),
+
+                          PolylineLayerOptions(
+                            polylines: [plan.buildNextWpIndicator(myTelemetry.geo)],
                           ),
 
-                        // Other Pilot path trace
-                        PolylineLayerOptions(
-                            polylines: Provider.of<Group>(context)
+                          // Flight plan paths
+                          PolylineLayerOptions(
+                            polylines: plan.waypoints
+                                .where((value) => value.latlng.length > 1)
+                                .mapIndexed((i, e) => Polyline(
+                                    points: e.latlng, strokeWidth: 6, color: e.getColor(), isDotted: e.isOptional))
+                                .toList(),
+                          ),
+
+                          // Polyline Directional Barbs
+                          MarkerLayerOptions(
+                              markers: makePathBarbs(
+                                  editingIndex != null
+                                      ? (plan.waypoints.toList()
+                                        ..removeAt(editingIndex!)
+                                        ..add(Waypoint(plan.waypoints[editingIndex!].name, editablePolyline.points,
+                                            false, null, plan.waypoints[editingIndex!].color)))
+                                      : plan.waypoints,
+                                  Provider.of<ActivePlan>(context).isReversed,
+                                  45)),
+
+                          // Flight plan markers
+                          DragMarkerPluginOptions(
+                            markers: plan.waypoints
+                                .mapIndexed((i, e) => e.latlng.length == 1
+                                    ? DragMarker(
+                                        point: e.latlng[0],
+                                        height: 60 * 0.8,
+                                        width: 40 * 0.8,
+                                        updateMapNearEdge: true,
+                                        offset: const Offset(0, -30 * 0.8),
+                                        feedbackOffset: const Offset(0, -30 * 0.8),
+                                        onTap: (_) => plan.selectWaypoint(i),
+                                        onDragEnd: (p0, p1) => {
+                                              plan.moveWaypoint(i, [p1])
+                                            },
+                                        builder: (context) => Container(
+                                            transformAlignment: const Alignment(0, 0),
+                                            transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                            child: MapMarker(e, 60 * 0.8)))
+                                    : null)
+                                .whereNotNull()
+                                .toList(),
+                          ),
+
+                          // Launch Location (automatic marker)
+                          if (myTelemetry.launchGeo != null)
+                            MarkerLayerOptions(markers: [
+                              Marker(
+                                  width: 40,
+                                  height: 60,
+                                  point: myTelemetry.launchGeo!.latLng,
+                                  builder: (ctx) => Container(
+                                        transformAlignment: const Alignment(0, 0),
+                                        transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                        child: Stack(children: [
+                                          Container(
+                                            transform: Matrix4.translationValues(0, -60 / 2, 0),
+                                            child: Image.asset(
+                                              "assets/images/pin.png",
+                                              color: Colors.lightGreen,
+                                            ),
+                                          ),
+                                          Center(
+                                            child: Container(
+                                              transform: Matrix4.translationValues(0, -60 / 1.5, 0),
+                                              child: const Icon(
+                                                Icons.flight_takeoff,
+                                                size: 60 / 2,
+                                              ),
+                                            ),
+                                          ),
+                                        ]),
+                                      ))
+                            ]),
+
+                          // GA planes (ADSB IN)
+                          if (Provider.of<ADSB>(context, listen: false).enabled)
+                            MarkerLayerOptions(
+                                markers: Provider.of<ADSB>(context, listen: false)
+                                    .planes
+                                    .values
+                                    .map(
+                                      (e) => Marker(
+                                        width: 50.0,
+                                        height: 50.0,
+                                        point: e.latlng,
+                                        builder: (ctx) => Container(
+                                          transformAlignment: const Alignment(0, 0),
+                                          transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                          child: Opacity(
+                                            opacity: getGAtransparency(e.alt - myTelemetry.geo.alt),
+                                            child: Stack(
+                                              children: [
+                                                /// --- GA icon
+                                                Container(
+                                                  transformAlignment: const Alignment(0, 0),
+                                                  child: e.getIcon(myTelemetry.geo),
+                                                  transform:
+                                                      Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
+                                                ),
+
+                                                /// --- Relative Altitude
+                                                Container(
+                                                    transform: Matrix4.translationValues(40, 0, 0),
+                                                    transformAlignment: const Alignment(0, 0),
+                                                    child: Text.rich(
+                                                      TextSpan(children: [
+                                                        WidgetSpan(
+                                                          child: Icon(
+                                                            (e.alt - myTelemetry.geo.alt) > 0
+                                                                ? Icons.keyboard_arrow_up
+                                                                : Icons.keyboard_arrow_down,
+                                                            color: Colors.black,
+                                                            size: 21,
+                                                          ),
+                                                        ),
+                                                        TextSpan(
+                                                          text: printValue(
+                                                              value: convertDistValueFine(settings.displayUnitsDist,
+                                                                  (e.alt - myTelemetry.geo.alt).abs()),
+                                                              digits: 5,
+                                                              decimals: 0),
+                                                          style: const TextStyle(color: Colors.black),
+                                                        ),
+                                                        TextSpan(
+                                                            text: unitStrDistFine[settings.displayUnitsDist],
+                                                            style: TextStyle(color: Colors.grey.shade700, fontSize: 12))
+                                                      ]),
+                                                      overflow: TextOverflow.visible,
+                                                      softWrap: false,
+                                                      maxLines: 1,
+                                                      style: const TextStyle(fontSize: 16),
+                                                    )),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList()),
+
+                          // Live locations other pilots
+                          MarkerLayerOptions(
+                            markers: Provider.of<Group>(context)
                                 .pilots
                                 // Don't see locations older than 10minutes
                                 .values
                                 .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
                                 .toList()
-                                .map((e) => e.buildFlightTrace())
-                                .toList()),
-
-                        // Flight Log
-                        PolylineLayerOptions(polylines: [myTelemetry.buildFlightTrace()]),
-
-                        // ADSB Proximity
-                        if (Provider.of<ADSB>(context, listen: false).enabled)
-                          CircleLayerOptions(circles: [
-                            CircleMarker(
-                                point: myTelemetry.geo.latLng,
-                                color: Colors.transparent,
-                                borderStrokeWidth: 1,
-                                borderColor: Colors.black54,
-                                radius: settings.proximityProfile.horizontalDist,
-                                useRadiusInMeter: true)
-                          ]),
-
-                        // Trip snake lines
-                        PolylineLayerOptions(polylines: plan.buildTripSnake()),
-
-                        PolylineLayerOptions(
-                          polylines: [plan.buildNextWpIndicator(myTelemetry.geo)],
-                        ),
-
-                        // Flight plan paths
-                        PolylineLayerOptions(
-                          polylines: plan.waypoints
-                              .where((value) => value.latlng.length > 1)
-                              .mapIndexed((i, e) => Polyline(
-                                  points: e.latlng, strokeWidth: 6, color: e.getColor(), isDotted: e.isOptional))
-                              .toList(),
-                        ),
-
-                        // Polyline Directional Barbs
-                        MarkerLayerOptions(
-                            markers: makePathBarbs(
-                                editingIndex != null
-                                    ? (plan.waypoints.toList()
-                                      ..removeAt(editingIndex!)
-                                      ..add(Waypoint(plan.waypoints[editingIndex!].name, editablePolyline.points, false,
-                                          null, plan.waypoints[editingIndex!].color)))
-                                    : plan.waypoints,
-                                Provider.of<ActivePlan>(context).isReversed,
-                                45)),
-
-                        // Flight plan markers
-                        DragMarkerPluginOptions(
-                          markers: plan.waypoints
-                              .mapIndexed((i, e) => e.latlng.length == 1
-                                  ? DragMarker(
-                                      point: e.latlng[0],
-                                      height: 60 * 0.8,
-                                      width: 40 * 0.8,
-                                      updateMapNearEdge: true,
-                                      offset: const Offset(0, -30 * 0.8),
-                                      feedbackOffset: const Offset(0, -30 * 0.8),
-                                      onTap: (_) => plan.selectWaypoint(i),
-                                      onDragEnd: (p0, p1) => {
-                                            plan.moveWaypoint(i, [p1])
-                                          },
-                                      builder: (context) => Container(
-                                          transformAlignment: const Alignment(0, 0),
-                                          transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
-                                          child: MapMarker(e, 60 * 0.8)))
-                                  : null)
-                              .whereNotNull()
-                              .toList(),
-                        ),
-
-                        // Launch Location (automatic marker)
-                        if (myTelemetry.launchGeo != null)
-                          MarkerLayerOptions(markers: [
-                            Marker(
-                                width: 40,
-                                height: 60,
-                                point: myTelemetry.launchGeo!.latLng,
-                                builder: (ctx) => Container(
-                                      transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
-                                      child: Stack(children: [
-                                        Container(
-                                          transform: Matrix4.translationValues(0, -60 / 2, 0),
-                                          child: Image.asset(
-                                            "assets/images/pin.png",
-                                            color: Colors.lightGreen,
-                                          ),
-                                        ),
-                                        Center(
-                                          child: Container(
-                                            transform: Matrix4.translationValues(0, -60 / 1.5, 0),
-                                            child: const Icon(
-                                              Icons.flight_takeoff,
-                                              size: 60 / 2,
-                                            ),
-                                          ),
-                                        ),
-                                      ]),
-                                    ))
-                          ]),
-
-                        // GA planes (ADSB IN)
-                        if (Provider.of<ADSB>(context, listen: false).enabled)
-                          MarkerLayerOptions(
-                              markers: Provider.of<ADSB>(context, listen: false)
-                                  .planes
-                                  .values
-                                  .map(
-                                    (e) => Marker(
-                                      width: 50.0,
-                                      height: 50.0,
-                                      point: e.latlng,
-                                      builder: (ctx) => Container(
+                                .map((pilot) => Marker(
+                                    point: pilot.geo.latLng,
+                                    width: 40,
+                                    height: 40,
+                                    builder: (ctx) => Container(
                                         transformAlignment: const Alignment(0, 0),
                                         transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
-                                        child: Opacity(
-                                          opacity: getGAtransparency(e.alt - myTelemetry.geo.alt),
-                                          child: Stack(
-                                            children: [
-                                              /// --- GA icon
-                                              Container(
-                                                transformAlignment: const Alignment(0, 0),
-                                                child: e.getIcon(myTelemetry.geo),
-                                                transform:
-                                                    Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
-                                              ),
+                                        child: PilotMarker(
+                                          pilot,
+                                          20,
+                                          hdg: pilot.geo.hdg + mapController.rotation * pi / 180,
+                                          relAlt: pilot.geo.alt - myTelemetry.geo.alt,
+                                        ))))
+                                .toList(),
+                          ),
 
-                                              /// --- Relative Altitude
-                                              Container(
-                                                  transform: Matrix4.translationValues(40, 0, 0),
-                                                  transformAlignment: const Alignment(0, 0),
-                                                  child: Text.rich(
-                                                    TextSpan(children: [
-                                                      WidgetSpan(
-                                                        child: Icon(
-                                                          (e.alt - myTelemetry.geo.alt) > 0
-                                                              ? Icons.keyboard_arrow_up
-                                                              : Icons.keyboard_arrow_down,
-                                                          color: Colors.black,
-                                                          size: 21,
-                                                        ),
-                                                      ),
-                                                      TextSpan(
-                                                        text: printValue(
-                                                            value: convertDistValueFine(settings.displayUnitsDist,
-                                                                (e.alt - myTelemetry.geo.alt).abs()),
-                                                            digits: 5,
-                                                            decimals: 0),
-                                                        style: const TextStyle(color: Colors.black),
-                                                      ),
-                                                      TextSpan(
-                                                          text: unitStrDistFine[settings.displayUnitsDist],
-                                                          style: TextStyle(color: Colors.grey.shade700, fontSize: 12))
-                                                    ]),
-                                                    overflow: TextOverflow.visible,
-                                                    softWrap: false,
-                                                    maxLines: 1,
-                                                    style: const TextStyle(fontSize: 16),
-                                                  )),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList()),
-
-                        // Live locations other pilots
-                        MarkerLayerOptions(
-                          markers: Provider.of<Group>(context)
-                              .pilots
-                              // Don't see locations older than 10minutes
-                              .values
-                              .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
-                              .toList()
-                              .map((pilot) => Marker(
-                                  point: pilot.geo.latLng,
-                                  width: 40,
-                                  height: 40,
-                                  builder: (ctx) => Container(
-                                      transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
-                                      child: PilotMarker(
-                                        pilot,
-                                        20,
-                                        hdg: pilot.geo.hdg + mapController.rotation * pi / 180,
-                                        relAlt: pilot.geo.alt - myTelemetry.geo.alt,
-                                      ))))
-                              .toList(),
-                        ),
-
-                        // "ME" Live Location Marker
-                        MarkerLayerOptions(
-                          markers: [
-                            Marker(
-                              width: 50.0,
-                              height: 50.0,
-                              point: myTelemetry.geo.latLng,
-                              builder: (ctx) => Container(
-                                transformAlignment: const Alignment(0, 0),
-                                child: Image.asset("assets/images/red_arrow.png"),
-                                transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
+                          // "ME" Live Location Marker
+                          MarkerLayerOptions(
+                            markers: [
+                              Marker(
+                                width: 50.0,
+                                height: 50.0,
+                                point: myTelemetry.geo.latLng,
+                                builder: (ctx) => Container(
+                                  transformAlignment: const Alignment(0, 0),
+                                  child: Image.asset("assets/images/red_arrow.png"),
+                                  transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
 
-                        // Draggable line editor
-                        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                          PolylineLayerOptions(polylines: polyLines),
-                        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                          DragMarkerPluginOptions(markers: polyEditor.edit()),
-                      ],
-                    )),
+                          // Draggable line editor
+                          if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                            PolylineLayerOptions(polylines: polyLines),
+                          if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                            DragMarkerPluginOptions(markers: polyEditor.edit()),
+                        ],
+                      )),
 
-            // --- Pilot Direction Markers (for when pilots are out of view)
-            StreamBuilder(
-                stream: mapController.mapEventStream,
-                builder: (context, mapEvent) => Center(
-                      child: Stack(
-                          // fit: StackFit.expand,
-                          children: Provider.of<Group>(context)
-                              .pilots
-                              .values
-                              .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
-                              .where((e) => !markerIsInView(e.geo.latLng))
-                              .map((e) => Builder(builder: (context) {
-                                    final theta = (latlngCalc.bearing(mapController.center, e.geo.latLng) +
-                                            mapController.rotation -
-                                            90) *
-                                        pi /
-                                        180;
-                                    final hypo = MediaQuery.of(context).size.width * 0.8 - 40;
-                                    final dist = latlngCalc.distance(mapController.center, e.geo.latLng);
+              // --- Pilot Direction Markers (for when pilots are out of view)
+              StreamBuilder(
+                  stream: mapController.mapEventStream,
+                  builder: (context, mapEvent) => Center(
+                        child: Stack(
+                            // fit: StackFit.expand,
+                            children: Provider.of<Group>(context)
+                                .pilots
+                                .values
+                                .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
+                                .where((e) => !markerIsInView(e.geo.latLng))
+                                .map((e) => Builder(builder: (context) {
+                                      final theta = (latlngCalc.bearing(mapController.center, e.geo.latLng) +
+                                              mapController.rotation -
+                                              90) *
+                                          pi /
+                                          180;
+                                      final hypo = MediaQuery.of(context).size.width * 0.8 - 40;
+                                      final dist = latlngCalc.distance(mapController.center, e.geo.latLng);
 
-                                    return Opacity(
-                                        opacity: 0.5,
-                                        child: Padding(
-                                          padding: EdgeInsets.fromLTRB(
-                                            max(0, cos(theta) * hypo),
-                                            max(0, sin(theta) * hypo),
-                                            max(0, cos(theta) * -hypo),
-                                            max(0, sin(theta) * -hypo),
-                                          ),
-                                          child: Stack(
-                                            children: [
-                                              Container(
+                                      return Opacity(
+                                          opacity: 0.5,
+                                          child: Padding(
+                                            padding: EdgeInsets.fromLTRB(
+                                              max(0, cos(theta) * hypo),
+                                              max(0, sin(theta) * hypo),
+                                              max(0, cos(theta) * -hypo),
+                                              max(0, sin(theta) * -hypo),
+                                            ),
+                                            child: Stack(
+                                              children: [
+                                                Container(
+                                                    transformAlignment: const Alignment(0, 0),
+                                                    transform:
+                                                        Matrix4.translationValues(cos(theta) * 30, sin(theta) * 30, 0)
+                                                          ..rotateZ(theta),
+                                                    child: const Icon(
+                                                      Icons.east,
+                                                      color: Colors.black,
+                                                      size: 40,
+                                                    )),
+                                                Container(
                                                   transformAlignment: const Alignment(0, 0),
-                                                  transform:
-                                                      Matrix4.translationValues(cos(theta) * 30, sin(theta) * 30, 0)
-                                                        ..rotateZ(theta),
-                                                  child: const Icon(
-                                                    Icons.east,
-                                                    color: Colors.black,
-                                                    size: 40,
-                                                  )),
-                                              Container(
-                                                transformAlignment: const Alignment(0, 0),
-                                                child: PilotMarker(
-                                                  e,
-                                                  20,
+                                                  child: PilotMarker(
+                                                    e,
+                                                    20,
+                                                  ),
                                                 ),
-                                              ),
-                                              Container(
-                                                  width: 40,
-                                                  // transformAlignment: const Alignment(0, 0),
-                                                  transform: Matrix4.translationValues(0, 40, 0),
-                                                  child: Text.rich(
-                                                    TextSpan(children: [
-                                                      TextSpan(
-                                                          style: const TextStyle(color: Colors.black, fontSize: 18),
-                                                          text: printValue(
-                                                              value: convertDistValueCoarse(
-                                                                  Provider.of<Settings>(context, listen: false)
-                                                                      .displayUnitsDist,
-                                                                  dist),
-                                                              digits: 4,
-                                                              decimals: 1)),
-                                                      TextSpan(
-                                                          style: const TextStyle(color: Colors.black87, fontSize: 14),
-                                                          text: unitStrDistCoarse[
-                                                              Provider.of<Settings>(context, listen: false)
-                                                                  .displayUnitsDist]),
-                                                    ]),
-                                                    softWrap: false,
-                                                    textAlign: TextAlign.center,
-                                                    overflow: TextOverflow.visible,
-                                                  ))
-                                            ],
-                                          ),
-                                        ));
-                                  }))
-                              .toList()),
-                    )),
+                                                Container(
+                                                    width: 40,
+                                                    // transformAlignment: const Alignment(0, 0),
+                                                    transform: Matrix4.translationValues(0, 40, 0),
+                                                    child: Text.rich(
+                                                      TextSpan(children: [
+                                                        TextSpan(
+                                                            style: const TextStyle(color: Colors.black, fontSize: 18),
+                                                            text: printValue(
+                                                                value: convertDistValueCoarse(
+                                                                    Provider.of<Settings>(context, listen: false)
+                                                                        .displayUnitsDist,
+                                                                    dist),
+                                                                digits: 4,
+                                                                decimals: 1)),
+                                                        TextSpan(
+                                                            style: const TextStyle(color: Colors.black87, fontSize: 14),
+                                                            text: unitStrDistCoarse[
+                                                                Provider.of<Settings>(context, listen: false)
+                                                                    .displayUnitsDist]),
+                                                      ]),
+                                                      softWrap: false,
+                                                      textAlign: TextAlign.center,
+                                                      overflow: TextOverflow.visible,
+                                                    ))
+                                              ],
+                                            ),
+                                          ));
+                                    }))
+                                .toList()),
+                      )),
 
-            // --- Chat bubbles
-            Consumer<ChatMessages>(
-              builder: (context, chat, child) {
-                // get valid bubbles
-                const numSeconds = 10;
-                List<Message> bubbles = [];
-                for (int i = chat.messages.length - 1; i > 0; i--) {
-                  if (chat.messages[i].timestamp >
-                          max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
-                      chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
-                    bubbles.add(chat.messages[i]);
+              // --- Chat bubbles
+              Consumer<ChatMessages>(
+                builder: (context, chat, child) {
+                  // get valid bubbles
+                  const numSeconds = 10;
+                  List<Message> bubbles = [];
+                  for (int i = chat.messages.length - 1; i >= 0; i--) {
+                    if (chat.messages[i].timestamp >
+                            max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
+                        chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
+                      bubbles.add(chat.messages[i]);
 
-                    Timer(const Duration(seconds: numSeconds), () {
-                      // "self destruct" the message after several seconds by triggering a refresh
-                      chat.refresh();
-                    });
-                  } else {
-                    break;
+                      Timer(const Duration(seconds: numSeconds), () {
+                        // "self destruct" the message after several seconds by triggering a refresh
+                        chat.refresh();
+                      });
+                    } else {
+                      break;
+                    }
                   }
-                }
-                return Positioned(
-                    right: Provider.of<Settings>(context).mapControlsRightSide ? 70 : 0,
-                    bottom: 0,
-                    // left: 100,
-                    child: Column(
-                      verticalDirection: VerticalDirection.up,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: bubbles
-                          .map(
-                            (e) => ChatBubble(
-                                false,
-                                e.text,
-                                AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20,
-                                    tier: Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.tier),
-                                null,
-                                e.timestamp),
-                          )
-                          .toList(),
-                    ));
-              },
-            ),
+                  return Positioned(
+                      right: Provider.of<Settings>(context).mapControlsRightSide ? 70 : 0,
+                      bottom: 0,
+                      // left: 100,
+                      child: Column(
+                        verticalDirection: VerticalDirection.up,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: bubbles
+                            .map(
+                              (e) => ChatBubble(
+                                  false,
+                                  e.text,
+                                  AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20,
+                                      tier: Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.tier),
+                                  null,
+                                  e.timestamp),
+                            )
+                            .toList(),
+                      ));
+                },
+              ),
 
-            // --- Map overlay layers
-            if (focusMode == FocusMode.addWaypoint)
-              Positioned(
-                bottom: 15,
-                child: Card(
-                  color: Colors.amber.shade400,
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text.rich(
-                      TextSpan(children: [
-                        WidgetSpan(
-                            child: Icon(
-                          Icons.touch_app,
-                          size: 18,
-                          color: Colors.black,
-                        )),
-                        TextSpan(text: "Tap to place waypoint")
-                      ]),
-                      style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-                      // textAlign: TextAlign.justify,
+              // --- Map overlay layers
+              if (focusMode == FocusMode.addWaypoint)
+                Positioned(
+                  bottom: 15,
+                  child: Card(
+                    color: Colors.amber.shade400,
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text.rich(
+                        TextSpan(children: [
+                          WidgetSpan(
+                              child: Icon(
+                            Icons.touch_app,
+                            size: 18,
+                            color: Colors.black,
+                          )),
+                          TextSpan(text: "Tap to place waypoint")
+                        ]),
+                        style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                        // textAlign: TextAlign.justify,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-              Positioned(
-                bottom: 10,
-                right: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
-                left: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Card(
-                      color: Colors.amber.shade400,
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text.rich(
-                          TextSpan(children: [
-                            WidgetSpan(
-                                child: Icon(
-                              Icons.touch_app,
-                              size: 18,
-                              color: Colors.black,
-                            )),
-                            TextSpan(text: "Tap to add to path")
-                          ]),
-                          style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-                          // textAlign: TextAlign.justify,
+              if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                Positioned(
+                  bottom: 10,
+                  right: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
+                  left: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Card(
+                        color: Colors.amber.shade400,
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text.rich(
+                            TextSpan(children: [
+                              WidgetSpan(
+                                  child: Icon(
+                                Icons.touch_app,
+                                size: 18,
+                                color: Colors.black,
+                              )),
+                              TextSpan(text: "Tap to add to path")
+                            ]),
+                            style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                            // textAlign: TextAlign.justify,
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      iconSize: 40,
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(
-                        Icons.swap_horizontal_circle,
-                        size: 40,
-                        color: Colors.black,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          var _tmp = editablePolyline.points.toList();
-                          editablePolyline.points.clear();
-                          editablePolyline.points.addAll(_tmp.reversed);
-                        });
-                      },
-                    ),
-                    IconButton(
-                      iconSize: 40,
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(
-                        Icons.cancel,
-                        size: 40,
-                        color: Colors.red,
-                      ),
-                      onPressed: () => {setFocusMode(prevFocusMode)},
-                    ),
-                    if (editablePolyline.points.length > 1)
                       IconButton(
-                        padding: EdgeInsets.zero,
                         iconSize: 40,
+                        padding: EdgeInsets.zero,
                         icon: const Icon(
-                          Icons.check_circle,
+                          Icons.swap_horizontal_circle,
                           size: 40,
-                          color: Colors.green,
+                          color: Colors.black,
                         ),
                         onPressed: () {
-                          // --- finish editing path
-                          var plan = Provider.of<ActivePlan>(context, listen: false);
-                          if (editingIndex == null) {
-                            var _temp = Waypoint("", editablePolyline.points.toList(), false, null, null);
-                            editWaypoint(context, _temp, isNew: focusMode == FocusMode.addPath)?.then((newWaypoint) {
-                              if (newWaypoint != null) {
-                                plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false,
-                                    newWaypoint.icon, newWaypoint.color);
-                              }
-                            });
-                          } else {
-                            plan.waypoints[editingIndex!].latlng = editablePolyline.points.toList();
-                            editingIndex = null;
-                          }
-                          setFocusMode(prevFocusMode);
+                          setState(() {
+                            var _tmp = editablePolyline.points.toList();
+                            editablePolyline.points.clear();
+                            editablePolyline.points.addAll(_tmp.reversed);
+                          });
                         },
                       ),
-                  ],
+                      IconButton(
+                        iconSize: 40,
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(
+                          Icons.cancel,
+                          size: 40,
+                          color: Colors.red,
+                        ),
+                        onPressed: () => {setFocusMode(prevFocusMode)},
+                      ),
+                      if (editablePolyline.points.length > 1)
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          iconSize: 40,
+                          icon: const Icon(
+                            Icons.check_circle,
+                            size: 40,
+                            color: Colors.green,
+                          ),
+                          onPressed: () {
+                            // --- finish editing path
+                            var plan = Provider.of<ActivePlan>(context, listen: false);
+                            if (editingIndex == null) {
+                              var _temp = Waypoint("", editablePolyline.points.toList(), false, null, null);
+                              editWaypoint(context, _temp, isNew: focusMode == FocusMode.addPath)?.then((newWaypoint) {
+                                if (newWaypoint != null) {
+                                  plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng,
+                                      false, newWaypoint.icon, newWaypoint.color);
+                                }
+                              });
+                            } else {
+                              plan.waypoints[editingIndex!].latlng = editablePolyline.points.toList();
+                              editingIndex = null;
+                            }
+                            setFocusMode(prevFocusMode);
+                          },
+                        ),
+                    ],
+                  ),
                 ),
-              ),
 
-            // --- Map View Buttons
-            Positioned(
-              left: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
-              right: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
-              top: 10,
-              bottom: 10,
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.max,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // --- Compass
-                    MapButton(
-                        child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
-                          StreamBuilder(
-                              stream: mapController.mapEventStream,
-                              builder: (context, event) => Container(
-                                    transformAlignment: const Alignment(0, 0),
-                                    transform: mapReady
-                                        ? Matrix4.rotationZ(mapController.rotation * pi / 180)
-                                        : Matrix4.rotationZ(0),
-                                    child: northLock
-                                        ? SvgPicture.asset("assets/images/compass_north.svg", fit: BoxFit.none)
-                                        : SvgPicture.asset(
-                                            "assets/images/compass.svg",
-                                            fit: BoxFit.none,
-                                          ),
-                                  )),
-                        ]),
-                        size: 60,
-                        onPressed: () => {
-                              setState(
-                                () {
-                                  northLock = !northLock;
-                                  if (northLock) mapController.rotate(0);
-                                },
-                              )
-                            },
-                        selected: false),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // --- Focus on Me
+              // --- Map View Buttons
+              Positioned(
+                left: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
+                right: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
+                top: 10,
+                bottom: 10,
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // --- Compass
+                      MapButton(
+                          child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
+                            StreamBuilder(
+                                stream: mapController.mapEventStream,
+                                builder: (context, event) => Container(
+                                      transformAlignment: const Alignment(0, 0),
+                                      transform: mapReady
+                                          ? Matrix4.rotationZ(mapController.rotation * pi / 180)
+                                          : Matrix4.rotationZ(0),
+                                      child: northLock
+                                          ? SvgPicture.asset("assets/images/compass_north.svg", fit: BoxFit.none)
+                                          : SvgPicture.asset(
+                                              "assets/images/compass.svg",
+                                              fit: BoxFit.none,
+                                            ),
+                                    )),
+                          ]),
+                          size: 60,
+                          onPressed: () => {
+                                setState(
+                                  () {
+                                    northLock = !northLock;
+                                    if (northLock) mapController.rotate(0);
+                                  },
+                                )
+                              },
+                          selected: false),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // --- Focus on Me
+                          MapButton(
+                            size: 60,
+                            selected: focusMode == FocusMode.me,
+                            child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                            onPressed: () =>
+                                setFocusMode(FocusMode.me, Provider.of<MyTelemetry>(context, listen: false).geo.latLng),
+                          ),
+                          //
+                          SizedBox(
+                              width: 2,
+                              height: 20,
+                              child: Container(
+                                color: Colors.black,
+                              )),
+                          // --- Focus on Group
+                          MapButton(
+                            size: 60,
+                            selected: focusMode == FocusMode.group,
+                            onPressed: () => setFocusMode(FocusMode.group),
+                            child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                          ),
+                        ],
+                      ),
+                      Column(mainAxisSize: MainAxisSize.min, children: [
+                        // --- Zoom In (+)
                         MapButton(
                           size: 60,
-                          selected: focusMode == FocusMode.me,
-                          child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
-                          onPressed: () =>
-                              setFocusMode(FocusMode.me, Provider.of<MyTelemetry>(context, listen: false).geo.latLng),
+                          selected: false,
+                          onPressed: () {
+                            mapController.move(mapController.center, mapController.zoom + 1);
+                            lastMapChange = DateTime.now();
+                          },
+                          child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
                         ),
                         //
                         SizedBox(
@@ -1293,137 +1355,111 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: Container(
                               color: Colors.black,
                             )),
-                        // --- Focus on Group
-                        MapButton(
-                          size: 60,
-                          selected: focusMode == FocusMode.group,
-                          onPressed: () => setFocusMode(FocusMode.group),
-                          child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
-                        ),
-                      ],
-                    ),
-                    Column(mainAxisSize: MainAxisSize.min, children: [
-                      // --- Zoom In (+)
-                      MapButton(
-                        size: 60,
-                        selected: false,
-                        onPressed: () {
-                          mapController.move(mapController.center, mapController.zoom + 1);
-                          lastMapChange = DateTime.now();
-                        },
-                        child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
-                      ),
-                      //
-                      SizedBox(
-                          width: 2,
-                          height: 20,
-                          child: Container(
-                            color: Colors.black,
-                          )),
-                      // --- Zoom Out (-)
-                      MapButton(
-                        size: 60,
-                        selected: false,
-                        onPressed: () {
-                          mapController.move(mapController.center, mapController.zoom - 1);
-                          lastMapChange = DateTime.now();
-                        },
-                        child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
-                      ),
-                    ]),
-                    // --- Chat button
-                    Stack(
-                      children: [
+                        // --- Zoom Out (-)
                         MapButton(
                           size: 60,
                           selected: false,
                           onPressed: () {
-                            Navigator.pushNamed(context, "/chat");
+                            mapController.move(mapController.center, mapController.zoom - 1);
+                            lastMapChange = DateTime.now();
                           },
-                          child: const Icon(
-                            Icons.chat,
-                            size: 30,
-                            color: Colors.black,
+                          child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
+                        ),
+                      ]),
+                      // --- Chat button
+                      Stack(
+                        children: [
+                          MapButton(
+                            size: 60,
+                            selected: false,
+                            onPressed: () {
+                              Navigator.pushNamed(context, "/chat");
+                            },
+                            child: const Icon(
+                              Icons.chat,
+                              size: 30,
+                              color: Colors.black,
+                            ),
+                          ),
+                          if (Provider.of<ChatMessages>(context).numUnread > 0)
+                            Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                    decoration: const BoxDecoration(
+                                        color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(10))),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: Text(
+                                        "${Provider.of<ChatMessages>(context).numUnread}",
+                                        style: const TextStyle(fontSize: 20),
+                                      ),
+                                    ))),
+                        ],
+                      )
+                    ]),
+              ),
+
+              /// Wind direction indicator
+              if (Provider.of<Wind>(context).result != null)
+                StreamBuilder(
+                  stream: mapController.mapEventStream,
+                  builder: (context, event) => Align(
+                      alignment: Alignment.topCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Container(
+                          transformAlignment: const Alignment(0, 0),
+                          transform: mapReady
+                              ? Matrix4.rotationZ(
+                                  mapController.rotation * pi / 180 + Provider.of<Wind>(context).result!.windHdg)
+                              : Matrix4.rotationZ(0),
+                          child: SvgPicture.asset(
+                            "assets/images/arrow.svg",
+                            width: 80,
+                            height: 80,
+                            // color: Colors.blue,
                           ),
                         ),
-                        if (Provider.of<ChatMessages>(context).numUnread > 0)
-                          Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                  decoration: const BoxDecoration(
-                                      color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(10))),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(4.0),
-                                    child: Text(
-                                      "${Provider.of<ChatMessages>(context).numUnread}",
-                                      style: const TextStyle(fontSize: 20),
-                                    ),
-                                  ))),
-                      ],
-                    )
-                  ]),
-            ),
-
-            /// Wind direction indicator
-            if (Provider.of<Wind>(context).result != null)
-              StreamBuilder(
-                stream: mapController.mapEventStream,
-                builder: (context, event) => Align(
+                      )),
+                ),
+              if (Provider.of<Wind>(context).result != null)
+                Align(
                     alignment: Alignment.topCenter,
                     child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Container(
-                        transformAlignment: const Alignment(0, 0),
-                        transform: mapReady
-                            ? Matrix4.rotationZ(
-                                mapController.rotation * pi / 180 + Provider.of<Wind>(context).result!.windHdg)
-                            : Matrix4.rotationZ(0),
-                        child: SvgPicture.asset(
-                          "assets/images/arrow.svg",
-                          width: 80,
-                          height: 80,
-                          // color: Colors.blue,
-                        ),
+                      padding: const EdgeInsets.all(42),
+                      child: Text(
+                        printValue(
+                            value: convertSpeedValue(Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
+                                Provider.of<Wind>(context).result!.windSpd),
+                            digits: 2,
+                            decimals: 0),
+                        style: const TextStyle(color: Colors.black),
                       ),
                     )),
-              ),
-            if (Provider.of<Wind>(context).result != null)
-              Align(
-                  alignment: Alignment.topCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.all(42),
-                    child: Text(
-                      printValue(
-                          value: convertSpeedValue(Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
-                              Provider.of<Wind>(context).result!.windSpd),
-                          digits: 2,
-                          decimals: 0),
-                      style: const TextStyle(color: Colors.black),
-                    ),
-                  )),
 
-            // --- Connection status banner (along top of map)
-            if (Provider.of<Client>(context).state == ClientState.disconnected)
-              const Positioned(
-                  top: 5,
-                  child: Card(
-                      color: Colors.amber,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
-                        child: Text.rich(
-                          TextSpan(children: [
-                            WidgetSpan(
-                                child: Icon(
-                              Icons.language,
-                              size: 20,
-                              color: Colors.black,
-                            )),
-                            TextSpan(text: "  connecting", style: TextStyle(color: Colors.black, fontSize: 20)),
-                          ]),
-                        ),
-                      )))
-          ]),
+              // --- Connection status banner (along top of map)
+              if (Provider.of<Client>(context).state == ClientState.disconnected)
+                const Positioned(
+                    top: 5,
+                    child: Card(
+                        color: Colors.amber,
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
+                          child: Text.rich(
+                            TextSpan(children: [
+                              WidgetSpan(
+                                  child: Icon(
+                                Icons.language,
+                                size: 20,
+                                color: Colors.black,
+                              )),
+                              TextSpan(text: "  connecting", style: TextStyle(color: Colors.black, fontSize: 20)),
+                            ]),
+                          ),
+                        )))
+            ]),
+          ),
         ),
 
         // --- Bottom Instruments

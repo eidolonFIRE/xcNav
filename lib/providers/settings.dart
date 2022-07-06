@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/providers/adsb.dart';
 
@@ -11,6 +12,52 @@ class Settings with ChangeNotifier {
 
   // --- Debug Tools
   bool _spoofLocation = false;
+
+  // --- Map TileProviders
+  String _curMapTiles = "topo";
+  final Map<String, double> _mapOpacity = {
+    "topo": 1.0,
+    "sectional": 1.0,
+    "satellite": 1.0,
+  };
+  TileLayerOptions getMapTileLayer(String name) {
+    switch (name) {
+      case "sectional":
+        return TileLayerOptions(
+            urlTemplate: 'http://wms.chartbundle.com/tms/v1.0/sec/{z}/{x}/{y}.png?type=google',
+            maxNativeZoom: 13,
+            minZoom: 4,
+            opacity: (_mapOpacity["sectional"] ?? 1.0) * 0.8 + 0.2);
+      case "satellite":
+        return TileLayerOptions(
+            urlTemplate:
+                'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
+            maxNativeZoom: 20,
+            opacity: (_mapOpacity["satellite"] ?? 1.0) * 0.8 + 0.2);
+      default:
+        return TileLayerOptions(
+          urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+        );
+    }
+  }
+
+  final Map<String, Image> mapTileThumbnails = {
+    "topo": Image.asset(
+      "assets/images/topo.png",
+      filterQuality: FilterQuality.high,
+      fit: BoxFit.cover,
+    ),
+    "sectional": Image.asset(
+      "assets/images/sectional.png",
+      filterQuality: FilterQuality.high,
+      fit: BoxFit.cover,
+    ),
+    "satellite": Image.asset(
+      "assets/images/satellite.png",
+      filterQuality: FilterQuality.high,
+      fit: BoxFit.cover,
+    ),
+  };
 
   // --- UI
   bool _showAirspace = false;
@@ -26,10 +73,10 @@ class Settings with ChangeNotifier {
   // --- ADSB
   final Map<String, ProximityConfig> proximityProfileOptions = {
     "Off": ProximityConfig(vertical: 0, horizontalDist: 0, horizontalTime: 0),
-    "Small": ProximityConfig(vertical: 200, horizontalDist: 300, horizontalTime: 30),
-    "Medium": ProximityConfig(vertical: 400, horizontalDist: 600, horizontalTime: 45),
-    "Large": ProximityConfig(vertical: 800, horizontalDist: 1200, horizontalTime: 60),
-    "X-Large": ProximityConfig(vertical: 1000, horizontalDist: 2000, horizontalTime: 90),
+    "Small": ProximityConfig(vertical: 200, horizontalDist: 600, horizontalTime: 30),
+    "Medium": ProximityConfig(vertical: 400, horizontalDist: 1200, horizontalTime: 45),
+    "Large": ProximityConfig(vertical: 800, horizontalDist: 2000, horizontalTime: 60),
+    "X-Large": ProximityConfig(vertical: 1200, horizontalDist: 3000, horizontalTime: 90),
   };
   late ProximityConfig proximityProfile;
   late String proximityProfileName;
@@ -54,6 +101,11 @@ class Settings with ChangeNotifier {
 
       _groundMode = prefs.getBool("settings.groundMode") ?? false;
       _groundModeTelemetry = prefs.getBool("settings.groundModeTelemetry") ?? false;
+
+      _curMapTiles = prefs.getString("settings.curMapTiles") ?? mapTileThumbnails.keys.first;
+      for (String name in _mapOpacity.keys) {
+        _mapOpacity[name] = prefs.getDouble("settings.mapOpacity_$name") ?? 1.0;
+      }
 
       // --- ADSB
       selectProximityConfig(prefs.getString("settings.adsbProximityProfile") ?? "Medium");
@@ -166,7 +218,7 @@ class Settings with ChangeNotifier {
   set patreonName(String value) {
     _patreonName = value;
     SharedPreferences.getInstance().then((prefs) {
-      prefs.setString("settings.patreonName", _patreonName);
+      prefs.setString("settings.patreonName", value);
     });
     notifyListeners();
   }
@@ -175,7 +227,25 @@ class Settings with ChangeNotifier {
   set patreonEmail(String value) {
     _patreonEmail = value;
     SharedPreferences.getInstance().then((prefs) {
-      prefs.setString("settings.patreonEmail", _patreonEmail);
+      prefs.setString("settings.patreonEmail", value);
+    });
+    notifyListeners();
+  }
+
+  String get curMapTiles => _curMapTiles;
+  set curMapTiles(String value) {
+    _curMapTiles = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString("settings.curMapTiles", value);
+    });
+    notifyListeners();
+  }
+
+  double mapOpacity(String name) => _mapOpacity[name] ?? 1.0;
+  void setMapOpacity(String name, double value) {
+    _mapOpacity[name] = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setDouble("settings.mapOpacity_$name", value);
     });
     notifyListeners();
   }

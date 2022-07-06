@@ -195,6 +195,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                             " Include Return Trip",
                           ),
                           Switch(
+                              activeColor: Colors.lightBlueAccent,
                               value: activePlan.includeReturnTrip,
                               onChanged: (value) => {activePlan.includeReturnTrip = value}),
                         ],
@@ -269,6 +270,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                     const Text("Use Wind"),
                     Switch(
                       value: activePlan.useWind,
+                      activeColor: Colors.lightBlueAccent,
                       onChanged: (value) => {activePlan.useWind = value},
                       activeThumbImage: Provider.of<Wind>(context).result != null
                           ? IconImageProvider(Icons.check, color: Colors.black)
@@ -284,6 +286,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                     ),
                     Switch(
                         value: activePlan.isReversed,
+                        activeColor: Colors.lightBlueAccent,
                         activeThumbImage: IconImageProvider(Icons.arrow_upward, color: Colors.black),
                         inactiveThumbImage: IconImageProvider(Icons.arrow_downward, color: Colors.black),
                         onChanged: (value) => {activePlan.isReversed = value}),
