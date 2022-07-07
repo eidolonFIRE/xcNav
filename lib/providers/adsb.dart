@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -7,6 +8,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:usb_serial/transaction.dart';
+import 'package:usb_serial/usb_serial.dart';
 
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/geo.dart';
@@ -44,6 +47,109 @@ class ADSB with ChangeNotifier {
   bool portListening = false;
   bool _enabled = false;
 
+  // USB serial
+  UsbPort? _port;
+  String _status = "Idle";
+  // List<Widget> _ports = [];
+  // List<Widget> _serialData = [];
+
+  StreamSubscription<Uint8List>? _subscription;
+  Transaction<Uint8List>? _transaction;
+  UsbDevice? _device;
+
+  Future<bool> _connectTo(UsbDevice? device) async {
+    // _serialData.clear();
+
+    if (_subscription != null) {
+      _subscription!.cancel();
+      _subscription = null;
+    }
+
+    if (_transaction != null) {
+      _transaction!.dispose();
+      _transaction = null;
+    }
+
+    if (_port != null) {
+      _port!.close();
+      _port = null;
+    }
+
+    if (device == null) {
+      _device = null;
+
+      _status = "Disconnected";
+
+      return true;
+    }
+
+    try {
+      _port = await device.create();
+      if (await (_port!.open()) != true) {
+        _status = "Failed to open port";
+
+        return false;
+      }
+      _device = device;
+
+      await _port!.setDTR(true);
+      await _port!.setRTS(true);
+      await _port!.setPortParameters(57600, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
+
+      // _transaction = Transaction.magicHeader(_port!.inputStream as Stream<Uint8List>, [0xFE]);
+      _transaction = Transaction.magicHeader(_port!.inputStream as Stream<Uint8List>, [1, 156, 246]);
+
+      _subscription = _transaction!.stream.listen((data) {
+        // _port!.inputStream?.listen((data) {
+        decodeMavlink(data);
+        // _serialData.add(Text(line));
+        // if (_serialData.length > 20) {
+        //   _serialData.removeAt(0);
+        // }
+      }, onError: (e) {
+        debugPrint("USB SERIAL ERROR: ${e.toString()}");
+      }, onDone: () {
+        debugPrint("USB SERIAL DONE");
+      }, cancelOnError: false);
+
+      _status = "Connected";
+      return true;
+    } catch (e) {
+      debugPrint("USB SERIAL GENERAL ERROR: ${e.toString()}");
+      return false;
+    }
+  }
+
+  void _getPorts() async {
+    // _ports = [];
+    List<UsbDevice> devices = await UsbSerial.listDevices();
+    if (!devices.contains(_device)) {
+      _connectTo(null);
+    }
+    print(devices);
+
+    devices.forEach((device) {
+      debugPrint("${device.productName}, ${device.serial}, ${device.pid}, ${device.vid}");
+      if ((device.productName ?? "").contains("UART")) {
+        _connectTo(device);
+      }
+      // _ports.add(ListTile(
+      //     leading: Icon(Icons.usb),
+      //     title: Text(device.productName!),
+      //     subtitle: Text(device.manufacturerName!),
+      //     trailing: ElevatedButton(
+      //       child: Text(_device == device ? "Disconnect" : "Connect"),
+      //       onPressed: () {
+      //         _connectTo(_device == device ? null : device).then((res) {
+      //           _getPorts();
+      //         });
+      //       },
+      //     )));
+    });
+
+    // print(_ports);
+  }
+
   ADSB(BuildContext ctx) {
     context = ctx;
 
@@ -66,6 +172,12 @@ class ADSB with ChangeNotifier {
     });
 
     Provider.of<Settings>(context, listen: false).addListener(() async {});
+
+    UsbSerial.usbEventStream!.listen((UsbEvent event) {
+      _getPorts();
+    });
+
+    _getPorts();
   }
 
   bool get enabled => _enabled;
@@ -80,6 +192,7 @@ class ADSB with ChangeNotifier {
     if (sock != null) sock!.close();
     super.dispose();
     flutterTts.stop();
+    _connectTo(null);
   }
 
   void refreshSocket() async {
@@ -179,6 +292,18 @@ class ADSB with ChangeNotifier {
       default:
         break;
     }
+  }
+
+  void decodeMavlink(Uint8List data) {
+    // if (data[0] == 0xFE) {
+    final len = data[1];
+    debugPrint("MAVLINK (${data[2]}): len = $len, ${data.sublist(3, 6).toString()}");
+    // decodeGDL90(data.sublist(6));
+    if (len > 6) {
+      debugPrint(data.sublist(6).toString());
+      decodeTraffic(data.sublist(1));
+    }
+    // }
   }
 
   void cleanupOldEntries() {
