@@ -13,7 +13,7 @@ import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/makePathBarbs.dart';
+import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
 class PlanCard extends StatefulWidget {

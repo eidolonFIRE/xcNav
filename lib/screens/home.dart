@@ -30,7 +30,7 @@ import 'package:xcnav/providers/adsb.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
-import 'package:xcnav/widgets/makePathBarbs.dart';
+import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
 import 'package:xcnav/widgets/map_marker.dart';
@@ -237,7 +237,7 @@ class _MyHomePageState extends State<MyHomePage> {
           distanceFilter: 0,
           pauseLocationUpdatesAutomatically: false,
           // Only set to true if our app will be started up in the background.
-          showBackgroundLocationIndicator: false,
+          showBackgroundLocationIndicator: true,
         );
       } else {
         locationSettings = const LocationSettings(
@@ -899,15 +899,15 @@ class _MyHomePageState extends State<MyHomePage> {
                           if (myTelemetry.launchGeo != null)
                             MarkerLayerOptions(markers: [
                               Marker(
-                                  width: 40,
-                                  height: 60,
+                                  width: 40 * 0.6,
+                                  height: 60 * 0.6,
                                   point: myTelemetry.launchGeo!.latLng,
                                   builder: (ctx) => Container(
                                         transformAlignment: const Alignment(0, 0),
                                         transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
                                         child: Stack(children: [
                                           Container(
-                                            transform: Matrix4.translationValues(0, -60 / 2, 0),
+                                            transform: Matrix4.translationValues(0, -60 * 0.6 / 2, 0),
                                             child: Image.asset(
                                               "assets/images/pin.png",
                                               color: Colors.lightGreen,
@@ -915,10 +915,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                           ),
                                           Center(
                                             child: Container(
-                                              transform: Matrix4.translationValues(0, -60 / 1.5, 0),
+                                              transform: Matrix4.translationValues(0, -60 * 0.6 / 1.5, 0),
                                               child: const Icon(
                                                 Icons.flight_takeoff,
-                                                size: 60 / 2,
+                                                size: 60 * 0.6 / 2,
                                               ),
                                             ),
                                           ),

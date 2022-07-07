@@ -24,7 +24,7 @@ import 'package:xcnav/providers/settings.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
-import 'package:xcnav/widgets/makePathBarbs.dart';
+import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
 class PlanEditor extends StatefulWidget {

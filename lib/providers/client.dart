@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -51,7 +51,9 @@ class Client with ChangeNotifier {
     if (newState == ClientState.disconnected) {
       debugPrint("Reconnecting!");
       if (socket != null) {
-        socket!.close().then((value) => connect());
+        socket!.close().then((value) {
+          Timer(const Duration(seconds: 10), (() => connect()));
+        });
       } else {
         connect();
       }
@@ -60,7 +62,6 @@ class Client with ChangeNotifier {
   }
 
   void connect() async {
-    // TODO: catch errors on failure to connect
     WebSocket.connect("wss://cilme82sm3.execute-api.us-west-1.amazonaws.com/production").then((newSocket) {
       socket = newSocket;
       state = ClientState.connected;

@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // Models
 import 'package:xcnav/models/pilot.dart';
-import 'package:xcnav/models/geo.dart';
 
 class PastGroup {
   // [id] == name
