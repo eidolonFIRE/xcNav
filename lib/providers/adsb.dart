@@ -17,6 +17,9 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
 
+import 'package:xcnav/models/gdl90.dart' as gdl90;
+import 'package:xcnav/models/mavlink.dart' as mavlink;
+
 enum TtsState { playing, stopped }
 
 class ProximityConfig {
@@ -36,7 +39,7 @@ class ProximityConfig {
 
 class ADSB with ChangeNotifier {
   RawDatagramSocket? sock;
-  Map<int, GA> planes = {};
+  Map<String, GA> planes = {};
 
   late FlutterTts flutterTts;
   TtsState ttsState = TtsState.stopped;
@@ -47,19 +50,13 @@ class ADSB with ChangeNotifier {
   bool portListening = false;
   bool _enabled = false;
 
-  // USB serial
-  UsbPort? _port;
-  String _status = "Idle";
-  // List<Widget> _ports = [];
-  // List<Widget> _serialData = [];
+  UsbPort? _usbPort;
 
   StreamSubscription<Uint8List>? _subscription;
   Transaction<Uint8List>? _transaction;
   UsbDevice? _device;
 
   Future<bool> _connectTo(UsbDevice? device) async {
-    // _serialData.clear();
-
     if (_subscription != null) {
       _subscription!.cancel();
       _subscription = null;
@@ -70,49 +67,43 @@ class ADSB with ChangeNotifier {
       _transaction = null;
     }
 
-    if (_port != null) {
-      _port!.close();
-      _port = null;
+    if (_usbPort != null) {
+      _usbPort!.close();
+      _usbPort = null;
     }
 
     if (device == null) {
       _device = null;
-
-      _status = "Disconnected";
-
       return true;
     }
 
     try {
-      _port = await device.create();
-      if (await (_port!.open()) != true) {
-        _status = "Failed to open port";
-
+      _usbPort = await device.create();
+      if (await (_usbPort!.open()) != true) {
+        debugPrint("USB PORT FAILED TO OPEN");
         return false;
       }
       _device = device;
 
-      await _port!.setDTR(true);
-      await _port!.setRTS(true);
-      await _port!.setPortParameters(57600, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
+      await _usbPort!.setDTR(true);
+      await _usbPort!.setRTS(true);
+      await _usbPort!.setPortParameters(57600, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
 
-      // _transaction = Transaction.magicHeader(_port!.inputStream as Stream<Uint8List>, [0xFE]);
-      _transaction = Transaction.magicHeader(_port!.inputStream as Stream<Uint8List>, [1, 156, 246]);
-
+      _transaction = Transaction.magicHeader(_usbPort!.inputStream as Stream<Uint8List>, [0xFE, 38]);
       _subscription = _transaction!.stream.listen((data) {
-        // _port!.inputStream?.listen((data) {
-        decodeMavlink(data);
-        // _serialData.add(Text(line));
-        // if (_serialData.length > 20) {
-        //   _serialData.removeAt(0);
-        // }
+        if (data.length > 5) {
+          final ga = mavlink.decodeMavlink(data);
+          if (ga != null) {
+            planes[ga.id] = ga;
+            heartbeat();
+          }
+        }
       }, onError: (e) {
         debugPrint("USB SERIAL ERROR: ${e.toString()}");
       }, onDone: () {
         debugPrint("USB SERIAL DONE");
       }, cancelOnError: false);
-
-      _status = "Connected";
+      debugPrint("USB PORT CONNECTED");
       return true;
     } catch (e) {
       debugPrint("USB SERIAL GENERAL ERROR: ${e.toString()}");
@@ -121,33 +112,17 @@ class ADSB with ChangeNotifier {
   }
 
   void _getPorts() async {
-    // _ports = [];
     List<UsbDevice> devices = await UsbSerial.listDevices();
     if (!devices.contains(_device)) {
       _connectTo(null);
     }
-    print(devices);
 
-    devices.forEach((device) {
+    for (final device in devices) {
       debugPrint("${device.productName}, ${device.serial}, ${device.pid}, ${device.vid}");
       if ((device.productName ?? "").contains("UART")) {
         _connectTo(device);
       }
-      // _ports.add(ListTile(
-      //     leading: Icon(Icons.usb),
-      //     title: Text(device.productName!),
-      //     subtitle: Text(device.manufacturerName!),
-      //     trailing: ElevatedButton(
-      //       child: Text(_device == device ? "Disconnect" : "Connect"),
-      //       onPressed: () {
-      //         _connectTo(_device == device ? null : device).then((res) {
-      //           _getPorts();
-      //         });
-      //       },
-      //     )));
-    });
-
-    // print(_ports);
+    }
   }
 
   ADSB(BuildContext ctx) {
@@ -216,7 +191,11 @@ class ADSB with ChangeNotifier {
           Datagram? dg = _sock.receive();
           if (dg != null) {
             // debugPrint("${dg.data.toString()}");
-            decodeGDL90(dg.data);
+            heartbeat();
+            final ga = gdl90.decodeGDL90(dg.data);
+            if (ga != null) {
+              planes[ga.id] = ga;
+            }
           }
         }, onError: (error) {
           debugPrint("ADSB socket error: ${error.toString()}");
@@ -234,76 +213,8 @@ class ADSB with ChangeNotifier {
     }
   }
 
-  int decode24bit(Uint8List data) {
-    int value = ((data[0] & 0x7f) << 16) | (data[1] << 8) | data[2];
-    if (data[0] & 0x80 > 0) {
-      value -= 0x7fffff;
-    }
-    return value;
-  }
-
-  void decodeTraffic(Uint8List data) {
-    final int id = (data[1] << 16) | (data[2] << 8) | data[3];
-
-    final double lat = decode24bit(data.sublist(4, 7)) * 180.0 / 0x7fffff;
-    final double lng = decode24bit(data.sublist(7, 10)) * 180.0 / 0x7fffff;
-
-    final Uint8List _altRaw = data.sublist(10, 12);
-    final double alt = ((((_altRaw[0] << 4) + (_altRaw[1] >> 4)) * 25) - 1000) / meters2Feet;
-
-    final double hdg = data[16] * 360 / 256.0;
-    final double spd = ((data[13] << 4) + (data[14] >> 4)) * 0.51444;
-
-    // TODO: why are we getting really high IDs? (reserved IDs)
-    GAtype type = GAtype.unknown;
-    final i = data[17];
-    if (i == 1 || i == 9 || i == 10) {
-      type = GAtype.small;
-    } else if (i == 7) {
-      type = GAtype.heli;
-    } else {
-      type = GAtype.large;
-    }
-
-    debugPrint("GA $id (${type.toString()}): $lat, $lng, $spd m/s  $alt m, $hdg deg");
-
-    if (type.index > 0 && type.index < 22 && (lat != 0 || lng != 0) && (lat < 90 && lat > -90)) {
-      planes[id] = GA(id, LatLng(lat, lng), alt, spd, hdg, type, DateTime.now().millisecondsSinceEpoch);
-    }
-  }
-
   void heartbeat() {
     lastHeartbeat = DateTime.now().millisecondsSinceEpoch;
-  }
-
-  void decodeGDL90(Uint8List data) {
-    switch (data[1]) {
-      case 0:
-        // --- heartbeat
-        // debugPrint("ADSB heartbeat ${data[2].toRadixString(2)}");
-        if (data[2] & 0x50 == 0) {}
-        heartbeat();
-        break;
-      case 20:
-        // --- traffic
-        decodeTraffic(data.sublist(2));
-        heartbeat();
-        break;
-      default:
-        break;
-    }
-  }
-
-  void decodeMavlink(Uint8List data) {
-    // if (data[0] == 0xFE) {
-    final len = data[1];
-    debugPrint("MAVLINK (${data[2]}): len = $len, ${data.sublist(3, 6).toString()}");
-    // decodeGDL90(data.sublist(6));
-    if (len > 6) {
-      debugPrint(data.sublist(6).toString());
-      decodeTraffic(data.sublist(1));
-    }
-    // }
   }
 
   void cleanupOldEntries() {
@@ -351,7 +262,7 @@ class ADSB with ChangeNotifier {
     var observer = LatLng(0, 0);
 
     var ga = GA(
-        0,
+        "",
         latlngCalc.offset(LatLng(0, 0), 10 + rand.nextDouble() * 3000, rand.nextDouble() * 360),
         rand.nextDouble() * 200 - 100,
         35 + rand.nextDouble() * 50,
