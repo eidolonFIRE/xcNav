@@ -122,22 +122,12 @@ class Pilot {
           debugPrint("Loaded avatar $id.jpg from local cache");
           avatar = Image.memory(loadedBytes);
           _updateColor(loadedBytes);
+        } else {
+          debugPrint("Tried to load avatar from file but hash didn't match.");
+          _fetchAvatorFromS3();
         }
       } else {
-        // - cache miss, load from S3
-        _fetchAvatarS3(id).then((value) {
-          Uint8List bytes = base64Decode(value["avatar"]);
-          avatar = Image.memory(bytes);
-          _updateColor(bytes);
-
-          // save file to the temp file
-          fileAvatar.create(recursive: true).then((value) {
-            fileAvatar.writeAsBytes(bytes);
-            debugPrint("Pulled avatar $id.jpg from remote source");
-          });
-        }, onError: (error) {
-          debugPrint("Failed to fetch avatar $id.jpg... $error");
-        });
+        _fetchAvatorFromS3();
       }
     } else {
       // - fallback on default avatar
@@ -145,7 +135,26 @@ class Pilot {
     }
   }
 
-  Future _fetchAvatarS3(String pilotID) async {
+  void _fetchAvatorFromS3() async {
+    // - cache miss, load from S3
+    Directory tempDir = await getTemporaryDirectory();
+    File fileAvatar = File("${tempDir.path}/avatars/$id.jpg");
+    _fetchS3asset(id).then((value) {
+      Uint8List bytes = base64Decode(value["avatar"]);
+      avatar = Image.memory(bytes);
+      _updateColor(bytes);
+
+      // save file to the temp file
+      fileAvatar.create(recursive: true).then((value) {
+        fileAvatar.writeAsBytes(bytes);
+        debugPrint("Pulled avatar $id.jpg from remote source");
+      });
+    }, onError: (error) {
+      debugPrint("Failed to fetch avatar $id.jpg... $error");
+    });
+  }
+
+  Future _fetchS3asset(String pilotID) async {
     Uri uri =
         Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com", "/xcnav_avatar_service", {"pilot_id": pilotID});
     return http

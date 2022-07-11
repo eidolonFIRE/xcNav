@@ -223,11 +223,7 @@ class Client with ChangeNotifier {
   }
 
   void joinGroup(BuildContext context, String reqGroupID) {
-    if (Provider.of<ActivePlan>(context, listen: false).waypoints.isNotEmpty) {
-      savePlan(context, isSavingFirst: true).then((value) => _joinGroup(reqGroupID));
-    } else {
-      _joinGroup(reqGroupID);
-    }
+    savePlan(context, isSavingFirst: true).then((value) => _joinGroup(reqGroupID));
   }
 
   void leaveGroup(bool promptSplit) {

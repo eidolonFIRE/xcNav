@@ -56,16 +56,20 @@ void showPilotInfo(BuildContext context, String pilotId) {
               title: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.8,
                 child: Row(
+                  // direction: Axis.horizontal,
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(right: 15),
                       child: AvatarRound(pilot.avatar, 40),
                     ),
-                    Text(
-                      pilot.name,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Flexible(
+                      child: Text(
+                        pilot.name,
+                        textAlign: TextAlign.start,
+                        maxLines: 2,
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

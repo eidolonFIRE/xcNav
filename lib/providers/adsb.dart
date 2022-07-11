@@ -91,12 +91,10 @@ class ADSB with ChangeNotifier {
 
       _transaction = Transaction.magicHeader(_usbPort!.inputStream as Stream<Uint8List>, [0xFE, 38]);
       _subscription = _transaction!.stream.listen((data) {
-        if (data.length > 5) {
-          final ga = mavlink.decodeMavlink(data);
-          if (ga != null) {
-            planes[ga.id] = ga;
-            heartbeat();
-          }
+        final ga = mavlink.decodeMavlink(data);
+        if (ga != null) {
+          planes[ga.id] = ga;
+          heartbeat();
         }
       }, onError: (e) {
         debugPrint("USB SERIAL ERROR: ${e.toString()}");
@@ -321,7 +319,7 @@ class ADSB with ChangeNotifier {
   void refresh(Geo observer) {
     if (planes.isNotEmpty) {
       cleanupOldEntries();
-      checkProximity(observer);
+      if (_enabled) checkProximity(observer);
       notifyListeners();
     }
   }
