@@ -15,7 +15,7 @@ void configLocalNotification() {
   FlutterLocalNotificationsPlugin().initialize(initializationSettings);
 }
 
-void showNotification(message) async {
+void showNotification(String fromPilot, String message) async {
   // Don't show any notificaitons if we're already in focus
   if (inFocus) return;
 
@@ -33,7 +33,7 @@ void showNotification(message) async {
       android: androidPlatformChannelSpecifics,
       iOS: iOSPlatformChannelSpecifics);
   await FlutterLocalNotificationsPlugin().show(
-    0, "xcNav",
+    0, "xcNav - $fromPilot",
     message, platformChannelSpecifics,
     // payload: jsonEncode(message)
   );

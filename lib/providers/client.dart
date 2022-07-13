@@ -272,9 +272,10 @@ class Client with ChangeNotifier {
 
   // --- new text message from server
   void handleChatMessage(Map<String, dynamic> msg) {
-    String? currentGroupID = Provider.of<Group>(context, listen: false).currentGroupID;
+    final group = Provider.of<Group>(context, listen: false);
+    String? currentGroupID = group.currentGroupID;
     if (msg["group"] == currentGroupID) {
-      Provider.of<ChatMessages>(context, listen: false).processMessageFromServer(msg);
+      Provider.of<ChatMessages>(context, listen: false).processMessageFromServer(group.pilots[msg["pilot_id"]]?.name ?? "", msg);
     } else {
       // getting messages from the wrong group!
       debugPrint("Wrong group ID! $currentGroupID, ${msg["group"]}");

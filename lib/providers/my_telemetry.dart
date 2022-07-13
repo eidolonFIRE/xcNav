@@ -54,13 +54,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   @override
   void dispose() {
     _save();
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   MyTelemetry() {
     _load();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   void _load() async {

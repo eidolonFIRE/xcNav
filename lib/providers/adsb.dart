@@ -88,10 +88,14 @@ class ADSB with ChangeNotifier {
       final info = NetworkInfo();
       var wifiName = await info.getWifiName();
       var wifiGateway = await info.getWifiGatewayIP();
+      
+
+      debugPrint("WifiName: $wifiName, WifiGateway: $wifiGateway");
 
       dynamic address = InternetAddress.loopbackIPv4;
       if (wifiName != null && (wifiName.startsWith("Ping-") || wifiName.startsWith("Sentry_"))) {
-        address = wifiGateway;
+        // Temporary hard coded for Ping...
+        address = wifiGateway ?? "0.0.0.0";
       }
 
       debugPrint("Opening ADSB listen on ${address.toString()}:4000");

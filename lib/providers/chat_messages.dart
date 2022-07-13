@@ -25,12 +25,12 @@ class ChatMessages with ChangeNotifier {
     if (refresh) notifyListeners();
   }
 
-  void processMessageFromServer(dynamic msg) {
+  void processMessageFromServer(String pilotName, dynamic msg) {
     Message newMsg = Message(DateTime.now().millisecondsSinceEpoch, msg["pilot_id"], msg["text"], msg["emergency"]);
     messages.add(newMsg);
     numUnread++;
 
-    showNotification(msg["text"]);
+    showNotification(pilotName, msg["text"] ?? "");
 
     notifyListeners();
   }
