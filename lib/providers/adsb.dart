@@ -146,11 +146,13 @@ class ADSB with ChangeNotifier {
 
     Provider.of<Settings>(context, listen: false).addListener(() async {});
 
-    UsbSerial.usbEventStream!.listen((UsbEvent event) {
-      _getPorts();
-    });
+    if (Platform.isAndroid) {
+      UsbSerial.usbEventStream!.listen((UsbEvent event) {
+        _getPorts();
+      });
 
-    _getPorts();
+      _getPorts();
+    }
   }
 
   bool get enabled => _enabled;
@@ -165,7 +167,9 @@ class ADSB with ChangeNotifier {
     if (sock != null) sock!.close();
     super.dispose();
     flutterTts.stop();
-    _connectTo(null);
+    if (Platform.isAndroid) {
+      _connectTo(null);
+    }
   }
 
   void refreshSocket() async {
@@ -174,7 +178,6 @@ class ADSB with ChangeNotifier {
       final info = NetworkInfo();
       var wifiName = await info.getWifiName();
       var wifiGateway = await info.getWifiGatewayIP();
-      
 
       debugPrint("WifiName: $wifiName, WifiGateway: $wifiGateway");
 

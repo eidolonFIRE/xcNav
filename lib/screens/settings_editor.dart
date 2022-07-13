@@ -155,8 +155,9 @@ class _SettingsEditorState extends State<SettingsEditor> {
                 // --- Test Audio
                 SettingsTile.navigation(
                   title: const Text("Test Warning Audio"),
-                  leading: const Icon(Icons.volume_up),
+                  // leading: const Icon(Icons.volume_up),
                   onPressed: (event) => {Provider.of<ADSB>(context, listen: false).testWarning()},
+                  trailing: const Icon(Icons.volume_up),
                 ),
               ]),
 

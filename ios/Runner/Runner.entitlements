@@ -4,8 +4,6 @@
 <dict>
 	<key>aps-environment</key>
 	<string>development</string>
-	<key>com.apple.developer.networking.multipath</key>
-	<true/>
 	<key>com.apple.developer.networking.wifi-info</key>
 	<true/>
 </dict>
