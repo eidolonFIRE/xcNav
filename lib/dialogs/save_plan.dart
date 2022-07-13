@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/models/flight_plan.dart';
@@ -7,8 +9,12 @@ import 'package:xcnav/providers/active_plan.dart';
 
 final TextEditingController filename = TextEditingController();
 
+/// Returns bool didSave?
 Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
   ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
+  if (plan.waypoints.isEmpty) {
+    return Future.value(false);
+  }
 
   return showDialog<bool?>(
     context: context,

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- pingUSB uAvioni: FT230X Basic UART -->
+    <usb-device vendor-id="1027" product-id="24597" />
+    
+
+</resources>

@@ -663,7 +663,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   onChanged: (value) => {Provider.of<ADSB>(context, listen: false).enabled = value},
                 ),
                 subtitle: Provider.of<ADSB>(context).enabled
-                    ? (Provider.of<ADSB>(context).lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 20)
+                    ? (Provider.of<ADSB>(context).lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 60)
                         ? const Text.rich(TextSpan(children: [
                             WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
