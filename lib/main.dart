@@ -15,6 +15,7 @@ import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
+import 'package:xcnav/screens/adsb_help.dart';
 
 // screens
 import 'package:xcnav/screens/home.dart';
@@ -171,6 +172,7 @@ class MyApp extends StatelessWidget {
         "/groupDetails": (context) => const GroupDetails(),
         "/weather": (context) => const WeatherViewer(),
         "/about": (context) => const About(),
+        "/adsbHelp": (context) => const ADSBhelp(),
       },
     );
   }

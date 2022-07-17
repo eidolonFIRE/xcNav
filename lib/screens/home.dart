@@ -673,14 +673,22 @@ class _MyHomePageState extends State<MyHomePage> {
                                 )),
                             TextSpan(text: "  Connected")
                           ]))
-                        : const Text.rich(TextSpan(children: [
-                            WidgetSpan(
+                        : Text.rich(TextSpan(children: [
+                            const WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
                                 child: Icon(
                                   Icons.link_off,
                                   color: Colors.amber,
                                 )),
-                            TextSpan(text: "  No Data")
+                            const TextSpan(text: "  No Data"),
+                            WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 15),
+                                  child: GestureDetector(
+                                      onTap: () => {Navigator.pushNamed(context, "/adsbHelp")},
+                                      child: const Icon(Icons.help, size: 20, color: Colors.lightBlueAccent)),
+                                )),
                           ]))
                     : null),
 

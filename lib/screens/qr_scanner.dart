@@ -144,9 +144,15 @@ class _QRScannerState extends State<QRScanner> {
   }
 
   void joinCode(String code) {
-    controller!.pauseCamera().then((value) {
-      Navigator.pop<bool>(context, true);
-      Provider.of<Client>(context, listen: false).joinGroup(context, code);
+    controller!.pauseCamera().then((_) {
+      final exp = RegExp(r'([0-9A-Z]{8})');
+      if (exp.hasMatch(code)) {
+        debugPrint("Joined code: $code");
+        Navigator.pop<bool>(context, true);
+        Provider.of<Client>(context, listen: false).joinGroup(context, code);
+      } else {
+        debugPrint("Invalid code: $code");
+      }
     });
   }
 

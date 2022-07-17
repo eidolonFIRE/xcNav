@@ -79,7 +79,7 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                 SizedBox(
                   width: MediaQuery.of(context).size.width / 1.5,
                   child: const Text(
-                    "Our goal is to put all the tools for coordinating a group, cross-country flight into one app. This app is free and open source. We rely on your contributions to keep it alive.",
+                    "This project was started by Caleb Johnson with the goal of to put all the tools for coordinating a group, cross-country flight into one app. This app is free and open source. We rely on your contributions to keep it alive.",
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -116,30 +116,6 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                                   width: MediaQuery.of(context).size.width / 10))
                         ],
                       ),
-                    ),
-                  ],
-                ),
-
-                /// --- Contributors
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      "Code Contributors",
-                      style: TextStyle(fontSize: 24),
-                    ),
-                    SizedBox(
-                        width: MediaQuery.of(context).size.width / 2,
-                        child: const Divider(
-                          color: Colors.white,
-                        )),
-                    Text(
-                      "Caleb Johnson",
-                      style: _contributerStyle,
-                    ),
-                    Text(
-                      "Edwin Veelo",
-                      style: _contributerStyle,
                     ),
                   ],
                 ),
