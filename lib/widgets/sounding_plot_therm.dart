@@ -70,7 +70,7 @@ class SoundingPlotThermPainter extends CustomPainter {
     const ceil = 6000;
     final double maxTmp = sounding.data.reduce((a, b) => (a.tmp ?? 0) > (b.tmp ?? 0) ? a : b).tmp!;
     final double minTmp = sounding.data.reduce((a, b) => (a.tmp ?? 0) < (b.tmp ?? 0) ? a : b).tmp!;
-    final thermCeil = max(20, (maxTmp / 20).ceil() * 20);
+    final thermCeil = max(20, ((maxTmp + 10) / 20).ceil() * 20);
     final thermFloor = min(0, (minTmp / 20).floor() * 20);
     // final thermFloor = minTmp;
 
