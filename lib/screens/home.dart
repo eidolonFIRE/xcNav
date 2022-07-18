@@ -916,8 +916,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                         child: Stack(children: [
                                           Container(
                                             transform: Matrix4.translationValues(0, -60 * 0.6 / 2, 0),
-                                            child: Image.asset(
-                                              "assets/images/pin.png",
+                                            child: SvgPicture.asset(
+                                              "assets/images/pin.svg",
                                               color: Colors.lightGreen,
                                             ),
                                           ),

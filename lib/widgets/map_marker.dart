@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 const iconOptions = {
@@ -36,8 +37,8 @@ class MapMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
-      Image.asset(
-        "assets/images/pin.png",
+      SvgPicture.asset(
+        "assets/images/pin.svg",
         color: waypoint.color == null ? Colors.black : Color(waypoint.color!),
       ),
       if (waypoint.icon != null)
