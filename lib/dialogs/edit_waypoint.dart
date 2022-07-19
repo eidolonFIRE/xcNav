@@ -31,7 +31,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
 
                 child: MaterialButton(
                   onPressed: () => {setState(() => selectedColor = value)},
-                  height: value == selectedColor ? 60 : 40,
+                  height: value == selectedColor ? 50 : 30,
                   color: value,
                   // child: Container(),
                 ),
@@ -137,7 +137,15 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
               ],
             ),
             actions: [
-              ElevatedButton.icon(
+              TextButton.icon(
+                  label: const Text("Cancel"),
+                  onPressed: () => {Navigator.pop(context)},
+                  icon: const Icon(
+                    Icons.cancel,
+                    size: 20,
+                    color: Colors.red,
+                  )),
+              TextButton.icon(
                   label: Text(isNew ? "Add" : "Update"),
                   onPressed: () {
                     if (formKey.currentState?.validate() ?? false) {
@@ -151,14 +159,6 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                     Icons.check,
                     size: 20,
                     color: Colors.lightGreen,
-                  )),
-              ElevatedButton.icon(
-                  label: const Text("Cancel"),
-                  onPressed: () => {Navigator.pop(context)},
-                  icon: const Icon(
-                    Icons.cancel,
-                    size: 20,
-                    color: Colors.red,
                   )),
             ],
           );

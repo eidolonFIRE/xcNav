@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:xcnav/dialogs/save_plan.dart';
+import 'package:xcnav/dialogs/edit_latlng.dart';
+import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
@@ -68,9 +70,27 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                 iconSize: 25,
                 onPressed: onNewPath,
                 icon: const ImageIcon(AssetImage("assets/images/add_waypoint_path.png"), color: Colors.yellow)),
+            // --- New from Lat Lng
+            IconButton(
+                iconSize: 25,
+                onPressed: () {
+                  editLatLng(context).then((value) {
+                    if (value != null) {
+                      editWaypoint(context, Waypoint("", [value], false, null, null), isNew: true, isPath: false)
+                          ?.then((newWaypoint) {
+                        if (newWaypoint != null) {
+                          final plan = Provider.of<ActivePlan>(context, listen: false);
+                          plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false,
+                              newWaypoint.icon, newWaypoint.color);
+                        }
+                      });
+                    }
+                  });
+                },
+                icon: const ImageIcon(AssetImage("assets/images/crosshair.png"))),
             // --- Save Plan
             IconButton(
-                iconSize: 30,
+                iconSize: 25,
                 onPressed: () {
                   Navigator.pop(context);
                   savePlan(context);
@@ -145,9 +165,6 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                 child: WaypointCard(
                   waypoint: activePlan.waypoints[i],
                   index: i,
-                  isFaded: activePlan.selectedIndex != null &&
-                      ((activePlan.isReversed && i > activePlan.selectedIndex!) ||
-                          (!activePlan.isReversed && i < activePlan.selectedIndex!)),
                   onSelect: () {
                     debugPrint("Selected $i");
                     activePlan.selectWaypoint(i);

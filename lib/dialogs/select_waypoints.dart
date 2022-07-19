@@ -9,51 +9,31 @@ Future<List<Waypoint>?> selectWaypoints(BuildContext context, List<Waypoint> way
         Set<int> checkedElements = {};
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-              // insetPadding: const EdgeInsets.only(left: 10, right: 10, top: 80, bottom: 80),
-              contentPadding: EdgeInsets.all(1),
-              // title: const Padding(
-              //   padding: EdgeInsets.only(bottom: 20),
-              //   child: Text("Select Waypoints"),
-              // ),
-              content: Container(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 2),
+              contentPadding: const EdgeInsets.all(1),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width - 10,
                 child: ListView.builder(
                   padding: EdgeInsets.zero,
                   shrinkWrap: true,
                   itemCount: waypoints.length,
-                  itemBuilder: (context, index) => ListTile(
-                      // tileColor: Colors.grey.shade900,
-                      minVerticalPadding: 0,
-                      contentPadding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                      // dense: true,
-                      // visualDensity: VisualDensity.compact,
-                      leading: Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Checkbox(
-                          onChanged: (checked) {
-                            setState(
-                              () {
-                                if (checked ?? false) {
-                                  checkedElements.add(index);
-                                } else {
-                                  checkedElements.remove(index);
-                                }
-                              },
-                            );
-                          },
-                          value: checkedElements.contains(index),
-                        ),
-                      ),
-                      title: WaypointCard(
-                        index: index,
-                        waypoint: waypoints[index],
-                        onSelect: () {},
-                        onToggleOptional: () {},
-                        isSelected: false,
-                        isFaded: false,
-                        showPilots: false,
-                      )),
+                  itemBuilder: (context, index) => WaypointCard(
+                    index: index,
+                    waypoint: waypoints[index],
+                    onSelect: () {
+                      setState(
+                        () {
+                          if (checkedElements.contains(index)) {
+                            checkedElements.remove(index);
+                          } else {
+                            checkedElements.add(index);
+                          }
+                        },
+                      );
+                    },
+                    onToggleOptional: () {},
+                    isSelected: checkedElements.contains(index),
+                    showPilots: false,
+                  ),
                 ),
               ),
               actions: [

@@ -8,6 +8,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/dialogs/edit_latlng.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
@@ -389,6 +390,25 @@ class _PlanEditorState extends State<PlanEditor> {
                         }
                       });
                     }),
+                // --- New from Lat Lng
+                IconButton(
+                    iconSize: 25,
+                    onPressed: () {
+                      editLatLng(context).then((value) {
+                        if (value != null) {
+                          editWaypoint(context, Waypoint("", [value], false, null, null), isNew: true, isPath: false)
+                              ?.then((newWaypoint) {
+                            if (newWaypoint != null) {
+                              setState(() {
+                                plan!.waypoints.add(Waypoint(
+                                    newWaypoint.name, newWaypoint.latlng, false, newWaypoint.icon, newWaypoint.color));
+                              });
+                            }
+                          });
+                        }
+                      });
+                    },
+                    icon: const ImageIcon(AssetImage("assets/images/crosshair.png"))),
               ],
             ),
             Divider(
@@ -463,7 +483,6 @@ class _PlanEditorState extends State<PlanEditor> {
                           child: WaypointCard(
                             waypoint: plan!.waypoints[i],
                             index: i,
-                            isFaded: false,
                             onSelect: () {
                               debugPrint("Selected $i");
 

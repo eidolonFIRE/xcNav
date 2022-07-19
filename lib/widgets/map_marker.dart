@@ -16,7 +16,7 @@ const iconOptions = {
   "flag": Icons.sports_score,
   "camera": Icons.photo_camera,
   "airport": Icons.local_airport,
-  // TODO: add custom icons (camping tent, pylons, power lines?, LZ, etc)
+  // TODO: add custom icons (camping tent, pylons, power lines?, LZ, mountains, etc)
 };
 
 var colorOptions = {

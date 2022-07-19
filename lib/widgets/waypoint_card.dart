@@ -20,14 +20,12 @@ class WaypointCard extends StatelessWidget {
     required this.onSelect,
     required this.onToggleOptional,
     required this.isSelected,
-    required this.isFaded,
     this.showPilots = true,
   }) : super(key: key);
 
   final Waypoint waypoint;
   final int index;
   final bool isSelected;
-  final bool isFaded;
   final bool showPilots;
 
   // callbacks

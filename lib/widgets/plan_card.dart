@@ -243,7 +243,7 @@ class _PlanCardState extends State<PlanCard> {
                           child: ListTile(
                               title: Text(
                                 "Select From",
-                                style: TextStyle(color: Colors.lightGreen),
+                                style: TextStyle(color: Colors.lightGreen, fontSize: 20),
                               ),
                               leading: Icon(
                                 Icons.playlist_add,
@@ -256,7 +256,7 @@ class _PlanCardState extends State<PlanCard> {
                           child: ListTile(
                               title: Text(
                                 "Replace Active",
-                                style: TextStyle(color: Colors.amber),
+                                style: TextStyle(color: Colors.amber, fontSize: 20),
                               ),
                               leading: Icon(
                                 Icons.playlist_remove,
@@ -270,7 +270,7 @@ class _PlanCardState extends State<PlanCard> {
                       PopupMenuItem(
                           value: "edit",
                           child: ListTile(
-                              title: Text("Edit"),
+                              title: Text("Edit", style: TextStyle(fontSize: 20)),
                               leading: Icon(
                                 Icons.pin_drop,
                                 size: 28,
@@ -280,14 +280,14 @@ class _PlanCardState extends State<PlanCard> {
                       PopupMenuItem(
                           value: "rename",
                           child: ListTile(
-                            title: Text("Rename"),
+                            title: Text("Rename", style: TextStyle(fontSize: 20)),
                             leading: Icon(Icons.edit, size: 30),
                           )),
                       // --- Option: Duplicate
                       PopupMenuItem(
                           value: "duplicate",
                           child: ListTile(
-                            title: Text("Duplicate"),
+                            title: Text("Duplicate", style: TextStyle(fontSize: 20)),
                             leading: Icon(
                               Icons.copy_all,
                               size: 28,
@@ -302,7 +302,7 @@ class _PlanCardState extends State<PlanCard> {
                           child: ListTile(
                               title: Text(
                                 "Delete",
-                                style: TextStyle(color: Colors.red),
+                                style: TextStyle(color: Colors.red, fontSize: 20),
                               ),
                               leading: Icon(
                                 Icons.delete,
