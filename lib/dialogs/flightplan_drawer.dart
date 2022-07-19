@@ -96,7 +96,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
               itemBuilder: (context, i) => Slidable(
                 key: ValueKey(activePlan.waypoints[i]),
                 dragStartBehavior: DragStartBehavior.start,
-                startActionPane: ActionPane(extentRatio: 0.14, motion: const ScrollMotion(), children: [
+                startActionPane: ActionPane(extentRatio: 0.15, motion: const ScrollMotion(), children: [
                   SlidableAction(
                     onPressed: (e) => {activePlan.removeWaypoint(i)},
                     icon: Icons.delete,
@@ -105,7 +105,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                   ),
                 ]),
                 endActionPane: ActionPane(
-                  extentRatio: 0.3,
+                  extentRatio: 0.15,
                   motion: const ScrollMotion(),
                   children: [
                     SlidableAction(
@@ -126,20 +126,20 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                       backgroundColor: Colors.grey.shade400,
                       foregroundColor: Colors.black,
                     ),
-                    ReorderableDragStartListener(
-                      index: i,
-                      child: Container(
-                        color: Colors.grey.shade400,
-                        child: const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Icon(
-                            Icons.drag_handle,
-                            size: 24,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ),
+                    // ReorderableDragStartListener(
+                    //   index: i,
+                    //   child: Container(
+                    //     color: Colors.grey.shade400,
+                    //     child: const Padding(
+                    //       padding: EdgeInsets.all(16.0),
+                    //       child: Icon(
+                    //         Icons.drag_handle,
+                    //         size: 24,
+                    //         color: Colors.black,
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
                 child: WaypointCard(

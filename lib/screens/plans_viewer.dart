@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 
 // --- Dialogs
 import 'package:xcnav/dialogs/save_plan.dart';
+import 'package:xcnav/dialogs/select_kml_folders.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
@@ -16,6 +17,7 @@ import 'package:xcnav/models/flight_plan.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/plan_card.dart';
+import 'package:xml/xml.dart';
 
 class PlansViewer extends StatefulWidget {
   const PlansViewer({Key? key}) : super(key: key);
@@ -87,14 +89,19 @@ class _PlansViewerState extends State<PlansViewer> {
     if (result != null) {
       File file = File(result.files.single.path!);
       file.readAsString().then((data) {
-        // TODO: remove extension
-        var newPlan = FlightPlan.fromKml(result.files.single.name, data);
-        // TODO: notify if broken file
-        if (newPlan.goodFile) {
-          setState(() {
-            plans[result.files.single.path!] = newPlan;
-          });
-        }
+        final document = XmlDocument.parse(data).getElement("kml")!.getElement("Document")!;
+
+        // Select which folders to import
+        final folderNames = document.findAllElements("Folder").toList();
+        selectKmlFolders(context, folderNames).then((selectedFolders) {
+          var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
+          // TODO: notify if broken file
+          if (newPlan.goodFile) {
+            setState(() {
+              plans[result.files.single.path!] = newPlan;
+            });
+          }
+        });
       });
     } else {
       // User canceled the picker

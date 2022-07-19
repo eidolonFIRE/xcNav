@@ -45,7 +45,7 @@ class FlightPlan {
     for (final wp in waypoints) {
       points.addAll(wp.latlng);
     }
-    return LatLngBounds.fromPoints(points)..pad(0.4);
+    return LatLngBounds.fromPoints(points)..pad(0.2);
   }
 
   void sortWaypoint(int oldIndex, int newIndex) {
@@ -136,55 +136,55 @@ class FlightPlan {
     }
   }
 
-  FlightPlan.fromKml(String name, String rawData) {
+  FlightPlan.fromKml(String name, XmlElement document, List<XmlElement> folders) {
     _name = name;
     waypoints = [];
 
-    // try {
-    var document = XmlDocument.parse(rawData).getElement("kml")!.getElement("Document")!;
+    try {
+      for (final each in folders) {
+        each.findAllElements("Placemark").forEach((element) {
+          final String name = element.getElement("name")!.text;
+          if (element.getElement("Point") != null || element.getElement("LineString") != null) {
+            final List<LatLng> points = (element.getElement("Point") ?? element.getElement("LineString"))!
+                .getElement("coordinates")!
+                .text
+                .trim()
+                .split("\n")
+                .map((e) {
+              final _raw = e.split(",");
+              return LatLng(double.parse(_raw[1]), double.parse(_raw[0]));
+            }).toList();
 
-    document.findAllElements("Placemark").forEach((element) {
-      final String name = element.getElement("name")!.text;
-      if (element.getElement("Point") != null || element.getElement("LineString") != null) {
-        final List<LatLng> points = (element.getElement("Point") ?? element.getElement("LineString"))!
-            .getElement("coordinates")!
-            .text
-            .trim()
-            .split("\n")
-            .map((e) {
-          final _raw = e.split(",");
-          return LatLng(double.parse(_raw[1]), double.parse(_raw[0]));
-        }).toList();
+            final styleElement = document
+                .findAllElements("Style")
+                .where((_e) => _e.getAttribute("id")!.startsWith(element.getElement("styleUrl")!.text.substring(1)));
+            String? colorText =
+                (styleElement.first.getElement("IconStyle") ?? styleElement.first.getElement("LineStyle"))
+                    ?.getElement("color")
+                    ?.text;
+            if (colorText != null) {
+              colorText = colorText.substring(0, 2) +
+                  colorText.substring(6, 8) +
+                  colorText.substring(4, 6) +
+                  colorText.substring(2, 4);
+            }
+            final int color = int.parse((colorText ?? Colors.black.value.toString()), radix: 16) | 0xff000000;
 
-        final styleElement = document
-            .findAllElements("Style")
-            .where((_e) => _e.getAttribute("id")!.startsWith(element.getElement("styleUrl")!.text.substring(1)));
-        String? colorText = (styleElement.first.getElement("IconStyle") ?? styleElement.first.getElement("LineStyle"))
-            ?.getElement("color")
-            ?.text;
-        if (colorText != null) {
-          colorText = colorText.substring(0, 2) +
-              colorText.substring(6, 8) +
-              colorText.substring(4, 6) +
-              colorText.substring(2, 4);
-        }
-        final int color = int.parse((colorText ?? Colors.black.value.toString()), radix: 16) | 0xff000000;
+            if (points.isNotEmpty) {
+              waypoints.add(Waypoint(name, points, name.toLowerCase().startsWith("alt"), null, color));
+            } else {
+              debugPrint("Dropping $name with no points.");
+            }
+          }
 
-        if (points.isNotEmpty) {
-          waypoints.add(Waypoint(name, points, name.toLowerCase().startsWith("opt"), null, color));
-        } else {
-          debugPrint("Dropping $name with no points.");
-        }
+          _calcLength();
+        });
       }
-
-      _calcLength();
-    });
-    goodFile = true;
-    // } catch (e) {
-    //   debugPrint("$e");
-    //   title = "Broken File!";
-    //   goodFile = false;
-    // }
+      goodFile = true;
+      saveToFile();
+    } catch (e) {
+      goodFile = false;
+    }
   }
 
   Future rename(String name, {bool deleteOld = true}) async {

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/save_plan.dart';
+import 'package:xcnav/dialogs/select_waypoints.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
@@ -192,109 +193,118 @@ class _PlanCardState extends State<PlanCard> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  PopupMenuButton(
+                  PopupMenuButton<String>(
+                    onSelected: ((value) {
+                      switch (value) {
+                        case "append":
+                          selectWaypoints(context, widget.plan.waypoints).then((selected) {
+                            Provider.of<ActivePlan>(context, listen: false).waypoints.addAll(selected ?? []);
+                            Provider.of<Client>(context, listen: false).pushFlightPlan();
+                          });
+
+                          break;
+                        case "replace":
+                          if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
+                            replacePlanDialog(context).then((value) {
+                              if (value ?? false) _replacePlanDialog(context);
+                            });
+                          } else {
+                            _replacePlanDialog(context);
+                          }
+                          break;
+                        case "edit":
+                          Navigator.pushNamed(context, "/planEditor", arguments: widget.plan);
+                          break;
+                        case "rename":
+                          rename(context);
+                          break;
+                        case "duplicate":
+                          rename(context, deleteOld: false).then((value) => widget.onDelete());
+                          break;
+                        case "delete":
+                          deletePlan(context);
+                          break;
+                        default:
+                          debugPrint("Oops! Button not handled! $value");
+                      }
+                    }),
                     icon: const Icon(Icons.more_horiz),
-                    itemBuilder: (context) => <PopupMenuEntry>[
-                      // TODO: determine if this is still needed (or find something more elegant)
-                      const PopupMenuItem(
-                        enabled: false,
-                        height: 20,
-                        child: Text(
-                          "To the Active Plan:",
-                        ),
-                      ),
-                      // --- Option: Add All
+                    itemBuilder: (context) => const <PopupMenuEntry<String>>[
+                      // PopupMenuItem(
+                      //   enabled: false,
+                      //   height: 20,
+                      //   child: Text(
+                      //     "To the Active Plan:",
+                      //   ),
+                      // ),
+                      // --- Option: Add
                       PopupMenuItem(
-                          child: TextButton.icon(
-                              label: const Text(
-                                "Append",
+                          value: "append",
+                          child: ListTile(
+                              title: Text(
+                                "Select From",
                                 style: TextStyle(color: Colors.lightGreen),
                               ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                Provider.of<ActivePlan>(context, listen: false).waypoints.addAll(widget.plan.waypoints);
-                                Provider.of<Client>(context, listen: false).pushFlightPlan();
-                              },
-                              icon: const Icon(
+                              leading: Icon(
                                 Icons.playlist_add,
                                 size: 28,
                                 color: Colors.lightGreen,
                               ))),
                       // --- Option: Replace
                       PopupMenuItem(
-                          child: TextButton.icon(
-                              label: const Text(
-                                "Replace",
+                          value: "replace",
+                          child: ListTile(
+                              title: Text(
+                                "Replace Active",
                                 style: TextStyle(color: Colors.amber),
                               ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
-                                  replacePlanDialog(context).then((value) {
-                                    if (value ?? false) _replacePlanDialog(context);
-                                  });
-                                } else {
-                                  _replacePlanDialog(context);
-                                }
-                              },
-                              icon: const Icon(
+                              leading: Icon(
                                 Icons.playlist_remove,
                                 size: 28,
                                 color: Colors.amber,
                               ))),
 
-                      const PopupMenuDivider(),
+                      PopupMenuDivider(),
 
                       // --- Option: Edit
                       PopupMenuItem(
-                          child: TextButton.icon(
-                              label: const Text("Edit"),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                Navigator.pushNamed(context, "/planEditor", arguments: widget.plan);
-                              },
-                              icon: const Icon(
+                          value: "edit",
+                          child: ListTile(
+                              title: Text("Edit"),
+                              leading: Icon(
                                 Icons.pin_drop,
                                 size: 28,
                                 // color: Colors.blue,
                               ))),
                       // --- Option: Rename
                       PopupMenuItem(
-                          child: TextButton.icon(
-                              label: const Text("Rename"),
-                              icon: const Icon(Icons.edit, size: 30),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                rename(context);
-                              })),
+                          value: "rename",
+                          child: ListTile(
+                            title: Text("Rename"),
+                            leading: Icon(Icons.edit, size: 30),
+                          )),
                       // --- Option: Duplicate
                       PopupMenuItem(
-                          child: TextButton.icon(
-                              label: const Text("Duplicate"),
-                              icon: const Icon(
-                                Icons.copy_all,
-                                size: 28,
-                              ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                rename(context, deleteOld: false).then((value) => widget.onDelete());
-                                // widget.onDelete();
-                              })),
+                          value: "duplicate",
+                          child: ListTile(
+                            title: Text("Duplicate"),
+                            leading: Icon(
+                              Icons.copy_all,
+                              size: 28,
+                            ),
+                          )),
 
-                      const PopupMenuDivider(),
+                      PopupMenuDivider(),
 
                       // --- Option: Delete
                       PopupMenuItem(
-                          child: TextButton.icon(
-                              label: const Text(
+                          value: "delete",
+                          child: ListTile(
+                              title: Text(
                                 "Delete",
                                 style: TextStyle(color: Colors.red),
                               ),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                deletePlan(context);
-                              },
-                              icon: const Icon(
+                              leading: Icon(
                                 Icons.delete,
                                 size: 28,
                                 color: Colors.red,

@@ -78,7 +78,7 @@
      id="layer1"
      transform="translate(0,-259.95832)">
     <path
-       style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;stroke:#000000;stroke-width:2.64583325;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 7.9375002,259.95832 v 37.04167"
        id="path825"
        inkscape:connector-curvature="0"
@@ -86,12 +86,12 @@
        inkscape:export-xdpi="43.841583"
        inkscape:export-ydpi="43.841583" />
     <circle
-       style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.5711658;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.33742356;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="path2003"
        cx="7.9374995"
-       cy="278.53207"
+       cy="278.47916"
        inkscape:export-xdpi="43.841583"
        inkscape:export-ydpi="43.841583"
-       r="4.5352502" />
+       r="4.1229548" />
   </g>
 </svg>
