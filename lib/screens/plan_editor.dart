@@ -135,7 +135,7 @@ class _PlanEditorState extends State<PlanEditor> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Edit Plan"),
+        title: Text("Edit: ${plan!.name}"),
       ),
       body: Stack(
         children: [

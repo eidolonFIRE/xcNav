@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/dialogs/edit_plan_name.dart';
 import 'package:xcnav/dialogs/save_plan.dart';
 import 'package:xcnav/dialogs/select_waypoints.dart';
 
@@ -39,7 +41,7 @@ class _PlanCardState extends State<PlanCard> {
             content: const Text('Are you sure you want to delete this plan?'),
             actions: [
               // The "Yes" button
-              ElevatedButton.icon(
+              TextButton.icon(
                   onPressed: () {
                     // Delete the file
                     widget.plan.getFilename().then((filename) {
@@ -56,7 +58,7 @@ class _PlanCardState extends State<PlanCard> {
                     color: Colors.red,
                   ),
                   label: const Text('Delete')),
-              ElevatedButton(
+              TextButton(
                   onPressed: () {
                     // Close the dialog
                     Navigator.of(context).pop();
@@ -76,7 +78,7 @@ class _PlanCardState extends State<PlanCard> {
 
   void _replacePlanDialog(BuildContext context) {
     if (Provider.of<ActivePlan>(context, listen: false).waypoints.isNotEmpty) {
-      savePlan(context).then((value) {
+      savePlan(context, isSavingFirst: true).then((value) {
         _replacePlan(context);
       });
     } else {
@@ -113,59 +115,20 @@ class _PlanCardState extends State<PlanCard> {
   }
 
   Future rename(BuildContext context, {bool deleteOld = true}) {
-    TextEditingController filename = TextEditingController();
-    filename.text = widget.plan.name;
-
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(deleteOld ? "Rename Plan" : "Save Plan"),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: filename,
-            validator: (value) {
-              if (value != null) {
-                if (value.trim().isEmpty || value.isEmpty) return "Must not be empty";
-              }
-              return null;
-            },
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ -]"))],
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: "plan name",
-              border: OutlineInputBorder(),
-            ),
-            style: const TextStyle(fontSize: 20),
-          ),
-        ),
-        actions: [
-          ElevatedButton.icon(
-              label: const Text("Save"),
-              onPressed: () {
-                if (formKey.currentState?.validate() ?? false) {
-                  widget.plan
-                      .rename(filename.text, deleteOld: deleteOld)
-                      .then((value) => Navigator.popUntil(context, ModalRoute.withName("/plans")));
-                }
-                setState(() {});
-              },
-              icon: const Icon(
-                Icons.save,
-                size: 20,
-                color: Colors.lightGreen,
-              )),
-          ElevatedButton.icon(
-              label: const Text("Cancel"),
-              onPressed: () => {Navigator.pop(context)},
-              icon: const Icon(
-                Icons.cancel,
-                size: 20,
-                color: Colors.red,
-              )),
-        ],
-      ),
-    );
+    // TextEditingController filename = TextEditingController();
+    // filename.text = widget.plan.name;
+    Completer completer = Completer();
+    editPlanName(context, widget.plan.name).then((newName) {
+      if (newName != null && newName.isNotEmpty) {
+        widget.plan
+            .rename(newName, deleteOld: deleteOld)
+            .then((_) => Navigator.popUntil(context, ModalRoute.withName("/plans")))
+            .then((value) => completer.complete());
+      } else {
+        completer.complete();
+      }
+    });
+    return completer.future;
   }
 
   @override
@@ -216,10 +179,16 @@ class _PlanCardState extends State<PlanCard> {
                           Navigator.pushNamed(context, "/planEditor", arguments: widget.plan);
                           break;
                         case "rename":
-                          rename(context);
+                          rename(context).then((value) => setState(
+                                () {},
+                              ));
+
                           break;
                         case "duplicate":
-                          rename(context, deleteOld: false).then((value) => widget.onDelete());
+                          rename(context, deleteOld: false).then((value) => widget.onDelete()).then((value) => setState(
+                                () {},
+                              ));
+
                           break;
                         case "delete":
                           deletePlan(context);
@@ -242,7 +211,7 @@ class _PlanCardState extends State<PlanCard> {
                           value: "append",
                           child: ListTile(
                               title: Text(
-                                "Select From",
+                                "Activate Waypoints",
                                 style: TextStyle(color: Colors.lightGreen, fontSize: 20),
                               ),
                               leading: Icon(
@@ -255,7 +224,7 @@ class _PlanCardState extends State<PlanCard> {
                           value: "replace",
                           child: ListTile(
                               title: Text(
-                                "Replace Active",
+                                "Use as Active Plan",
                                 style: TextStyle(color: Colors.amber, fontSize: 20),
                               ),
                               leading: Icon(

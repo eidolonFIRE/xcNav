@@ -746,7 +746,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   Icons.menu_book,
                   size: 30,
                 ),
-                title: Text("History", style: Theme.of(context).textTheme.headline5)),
+                title: Text("Log", style: Theme.of(context).textTheme.headline5)),
 
             Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 

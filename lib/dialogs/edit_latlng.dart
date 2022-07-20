@@ -3,13 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
-final TextEditingController latlngText = TextEditingController();
-
 Future<LatLng?> editLatLng(BuildContext context, {LatLng? latlng}) {
   // newWaypointName.value = TextEditingValue(text: waypoint.name);
   var formKey = GlobalKey<FormState>();
   final reMatch = RegExp(r"([-\d]+.?[\d]*),[\s]*([-\d]+.?[\d]*)");
-  latlngText.clear();
+  final TextEditingController latlngText = TextEditingController();
 
   return showDialog<LatLng?>(
       context: context,

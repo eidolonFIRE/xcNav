@@ -10,6 +10,8 @@ Future<List<Waypoint>?> selectWaypoints(BuildContext context, List<Waypoint> way
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
               contentPadding: const EdgeInsets.all(1),
+              title: const Text("Select waypoints to activate"),
+              titlePadding: const EdgeInsets.all(10),
               content: SizedBox(
                 width: MediaQuery.of(context).size.width - 10,
                 child: ListView.builder(
@@ -38,7 +40,7 @@ Future<List<Waypoint>?> selectWaypoints(BuildContext context, List<Waypoint> way
               ),
               actions: [
                 TextButton.icon(
-                    label: const Text("Add Selected"),
+                    label: const Text("Use"),
                     onPressed: () {
                       // Return list of selected waypoints
                       Navigator.pop(context, checkedElements.map((e) => waypoints[e]).toList());

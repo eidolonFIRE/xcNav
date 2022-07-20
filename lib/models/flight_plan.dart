@@ -19,7 +19,7 @@ class FlightPlan {
   late final List<Waypoint> waypoints;
   double? _length;
 
-  get name => _name;
+  String get name => _name;
 
   double get length {
     return _length ??= _calcLength();
@@ -44,6 +44,11 @@ class FlightPlan {
     List<LatLng> points = [];
     for (final wp in waypoints) {
       points.addAll(wp.latlng);
+    }
+    // max zoom value
+    if (points.length == 1) {
+      points.add(LatLng(points.first.latitude, points.first.longitude + 0.02));
+      points.add(LatLng(points.first.latitude, points.first.longitude - 0.02));
     }
     return LatLngBounds.fromPoints(points)..pad(0.2);
   }

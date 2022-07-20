@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:xcnav/dialogs/edit_plan_name.dart';
 
 // --- Dialogs
 import 'package:xcnav/dialogs/save_plan.dart';
@@ -114,15 +115,18 @@ class _PlansViewerState extends State<PlansViewer> {
     keys.sort((a, b) => a.compareTo(b));
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Flight Plans"),
-        // centerTitle: true,
+        title: const Text("Plans"),
         actions: [
           IconButton(
               iconSize: 30,
               onPressed: () {
-                var _plan = FlightPlan.new("Unamed");
-                Navigator.pop(context);
-                Navigator.pushNamed(context, "/planEditor", arguments: _plan);
+                editPlanName(context, null).then((value) {
+                  if (value != null && value != "") {
+                    var _plan = FlightPlan.new(value);
+
+                    Navigator.pushNamed(context, "/planEditor", arguments: _plan);
+                  }
+                });
               },
               icon: const Icon(Icons.add)),
           IconButton(
@@ -136,10 +140,26 @@ class _PlansViewerState extends State<PlansViewer> {
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : ListView.builder(
-              itemCount: plans.length,
-              itemBuilder: (context, index) => PlanCard(plans[keys[index]]!, refreshPlansFromDirectory),
-            ),
+          : (plans.isEmpty
+              ? Center(
+                  child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    // Padding(
+                    //   padding: EdgeInsets.all(8.0),
+                    //   child: Text("No plans created yet!"),
+                    // ),
+                    Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text("Use the buttons in the upper right corner to:", softWrap: true, maxLines: 3),
+                    ),
+                    Text("- Create a new plan / collection\n- Save the active plan\n- Import a KML file"),
+                  ],
+                ))
+              : ListView.builder(
+                  itemCount: plans.length,
+                  itemBuilder: (context, index) => PlanCard(plans[keys[index]]!, refreshPlansFromDirectory),
+                )),
     );
   }
 }

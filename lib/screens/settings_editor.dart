@@ -256,7 +256,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                 content: const Text('Are you sure you want to clear your Identity?'),
                                 actions: [
                                   // The "Yes" button
-                                  ElevatedButton.icon(
+                                  TextButton.icon(
                                       onPressed: () {
                                         // Clear Profile
                                         Provider.of<Profile>(context, listen: false).eraseIdentity();
@@ -275,7 +275,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                         color: Colors.red,
                                       ),
                                       label: const Text('Yes')),
-                                  ElevatedButton(
+                                  TextButton(
                                       onPressed: () {
                                         // Close the dialog
                                         Navigator.of(context).pop();
@@ -302,7 +302,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                 content: const Text('Are you sure you want to clear all cached avatars?'),
                                 actions: [
                                   // The "Yes" button
-                                  ElevatedButton.icon(
+                                  TextButton.icon(
                                       onPressed: () {
                                         // // Clear Profile
                                         // Provider.of<Profile>(context, listen: false).eraseIdentity();
@@ -325,7 +325,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                         color: Colors.red,
                                       ),
                                       label: const Text('Yes')),
-                                  ElevatedButton(
+                                  TextButton(
                                       onPressed: () {
                                         // Close the dialog
                                         Navigator.of(context).pop();

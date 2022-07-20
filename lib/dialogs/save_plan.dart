@@ -19,7 +19,7 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
   return showDialog<bool?>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text("Save Active Plan" + (isSavingFirst ? " before it is replaced?" : "")),
+      title: Text("Save Active Plan to Library" + (isSavingFirst ? " before it is replaced?" : "")),
       content: TextField(
         controller: filename,
         autofocus: true,
@@ -30,7 +30,15 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
         style: const TextStyle(fontSize: 20),
       ),
       actions: [
-        ElevatedButton.icon(
+        TextButton.icon(
+            label: Text(isSavingFirst ? "No" : "Cancel"),
+            onPressed: () => {Navigator.pop(context, false)},
+            icon: const Icon(
+              Icons.cancel,
+              size: 20,
+              color: Colors.red,
+            )),
+        TextButton.icon(
             label: const Text("Save"),
             onPressed: () {
               FlightPlan.fromActivePlan(plan, filename.text).saveToFile().then((_) => Navigator.pop(context, true));
@@ -39,14 +47,6 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
               Icons.save,
               size: 20,
               color: Colors.lightGreen,
-            )),
-        ElevatedButton.icon(
-            label: Text(isSavingFirst ? "No" : "Cancel"),
-            onPressed: () => {Navigator.pop(context, false)},
-            icon: const Icon(
-              Icons.cancel,
-              size: 20,
-              color: Colors.red,
             )),
       ],
     ),
