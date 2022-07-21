@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 // --- Dialogs
 import 'package:xcnav/dialogs/edit_plan_name.dart';
 import 'package:xcnav/dialogs/save_plan.dart';
-import 'package:xcnav/dialogs/select_waypoints.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
@@ -148,13 +147,6 @@ class _PlanCardState extends State<PlanCard> {
                   PopupMenuButton<String>(
                     onSelected: ((value) {
                       switch (value) {
-                        case "append":
-                          selectWaypoints(context, widget.plan.waypoints).then((selected) {
-                            Provider.of<ActivePlan>(context, listen: false).waypoints.addAll(selected ?? []);
-                            Provider.of<Client>(context, listen: false).pushFlightPlan();
-                          });
-
-                          break;
                         case "replace":
                           if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
                             replacePlanDialog(context).then((value) {
@@ -314,7 +306,7 @@ class _PlanCardState extends State<PlanCard> {
                           .mapIndexed((i, e) => e.latlng.length > 1
                               ? Polyline(
                                   points: e.latlng,
-                                  strokeWidth: checkedElements.contains(i) ? 6 : 4,
+                                  strokeWidth: checkedElements.contains(i) ? 6 : 3,
                                   color: e.getColor(),
                                   isDotted: e.isOptional)
                               : null)

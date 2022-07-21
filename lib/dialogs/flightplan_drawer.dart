@@ -10,8 +10,10 @@ import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 
@@ -89,13 +91,66 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                 },
                 icon: const ImageIcon(AssetImage("assets/images/crosshair.png"))),
             // --- Save Plan
-            IconButton(
-                iconSize: 25,
-                onPressed: () {
-                  Navigator.pop(context);
-                  savePlan(context);
+            PopupMenuButton<String>(
+                onSelected: (value) {
+                  switch (value) {
+                    case "save":
+                      Navigator.pop(context);
+                      savePlan(context);
+                      break;
+                    case "clear":
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext ctx) {
+                            return AlertDialog(
+                              title: const Text('Are you sure?'),
+                              content: const Text('This will delete the flight plan for everyone in the group!'),
+                              actions: [
+                                TextButton.icon(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(true);
+                                    },
+                                    icon: const Icon(
+                                      Icons.delete_forever,
+                                      color: Colors.red,
+                                    ),
+                                    label: const Text('Delete')),
+                                TextButton(
+                                    onPressed: () {
+                                      // Close the dialog
+                                      Navigator.of(context).pop(false);
+                                    },
+                                    child: const Text('Cancel'))
+                              ],
+                            );
+                          }).then((value) {
+                        if (value) {
+                          activePlan.waypoints.clear();
+                          Provider.of<Client>(context, listen: false).pushFlightPlan();
+                        }
+                      });
+                      break;
+                  }
                 },
-                icon: const Icon(Icons.save_as)),
+                itemBuilder: (context) => const <PopupMenuEntry<String>>[
+                      PopupMenuItem(
+                        value: "save",
+                        child: ListTile(
+                          leading: Icon(Icons.save_as),
+                          title: Text("Save Plan"),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: "clear",
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.delete_forever,
+                            color: Colors.red,
+                          ),
+                          title: Text("Clear Waypoints"),
+                        ),
+                      ),
+                    ]),
           ],
         ),
 
@@ -146,20 +201,45 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                       backgroundColor: Colors.grey.shade400,
                       foregroundColor: Colors.black,
                     ),
-                    ReorderableDragStartListener(
-                      index: i,
-                      child: Container(
-                        color: Colors.grey.shade400,
-                        child: const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Icon(
-                            Icons.drag_handle,
-                            size: 24,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ),
+                    SlidableAction(
+                      onPressed: (e) {
+                        showDialog<String>(
+                            context: context,
+                            builder: (context) => SimpleDialog(
+                                  title: const Text("Save waypoint into plan/collection:"),
+                                  children: Provider.of<Plans>(context, listen: false)
+                                      .loadedPlans
+                                      .keys
+                                      .map((name) => SimpleDialogOption(
+                                          onPressed: () => Navigator.pop(context, name), child: Text(name)))
+                                      .toList(),
+                                )).then((value) {
+                          if (value != null) {
+                            Provider.of<Plans>(context, listen: false)
+                                .loadedPlans[value]
+                                ?.waypoints
+                                .add(activePlan.waypoints[i]);
+                          }
+                        });
+                      },
+                      icon: Icons.playlist_add,
+                      backgroundColor: Colors.grey.shade400,
+                      foregroundColor: Colors.black,
+                    )
+                    // ReorderableDragStartListener(
+                    //   index: i,
+                    //   child: Container(
+                    //     color: Colors.grey.shade400,
+                    //     child: const Padding(
+                    //       padding: EdgeInsets.all(16.0),
+                    //       child: Icon(
+                    //         Icons.drag_handle,
+                    //         size: 24,
+                    //         color: Colors.black,
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
                 child: WaypointCard(
