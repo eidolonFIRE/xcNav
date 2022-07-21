@@ -715,17 +715,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   )),
             ),
 
-            /// Weather
-            ListTile(
-              minVerticalPadding: 20,
-              leading: const Icon(
-                Icons.cloudy_snowing,
-                size: 30,
-              ),
-              title: Text("Weather", style: Theme.of(context).textTheme.headline5),
-              onTap: () => {Navigator.pushNamed(context, "/weather")},
-            ),
-
             ListTile(
               minVerticalPadding: 20,
               onTap: () => {Navigator.pushNamed(context, "/plans")},
@@ -734,9 +723,19 @@ class _MyHomePageState extends State<MyHomePage> {
                 size: 30,
               ),
               title: Text(
-                "Plans",
+                "Waypoints",
                 style: Theme.of(context).textTheme.headline5,
               ),
+            ),
+
+            ListTile(
+              minVerticalPadding: 20,
+              leading: const Icon(
+                Icons.cloudy_snowing,
+                size: 30,
+              ),
+              title: Text("Weather", style: Theme.of(context).textTheme.headline5),
+              onTap: () => {Navigator.pushNamed(context, "/weather")},
             ),
 
             ListTile(

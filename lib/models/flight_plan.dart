@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -14,12 +12,10 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 class FlightPlan {
-  late String _name;
+  String name;
   late bool goodFile;
   late final List<Waypoint> waypoints;
   double? _length;
-
-  String get name => _name;
 
   double get length {
     return _length ??= _calcLength();
@@ -113,22 +109,18 @@ class FlightPlan {
     return _length;
   }
 
-  FlightPlan.new(String name) {
+  FlightPlan.new(this.name) {
     waypoints = [];
-    _name = name;
     goodFile = true;
   }
 
-  FlightPlan.fromActivePlan(ActivePlan activePlan, String name) {
+  FlightPlan.fromActivePlan(this.name, ActivePlan activePlan) {
     waypoints = activePlan.waypoints.toList();
-    _name = name;
     _calcLength();
     goodFile = true;
   }
 
-  FlightPlan.fromJson(String name, dynamic data) {
-    _name = name;
-
+  FlightPlan.fromJson(this.name, dynamic data) {
     try {
       List<dynamic> _dataSamples = data["waypoints"];
       waypoints = _dataSamples.map((e) => Waypoint.fromJson(e)).toList();
@@ -141,8 +133,7 @@ class FlightPlan {
     }
   }
 
-  FlightPlan.fromKml(String name, XmlElement document, List<XmlElement> folders) {
-    _name = name;
+  FlightPlan.fromKml(this.name, XmlElement document, List<XmlElement> folders) {
     waypoints = [];
 
     try {
@@ -186,38 +177,8 @@ class FlightPlan {
         });
       }
       goodFile = true;
-      saveToFile();
     } catch (e) {
       goodFile = false;
     }
-  }
-
-  Future rename(String name, {bool deleteOld = true}) async {
-    if (deleteOld) {
-      // remove old file
-      await getFilename().then((filename) {
-        File planFile = File(filename);
-        planFile.exists().then((value) {
-          planFile.delete();
-        });
-      });
-    }
-
-    _name = name;
-
-    // save to new name
-    return saveToFile();
-  }
-
-  Future saveToFile() {
-    Completer completer = Completer();
-    getFilename().then((filename) {
-      File file = File(filename);
-
-      file.create(recursive: true).then((value) => file
-          .writeAsString(jsonEncode({"title": name, "waypoints": waypoints.map((e) => e.toJson()).toList()}))
-          .then((_) => completer.complete()));
-    });
-    return completer.future;
   }
 }

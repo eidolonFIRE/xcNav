@@ -6,28 +6,47 @@ import 'package:xcnav/models/flight_plan.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
-
-final TextEditingController filename = TextEditingController();
+import 'package:xcnav/providers/plans.dart';
+import 'package:xcnav/screens/plans_viewer.dart';
 
 /// Returns bool didSave?
 Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
-  ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
-  if (plan.waypoints.isEmpty) {
+  var formKey = GlobalKey<FormState>();
+  ActivePlan activePlan = Provider.of<ActivePlan>(context, listen: false);
+  TextEditingController filename = TextEditingController();
+  if (activePlan.waypoints.isEmpty) {
     return Future.value(false);
+  }
+
+  void onDone(BuildContext context) {
+    final newPlan = FlightPlan.fromActivePlan(filename.text, activePlan);
+    Provider.of<Plans>(context, listen: false).setPlan(newPlan).then((_) => Navigator.pop(context, true));
   }
 
   return showDialog<bool?>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text("Save Active Plan to Library" + (isSavingFirst ? " before it is replaced?" : "")),
-      content: TextField(
-        controller: filename,
-        autofocus: true,
-        decoration: const InputDecoration(
-          hintText: "plan name",
-          border: OutlineInputBorder(),
+      content: Form(
+        key: formKey,
+        child: TextFormField(
+          textInputAction: TextInputAction.done,
+          controller: filename,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: "plan name",
+            border: OutlineInputBorder(),
+          ),
+          style: const TextStyle(fontSize: 20),
+          validator: (value) {
+            if (value != null) {
+              if (value.trim().isEmpty) return "Must not be empty";
+              if (Provider.of<Plans>(context, listen: false).hasPlan(value)) return "Name already in use";
+            }
+            return null;
+          },
+          onEditingComplete: () => onDone(context),
         ),
-        style: const TextStyle(fontSize: 20),
       ),
       actions: [
         TextButton.icon(
@@ -40,9 +59,7 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
             )),
         TextButton.icon(
             label: const Text("Save"),
-            onPressed: () {
-              FlightPlan.fromActivePlan(plan, filename.text).saveToFile().then((_) => Navigator.pop(context, true));
-            },
+            onPressed: () => onDone(context),
             icon: const Icon(
               Icons.save,
               size: 20,

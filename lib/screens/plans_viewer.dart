@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/edit_plan_name.dart';
 
 // --- Dialogs
@@ -12,6 +13,7 @@ import 'package:xcnav/dialogs/select_kml_folders.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/providers/plans.dart';
 
 // --- Providers
 // import 'package:xcnav/providers/active_plan.dart';
@@ -28,63 +30,7 @@ class PlansViewer extends StatefulWidget {
 }
 
 class _PlansViewerState extends State<PlansViewer> {
-  Map<String, FlightPlan> plans = {};
-  bool loaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    refreshPlansFromDirectory();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  void refreshPlansFromDirectory() async {
-    final Directory _appDocDir = await getApplicationDocumentsDirectory();
-    final Directory _appDocDirFolder = Directory("${_appDocDir.path}/flight_plans/");
-    if (await _appDocDirFolder.exists()) {
-      setState(() {
-        loaded = false;
-      });
-      plans.clear();
-      // Async load in all the files
-
-      var files = await _appDocDirFolder.list(recursive: false, followLinks: false).toList();
-      // debugPrint("${files.length} log files found.");
-      List<Completer> completers = [];
-      for (var each in files) {
-        var _completer = Completer();
-        completers.add(_completer);
-        File.fromUri(each.uri).readAsString().then((value) {
-          var _plan = FlightPlan.fromJson(each.uri.pathSegments.last.replaceAll(".json", ""), jsonDecode(value));
-          if (_plan.waypoints.isNotEmpty) {
-            plans[each.uri.path] = _plan;
-          } else {
-            // plan was empty, delete it
-            File planFile = File.fromUri(each.uri);
-            planFile.exists().then((value) {
-              planFile.delete();
-            });
-          }
-
-          _completer.complete();
-        });
-      }
-      // debugPrint("${completers.length} completers created.");
-      Future.wait(completers.map((e) => e.future).toList()).then((value) {
-        setState(() {
-          loaded = true;
-        });
-      });
-    } else {
-      debugPrint('"flight_plans" directory doesn\'t exist yet!');
-    }
-  }
-
-  void selectKmlImport() async {
+  void selectKmlImport(BuildContext context) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
     if (result != null) {
@@ -98,9 +44,7 @@ class _PlansViewerState extends State<PlansViewer> {
           var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
           // TODO: notify if broken file
           if (newPlan.goodFile) {
-            setState(() {
-              plans[result.files.single.path!] = newPlan;
-            });
+            Provider.of<Plans>(context, listen: false).setPlan(newPlan);
           }
         });
       });
@@ -111,55 +55,50 @@ class _PlansViewerState extends State<PlansViewer> {
 
   @override
   Widget build(BuildContext context) {
-    var keys = plans.keys.toList();
-    keys.sort((a, b) => a.compareTo(b));
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Plans"),
-        actions: [
-          IconButton(
-              iconSize: 30,
-              onPressed: () {
-                editPlanName(context, null).then((value) {
-                  if (value != null && value != "") {
-                    var _plan = FlightPlan.new(value);
-
-                    Navigator.pushNamed(context, "/planEditor", arguments: _plan);
-                  }
-                });
-              },
-              icon: const Icon(Icons.add)),
-          IconButton(
-              iconSize: 30,
-              onPressed: () => {savePlan(context).then((value) => refreshPlansFromDirectory())},
-              icon: const Icon(Icons.save_as)),
-          IconButton(iconSize: 30, onPressed: () => {selectKmlImport()}, icon: const Icon(Icons.file_upload_outlined))
-        ],
-      ),
-      body: !loaded
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : (plans.isEmpty
-              ? Center(
-                  child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    // Padding(
-                    //   padding: EdgeInsets.all(8.0),
-                    //   child: Text("No plans created yet!"),
-                    // ),
-                    Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text("Use the buttons in the upper right corner to:", softWrap: true, maxLines: 3),
-                    ),
-                    Text("- Create a new plan / collection\n- Save the active plan\n- Import a KML file"),
-                  ],
-                ))
-              : ListView.builder(
-                  itemCount: plans.length,
-                  itemBuilder: (context, index) => PlanCard(plans[keys[index]]!, refreshPlansFromDirectory),
-                )),
-    );
+    return Consumer<Plans>(builder: ((context, plans, child) {
+      var keys = plans.loadedPlans.keys.toList();
+      keys.sort((a, b) => a.compareTo(b));
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("Waypoints"),
+          actions: [
+            IconButton(
+                iconSize: 30,
+                onPressed: () {
+                  editPlanName(context, null).then((value) {
+                    if (value != null && value != "") {
+                      var _plan = FlightPlan.new(value);
+                      Navigator.pushNamed(context, "/planEditor", arguments: _plan);
+                    }
+                  });
+                },
+                icon: const Icon(Icons.add)),
+            IconButton(iconSize: 30, onPressed: () => {savePlan(context)}, icon: const Icon(Icons.save_as)),
+            IconButton(
+                iconSize: 30, onPressed: () => {selectKmlImport(context)}, icon: const Icon(Icons.file_upload_outlined))
+          ],
+        ),
+        body: plans.loadedPlans.isEmpty
+            ? Center(
+                child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  // Padding(
+                  //   padding: EdgeInsets.all(8.0),
+                  //   child: Text("No plans created yet!"),
+                  // ),
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text("Use the buttons in the upper right corner to:", softWrap: true, maxLines: 3),
+                  ),
+                  Text("- Create a new plan / collection\n- Save the active plan\n- Import a KML file"),
+                ],
+              ))
+            : ListView.builder(
+                itemCount: plans.loadedPlans.length,
+                itemBuilder: (context, index) => PlanCard(plans.loadedPlans[keys[index]]!),
+              ),
+      );
+    }));
   }
 }

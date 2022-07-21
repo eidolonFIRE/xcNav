@@ -125,7 +125,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                   ),
                 ]),
                 endActionPane: ActionPane(
-                  extentRatio: 0.15,
+                  extentRatio: 0.3,
                   motion: const ScrollMotion(),
                   children: [
                     SlidableAction(
@@ -146,20 +146,20 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                       backgroundColor: Colors.grey.shade400,
                       foregroundColor: Colors.black,
                     ),
-                    // ReorderableDragStartListener(
-                    //   index: i,
-                    //   child: Container(
-                    //     color: Colors.grey.shade400,
-                    //     child: const Padding(
-                    //       padding: EdgeInsets.all(16.0),
-                    //       child: Icon(
-                    //         Icons.drag_handle,
-                    //         size: 24,
-                    //         color: Colors.black,
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
+                    ReorderableDragStartListener(
+                      index: i,
+                      child: Container(
+                        color: Colors.grey.shade400,
+                        child: const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Icon(
+                            Icons.drag_handle,
+                            size: 24,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 child: WaypointCard(

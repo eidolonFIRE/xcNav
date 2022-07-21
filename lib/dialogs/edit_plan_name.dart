@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:xcnav/providers/plans.dart';
 
 Future<String?> editPlanName(BuildContext context, String? prevName) {
   var formKey = GlobalKey<FormState>();
@@ -45,6 +47,7 @@ Future<String?> editPlanName(BuildContext context, String? prevName) {
                   validator: (value) {
                     if (value != null) {
                       if (value.trim().isEmpty) return "Must not be empty";
+                      if (Provider.of<Plans>(context, listen: false).hasPlan(value)) return "Name already in use";
                     }
                     return null;
                   },

@@ -10,14 +10,15 @@ import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
-import 'package:xcnav/screens/adsb_help.dart';
 
 // screens
+import 'package:xcnav/screens/adsb_help.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/screens/loading.dart';
 import 'package:xcnav/screens/chat.dart';
@@ -59,6 +60,10 @@ void main() {
           ),
           ChangeNotifierProvider(
             create: (_) => ActivePlan(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Plans(),
             lazy: false,
           ),
           ChangeNotifierProvider(

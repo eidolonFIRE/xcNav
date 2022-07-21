@@ -1,29 +1,30 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
+
+// --- Dialogs
 import 'package:xcnav/dialogs/edit_plan_name.dart';
 import 'package:xcnav/dialogs/save_plan.dart';
 import 'package:xcnav/dialogs/select_waypoints.dart';
 
-// --- Models
-import 'package:xcnav/models/flight_plan.dart';
+// --- Providers
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
+import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/settings.dart';
+
+import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
 class PlanCard extends StatefulWidget {
   final FlightPlan plan;
-  final Function onDelete;
 
-  const PlanCard(this.plan, this.onDelete, {Key? key}) : super(key: key);
+  const PlanCard(this.plan, {Key? key}) : super(key: key);
 
   @override
   State<PlanCard> createState() => _PlanCardState();
@@ -31,6 +32,7 @@ class PlanCard extends StatefulWidget {
 
 class _PlanCardState extends State<PlanCard> {
   var formKey = GlobalKey<FormState>();
+  bool isExpanded = false;
 
   void deletePlan(BuildContext context) {
     showDialog(
@@ -43,15 +45,8 @@ class _PlanCardState extends State<PlanCard> {
               // The "Yes" button
               TextButton.icon(
                   onPressed: () {
-                    // Delete the file
-                    widget.plan.getFilename().then((filename) {
-                      File planFile = File(filename);
-                      planFile.exists().then((value) {
-                        planFile.delete();
-                        widget.onDelete();
-                      });
-                      Navigator.popUntil(context, ModalRoute.withName("/plans"));
-                    });
+                    Provider.of<Plans>(context, listen: false).deletePlan(widget.plan.name);
+                    Navigator.popUntil(context, ModalRoute.withName("/plans"));
                   },
                   icon: const Icon(
                     Icons.delete_forever,
@@ -114,23 +109,6 @@ class _PlanCardState extends State<PlanCard> {
         });
   }
 
-  Future rename(BuildContext context, {bool deleteOld = true}) {
-    // TextEditingController filename = TextEditingController();
-    // filename.text = widget.plan.name;
-    Completer completer = Completer();
-    editPlanName(context, widget.plan.name).then((newName) {
-      if (newName != null && newName.isNotEmpty) {
-        widget.plan
-            .rename(newName, deleteOld: deleteOld)
-            .then((_) => Navigator.popUntil(context, ModalRoute.withName("/plans")))
-            .then((value) => completer.complete());
-      } else {
-        completer.complete();
-      }
-    });
-    return completer.future;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -156,6 +134,9 @@ class _PlanCardState extends State<PlanCard> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  IconButton(
+                      onPressed: () => {setState(() => isExpanded = !isExpanded)},
+                      icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more)),
                   PopupMenuButton<String>(
                     onSelected: ((value) {
                       switch (value) {
@@ -179,16 +160,22 @@ class _PlanCardState extends State<PlanCard> {
                           Navigator.pushNamed(context, "/planEditor", arguments: widget.plan);
                           break;
                         case "rename":
-                          rename(context).then((value) => setState(
-                                () {},
-                              ));
-
+                          editPlanName(context, widget.plan.name).then((newName) {
+                            if (newName != null && newName.isNotEmpty) {
+                              final oldName = widget.plan.name;
+                              Navigator.popUntil(context, ModalRoute.withName("/plans"));
+                              Provider.of<Plans>(context, listen: false).renamePlan(oldName, newName);
+                            }
+                          });
                           break;
                         case "duplicate":
-                          rename(context, deleteOld: false).then((value) => widget.onDelete()).then((value) => setState(
-                                () {},
-                              ));
-
+                          editPlanName(context, widget.plan.name).then((newName) {
+                            if (newName != null && newName.isNotEmpty) {
+                              final oldName = widget.plan.name;
+                              Navigator.popUntil(context, ModalRoute.withName("/plans"));
+                              Provider.of<Plans>(context, listen: false).duplicatePlan(oldName, newName);
+                            }
+                          });
                           break;
                         case "delete":
                           deletePlan(context);
@@ -284,117 +271,64 @@ class _PlanCardState extends State<PlanCard> {
               )
             ],
           ),
-          const Divider(
-            height: 10,
-          ),
-          IntrinsicHeight(
-            child: Row(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                // --- Preview Image
-                Column(
-                  children: [
-                    Card(
-                        color: Colors.white,
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width / 2,
-                          height: MediaQuery.of(context).size.width / 2,
-                          child: FlutterMap(
-                              options: MapOptions(
-                                  interactiveFlags: InteractiveFlag.none,
-                                  bounds: widget.plan.getBounds(),
-                                  allowPanningOnScrollingParent: false),
-                              layers: [
-                                TileLayerOptions(
-                                  // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                                  // subdomains: ['a', 'b', 'c'],
-                                  urlTemplate:
-                                      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                                  // tileSize: 512,
-                                  // zoomOffset: -1,
-                                ),
-
-                                // Trip snake lines
-                                PolylineLayerOptions(polylines: widget.plan.buildTripSnake()),
-
-                                // Flight plan markers
-                                PolylineLayerOptions(
-                                  polylines: widget.plan.waypoints
-                                      // .where((value) => value.latlng.length > 1)
-                                      .mapIndexed((i, e) => e.latlng.length > 1
-                                          ? Polyline(
-                                              points: e.latlng,
-                                              strokeWidth: 4,
-                                              color: e.getColor(),
-                                              isDotted: e.isOptional)
-                                          : null)
-                                      .whereNotNull()
-                                      .toList(),
-                                ),
-
-                                // Flight plan paths - directional barbs
-                                MarkerLayerOptions(markers: makePathBarbs(widget.plan.waypoints, false, 30)),
-
-                                // Waypoint Markers
-                                MarkerLayerOptions(
-                                  markers: widget.plan.waypoints
-                                      .mapIndexed((i, e) => e.latlng.length == 1
-                                          ? Marker(
-                                              point: e.latlng[0],
-                                              height: 30,
-                                              width: 30 * 2 / 3,
-                                              builder: (context) => Container(
-                                                  transform: Matrix4.translationValues(0, -15, 0),
-                                                  child: MapMarker(e, 30)))
-                                          : null)
-                                      .whereNotNull()
-                                      .toList(),
-                                ),
-                              ]),
-                        )),
-                  ],
-                ),
-
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // --- Info
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Table(
-                          columnWidths: const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
-                          children: [
-                            TableRow(children: [
-                              const TableCell(child: Text("Total Length")),
-                              TableCell(
-                                  child: (widget.plan.length) > 1
-                                      ? Text.rich(
-                                          TextSpan(children: [
-                                            TextSpan(
-                                                text: convertDistValueCoarse(
-                                                        Provider.of<Settings>(context, listen: false).displayUnitsDist,
-                                                        widget.plan.length)
-                                                    .toStringAsFixed(1)),
-                                            TextSpan(
-                                                text: unitStrDistCoarse[
-                                                    Provider.of<Settings>(context, listen: false).displayUnitsDist]),
-                                          ]),
-                                          textAlign: TextAlign.end,
-                                        )
-                                      : Container()),
-                            ]),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          if (isExpanded)
+            const Divider(
+              height: 10,
             ),
-          ),
+          if (isExpanded)
+            AspectRatio(
+              // width: MediaQuery.of(context).size.width / 2,
+              // height: MediaQuery.of(context).size.width / 2,
+              aspectRatio: 1.5,
+              child: FlutterMap(
+                  options: MapOptions(
+                    bounds: widget.plan.getBounds(),
+                    interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    // allowPanningOnScrollingParent: false
+                  ),
+                  layers: [
+                    TileLayerOptions(
+                      // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      // subdomains: ['a', 'b', 'c'],
+                      urlTemplate:
+                          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                      // tileSize: 512,
+                      // zoomOffset: -1,
+                    ),
+
+                    // Trip snake lines
+                    PolylineLayerOptions(polylines: widget.plan.buildTripSnake()),
+
+                    // Flight plan markers
+                    PolylineLayerOptions(
+                      polylines: widget.plan.waypoints
+                          // .where((value) => value.latlng.length > 1)
+                          .mapIndexed((i, e) => e.latlng.length > 1
+                              ? Polyline(points: e.latlng, strokeWidth: 4, color: e.getColor(), isDotted: e.isOptional)
+                              : null)
+                          .whereNotNull()
+                          .toList(),
+                    ),
+
+                    // Flight plan paths - directional barbs
+                    MarkerLayerOptions(markers: makePathBarbs(widget.plan.waypoints, false, 30)),
+
+                    // Waypoint Markers
+                    MarkerLayerOptions(
+                      markers: widget.plan.waypoints
+                          .mapIndexed((i, e) => e.latlng.length == 1
+                              ? Marker(
+                                  point: e.latlng[0],
+                                  height: 30,
+                                  width: 30 * 2 / 3,
+                                  builder: (context) => Container(
+                                      transform: Matrix4.translationValues(0, -15, 0), child: MapMarker(e, 30)))
+                              : null)
+                          .whereNotNull()
+                          .toList(),
+                    ),
+                  ]),
+            ),
         ]),
       ),
     );
