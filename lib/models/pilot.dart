@@ -33,7 +33,7 @@ class Pilot {
   // Flightplan
   int? selectedWaypoint;
 
-  Pilot.new(this.id, this.name, this.avatarHash, this.geo, this.tier) {
+  Pilot(this.id, this.name, this.avatarHash, this.geo, this.tier) {
     // Load Avatar
     _loadAvatar();
   }

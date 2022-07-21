@@ -312,7 +312,7 @@ class _MyHomePageState extends State<MyHomePage> {
           .pilots
           // Don't consider telemetry older than 5 minutes
           .values
-          .where((_p) => _p.geo.time > DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch)
+          .where((p) => p.geo.time > DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch)
           .map((e) => e.geo.latLng)
           .toList();
       points.add(LatLng(geo.lat, geo.lng));
@@ -419,13 +419,13 @@ class _MyHomePageState extends State<MyHomePage> {
         return Dismissible(
           key: const Key("moreInstruments"),
           resizeDuration: const Duration(milliseconds: 10),
-          child: moreInstrumentsDrawer(),
           direction: DismissDirection.up,
           onDismissed: (event) {
             Navigator.pop(context);
             final wind = Provider.of<Wind>(context, listen: false);
             wind.stop(waitTillSolution: true);
           },
+          child: moreInstrumentsDrawer(),
         );
       },
       // TODO: this could use some tuning
@@ -830,7 +830,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   .pilots
                                   // Don't see locations older than 10minutes
                                   .values
-                                  .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
+                                  .where((p) => p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
                                   .toList()
                                   .map((e) => e.buildFlightTrace())
                                   .toList()),
@@ -887,10 +887,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                         height: 60 * 0.8,
                                         width: 40 * 0.8,
                                         updateMapNearEdge: true,
+                                        useLongPress: true,
                                         offset: const Offset(0, -30 * 0.8),
                                         feedbackOffset: const Offset(0, -30 * 0.8),
                                         onTap: (_) => plan.selectWaypoint(i),
-                                        onDragEnd: (p0, p1) => {
+                                        onLongDragEnd: (p0, p1) => {
                                               plan.moveWaypoint(i, [p1])
                                             },
                                         builder: (context) => Container(
@@ -954,9 +955,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 /// --- GA icon
                                                 Container(
                                                   transformAlignment: const Alignment(0, 0),
-                                                  child: e.getIcon(myTelemetry.geo),
                                                   transform:
                                                       Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
+                                                  child: e.getIcon(myTelemetry.geo),
                                                 ),
 
                                                 /// --- Relative Altitude
@@ -1005,7 +1006,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 .pilots
                                 // Don't see locations older than 10minutes
                                 .values
-                                .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
+                                .where((p) => p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
                                 .toList()
                                 .map((pilot) => Marker(
                                     point: pilot.geo.latLng,
@@ -1032,8 +1033,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                 point: myTelemetry.geo.latLng,
                                 builder: (ctx) => Container(
                                   transformAlignment: const Alignment(0, 0),
-                                  child: Image.asset("assets/images/red_arrow.png"),
                                   transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
+                                  child: Image.asset("assets/images/red_arrow.png"),
                                 ),
                               ),
                             ],
@@ -1056,7 +1057,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             children: Provider.of<Group>(context)
                                 .pilots
                                 .values
-                                .where((_p) => _p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
+                                .where((p) => p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
                                 .where((e) => !markerIsInView(e.geo.latLng))
                                 .map((e) => Builder(builder: (context) {
                                       final theta = (latlngCalc.bearing(mapController.center, e.geo.latLng) +
@@ -1231,9 +1232,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         onPressed: () {
                           setState(() {
-                            var _tmp = editablePolyline.points.toList();
+                            var tmp = editablePolyline.points.toList();
                             editablePolyline.points.clear();
-                            editablePolyline.points.addAll(_tmp.reversed);
+                            editablePolyline.points.addAll(tmp.reversed);
                           });
                         },
                       ),
@@ -1260,8 +1261,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             // --- finish editing path
                             var plan = Provider.of<ActivePlan>(context, listen: false);
                             if (editingIndex == null) {
-                              var _temp = Waypoint("", editablePolyline.points.toList(), false, null, null);
-                              editWaypoint(context, _temp, isNew: focusMode == FocusMode.addPath)?.then((newWaypoint) {
+                              var temp = Waypoint("", editablePolyline.points.toList(), false, null, null);
+                              editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath)?.then((newWaypoint) {
                                 if (newWaypoint != null) {
                                   plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng,
                                       false, newWaypoint.icon, newWaypoint.color);
@@ -1291,6 +1292,16 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: [
                       // --- Compass
                       MapButton(
+                          size: 60,
+                          onPressed: () => {
+                                setState(
+                                  () {
+                                    northLock = !northLock;
+                                    if (northLock) mapController.rotate(0);
+                                  },
+                                )
+                              },
+                          selected: false,
                           child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
                             StreamBuilder(
                                 stream: mapController.mapEventStream,
@@ -1306,17 +1317,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                               fit: BoxFit.none,
                                             ),
                                     )),
-                          ]),
-                          size: 60,
-                          onPressed: () => {
-                                setState(
-                                  () {
-                                    northLock = !northLock;
-                                    if (northLock) mapController.rotate(0);
-                                  },
-                                )
-                              },
-                          selected: false),
+                          ])),
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [

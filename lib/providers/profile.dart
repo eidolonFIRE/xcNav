@@ -88,7 +88,7 @@ class Profile with ChangeNotifier {
 
     // Save avatar to file
     path_provider.getTemporaryDirectory().then((tempDir) {
-      var outfile = File(tempDir.path + "/avatar.jpg");
+      var outfile = File("${tempDir.path}/avatar.jpg");
       outfile.writeAsBytes(newRawAvatar);
     });
 
@@ -127,7 +127,7 @@ class Profile with ChangeNotifier {
 
   String _hash() {
     // build long string
-    String str = "Meta" + (name ?? "") + (id ?? "") + (avatarHash ?? "") + (tier ?? "");
+    String str = "Meta${name ?? ""}${id ?? ""}${avatarHash ?? ""}${tier ?? ""}";
 
     // fold string into hash
     int hash = 0;

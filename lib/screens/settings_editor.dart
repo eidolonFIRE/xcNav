@@ -263,7 +263,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
 
                                         // Remove Avatar saved file
                                         path_provider.getTemporaryDirectory().then((tempDir) {
-                                          var outfile = File(tempDir.path + "/avatar.jpg");
+                                          var outfile = File("${tempDir.path}/avatar.jpg");
                                           outfile.exists().then((value) => {if (value) outfile.delete()});
                                         });
 

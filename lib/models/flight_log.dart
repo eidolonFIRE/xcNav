@@ -25,8 +25,8 @@ class FlightLog {
     _filename = filename;
 
     try {
-      List<dynamic> _dataSamples = data["samples"];
-      samples = _dataSamples.map((e) => Geo.fromJson(e)).toList();
+      List<dynamic> dataSamples = data["samples"];
+      samples = dataSamples.map((e) => Geo.fromJson(e)).toList();
 
       var date = DateTime.fromMillisecondsSinceEpoch(samples[0].time);
       title = DateFormat("MMM d - yyyy").format(date);
@@ -81,7 +81,7 @@ class FlightLog {
     const numStyles = 1;
     List<String> styles = [];
     for (int i = 0; i < numStyles; i++) {
-      final String lineColor = "ff" + colorWheel(-i / (max(1, numStyles - 1)) * 2 / 3 + 1 / 3);
+      final String lineColor = "ff${colorWheel(-i / (max(1, numStyles - 1)) * 2 / 3 + 1 / 3)}";
 
       styles.add("""<Style id="style$i">
     <LineStyle>

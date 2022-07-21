@@ -12,13 +12,13 @@ class PastGroup {
   late final String id;
   late final DateTime timestamp;
 
-  PastGroup.new(this.id, this.timestamp, this.pilots);
+  PastGroup(this.id, this.timestamp, this.pilots);
   PastGroup.fromJson(Map<String, dynamic> json) {
     id = json["id"];
     timestamp = DateTime.fromMillisecondsSinceEpoch(json["timestamp"]);
     for (Map<String, dynamic> each in json["pilots"]) {
-      Pilot _p = Pilot.fromJson(each);
-      pilots.add(_p);
+      Pilot p = Pilot.fromJson(each);
+      pilots.add(p);
     }
   }
 
@@ -88,9 +88,9 @@ class Group with ChangeNotifier {
       prefs = value;
 
       // Load past groups
-      var _pastGroupsRaw = prefs!.getStringList("me.pastGroups");
-      if (_pastGroupsRaw != null) {
-        pastGroups = _pastGroupsRaw.map((e) => PastGroup.fromJson(jsonDecode(e))).toList();
+      var pastGroupsRaw = prefs!.getStringList("me.pastGroups");
+      if (pastGroupsRaw != null) {
+        pastGroups = pastGroupsRaw.map((e) => PastGroup.fromJson(jsonDecode(e))).toList();
 
         debugPrint("Loaded ${pastGroups.length} past groups.");
 
@@ -145,14 +145,14 @@ class Group with ChangeNotifier {
   }
 
   void fixPilotSelectionsOnSort(int oldIndex, int newIndex) {
-    for (final _p in pilots.values) {
-      if (_p.selectedWaypoint != null) {
-        if (_p.selectedWaypoint == oldIndex) {
-          _p.selectedWaypoint = newIndex;
-        } else if (newIndex <= _p.selectedWaypoint! && oldIndex > _p.selectedWaypoint!) {
-          _p.selectedWaypoint = _p.selectedWaypoint! + 1;
-        } else if (_p.selectedWaypoint! <= newIndex && _p.selectedWaypoint! > oldIndex) {
-          _p.selectedWaypoint = _p.selectedWaypoint! - 1;
+    for (final p in pilots.values) {
+      if (p.selectedWaypoint != null) {
+        if (p.selectedWaypoint == oldIndex) {
+          p.selectedWaypoint = newIndex;
+        } else if (newIndex <= p.selectedWaypoint! && oldIndex > p.selectedWaypoint!) {
+          p.selectedWaypoint = p.selectedWaypoint! + 1;
+        } else if (p.selectedWaypoint! <= newIndex && p.selectedWaypoint! > oldIndex) {
+          p.selectedWaypoint = p.selectedWaypoint! - 1;
         }
       }
     }

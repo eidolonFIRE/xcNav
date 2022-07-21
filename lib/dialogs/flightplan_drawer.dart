@@ -260,7 +260,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                           style: instrLabel),
                       if (myTelemetry.inFlight)
                         TextSpan(
-                          text: "   " + etaTripValue,
+                          text: "   $etaTripValue",
                           style: instrLower,
                         ),
                       if (myTelemetry.inFlight) TextSpan(text: etaTripUnit, style: instrLabel),

@@ -85,20 +85,20 @@ class SoundingPlotThermPainter extends CustomPainter {
 
     // --- Dry Adiabats
     for (int t = 1; t <= numThermLines; t++) {
-      List<Offset> _points = [];
+      List<Offset> points = [];
       for (double elev = 0; elev <= ceil; elev += ceil / 10) {
         final y = elev / ceil * size.height;
         final temp = dryLapse(
             pressureFromElevation(elev, 1013.25), thermFloor + (thermCeil - thermFloor) / numThermLines * t, 1013.25);
         final x = toX(temp);
-        _points.add(Offset(x + skew * y, size.height - y));
+        points.add(Offset(x + skew * y, size.height - y));
       }
-      canvas.drawPoints(PointMode.polygon, _points, _paintDryAd);
+      canvas.drawPoints(PointMode.polygon, points, _paintDryAd);
     }
 
     // --- Wet Adiabats
     for (int t = 1; t <= numThermLines; t++) {
-      List<Offset> _points = [];
+      List<Offset> points = [];
       double prevTemp = thermFloor + (thermCeil - thermFloor) / numThermLines * t + celsiusToK;
       double prevP = 1013.25;
       for (double elev = 0; elev <= ceil; elev += ceil / 10) {
@@ -108,11 +108,11 @@ class SoundingPlotThermPainter extends CustomPainter {
 
         final x = toX(newTemp - celsiusToK);
 
-        _points.add(Offset(x + skew * y, size.height - y));
+        points.add(Offset(x + skew * y, size.height - y));
         prevP = p;
         prevTemp = newTemp;
       }
-      canvas.drawPoints(PointMode.polygon, _points, _paintWetAd);
+      canvas.drawPoints(PointMode.polygon, points, _paintWetAd);
     }
 
     // --- Temperature
@@ -152,12 +152,12 @@ class SoundingPlotThermPainter extends CustomPainter {
     final myBaroY =
         max(0, min(size.height, size.height - getElevation(myBaro, 1013.25) * size.height / ceil)).toDouble();
     canvas.drawLine(Offset(4, myBaroY), Offset(size.width - 4, myBaroY), _paintGrid..strokeWidth = 2);
-    var _path = Path();
-    _path.addPolygon([Offset(2, myBaroY + 5), Offset(10, myBaroY), Offset(2, myBaroY - 5)], true);
-    _path.addPolygon(
+    var path = Path();
+    path.addPolygon([Offset(2, myBaroY + 5), Offset(10, myBaroY), Offset(2, myBaroY - 5)], true);
+    path.addPolygon(
         [Offset(size.width - 2, myBaroY + 5), Offset(size.width - 10, myBaroY), Offset(size.width - 2, myBaroY - 5)],
         true);
-    canvas.drawPath(_path, _paintBarb);
+    canvas.drawPath(path, _paintBarb);
   }
 
   @override

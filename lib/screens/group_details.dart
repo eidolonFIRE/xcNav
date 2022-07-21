@@ -69,32 +69,32 @@ class _GroupDetailsState extends State<GroupDetails> {
         body: Consumer2<Group, Settings>(
             builder: (context, group, settings, child) => ListView(
                 children: group.pilots.values
-                    .map((_p) => ListTile(
-                          leading: AvatarRound(_p.avatar, 28, tier: _p.tier),
+                    .map((p) => ListTile(
+                          leading: AvatarRound(p.avatar, 28, tier: p.tier),
                           title: Row(children: [
                             Text(
-                              _p.name,
+                              p.name,
                               style: Theme.of(context).textTheme.headline5,
                             ),
-                            if (isTierRecognized(_p.tier))
+                            if (isTierRecognized(p.tier))
                               Padding(
                                 padding: const EdgeInsets.only(left: 10),
-                                child: tierBadge(_p.tier),
+                                child: tierBadge(p.tier),
                               )
                           ]),
-                          subtitle: (_p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
+                          subtitle: (p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
                               ? Text.rich(TextSpan(children: [
                                   // speed
                                   TextSpan(
                                       style: valueStyle,
                                       text:
-                                          convertSpeedValue(settings.displayUnitsSpeed, _p.geo.spd).toStringAsFixed(0)),
+                                          convertSpeedValue(settings.displayUnitsSpeed, p.geo.spd).toStringAsFixed(0)),
                                   TextSpan(style: unitStyle, text: unitStrSpeed[settings.displayUnitsSpeed]),
                                   TextSpan(style: fillStyle, text: ", at "),
                                   // alt
                                   TextSpan(
                                       style: valueStyle,
-                                      text: convertDistValueFine(settings.displayUnitsDist, _p.geo.alt)
+                                      text: convertDistValueFine(settings.displayUnitsDist, p.geo.alt)
                                           .toStringAsFixed(0)),
                                   TextSpan(style: unitStyle, text: unitStrDistFine[settings.displayUnitsDist]),
                                   TextSpan(style: fillStyle, text: " MSL, "),
@@ -102,7 +102,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                                   TextSpan(
                                       style: valueStyle,
                                       text: convertDistValueCoarse(settings.displayUnitsDist,
-                                              _p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo))
+                                              p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo))
                                           .toStringAsFixed(1)),
                                   TextSpan(style: unitStyle, text: unitStrDistCoarse[settings.displayUnitsDist]),
                                   TextSpan(style: fillStyle, text: " away"),

@@ -40,7 +40,7 @@ class WaypointCard extends StatelessWidget {
       color: isSelected ? Colors.grey.shade200 : Colors.grey.shade900,
       key: ValueKey(waypoint),
       margin: const EdgeInsets.all(0),
-      constraints: BoxConstraints(maxHeight: 100),
+      constraints: const BoxConstraints(maxHeight: 100),
       child: IntrinsicHeight(
         child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Column(
@@ -57,10 +57,7 @@ class WaypointCard extends StatelessWidget {
                     clipBehavior: Clip.none,
                     children: [
                       SvgPicture.asset(
-                        "assets/images/wp" +
-                            (waypoint.latlng.length > 1 ? "_path" : "") +
-                            (waypoint.isOptional ? "_optional" : "") +
-                            ".svg",
+                        "assets/images/wp${waypoint.latlng.length > 1 ? "_path" : ""}${waypoint.isOptional ? "_optional" : ""}.svg",
                         height: 56,
                         color: waypoint.getColor(),
                       ),
@@ -85,6 +82,7 @@ class WaypointCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextButton(
+                    onPressed: onSelect,
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text.rich(
@@ -105,11 +103,8 @@ class WaypointCard extends StatelessWidget {
                           // --- Length
                           if (waypoint.latlng.length > 1)
                             TextSpan(
-                                text: " (" +
-                                    printValue(
-                                        value: convertDistValueCoarse(settings.displayUnitsDist, waypoint.length),
-                                        digits: 3,
-                                        decimals: 1),
+                                text:
+                                    " (${printValue(value: convertDistValueCoarse(settings.displayUnitsDist, waypoint.length), digits: 3, decimals: 1)}",
                                 style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
                           if (waypoint.latlng.length > 1)
                             TextSpan(
@@ -123,7 +118,6 @@ class WaypointCard extends StatelessWidget {
                         textAlign: TextAlign.start,
                       ),
                     ),
-                    onPressed: onSelect,
                   ),
                 ),
 

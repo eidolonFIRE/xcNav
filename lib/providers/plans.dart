@@ -27,22 +27,22 @@ class Plans with ChangeNotifier {
 
   void refreshPlansFromDirectory() async {
     debugPrint("Refreshing Plans From Directory");
-    final Directory _appDocDir = await getApplicationDocumentsDirectory();
-    final Directory _appDocDirFolder = Directory("${_appDocDir.path}/flight_plans/");
-    if (await _appDocDirFolder.exists()) {
+    final Directory appDocDir = await getApplicationDocumentsDirectory();
+    final Directory appDocDirFolder = Directory("${appDocDir.path}/flight_plans/");
+    if (await appDocDirFolder.exists()) {
       _loadedPlans.clear();
       // Async load in all the files
 
-      var files = await _appDocDirFolder.list(recursive: false, followLinks: false).toList();
+      var files = await appDocDirFolder.list(recursive: false, followLinks: false).toList();
       // debugPrint("${files.length} log files found.");
       List<Completer> completers = [];
       for (var each in files) {
-        var _completer = Completer();
-        completers.add(_completer);
+        var completer = Completer();
+        completers.add(completer);
         File.fromUri(each.uri).readAsString().then((value) {
-          var _plan = FlightPlan.fromJson(each.uri.pathSegments.last.replaceAll(".json", ""), jsonDecode(value));
-          if (_plan.waypoints.isNotEmpty) {
-            _loadedPlans[_plan.name] = _plan;
+          var plan = FlightPlan.fromJson(each.uri.pathSegments.last.replaceAll(".json", ""), jsonDecode(value));
+          if (plan.waypoints.isNotEmpty) {
+            _loadedPlans[plan.name] = plan;
           } else {
             // plan was empty, delete it
             File planFile = File.fromUri(each.uri);
@@ -51,7 +51,7 @@ class Plans with ChangeNotifier {
             });
           }
 
-          _completer.complete();
+          completer.complete();
         });
       }
       // debugPrint("${completers.length} completers created.");

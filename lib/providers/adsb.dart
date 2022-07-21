@@ -188,12 +188,12 @@ class ADSB with ChangeNotifier {
       }
 
       debugPrint("Opening ADSB listen on ${address.toString()}:4000");
-      RawDatagramSocket.bind(address, 4000).then((_sock) {
-        sock = _sock;
+      RawDatagramSocket.bind(address, 4000).then((sock) {
+        sock = sock;
 
-        _sock.listen((event) {
+        sock.listen((event) {
           // debugPrint("ADSB event: ${event.toString()}");
-          Datagram? dg = _sock.receive();
+          Datagram? dg = sock.receive();
           if (dg != null) {
             // debugPrint("${dg.data.toString()}");
             heartbeat();
@@ -304,7 +304,7 @@ class ADSB with ChangeNotifier {
         convertDistValueCoarse(settings.displayUnitsDist, latlngCalc.distance(ga.latlng, observer.latLng)).toInt();
     final String distMsg =
         ((dist > 0) ? dist.toStringAsFixed(0) : "less than one") + unitStrDistCoarseVerbal[settings.displayUnitsDist]!;
-    final String? etaStr = eta != null ? eta.toStringAsFixed(0) + " seconds out" : null;
+    final String? etaStr = eta != null ? "${eta.toStringAsFixed(0)} seconds out" : null;
 
     // vertical separation
     String vertSep = ".";

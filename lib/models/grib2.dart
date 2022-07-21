@@ -32,7 +32,7 @@ class Section {
   double? baroElev;
   List<List<double>>? data;
 
-  Uint8List offsetData(Uint8List _data) => _data.sublist(start, end);
+  Uint8List offsetData(Uint8List data) => data.sublist(start, end);
 
   Section(this.start, this.end);
 }
@@ -51,22 +51,22 @@ List<Section> parseRawFile(Uint8List data) {
   List<Section> sections = [];
 
   // Find "GRIB" sections
-  int _sectionStart = 0;
-  int _sectionEnd = 0;
+  int sectionStart = 0;
+  int sectionEnd = 0;
   for (int i = 0; i < data.length; i++) {
-    if (String.fromCharCodes(data.sublist(i, min(i + 4, data.length - 1))) == "GRIB") _sectionStart = i;
+    if (String.fromCharCodes(data.sublist(i, min(i + 4, data.length - 1))) == "GRIB") sectionStart = i;
     if (i == data.length - 1 || String.fromCharCodes(data.sublist(i, min(i + 8, data.length - 1))) == "7777GRIB") {
-      _sectionEnd = i;
-      sections.add(Section(_sectionStart, _sectionEnd));
+      sectionEnd = i;
+      sections.add(Section(sectionStart, sectionEnd));
       // debugPrint("Section: $_sectionStart - $_sectionEnd");
     }
   }
 
   // Process Each GRIB section
-  for (var _s in sections) {
+  for (var s in sections) {
     // debugPrint("\n=== Section: ${_s.start} (${_s.end - _s.start})");
     // debugPrint("GRIB version: ${_s.offsetData(data)[7]}");
-    var d = _s.offsetData(data).sublist(16);
+    var d = s.offsetData(data).sublist(16);
 
     // --- Identification
     // debugPrint("--- ${d[4]}) Identification (${_int32(0, d)})");
@@ -107,7 +107,7 @@ List<Section> parseRawFile(Uint8List data) {
     // debugPrint("Meridian 1: ${_int32(65, d) * 10e-7}");
     // debugPrint("Meridian 2: ${_int32(65, d) * 10e-7}");
 
-    _s.gridConfig = GridConfig(numX: numX, numY: numY, la1: la1, lo1: lo1, dX: dX, dY: dY, latRef: latRef);
+    s.gridConfig = GridConfig(numX: numX, numY: numY, la1: la1, lo1: lo1, dX: dX, dY: dY, latRef: latRef);
 
     d = d.sublist(_int32(0, d));
 
@@ -121,7 +121,7 @@ List<Section> parseRawFile(Uint8List data) {
     }
     final prodCat = d[9];
     final prodParam = d[10];
-    final prodName = lutProduct[prodCat.toString() + "," + prodParam.toString()] ?? "Unknown";
+    final prodName = lutProduct["${prodCat.toString()},${prodParam.toString()}"] ?? "Unknown";
     final surfaceType = d[22];
     // debugPrint("Surface Type: ${lutSurfaceType[d[22]] ?? "Unknown"}");
 
@@ -217,10 +217,10 @@ List<Section> parseRawFile(Uint8List data) {
       // debugPrint(line);
       // }
 
-      _s.product = prodName;
+      s.product = prodName;
       // For surface type 103, force to ground level (default ambient barometric pressure)
-      _s.baroElev = surfaceType == 103 ? 1013.25 : scaleV / 100;
-      _s.data = bitmap;
+      s.baroElev = surfaceType == 103 ? 1013.25 : scaleV / 100;
+      s.data = bitmap;
     }
   }
   return sections;

@@ -75,12 +75,12 @@ class SoundingPlotWindPainter extends CustomPainter {
     final myBaroY =
         max(0, min(size.height, size.height - getElevation(myBaro, 1013.25) * size.height / ceil)).toDouble();
     canvas.drawLine(Offset(4, myBaroY), Offset(size.width - 4, myBaroY), _paintGrid..strokeWidth = 2);
-    var _path = Path();
-    _path.addPolygon([Offset(2, myBaroY + 5), Offset(10, myBaroY), Offset(2, myBaroY - 5)], true);
-    _path.addPolygon(
+    var path = Path();
+    path.addPolygon([Offset(2, myBaroY + 5), Offset(10, myBaroY), Offset(2, myBaroY - 5)], true);
+    path.addPolygon(
         [Offset(size.width - 2, myBaroY + 5), Offset(size.width - 10, myBaroY), Offset(size.width - 2, myBaroY - 5)],
         true);
-    canvas.drawPath(_path, _paintBarb);
+    canvas.drawPath(path, _paintBarb);
   }
 
   @override

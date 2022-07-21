@@ -346,9 +346,9 @@ class _PlanEditorState extends State<PlanEditor> {
                                 style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
                             onPressed: () {
                               setState(() {
-                                var _temp = editablePolyline.toList();
+                                var temp = editablePolyline.toList();
                                 editablePolyline.clear();
-                                editablePolyline.addAll(_temp.reversed);
+                                editablePolyline.addAll(temp.reversed);
                               });
                             },
                           )),
@@ -385,8 +385,8 @@ class _PlanEditorState extends State<PlanEditor> {
                       iconSize: 25,
                       icon: const ImageIcon(AssetImage("assets/images/add_waypoint_path.png"), color: Colors.yellow),
                       onPressed: () {
-                        var _temp = Waypoint("", [], false, null, null);
-                        editWaypoint(context, _temp, isNew: true, isPath: true)?.then((newWaypoint) {
+                        var temp = Waypoint("", [], false, null, null);
+                        editWaypoint(context, temp, isNew: true, isPath: true)?.then((newWaypoint) {
                           if (newWaypoint != null) {
                             plan!.waypoints.add(newWaypoint);
                             beginEditingPolyline(plan!.waypoints.length - 1);

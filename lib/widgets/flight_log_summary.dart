@@ -58,7 +58,7 @@ class FlightLogSummary extends StatelessWidget {
                                 ? getApplicationDocumentsDirectory()
                                 : Future(() => Directory('/storage/emulated/0/Documents')))
                             .then((Directory path) {
-                          var outFile = File(path.path + "/xcNav_kml/$filename.kml");
+                          var outFile = File("${path.path}/xcNav_kml/$filename.kml");
                           outFile
                               .create(recursive: true)
                               .then((value) => value.writeAsString(log.toKML()).then((value) => showDialog(
@@ -187,8 +187,8 @@ class FlightLogSummary extends StatelessWidget {
                                   size: 18,
                                 )),
                                 TextSpan(
-                                    text: "  " +
-                                        dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time))),
+                                    text:
+                                        "  ${dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time))}"),
                               ]),
                               textAlign: TextAlign.center,
                             ),
@@ -201,8 +201,8 @@ class FlightLogSummary extends StatelessWidget {
                               TextSpan(children: [
                                 const WidgetSpan(child: Icon(Icons.flight_land, size: 18)),
                                 TextSpan(
-                                  text: "  " +
-                                      dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.last.time)),
+                                  text:
+                                      "  ${dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.last.time))}",
                                 )
                               ]),
                               textAlign: TextAlign.center,

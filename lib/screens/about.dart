@@ -10,7 +10,7 @@ class About extends StatefulWidget {
 }
 
 class _AboutState extends State<About> with SingleTickerProviderStateMixin {
-  final TextStyle _contributerStyle = const TextStyle(fontSize: 18);
+  final TextStyle contributerStyle = const TextStyle(fontSize: 18);
 
   late final Animation<Color?> animation;
 

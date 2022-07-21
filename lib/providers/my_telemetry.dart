@@ -54,13 +54,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   @override
   void dispose() {
     _save();
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   MyTelemetry() {
     _load();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   void _load() async {
@@ -108,7 +108,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           List<dynamic> stationList = msgPoint["observationStations"];
           for (String each in stationList) {
             if (stationFound) break;
-            await http.get(Uri.parse(each + "/observations/latest")).then((responseStation) {
+            await http.get(Uri.parse("$each/observations/latest")).then((responseStation) {
               try {
                 var msgStation = jsonDecode(responseStation.body);
                 if (msgStation["properties"] != null && msgStation["properties"]["seaLevelPressure"]["value"] != null) {
@@ -120,7 +120,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                 }
               } catch (e) {
                 debugPrint("Failed to get station info. $e");
-                debugPrint(Uri.parse(each + "/observations/latest").toString());
+                debugPrint(Uri.parse("$each/observations/latest").toString());
                 debugPrint(responseStation.body);
               }
             });

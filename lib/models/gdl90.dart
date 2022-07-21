@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:xcnav/models/ga.dart';
@@ -19,8 +18,8 @@ GA? _decodeTraffic(Uint8List data) {
   final double lat = _decode24bit(data.sublist(4, 7)) * 180.0 / 0x7fffff;
   final double lng = _decode24bit(data.sublist(7, 10)) * 180.0 / 0x7fffff;
 
-  final Uint8List _altRaw = data.sublist(10, 12);
-  final double alt = ((((_altRaw[0] << 4) + (_altRaw[1] >> 4)) * 25) - 1000) / meters2Feet;
+  final Uint8List altRaw = data.sublist(10, 12);
+  final double alt = ((((altRaw[0] << 4) + (altRaw[1] >> 4)) * 25) - 1000) / meters2Feet;
 
   final double hdg = data[16] * 360 / 256.0;
   final double spd = ((data[13] << 4) + (data[14] >> 4)) * 0.51444;

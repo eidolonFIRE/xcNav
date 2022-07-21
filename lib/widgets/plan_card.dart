@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ffi';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
@@ -15,10 +14,8 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/providers/settings.dart';
 
 import 'package:xcnav/models/flight_plan.dart';
-import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';

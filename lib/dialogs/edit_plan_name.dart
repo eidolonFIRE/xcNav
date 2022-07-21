@@ -18,7 +18,7 @@ Future<String?> editPlanName(BuildContext context, String? prevName) {
       context: context,
       builder: (context) {
         return AlertDialog(
-            title: Text(((prevName != null && prevName.isNotEmpty) ? "Rename" : "New") + " Plan / Collection"),
+            title: Text("${((prevName != null && prevName.isNotEmpty) ? "Rename" : "New")} Plan / Collection"),
             actions: [
               TextButton.icon(
                   label: const Text("Cancel"),

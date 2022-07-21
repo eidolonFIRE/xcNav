@@ -168,6 +168,8 @@ class _QRScannerState extends State<QRScanner> {
         joinCode(scanData.code!);
       }
     });
+    this.controller!.pauseCamera();
+    this.controller!.resumeCamera();
   }
 
   void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {

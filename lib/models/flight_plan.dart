@@ -88,7 +88,7 @@ class FlightPlan {
 
   double _calcLength() {
     // --- Calculate Stuff
-    double _length = 0;
+    double length = 0;
     int? prevIndex;
     for (int i = 0; i < waypoints.length; i++) {
       // skip optional waypoints
@@ -98,18 +98,18 @@ class FlightPlan {
       if (prevIndex != null) {
         // Will take the last point of the previous waypoint
         LatLng prevLatlng = waypoints[prevIndex].latlng.last;
-        _length += latlngCalc.distance(wpIndex.latlng.first, prevLatlng);
+        length += latlngCalc.distance(wpIndex.latlng.first, prevLatlng);
       }
 
       // include lengths for paths
-      _length += wpIndex.length;
+      length += wpIndex.length;
 
       prevIndex = i;
     }
-    return _length;
+    return length;
   }
 
-  FlightPlan.new(this.name) {
+  FlightPlan(this.name) {
     waypoints = [];
     goodFile = true;
   }
@@ -122,8 +122,8 @@ class FlightPlan {
 
   FlightPlan.fromJson(this.name, dynamic data) {
     try {
-      List<dynamic> _dataSamples = data["waypoints"];
-      waypoints = _dataSamples.map((e) => Waypoint.fromJson(e)).toList();
+      List<dynamic> dataSamples = data["waypoints"];
+      waypoints = dataSamples.map((e) => Waypoint.fromJson(e)).toList();
 
       _calcLength();
 
@@ -147,13 +147,13 @@ class FlightPlan {
                 .trim()
                 .split("\n")
                 .map((e) {
-              final _raw = e.split(",");
-              return LatLng(double.parse(_raw[1]), double.parse(_raw[0]));
+              final raw = e.split(",");
+              return LatLng(double.parse(raw[1]), double.parse(raw[0]));
             }).toList();
 
             final styleElement = document
                 .findAllElements("Style")
-                .where((_e) => _e.getAttribute("id")!.startsWith(element.getElement("styleUrl")!.text.substring(1)));
+                .where((e) => e.getAttribute("id")!.startsWith(element.getElement("styleUrl")!.text.substring(1)));
             String? colorText =
                 (styleElement.first.getElement("IconStyle") ?? styleElement.first.getElement("LineStyle"))
                     ?.getElement("color")

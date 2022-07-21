@@ -34,9 +34,9 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
   }
 
   void refreshLogsFromDirectory() async {
-    final Directory _appDocDir = await getApplicationDocumentsDirectory();
-    final Directory _appDocDirFolder = Directory("${_appDocDir.path}/flight_logs/");
-    if (await _appDocDirFolder.exists()) {
+    final Directory appDocDir = await getApplicationDocumentsDirectory();
+    final Directory appDocDirFolder = Directory("${appDocDir.path}/flight_logs/");
+    if (await appDocDirFolder.exists()) {
       //if folder already exists return path
       setState(() {
         loaded = false;
@@ -45,12 +45,12 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
       logs.clear();
 
       // Async load in all the files
-      var files = await _appDocDirFolder.list(recursive: false, followLinks: false).toList();
+      var files = await appDocDirFolder.list(recursive: false, followLinks: false).toList();
       // debugPrint("${files.length} log files found.");
       List<Completer> completers = [];
       for (var each in files) {
-        var _completer = Completer();
-        completers.add(_completer);
+        var completer = Completer();
+        completers.add(completer);
         File.fromUri(each.uri).readAsString().then((value) {
           try {
             logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
@@ -62,7 +62,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
               debugPrint("Failed to load log: ${each.uri.path}");
             }
           }
-          _completer.complete();
+          completer.complete();
         });
       }
       // debugPrint("${completers.length} completers created.");

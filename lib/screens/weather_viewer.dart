@@ -37,7 +37,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
               children: [
                 /// === View Sounding at current geo
                 FutureBuilder<Sounding?>(
-                    future: Provider.of<Weather>(context, listen: false).getSounding(),
+                    future: Provider.of<Weather>(context).getSounding(),
                     builder: (context, sounding) {
                       if (sounding.hasData && sounding.data != null) {
                         double myBaro = Provider.of<MyTelemetry>(context, listen: false).baro?.hectpascal ??
@@ -90,13 +90,13 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                                 style: const TextStyle(color: Colors.blue),
                                                 text: sample.dpt == null
                                                     ? "?"
-                                                    : cToF(sample.dpt)!.toStringAsFixed(0) + " F"),
+                                                    : "${cToF(sample.dpt)!.toStringAsFixed(0)} F"),
                                             const TextSpan(text: ",  "),
                                             TextSpan(
                                                 style: const TextStyle(color: Colors.red),
                                                 text: sample.tmp == null
                                                     ? "?"
-                                                    : cToF(sample.tmp)!.toStringAsFixed(0) + " F"),
+                                                    : "${cToF(sample.tmp)!.toStringAsFixed(0)} F"),
                                           ]),
                                           style: const TextStyle(fontSize: 24),
                                           textAlign: TextAlign.center,

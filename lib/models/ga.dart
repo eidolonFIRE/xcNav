@@ -63,6 +63,6 @@ class GA {
 
   GA(this.id, this.latlng, this.alt, this.spd, this.hdg, this.type, this.timestamp) {
     // debugPrint("GA $id (${gaTypeStr[type]}): $latlng, $spd m/s  $alt m, $hdg deg");
-    debugPrint("GA \"${id}\" $latlng, $spd m/s  $alt m, $hdg deg");
+    debugPrint("GA \"$id\" $latlng, $spd m/s  $alt m, $hdg deg");
   }
 }

@@ -1,8 +1,5 @@
-import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/edit_plan_name.dart';
@@ -67,8 +64,8 @@ class _PlansViewerState extends State<PlansViewer> {
                 onPressed: () {
                   editPlanName(context, null).then((value) {
                     if (value != null && value != "") {
-                      var _plan = FlightPlan.new(value);
-                      Navigator.pushNamed(context, "/planEditor", arguments: _plan);
+                      var plan = FlightPlan(value);
+                      Navigator.pushNamed(context, "/planEditor", arguments: plan);
                     }
                   });
                 },

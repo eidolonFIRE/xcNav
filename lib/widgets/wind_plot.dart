@@ -72,15 +72,15 @@ class WindPlotPainter extends CustomPainter {
     final Offset center = Offset(size.width / 2, size.height / 2);
 
     // Paint grid
-    const _pad = 0.9;
+    const pad = 0.9;
     canvas.drawLine(
-        Offset(size.width * (1 - _pad), size.height / 2), Offset(size.width * _pad, size.height / 2), _paintGrid);
+        Offset(size.width * (1 - pad), size.height / 2), Offset(size.width * pad, size.height / 2), _paintGrid);
     canvas.drawLine(
-        Offset(size.width / 2, size.height * (1 - _pad)), Offset(size.width / 2, size.height * _pad), _paintGrid);
+        Offset(size.width / 2, size.height * (1 - pad)), Offset(size.width / 2, size.height * pad), _paintGrid);
 
     // Paint Wind fit
-    final _circleCenter = circleCenter * maxSize / maxValue + center;
-    canvas.drawCircle(_circleCenter, circleRadius * maxSize / maxValue, circlePaint);
+    final cCenter = circleCenter * maxSize / maxValue + center;
+    canvas.drawCircle(cCenter, circleRadius * maxSize / maxValue, circlePaint);
 
     // Paint samples
     for (int i = 0; i < dataX.length; i++) {
@@ -88,18 +88,18 @@ class WindPlotPainter extends CustomPainter {
     }
 
     // Wind barb
-    canvas.drawLine(center, _circleCenter, _barbPaint);
+    canvas.drawLine(center, cCenter, _barbPaint);
     canvas.drawPoints(
         PointMode.polygon,
         [
-          _circleCenter +
+          cCenter +
               Offset(cos(circleCenter.direction - pi / 1.2), sin(circleCenter.direction - pi / 1.2)) *
                   circleCenter.distance *
                   maxSize /
                   maxValue /
                   3,
-          _circleCenter,
-          _circleCenter +
+          cCenter,
+          cCenter +
               Offset(cos(circleCenter.direction + pi / 1.2), sin(circleCenter.direction + pi / 1.2)) *
                   circleCenter.distance *
                   maxSize /

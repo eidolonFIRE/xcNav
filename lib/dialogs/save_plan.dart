@@ -7,7 +7,6 @@ import 'package:xcnav/models/flight_plan.dart';
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/screens/plans_viewer.dart';
 
 /// Returns bool didSave?
 Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
@@ -26,7 +25,7 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
   return showDialog<bool?>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text("Save Active Plan to Library" + (isSavingFirst ? " before it is replaced?" : "")),
+      title: Text("Save Active Plan to Library${isSavingFirst ? " before it is replaced?" : ""}"),
       content: Form(
         key: formKey,
         child: TextFormField(
@@ -41,7 +40,9 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
           validator: (value) {
             if (value != null) {
               if (value.trim().isEmpty) return "Must not be empty";
-              if (Provider.of<Plans>(context, listen: false).hasPlan(value)) return "Name already in use";
+              if (Provider.of<Plans>(context, listen: false).hasPlan(value)) {
+                return "Name already in use";
+              }
             }
             return null;
           },

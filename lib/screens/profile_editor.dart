@@ -47,10 +47,10 @@ class _ProfileEditorState extends State<ProfileEditor> {
     // initial image
     if (profile.avatarRaw != null) {
       path_provider.getTemporaryDirectory().then((tempDir) {
-        var infile = File(tempDir.path + "/avatar.jpg");
+        var infile = File("${tempDir.path}/avatar.jpg");
         infile.exists().then((exists) {
           if (exists) {
-            inputFile = XFile(tempDir.path + "/avatar.jpg");
+            inputFile = XFile("${tempDir.path}/avatar.jpg");
             infile.readAsBytes().then((value) {
               setState(() {
                 inputImage = value;
@@ -65,8 +65,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
     }
 
     // This is a hack to work around the lack of callbacks in the cropper
-    updateLoop =
-        Timer.periodic(const Duration(milliseconds: 500), (timer) async {
+    updateLoop = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
       refreshCropped();
     });
   }
@@ -113,7 +112,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
     // use crop state
     ImageCrop.cropImage(file: File(inputFile!.path), area: area).then((value) {
       path_provider.getTemporaryDirectory().then((dir) {
-        final targetPath = dir.absolute.path + "/temp_${area.toString()}.jpg";
+        final targetPath = "${dir.absolute.path}/temp_${area.toString()}.jpg";
         FlutterImageCompress.compressAndGetFile(value.absolute.path, targetPath,
                 minHeight: 128, minWidth: 128, quality: 90)
             .then((value) => {
@@ -135,8 +134,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
       croppedImage!.readAsBytes().then((value) {
         // (workaround to clear animations)
         Timer(const Duration(seconds: 1), () {
-          Provider.of<Profile>(context, listen: false)
-              .updateNameAvatar(nameController.text, value);
+          Provider.of<Profile>(context, listen: false).updateNameAvatar(nameController.text, value);
           if (isOptional) {
             Navigator.pop(contex);
           } else {
@@ -199,19 +197,11 @@ class _ProfileEditorState extends State<ProfileEditor> {
                             ),
                       // --- buttons
                       Row(
-                        mainAxisAlignment: inputImage != null
-                            ? MainAxisAlignment.start
-                            : MainAxisAlignment.center,
-                        crossAxisAlignment: inputImage != null
-                            ? CrossAxisAlignment.start
-                            : CrossAxisAlignment.center,
+                        mainAxisAlignment: inputImage != null ? MainAxisAlignment.start : MainAxisAlignment.center,
+                        crossAxisAlignment: inputImage != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                         children: [
-                          IconButton(
-                              onPressed: pickGallery,
-                              icon: const Icon(Icons.collections)),
-                          IconButton(
-                              onPressed: pickCamera,
-                              icon: const Icon(Icons.photo_camera))
+                          IconButton(onPressed: pickGallery, icon: const Icon(Icons.collections)),
+                          IconButton(onPressed: pickCamera, icon: const Icon(Icons.photo_camera))
                         ]
                             .map((e) => Padding(
                                   padding: const EdgeInsets.all(4),
