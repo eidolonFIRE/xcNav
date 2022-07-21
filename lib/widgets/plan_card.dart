@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
@@ -20,6 +21,7 @@ import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_card.dart';
 
 class PlanCard extends StatefulWidget {
   final FlightPlan plan;
@@ -33,6 +35,7 @@ class PlanCard extends StatefulWidget {
 class _PlanCardState extends State<PlanCard> {
   var formKey = GlobalKey<FormState>();
   bool isExpanded = false;
+  Set<int> checkedElements = {};
 
   void deletePlan(BuildContext context) {
     showDialog(
@@ -78,6 +81,14 @@ class _PlanCardState extends State<PlanCard> {
       });
     } else {
       _replacePlan(context);
+    }
+  }
+
+  void toggleItem(int index) {
+    if (checkedElements.contains(index)) {
+      checkedElements.remove(index);
+    } else {
+      checkedElements.add(index);
     }
   }
 
@@ -194,18 +205,18 @@ class _PlanCardState extends State<PlanCard> {
                       //   ),
                       // ),
                       // --- Option: Add
-                      PopupMenuItem(
-                          value: "append",
-                          child: ListTile(
-                              title: Text(
-                                "Activate Waypoints",
-                                style: TextStyle(color: Colors.lightGreen, fontSize: 20),
-                              ),
-                              leading: Icon(
-                                Icons.playlist_add,
-                                size: 28,
-                                color: Colors.lightGreen,
-                              ))),
+                      // PopupMenuItem(
+                      //     value: "append",
+                      //     child: ListTile(
+                      //         title: Text(
+                      //           "Activate Waypoints",
+                      //           style: TextStyle(color: Colors.lightGreen, fontSize: 20),
+                      //         ),
+                      //         leading: Icon(
+                      //           Icons.playlist_add,
+                      //           size: 28,
+                      //           color: Colors.lightGreen,
+                      //         ))),
                       // --- Option: Replace
                       PopupMenuItem(
                           value: "replace",
@@ -304,7 +315,11 @@ class _PlanCardState extends State<PlanCard> {
                       polylines: widget.plan.waypoints
                           // .where((value) => value.latlng.length > 1)
                           .mapIndexed((i, e) => e.latlng.length > 1
-                              ? Polyline(points: e.latlng, strokeWidth: 4, color: e.getColor(), isDotted: e.isOptional)
+                              ? Polyline(
+                                  points: e.latlng,
+                                  strokeWidth: checkedElements.contains(i) ? 6 : 4,
+                                  color: e.getColor(),
+                                  isDotted: e.isOptional)
                               : null)
                           .whereNotNull()
                           .toList(),
@@ -316,19 +331,69 @@ class _PlanCardState extends State<PlanCard> {
                     // Waypoint Markers
                     MarkerLayerOptions(
                       markers: widget.plan.waypoints
-                          .mapIndexed((i, e) => e.latlng.length == 1
-                              ? Marker(
+                          .mapIndexed((i, e) {
+                            if (e.latlng.length == 1) {
+                              final bool isChecked = checkedElements.contains(i);
+                              return Marker(
                                   point: e.latlng[0],
-                                  height: 30,
-                                  width: 30 * 2 / 3,
+                                  height: isChecked ? 40 : 30,
+                                  width: (isChecked ? 40 : 30) * 2 / 3,
                                   builder: (context) => Container(
-                                      transform: Matrix4.translationValues(0, -15, 0), child: MapMarker(e, 30)))
-                              : null)
+                                      transform: Matrix4.translationValues(0, isChecked ? (-15 * 4 / 3) : -15, 0),
+                                      child: GestureDetector(
+                                          onTap: () => setState(() => toggleItem(i)),
+                                          child: MapMarker(e, isChecked ? 40 : 30))));
+                            } else {
+                              return null;
+                            }
+                          })
                           .whereNotNull()
                           .toList(),
                     ),
                   ]),
             ),
+          if (isExpanded)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 250),
+              child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: widget.plan.waypoints.length,
+                  itemBuilder: (context, index) => WaypointCard(
+                        index: index,
+                        waypoint: widget.plan.waypoints[index],
+                        onSelect: () {
+                          setState(
+                            () {
+                              toggleItem(index);
+                            },
+                          );
+                        },
+                        onToggleOptional: () {},
+                        isSelected: checkedElements.contains(index),
+                        showPilots: false,
+                      )),
+            ),
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: ElevatedButton.icon(
+                  onPressed: () {
+                    Provider.of<ActivePlan>(context, listen: false).waypoints.addAll(checkedElements.isEmpty
+                        ? widget.plan.waypoints
+                        : checkedElements.map((e) => widget.plan.waypoints[e]).toList());
+                    Provider.of<Client>(context, listen: false).pushFlightPlan();
+                    Navigator.popUntil(context, ModalRoute.withName("/home"));
+                  },
+                  icon: const Icon(
+                    Icons.playlist_add,
+                    color: Colors.lightGreen,
+                  ),
+                  label: Text(
+                    "Activate ${checkedElements.isEmpty ? "All" : "Selected (${checkedElements.length})"}",
+                    style: const TextStyle(fontSize: 18),
+                  )),
+            )
         ]),
       ),
     );
