@@ -206,7 +206,9 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                         showDialog<String>(
                             context: context,
                             builder: (context) => SimpleDialog(
-                                  title: const Text("Save waypoint into plan/collection:"),
+                                  title: Text(Provider.of<Plans>(context, listen: false).loadedPlans.isEmpty
+                                      ? "Oops, make a plan / collection in Waypoints menu first!"
+                                      : "Save waypoint into:"),
                                   children: Provider.of<Plans>(context, listen: false)
                                       .loadedPlans
                                       .keys
