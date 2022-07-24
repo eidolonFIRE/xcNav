@@ -2,22 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:xcnav/models/waypoint.dart';
 
-const iconOptions = {
+final iconOptions = {
   null: Icons.circle,
   "star": Icons.star,
   "x": Icons.close,
-  "paraglider": Icons.paragliding,
-  "exclamation": Icons.priority_high,
   "question": Icons.question_mark,
-  "fuel": Icons.local_gas_station,
+  "exclamation": Icons.priority_high,
+  "flag": Icons.sports_score,
+  "airport": Icons.local_airport,
+  "windsock": "assets/images/icon_windsock.svg",
+  "camp": "assets/images/icon_camp.svg",
+  "paraglider": Icons.paragliding,
   "left": Icons.turn_left,
   "right": Icons.turn_right,
+  "fuel": Icons.local_gas_station,
   "sleep": Icons.local_hotel,
-  "flag": Icons.sports_score,
   "camera": Icons.photo_camera,
-  "airport": Icons.local_airport,
-  // TODO: add custom icons (camping tent, pylons, power lines?, LZ, mountains, etc)
 };
+
+Widget getWpIcon(String? name, double size, Color? color) {
+  final icon = iconOptions[name];
+  if (icon is IconData || icon == null) {
+    return Icon(
+      iconOptions.keys.contains(name) ? iconOptions[name] as IconData : null,
+      size: size,
+      color: color,
+    );
+  } else if (icon is String) {
+    return SizedBox(
+      width: size,
+      child: SvgPicture.asset(
+        icon,
+        color: color ?? Colors.white,
+        width: size,
+        height: size,
+      ),
+    );
+  } else {
+    debugPrint("NULL WP ICON IMAGE!");
+    return Container();
+  }
+}
 
 var colorOptions = {
   "black": Colors.black,
@@ -45,10 +70,7 @@ class MapMarker extends StatelessWidget {
         Center(
           child: Container(
             transform: Matrix4.translationValues(0, -size / 5.5, 0),
-            child: Icon(
-              iconOptions[waypoint.icon],
-              size: size / 2,
-            ),
+            child: getWpIcon(waypoint.icon, size / 2, Colors.white),
           ),
         ),
     ]);

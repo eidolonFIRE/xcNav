@@ -77,45 +77,47 @@ class Wind with ChangeNotifier {
   Wind(BuildContext context) {
     _context = context;
     Provider.of<MyTelemetry>(context, listen: false).addListener(() {
-      final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-      final cardinality = myTelemetry.recordGeo.length;
-      // Conditions for skipping the solve
-      if (cardinality < 2 || windSampleFirst == null || ((windSampleFirst ?? cardinality) > cardinality - 3)) return;
+      if (isRecording) {
+        final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+        final cardinality = myTelemetry.recordGeo.length;
+        // Conditions for skipping the solve
+        if (cardinality < 2 || windSampleFirst == null || ((windSampleFirst ?? cardinality) > cardinality - 3)) return;
 
-      final firstIndex = min(
-          cardinality - 1,
-          max(
-              0,
-              max(((isRecording || windSampleLast == null) ? cardinality - 1 : windSampleLast!) - maxSamples,
-                  windSampleFirst!)));
+        final firstIndex = min(
+            cardinality - 1,
+            max(
+                0,
+                max(((isRecording || windSampleLast == null) ? cardinality - 1 : windSampleLast!) - maxSamples,
+                    windSampleFirst!)));
 
-      // clamp
-      if (windSampleLast != null) {
-        windSampleLast = min(cardinality - 1, windSampleLast!);
-      }
-
-      final List<Geo> samples = myTelemetry.recordGeo.sublist(firstIndex, windSampleLast);
-      if (samples.isNotEmpty) {
-        // Check sampled field-of-view is sufficient for confidence
-        var prev = samples.first.hdg;
-        var left = prev;
-        var right = prev;
-        for (var each in samples) {
-          var cur = each.hdg;
-          while (cur - prev > pi) {
-            cur -= 2 * pi;
-          }
-          while (cur - prev < -pi) {
-            cur += 2 * pi;
-          }
-          left = min(left, cur);
-          right = max(right, cur);
-          prev = cur;
+        // clamp
+        if (windSampleLast != null) {
+          windSampleLast = min(cardinality - 1, windSampleLast!);
         }
-        final fov = right - left;
-        // debugPrint("FOV: $fov  (${samples.length} samples)");
 
-        if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
+        final List<Geo> samples = myTelemetry.recordGeo.sublist(firstIndex, windSampleLast);
+        if (samples.isNotEmpty) {
+          // Check sampled field-of-view is sufficient for confidence
+          var prev = samples.first.hdg;
+          var left = prev;
+          var right = prev;
+          for (var each in samples) {
+            var cur = each.hdg;
+            while (cur - prev > pi) {
+              cur -= 2 * pi;
+            }
+            while (cur - prev < -pi) {
+              cur += 2 * pi;
+            }
+            left = min(left, cur);
+            right = max(right, cur);
+            prev = cur;
+          }
+          final fov = right - left;
+          // debugPrint("FOV: $fov  (${samples.length} samples)");
+
+          if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
+        }
       }
     });
   }
@@ -123,6 +125,7 @@ class Wind with ChangeNotifier {
   /// #Solve wind direction from GPS samples.
   /// https://people.cas.uab.edu/~mosya/cl/
   void solve(List<Geo> samples) {
+    debugPrint("Solve Wind");
     double mXX = 0;
     double mYY = 0;
     double mXY = 0;

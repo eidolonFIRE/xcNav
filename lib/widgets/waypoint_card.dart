@@ -91,10 +91,10 @@ class WaypointCard extends StatelessWidget {
                           if (waypoint.icon != null)
                             WidgetSpan(
                               alignment: PlaceholderAlignment.middle,
-                              child: Icon(
-                                iconOptions[waypoint.icon],
-                                size: 24,
-                                color: textColor,
+                              child: getWpIcon(
+                                waypoint.icon,
+                                24,
+                                textColor,
                               ),
                             ),
                           if (waypoint.icon != null) const TextSpan(text: " "),

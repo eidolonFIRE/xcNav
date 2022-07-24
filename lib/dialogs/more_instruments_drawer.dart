@@ -208,13 +208,8 @@ Widget moreInstrumentsDrawer() {
                       /// --- Wind Readings Polar Chart
                       Card(
                         color: Colors.black26,
-                        child: Container(
-                          // width: MediaQuery.of(context).size.width * 2 / 3,
-                          constraints: BoxConstraints(
-                            minWidth: MediaQuery.of(context).size.width * 0.4,
-                            maxWidth: MediaQuery.of(context).size.width * 0.5,
-                          ),
-
+                        child: SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.5,
                           child: AspectRatio(
                             aspectRatio: 1,
                             child: Stack(
