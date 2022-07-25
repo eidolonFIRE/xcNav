@@ -149,28 +149,32 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     // --- In-Flight detector
+    const triggerDuration = Duration(seconds: 30);
     if ((geo.spd > 2.5 || geo.vario.abs() > 1.0) ^ inFlight) {
       triggerHyst += geo.time - geoPrev.time;
     } else {
       triggerHyst = 0;
     }
-    if (triggerHyst > 1000 * 30) {
+    if (triggerHyst > triggerDuration.inMilliseconds) {
       inFlight = !inFlight;
       triggerHyst = 0;
       if (inFlight) {
-        takeOff = DateTime.now();
-        lastSavedLog = DateTime.now();
-        launchGeo = geo;
+        // TODO: Use real timestamp search here (it's hardcoded to 5seconds)
+        final launchIndex = max(0, recordGeo.length - (triggerDuration.inSeconds ~/ 5) - 5);
+        launchGeo = recordGeo[launchIndex];
+
+        takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
+        lastSavedLog = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
         debugPrint("In Flight!!!");
+
+        // clear the log
+        recordGeo.removeRange(0, launchIndex);
       } else {
         debugPrint("Flight Ended");
 
-        // Dump current flight to log
+        // Save current flight to log
         if (!(bypassRecording ?? false)) {
-          saveFlight().then((value) {
-            // then clear the log
-            recordGeo.clear();
-          });
+          saveFlight();
         }
       }
     }
