@@ -28,10 +28,12 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs camera access to scan QR codes</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>xcNav needs access to location when in the background so that other pilots will know your location while the screen is off.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>This app needs access to location when in the background.</string>
+	<string>xcNav needs access to location when in the background so that other pilots will know your location while the screen is off.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to location when open.</string>
+	<string>xcNav needs access to location for navigation and sharing your location with the group</string> 
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs to be able to select an avatar picture.</string>
 	<key>UIBackgroundModes</key>

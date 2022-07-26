@@ -178,38 +178,42 @@ class _ProfileEditorState extends State<ProfileEditor> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // --- Image Cropper Window
-              Padding(
-                padding: const EdgeInsets.only(left: 20, bottom: 10, right: 20),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Card(
-                    child: Stack(fit: StackFit.expand, children: [
-                      inputImage != null
-                          ? _buildCropImage()
-                          : const Center(
-                              child: Padding(
-                                padding: EdgeInsets.only(bottom: 70),
-                                child: Text(
-                                  "Set Avatar",
-                                  style: TextStyle(fontStyle: FontStyle.italic),
+              Container(
+                // TODO: rework this so that in keyboard doesn't cover up the text entry
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 3),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 20, bottom: 10, right: 20),
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: Card(
+                      child: Stack(fit: StackFit.expand, children: [
+                        inputImage != null
+                            ? _buildCropImage()
+                            : const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.only(bottom: 70),
+                                  child: Text(
+                                    "Set Avatar",
+                                    style: TextStyle(fontStyle: FontStyle.italic),
+                                  ),
                                 ),
                               ),
-                            ),
-                      // --- buttons
-                      Row(
-                        mainAxisAlignment: inputImage != null ? MainAxisAlignment.start : MainAxisAlignment.center,
-                        crossAxisAlignment: inputImage != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                        children: [
-                          IconButton(onPressed: pickGallery, icon: const Icon(Icons.collections)),
-                          IconButton(onPressed: pickCamera, icon: const Icon(Icons.photo_camera))
-                        ]
-                            .map((e) => Padding(
-                                  padding: const EdgeInsets.all(4),
-                                  child: e,
-                                ))
-                            .toList(),
-                      ),
-                    ]),
+                        // --- buttons
+                        Row(
+                          mainAxisAlignment: inputImage != null ? MainAxisAlignment.start : MainAxisAlignment.center,
+                          crossAxisAlignment: inputImage != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                          children: [
+                            IconButton(onPressed: pickGallery, icon: const Icon(Icons.collections)),
+                            IconButton(onPressed: pickCamera, icon: const Icon(Icons.photo_camera))
+                          ]
+                              .map((e) => Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: e,
+                                  ))
+                              .toList(),
+                        ),
+                      ]),
+                    ),
                   ),
                 ),
               ),

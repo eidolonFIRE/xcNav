@@ -108,6 +108,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'xcNav',
+      debugShowCheckedModeBanner: false,
       darkTheme: ThemeData(
         fontFamily: "roboto-condensed",
         // appBarTheme: AppBarTheme(backgroundColor: primaryDarkColor),

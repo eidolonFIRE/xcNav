@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 // import 'package:permission_handler/permission_handler.dart' as perms;
@@ -28,9 +30,6 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   bool showWaiting = false;
 
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
-  static const String _kLocationServicesDisabledMessage = 'Location services are disabled.';
-  static const String _kPermissionDeniedMessage = 'Permission denied.';
-  static const String _kPermissionGrantedMessage = 'Permission granted.';
 
   @override
   _LoadingScreenState();
@@ -56,6 +55,11 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     });
     controller.forward();
 
+    // Check permissions
+    checkPermissions();
+  }
+
+  void getInitalLocation() {
     // get initial location
     _getCurrentPosition().then((location) {
       debugPrint("initial location: $location");
@@ -70,68 +74,49 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     });
   }
 
-  //   Future<bool> _checkPermissions() async {
-  //   return (await perms.Permission.location.isGranted) &&
-  //       (await perms.Permission.locationWhenInUse.isGranted);
-  // }
-
-  Future<Position> _getCurrentPosition() async {
-    final hasPermission = await _handlePermission();
-
-    // This shouldn't be happening...
-    if (!hasPermission) {
-      return Position(
-          accuracy: 0,
-          longitude: 0,
-          latitude: 0,
-          altitude: 0,
-          speed: 0,
-          speedAccuracy: 0,
-          heading: 0,
-          timestamp: DateTime.now());
-    }
-
-    return await _geolocatorPlatform.getCurrentPosition();
-  }
-
-  Future<bool> _handlePermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Test if location services are enabled.
-    serviceEnabled = await _geolocatorPlatform.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
-      debugPrint(_kLocationServicesDisabledMessage);
-      return false;
-    }
-
-    permission = await _geolocatorPlatform.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await _geolocatorPlatform.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
-        debugPrint(_kPermissionDeniedMessage);
-        return false;
+  void checkPermissions() async {
+    if ((await Permission.locationWhenInUse.status).isDenied) {
+      // --- When in use is not granted!
+      final status = await Permission.locationWhenInUse.request();
+      if (status.isGranted) {
+        if (Platform.isAndroid || (await Permission.locationAlways.request()).isGranted) {
+          //Do some stuff
+          getInitalLocation();
+        } else {
+          debugPrint("Location whileInUse now granted, but requst for always denied");
+          //Do another stuff
+        }
+      } else {
+        //The user deny the permission
+      }
+      if (status.isPermanentlyDenied) {
+        //When the user previously rejected the permission and select never ask again
+        //Open the screen of settings
+        debugPrint("Location permissions all denied");
+        if (await openAppSettings()) {
+          checkPermissions();
+        }
+      }
+    } else {
+      //In use is available, check the always in use
+      if (!(await Permission.locationAlways.status).isGranted) {
+        if (await Permission.locationAlways.request().isGranted) {
+          //Do some stuff
+          getInitalLocation();
+        } else {
+          debugPrint("Location whileInUse but request for always failed.");
+          //Do another stuff
+        }
+      } else {
+        //previously available, do some stuff or nothing
+        debugPrint("All location permissions look good!");
+        getInitalLocation();
       }
     }
+  }
 
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      debugPrint("_kPermissionDeniedForeverMessage");
-      return false;
-    }
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
-    debugPrint(_kPermissionGrantedMessage);
-    return true;
+  Future<Position> _getCurrentPosition() async {
+    return await _geolocatorPlatform.getCurrentPosition();
   }
 
   @override
