@@ -77,6 +77,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   void checkPermissions() async {
     if ((await Permission.locationWhenInUse.status).isDenied) {
       // --- When in use is not granted!
+      debugPrint("Location whileInUse not graunted!");
       final status = await Permission.locationWhenInUse.request();
       if (status.isGranted) {
         if (Platform.isAndroid || (await Permission.locationAlways.request()).isGranted) {
@@ -99,7 +100,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       }
     } else {
       //In use is available, check the always in use
-      if (!(await Permission.locationAlways.status).isGranted) {
+      if (Platform.isIOS && !(await Permission.locationAlways.status).isGranted) {
         if (await Permission.locationAlways.request().isGranted) {
           //Do some stuff
           getInitalLocation();
