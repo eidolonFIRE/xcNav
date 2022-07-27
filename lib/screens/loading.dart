@@ -7,7 +7,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-// import 'package:permission_handler/permission_handler.dart' as perms;
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -28,6 +27,9 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   late final AnimationController controller;
 
   bool showWaiting = false;
+
+  bool checked = false;
+  bool failedPerms = false;
 
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
 
@@ -54,13 +56,11 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       setState(() {});
     });
     controller.forward();
-
-    // Check permissions
-    checkPermissions();
   }
 
   void getInitalLocation() {
     // get initial location
+    debugPrint("Getting initial location from GPS");
     _getCurrentPosition().then((location) {
       debugPrint("initial location: $location");
       Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
@@ -74,46 +74,80 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     });
   }
 
-  void checkPermissions() async {
-    if ((await Permission.locationWhenInUse.status).isDenied) {
-      // --- When in use is not granted!
-      debugPrint("Location whileInUse not graunted!");
+  void checkPermissions(BuildContext context) async {
+    if (checked) {
+      debugPrint("Skipping location permission check...");
+      return;
+    }
+
+    Timer(const Duration(seconds: 5), () => checked = false);
+    checked = true;
+
+    debugPrint("Checking location permissions...");
+    final whenInUse = await Permission.locationWhenInUse.status;
+    if (whenInUse.isPermanentlyDenied) {
+      failedPerms = true;
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                content: Text(Platform.isIOS
+                    ? "Please set location permission to \"always\""
+                    : "Please enable location permission"),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.check, color: Colors.lightGreen),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      openAppSettings();
+                    },
+                  )
+                ],
+              ));
+      return;
+    } else if (whenInUse.isDenied) {
+      debugPrint("Location whenInUse was not granted!");
       final status = await Permission.locationWhenInUse.request();
-      if (status.isGranted) {
-        if (Platform.isAndroid || (await Permission.locationAlways.request()).isGranted) {
-          //Do some stuff
-          getInitalLocation();
-        } else {
-          debugPrint("Location whileInUse now granted, but requst for always denied");
-          //Do another stuff
-        }
-      } else {
-        //The user deny the permission
-      }
-      if (status.isPermanentlyDenied) {
-        //When the user previously rejected the permission and select never ask again
-        //Open the screen of settings
-        debugPrint("Location permissions all denied");
-        if (await openAppSettings()) {
-          checkPermissions();
-        }
-      }
-    } else {
-      //In use is available, check the always in use
-      if (Platform.isIOS && !(await Permission.locationAlways.status).isGranted) {
-        if (await Permission.locationAlways.request().isGranted) {
-          //Do some stuff
-          getInitalLocation();
-        } else {
-          debugPrint("Location whileInUse but request for always failed.");
-          //Do another stuff
-        }
-      } else {
-        //previously available, do some stuff or nothing
-        debugPrint("All location permissions look good!");
-        getInitalLocation();
+      if (!status.isGranted) {
+        failedPerms = true;
+        return;
       }
     }
+
+    if (Platform.isIOS) {
+      // --- Check "always"
+      final locAlways = await Permission.locationAlways.status;
+      if (locAlways.isPermanentlyDenied) {
+        failedPerms = true;
+        showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+                  content: Text(Platform.isIOS
+                      ? "Please set location permission to \"always\""
+                      : "Please enable location permission"),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.check, color: Colors.lightGreen),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        openAppSettings();
+                      },
+                    )
+                  ],
+                ));
+        return;
+      } else if (!locAlways.isGranted) {
+        debugPrint("Location always was not granted!");
+        final status = await Permission.locationAlways.request();
+        if (!status.isGranted) {
+          failedPerms = true;
+          return;
+        }
+      }
+    }
+
+    failedPerms = false;
+    debugPrint("Location permissions all look good!");
+    getInitalLocation();
   }
 
   Future<Position> _getCurrentPosition() async {
@@ -129,6 +163,9 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+
+    checkPermissions(context);
+
     return Material(
         child: Container(
       decoration: const BoxDecoration(
@@ -167,6 +204,13 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                     style: TextStyle(fontSize: 30, color: animation.value),
                   );
                 }),
+          if (showWaiting && failedPerms && checked)
+            Text(
+              "Check location permission${Platform.isIOS ? " is set to ALWAYS." : "."}",
+              softWrap: true,
+              maxLines: 2,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 20),
+            ),
           // --- Wings and Dashed lines
           Padding(
             padding: const EdgeInsets.only(bottom: 80),
