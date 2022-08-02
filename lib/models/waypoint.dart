@@ -63,8 +63,8 @@ class Waypoint {
     _latlng = [];
     List<dynamic> rawList = json["latlng"];
     for (List<dynamic> e in rawList) {
-      List<double> raw = e.cast<double>();
-      _latlng.add(LatLng(raw[0], raw[1]));
+      _latlng.add(LatLng(e[0] is int ? (e[0] as int).toDouble() : e[0] as double,
+          e[1] is int ? (e[1] as int).toDouble() : e[1] as double));
     }
   }
 

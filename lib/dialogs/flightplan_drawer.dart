@@ -54,6 +54,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
     }
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Waypoint menu buttons
         Row(
@@ -156,13 +157,14 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
 
         Divider(
           thickness: 2,
-          height: 0,
+          height: 1,
           color: Theme.of(context).backgroundColor,
         ),
 
         // --- Waypoint list
-        Expanded(
-          child: ListView(primary: true, children: [
+        Container(
+          constraints: const BoxConstraints(maxHeight: 300),
+          child: ListView(shrinkWrap: true, primary: true, children: [
             // --- List of waypoints
             ReorderableListView.builder(
               shrinkWrap: true,
@@ -254,6 +256,9 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                   onToggleOptional: () {
                     activePlan.toggleOptional(i);
                   },
+                  onDoubleTap: () {
+                    zoomMainMapToLatLng.sink.add(activePlan.waypoints[i].latlng[0]);
+                  },
                   isSelected: i == activePlan.selectedIndex,
                 ),
               ),
@@ -266,9 +271,9 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
             // This shows when flight plan is empty
             if (activePlan.waypoints.isEmpty)
               Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.only(top: 50, bottom: 50),
                 child: Text(
-                  "Flightplan is Empty",
+                  "No waypoints added yet...",
                   textAlign: TextAlign.center,
                   style: instrLabel,
                 ),
@@ -307,10 +312,10 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
         ),
 
         // --- Trip Options
-        Divider(
+        const Divider(
           thickness: 2,
-          height: 0,
-          color: Theme.of(context).backgroundColor,
+          height: 2,
+          color: Colors.black,
         ),
         Column(
           mainAxisSize: MainAxisSize.min,
@@ -358,7 +363,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
               ],
             ),
             const Divider(
-              height: 0,
+              height: 1,
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

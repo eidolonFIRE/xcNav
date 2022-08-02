@@ -12,7 +12,7 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
-class WaypointCard extends StatelessWidget {
+class WaypointCard extends StatefulWidget {
   const WaypointCard({
     Key? key,
     required this.waypoint,
@@ -20,6 +20,7 @@ class WaypointCard extends StatelessWidget {
     required this.onSelect,
     required this.onToggleOptional,
     required this.isSelected,
+    this.onDoubleTap,
     this.showPilots = true,
   }) : super(key: key);
 
@@ -31,14 +32,23 @@ class WaypointCard extends StatelessWidget {
   // callbacks
   final VoidCallback onSelect;
   final VoidCallback onToggleOptional;
+  final VoidCallback? onDoubleTap;
+
+  @override
+  State<WaypointCard> createState() => _WaypointCardState();
+}
+
+class _WaypointCardState extends State<WaypointCard> {
+  DateTime? _lastSelect;
 
   @override
   Widget build(BuildContext context) {
     final settings = Provider.of<Settings>(context, listen: false);
-    final textColor = isSelected ? Colors.black : (waypoint.isOptional ? Colors.grey.shade600 : Colors.white);
+    final textColor =
+        widget.isSelected ? Colors.black : (widget.waypoint.isOptional ? Colors.grey.shade600 : Colors.white);
     return Container(
-      color: isSelected ? Colors.grey.shade200 : Colors.grey.shade900,
-      key: ValueKey(waypoint),
+      color: widget.isSelected ? Colors.grey.shade200 : Colors.grey.shade900,
+      key: ValueKey(widget.waypoint),
       margin: const EdgeInsets.all(0),
       constraints: const BoxConstraints(maxHeight: 100),
       child: IntrinsicHeight(
@@ -46,10 +56,10 @@ class WaypointCard extends StatelessWidget {
           Column(
             children: [
               Expanded(
-                child: SizedBox(width: 4, child: Container(color: waypoint.getColor())),
+                child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
               ),
               GestureDetector(
-                onTap: onToggleOptional,
+                onTap: widget.onToggleOptional,
                 child: SizedBox(
                   width: 40,
                   child: Stack(
@@ -57,9 +67,9 @@ class WaypointCard extends StatelessWidget {
                     clipBehavior: Clip.none,
                     children: [
                       SvgPicture.asset(
-                        "assets/images/wp${waypoint.latlng.length > 1 ? "_path" : ""}${waypoint.isOptional ? "_optional" : ""}.svg",
+                        "assets/images/wp${widget.waypoint.latlng.length > 1 ? "_path" : ""}${widget.waypoint.isOptional ? "_optional" : ""}.svg",
                         height: 56,
-                        color: waypoint.getColor(),
+                        color: widget.waypoint.getColor(),
                       ),
                       // if (waypoint.isOptional)
                       //   SvgPicture.asset(
@@ -72,7 +82,7 @@ class WaypointCard extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: SizedBox(width: 4, child: Container(color: waypoint.getColor())),
+                child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
               ),
             ],
           ),
@@ -82,35 +92,44 @@ class WaypointCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextButton(
-                    onPressed: onSelect,
+                    onPressed: () {
+                      final delta = _lastSelect != null ? DateTime.now().difference(_lastSelect!) : null;
+                      if (delta == null || delta.inMilliseconds > 300) {
+                        widget.onSelect();
+                      } else if (delta.inMilliseconds < 300) {
+                        widget.onDoubleTap?.call();
+                      }
+
+                      _lastSelect = DateTime.now();
+                    },
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text.rich(
                         TextSpan(children: [
                           // --- Icon
-                          if (waypoint.icon != null)
+                          if (widget.waypoint.icon != null)
                             WidgetSpan(
                               alignment: PlaceholderAlignment.middle,
                               child: getWpIcon(
-                                waypoint.icon,
+                                widget.waypoint.icon,
                                 24,
                                 textColor,
                               ),
                             ),
-                          if (waypoint.icon != null) const TextSpan(text: " "),
+                          if (widget.waypoint.icon != null) const TextSpan(text: " "),
                           // --- Name
-                          TextSpan(text: waypoint.name, style: TextStyle(color: textColor, fontSize: 24)),
+                          TextSpan(text: widget.waypoint.name, style: TextStyle(color: textColor, fontSize: 24)),
                           // --- Length
-                          if (waypoint.latlng.length > 1)
+                          if (widget.waypoint.latlng.length > 1)
                             TextSpan(
                                 text:
-                                    " (${printValue(value: convertDistValueCoarse(settings.displayUnitsDist, waypoint.length), digits: 3, decimals: 1)}",
+                                    " (${printValue(value: convertDistValueCoarse(settings.displayUnitsDist, widget.waypoint.length), digits: 3, decimals: 1)}",
                                 style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
-                          if (waypoint.latlng.length > 1)
+                          if (widget.waypoint.latlng.length > 1)
                             TextSpan(
                                 text: unitStrDistCoarse[settings.displayUnitsDist],
                                 style: TextStyle(color: textColor.withAlpha(150), fontSize: 12)),
-                          if (waypoint.latlng.length > 1)
+                          if (widget.waypoint.latlng.length > 1)
                             TextSpan(text: ")", style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
                         ]),
                         maxLines: 3,
@@ -122,9 +141,9 @@ class WaypointCard extends StatelessWidget {
                 ),
 
                 /// Pilot Avatars
-                if (showPilots)
+                if (widget.showPilots)
                   Consumer<Group>(builder: (context, group, child) {
-                    var pilots = group.pilots.values.where((element) => element.selectedWaypoint == index);
+                    var pilots = group.pilots.values.where((element) => element.selectedWaypoint == widget.index);
 
                     if (pilots.isEmpty) return Container();
 

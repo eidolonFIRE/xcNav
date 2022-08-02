@@ -73,6 +73,8 @@ TextStyle instrLower = const TextStyle(fontSize: 35);
 TextStyle instrUpper = const TextStyle(fontSize: 40);
 TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic);
 
+StreamController<LatLng> zoomMainMapToLatLng = StreamController<LatLng>();
+
 class _MyHomePageState extends State<MyHomePage> {
   late MapController mapController;
   DateTime? lastMapChange;
@@ -115,6 +117,12 @@ class _MyHomePageState extends State<MyHomePage> {
     // intialize the controllers
     mapController = MapController();
     mapController.onReady.then((value) => mapReady = true);
+
+    zoomMainMapToLatLng.stream.listen((latlng) {
+      debugPrint("Map zoom to: $latlng");
+      mapController.move(latlng, mapController.zoom);
+      setFocusMode(FocusMode.unlocked);
+    });
 
     polyEditor = PolyEditor(
       addClosePathMarker: false,
@@ -387,7 +395,7 @@ class _MyHomePageState extends State<MyHomePage> {
     showModalBottomSheet(
         context: context,
         elevation: 0,
-        constraints: const BoxConstraints(maxHeight: 500),
+        // constraints: const BoxConstraints(maxHeight: 500),
         builder: (BuildContext context) {
           return SafeArea(
             child: Dismissible(

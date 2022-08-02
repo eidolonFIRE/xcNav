@@ -36,7 +36,7 @@ class Group with ChangeNotifier {
   Map<String, Pilot> pilots = {};
   SharedPreferences? prefs;
 
-  List<PastGroup> pastGroups = [];
+  Map<String, PastGroup> pastGroups = {};
 
   // --- Get/Set current group_id
   String? get currentGroupID => _currentGroupID;
@@ -58,8 +58,6 @@ class Group with ChangeNotifier {
         debugPrint("Left Group");
       }
 
-      _cleanPastGroups();
-
       notifyListeners();
     }
   }
@@ -67,18 +65,13 @@ class Group with ChangeNotifier {
   void _appendToPastGroups() {
     PastGroup pg = PastGroup(_currentGroupID!, DateTime.now(), pilots.values.toList());
     debugPrint("Appended to past groups. (id: ${pg.id}, ${pg.pilots.length} pilots)");
-    pastGroups.add(pg);
-  }
-
-  /// Remove the current groupID from history
-  void _cleanPastGroups() {
-    pastGroups = pastGroups.where((element) => element.id != _currentGroupID).toList();
+    pastGroups[_currentGroupID!] = pg;
     _savePastGroups();
   }
 
   void _savePastGroups() {
-    prefs?.setStringList("me.pastGroups", pastGroups.map((e) => jsonEncode(e.toJson())).toList());
-    debugPrint("Save pastGroups: ${pastGroups.map((e) => jsonEncode(e.toJson())).toList().join(", ")}");
+    prefs?.setStringList("me.pastGroups", pastGroups.values.map((e) => jsonEncode(e.toJson())).toList());
+    // debugPrint("Save pastGroups: ${pastGroups.values.map((e) => jsonEncode(e.toJson())).toList().join(", ")}");
   }
 
   bool hasPilot(String pilotID) => pilots.containsKey(pilotID);
@@ -90,14 +83,16 @@ class Group with ChangeNotifier {
       // Load past groups
       var pastGroupsRaw = prefs!.getStringList("me.pastGroups");
       if (pastGroupsRaw != null) {
-        pastGroups = pastGroupsRaw.map((e) => PastGroup.fromJson(jsonDecode(e))).toList();
+        pastGroupsRaw
+            // parse each object
+            .map((e) => PastGroup.fromJson(jsonDecode(e)))
+            // remove any groups too old
+            .where((each) => each.timestamp.isAfter(DateTime.now().subtract(const Duration(hours: 48))))
+            .forEach((g) {
+          pastGroups[g.id] = g;
+        });
 
         debugPrint("Loaded ${pastGroups.length} past groups.");
-
-        // remove any groups too old
-        pastGroups = pastGroups
-            .where((each) => each.timestamp.isAfter(DateTime.now().subtract(const Duration(hours: 24))))
-            .toList();
       }
     });
   }
@@ -118,6 +113,7 @@ class Group with ChangeNotifier {
   /// Add or Replace local pilot instance
   void processNewPilot(dynamic p) async {
     pilots[p["id"]] = Pilot.fromJson(p);
+    _appendToPastGroups();
     notifyListeners();
   }
 
