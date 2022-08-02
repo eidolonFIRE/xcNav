@@ -144,7 +144,8 @@ void showPilotInfo(BuildContext context, String pilotId) {
                               text: printValue(
                                   value: convertDistValueCoarse(settings.displayUnitsDist, dist),
                                   digits: 3,
-                                  decimals: 0)),
+                                  decimals: 0,
+                                  autoDecimalThresh: 1.0)),
                           TextSpan(style: unitStyle, text: unitStrDistCoarse[settings.displayUnitsDist]),
                           const TextSpan(style: fillStyle, text: ",  "),
                           WidgetSpan(

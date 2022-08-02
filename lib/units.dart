@@ -95,8 +95,9 @@ TextSpan richHrMin(
   }
 }
 
-String printValue({required double value, required int digits, required int decimals}) {
+String printValue({required double value, required int digits, required int decimals, double? autoDecimalThresh}) {
   if (!value.isFinite) return "?";
+  if (autoDecimalThresh != null && value < autoDecimalThresh) decimals++;
   final int mag = (pow(10, digits) - 1).round();
   final double decPwr = pow(10, decimals).toDouble();
   return ((min(mag, max(-mag, value)) * decPwr).round() / decPwr).toStringAsFixed(decimals);

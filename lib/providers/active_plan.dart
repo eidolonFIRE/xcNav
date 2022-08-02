@@ -16,6 +16,7 @@ class ActivePlan with ChangeNotifier {
   bool _isReversed = false;
   bool _includeReturnTrip = false;
   bool _useWind = false;
+  bool isSaved = false;
 
   void Function(
     WaypointAction action,
@@ -154,11 +155,13 @@ class ActivePlan with ChangeNotifier {
     if (onWaypointAction != null) {
       onWaypointAction!(WaypointAction.add, resolvedIndex, null, newWaypoint);
     }
+    isSaved = false;
     notifyListeners();
   }
 
   void backendReplaceWaypoint(int index, Waypoint replacement) {
     waypoints[index] = replacement;
+    isSaved = false;
     notifyListeners();
   }
 
@@ -174,6 +177,7 @@ class ActivePlan with ChangeNotifier {
     if (selectedIndex != null && selectedIndex! >= waypoints.length) {
       selectWaypoint(waypoints.length - 1);
     }
+    isSaved = false;
     notifyListeners();
   }
 
@@ -192,6 +196,7 @@ class ActivePlan with ChangeNotifier {
     if (onWaypointAction != null) {
       onWaypointAction!(WaypointAction.modify, index, null, waypoints[index]);
     }
+    isSaved = false;
     notifyListeners();
   }
 
@@ -203,6 +208,7 @@ class ActivePlan with ChangeNotifier {
       if (onWaypointAction != null) {
         onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
       }
+      isSaved = false;
       notifyListeners();
     }
   }
@@ -219,6 +225,7 @@ class ActivePlan with ChangeNotifier {
       if (onWaypointAction != null) {
         onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
       }
+      isSaved = false;
       notifyListeners();
     }
   }
@@ -236,6 +243,7 @@ class ActivePlan with ChangeNotifier {
       if (onWaypointAction != null) {
         onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
       }
+      isSaved = false;
       notifyListeners();
     }
   }
@@ -254,6 +262,7 @@ class ActivePlan with ChangeNotifier {
         selectWaypoint(selectedIndex! - 1);
       }
     }
+    isSaved = false;
     notifyListeners();
   }
 

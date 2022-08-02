@@ -22,7 +22,7 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
     // minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
     padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(20)),
     shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
-      return RoundedRectangleBorder(borderRadius: BorderRadius.circular(2));
+      return RoundedRectangleBorder(borderRadius: BorderRadius.circular(4));
     }),
     textStyle:
         MaterialStateProperty.resolveWith<TextStyle>((states) => const TextStyle(color: Colors.white, fontSize: 22)),
@@ -97,25 +97,34 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                         child: const Divider(
                           color: Colors.white,
                         )),
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width / 2,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          ElevatedButton(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Container(),
+                        ElevatedButton(
+                            style: externalBtn,
+                            onPressed: () => {launchUrl(Uri.parse("https://www.patreon.com/xcnav"))},
+                            child: Image.asset(
+                              "assets/external/Digital-Patreon-Logo_FieryCoral.png",
+                              width: MediaQuery.of(context).size.width / 10,
+                            )),
+                        ElevatedButton(
+                            style: externalBtn,
+                            onPressed: () => {launchUrl(Uri.parse("https://github.com/eidolonFIRE/xcNav"))},
+                            child: Image.asset("assets/external/GitHub-Mark-120px-plus.png",
+                                width: MediaQuery.of(context).size.width / 10)),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width / 5,
+                          height: MediaQuery.of(context).size.width / 5,
+                          child: ElevatedButton(
                               style: externalBtn,
-                              onPressed: () => {launchUrl(Uri.parse("https://www.patreon.com/xcnav"))},
-                              child: Image.asset(
-                                "assets/external/Digital-Patreon-Logo_FieryCoral.png",
-                                width: MediaQuery.of(context).size.width / 10,
+                              onPressed: () => {launchUrl(Uri.parse("https://discord.gg/Fwv8Sz4HJN"))},
+                              child: SvgPicture.asset(
+                                "assets/external/icon_clyde_white_RGB.svg",
                               )),
-                          ElevatedButton(
-                              style: externalBtn,
-                              onPressed: () => {launchUrl(Uri.parse("https://github.com/eidolonFIRE/xcNav"))},
-                              child: Image.asset("assets/external/GitHub-Mark-120px-plus.png",
-                                  width: MediaQuery.of(context).size.width / 10))
-                        ],
-                      ),
+                        ),
+                        Container()
+                      ],
                     ),
                   ],
                 ),

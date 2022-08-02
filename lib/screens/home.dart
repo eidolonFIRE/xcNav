@@ -10,6 +10,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:focus_detector/focus_detector.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
@@ -267,15 +268,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /// Do all the things with a GPS update
   void handleGeomUpdate(BuildContext context, Position position) {
-    var myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-    var settings = Provider.of<Settings>(context, listen: false);
+    final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+    final settings = Provider.of<Settings>(context, listen: false);
+    final client = Provider.of<Client>(context, listen: false);
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
       myTelemetry.updateGeo(position, bypassRecording: settings.groundMode);
 
       if (!settings.groundMode || settings.groundModeTelemetry) {
-        if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
-          Provider.of<Client>(context, listen: false).sendTelemetry(myTelemetry.geo, myTelemetry.fuel);
+        if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty || client.telemetrySkips > 20) {
+          client.sendTelemetry(myTelemetry.geo, myTelemetry.fuel);
+          client.telemetrySkips = 0;
+        } else {
+          client.telemetrySkips++;
         }
       }
     }
@@ -686,7 +691,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 child: Padding(
                                   padding: const EdgeInsets.only(left: 15),
                                   child: GestureDetector(
-                                      onTap: () => {Navigator.pushNamed(context, "/adsbHelp")},
+                                      onTap: () => {Navigator.popAndPushNamed(context, "/adsbHelp")},
                                       child: const Icon(Icons.help, size: 20, color: Colors.lightBlueAccent)),
                                 )),
                           ]))
@@ -697,7 +702,7 @@ class _MyHomePageState extends State<MyHomePage> {
             /// Group
             ListTile(
               minVerticalPadding: 20,
-              onTap: () => {Navigator.pushNamed(context, "/groupDetails")},
+              onTap: () => {Navigator.popAndPushNamed(context, "/groupDetails")},
               leading: const Icon(
                 Icons.groups,
                 size: 30,
@@ -708,7 +713,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               trailing: IconButton(
                   iconSize: 30,
-                  onPressed: () => {Navigator.pushNamed(context, "/qrScanner")},
+                  onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
                   icon: const Icon(
                     Icons.qr_code_scanner,
                     color: Colors.lightBlue,
@@ -717,7 +722,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
             ListTile(
               minVerticalPadding: 20,
-              onTap: () => {Navigator.pushNamed(context, "/plans")},
+              onTap: () => {Navigator.popAndPushNamed(context, "/plans")},
               leading: const Icon(
                 Icons.pin_drop,
                 size: 30,
@@ -735,12 +740,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 size: 30,
               ),
               title: Text("Weather", style: Theme.of(context).textTheme.headline5),
-              onTap: () => {Navigator.pushNamed(context, "/weather")},
+              onTap: () => {Navigator.popAndPushNamed(context, "/weather")},
             ),
 
             ListTile(
                 minVerticalPadding: 20,
-                onTap: () => {Navigator.pushNamed(context, "/flightLogs")},
+                onTap: () => {Navigator.popAndPushNamed(context, "/flightLogs")},
                 leading: const Icon(
                   Icons.menu_book,
                   size: 30,
@@ -751,7 +756,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
             ListTile(
                 minVerticalPadding: 20,
-                onTap: () => {Navigator.pushNamed(context, "/settings")},
+                onTap: () => {Navigator.popAndPushNamed(context, "/settings")},
                 leading: const Icon(
                   Icons.settings,
                   size: 30,
@@ -760,12 +765,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
             ListTile(
               minVerticalPadding: 20,
-              onTap: () => {Navigator.pushNamed(context, "/about")},
+              onTap: () => {Navigator.popAndPushNamed(context, "/about")},
               leading: const Icon(Icons.info, size: 30),
               title: Text("About", style: Theme.of(context).textTheme.headline5),
             )
           ],
         )),
+
+        /// --- Main screen
         body: Container(
           color: Colors.white,
           child: Center(
@@ -1483,6 +1490,7 @@ class _MyHomePageState extends State<MyHomePage> {
           return Container(
             color: Theme.of(context).backgroundColor,
             child: SafeArea(
+              // minimum: const EdgeInsets.only(bottom: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1508,7 +1516,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   // --- Next Waypoint Info
                   Expanded(
                     child: GestureDetector(
-                      onPanDown: (_) => showFlightPlan(),
+                      onPanDown: (details) {
+                        // debugPrint("${MediaQuery.of(context).size.height - details.globalPosition.dy}");
+                        // Limit the hitbox at the very bottom so it doesn't interfere with system bar
+                        if (MediaQuery.of(context).size.height - details.globalPosition.dy > 30) {
+                          showFlightPlan();
+                        }
+                      },
                       // onTap: showFlightPlan,
                       child: Container(
                         constraints: const BoxConstraints(minHeight: 60),
@@ -1596,7 +1610,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ? Colors.white
                           : Colors.grey.shade700,
                       icon: const Icon(
-                        Icons.skip_next,
+                        Icons.arrow_forward,
                       )),
                 ],
               ),

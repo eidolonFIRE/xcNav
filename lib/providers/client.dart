@@ -31,6 +31,8 @@ class Client with ChangeNotifier {
   WebSocket? socket;
   ClientState _state = ClientState.disconnected;
 
+  int telemetrySkips = 0;
+
   final BuildContext context;
 
   Client(this.context) {
@@ -271,7 +273,8 @@ class Client with ChangeNotifier {
     final group = Provider.of<Group>(context, listen: false);
     String? currentGroupID = group.currentGroupID;
     if (msg["group"] == currentGroupID) {
-      Provider.of<ChatMessages>(context, listen: false).processMessageFromServer(group.pilots[msg["pilot_id"]]?.name ?? "", msg);
+      Provider.of<ChatMessages>(context, listen: false)
+          .processMessageFromServer(group.pilots[msg["pilot_id"]]?.name ?? "", msg);
     } else {
       // getting messages from the wrong group!
       debugPrint("Wrong group ID! $currentGroupID, ${msg["group"]}");

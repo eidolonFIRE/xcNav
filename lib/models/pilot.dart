@@ -136,6 +136,7 @@ class Pilot {
   }
 
   void _fetchAvatorFromS3() async {
+    debugPrint("Fetching pilot ($name) avatar from S3.");
     // - cache miss, load from S3
     Directory tempDir = await getTemporaryDirectory();
     File fileAvatar = File("${tempDir.path}/avatars/$id.jpg");

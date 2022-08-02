@@ -104,7 +104,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                           builder: (BuildContext ctx) {
                             return AlertDialog(
                               title: const Text('Are you sure?'),
-                              content: const Text('This will delete the flight plan for everyone in the group!'),
+                              content: const Text('This will clear the flight plan for everyone in the group!'),
                               actions: [
                                 TextButton.icon(
                                     onPressed: () {
@@ -114,7 +114,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                                       Icons.delete_forever,
                                       color: Colors.red,
                                     ),
-                                    label: const Text('Delete')),
+                                    label: const Text('Clear')),
                                 TextButton(
                                     onPressed: () {
                                       // Close the dialog

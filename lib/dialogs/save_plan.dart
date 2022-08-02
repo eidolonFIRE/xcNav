@@ -13,12 +13,15 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
   var formKey = GlobalKey<FormState>();
   ActivePlan activePlan = Provider.of<ActivePlan>(context, listen: false);
   TextEditingController filename = TextEditingController();
-  if (activePlan.waypoints.isEmpty) {
+
+  // No need if plan is empty or if the plan is unchanged
+  if (activePlan.waypoints.isEmpty || isSavingFirst && activePlan.isSaved) {
     return Future.value(false);
   }
 
   void onDone(BuildContext context) {
     final newPlan = FlightPlan.fromActivePlan(filename.text, activePlan);
+    activePlan.isSaved = true;
     Provider.of<Plans>(context, listen: false).setPlan(newPlan).then((_) => Navigator.pop(context, true));
   }
 
