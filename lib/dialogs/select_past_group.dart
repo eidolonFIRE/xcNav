@@ -5,12 +5,14 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 
 void selectPastGroup(BuildContext context) {
-  var group = Provider.of<Group>(context, listen: false);
+  final group = Provider.of<Group>(context, listen: false);
+  final pastGroupsSorted = group.pastGroups.values.where((element) => element.id != group.currentGroupID).toList()
+    ..sort((a, b) => a.timestamp.difference(b.timestamp).inMilliseconds);
   showDialog(
       context: context,
       builder: (context) => AlertDialog(
           title: const Text("Recent Groups"),
-          content: group.pastGroups.isEmpty
+          content: pastGroupsSorted.isEmpty
               ? const Text(
                   "Nothing here...\nHave you been in a group recently?",
                   textAlign: TextAlign.center,
@@ -21,7 +23,7 @@ void selectPastGroup(BuildContext context) {
                   child: ListView.builder(
                     shrinkWrap: true,
                     reverse: true,
-                    itemCount: group.pastGroups.length,
+                    itemCount: pastGroupsSorted.length,
                     itemBuilder: (context, index) {
                       return Card(
                           color: Theme.of(context).backgroundColor,
@@ -33,7 +35,8 @@ void selectPastGroup(BuildContext context) {
                                   // crossAxisAlignment: WrapCrossAlignment.start,
                                   alignment: WrapAlignment.spaceBetween,
                                   // fit: StackFit.expand,
-                                  children: group.pastGroups[index].pilots
+                                  children: pastGroupsSorted[index]
+                                      .pilots
                                       .map<Widget>((p) => Card(
                                             shape: const RoundedRectangleBorder(
                                                 borderRadius: BorderRadius.all(Radius.circular(16))),
@@ -53,7 +56,7 @@ void selectPastGroup(BuildContext context) {
                                 Padding(
                                   padding: const EdgeInsets.all(13.0),
                                   child: Builder(builder: (context) {
-                                    final delta = DateTime.now().difference(group.pastGroups[index].timestamp);
+                                    final delta = DateTime.now().difference(pastGroupsSorted[index].timestamp);
                                     final value = delta.inMinutes >= 60 ? delta.inHours : delta.inMinutes;
                                     final unit = delta.inMinutes >= 60 ? "hr" : "min";
                                     return Text(
@@ -66,7 +69,7 @@ void selectPastGroup(BuildContext context) {
                                     visualDensity: VisualDensity.comfortable,
                                     onPressed: () {
                                       Provider.of<Client>(context, listen: false)
-                                          .joinGroup(context, group.pastGroups[index].id);
+                                          .joinGroup(context, pastGroupsSorted[index].id);
                                       Navigator.pop(context);
                                     },
                                     icon: const Icon(
