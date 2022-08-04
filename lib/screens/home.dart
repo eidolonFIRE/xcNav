@@ -15,6 +15,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/patreon.dart';
 
@@ -548,7 +549,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     debugPrint("Build /home");
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+    setSystemUI();
     return Scaffold(
         appBar: AppBar(
             automaticallyImplyLeading: true,
@@ -651,20 +652,20 @@ class _MyHomePageState extends State<MyHomePage> {
               }),
 
             // --- Toggle airspace overlay
-            if (Provider.of<Settings>(context).curMapTiles == "topo")
-              ListTile(
-                minVerticalPadding: 20,
-                leading: const Icon(
-                  Icons.local_airport,
-                  size: 30,
-                ),
-                title: Text("Airspace", style: Theme.of(context).textTheme.headline5),
-                trailing: Switch(
-                  activeColor: Colors.lightBlueAccent,
-                  value: Provider.of<Settings>(context).showAirspace,
-                  onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
-                ),
-              ),
+            // if (Provider.of<Settings>(context).curMapTiles == "topo")
+            //   ListTile(
+            //     minVerticalPadding: 20,
+            //     leading: const Icon(
+            //       Icons.local_airport,
+            //       size: 30,
+            //     ),
+            //     title: Text("Airspace", style: Theme.of(context).textTheme.headline5),
+            //     trailing: Switch(
+            //       activeColor: Colors.lightBlueAccent,
+            //       value: Provider.of<Settings>(context).showAirspace,
+            //       onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
+            //     ),
+            //   ),
 
             ListTile(
                 minVerticalPadding: 20,
@@ -1367,6 +1368,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           selected: false,
                           onPressed: () {
                             mapController.move(mapController.center, mapController.zoom + 1);
+                            debugPrint("Map Zoom: ${mapController.zoom}");
                             lastMapChange = DateTime.now();
                           },
                           child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
@@ -1384,6 +1386,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           selected: false,
                           onPressed: () {
                             mapController.move(mapController.center, mapController.zoom - 1);
+                            debugPrint("Map Zoom: ${mapController.zoom}");
                             lastMapChange = DateTime.now();
                           },
                           child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),

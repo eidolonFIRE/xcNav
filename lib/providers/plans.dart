@@ -10,7 +10,6 @@ class Plans with ChangeNotifier {
   final Map<String, FlightPlan> _loadedPlans = {};
   Map<String, FlightPlan> get loadedPlans => _loadedPlans;
 
-  @override
   Plans() {
     refreshPlansFromDirectory();
   }

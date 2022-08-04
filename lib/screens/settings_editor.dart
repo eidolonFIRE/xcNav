@@ -209,6 +209,25 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     ),
                   ]),
 
+              // --- Map Cache
+              SettingsSection(title: const Text("Map Cache"), tiles: <SettingsTile>[
+                SettingsTile.navigation(
+                  title: FutureBuilder<String>(
+                      future: settings.getMapTileCacheSize(),
+                      initialData: "?",
+                      builder: (context, value) {
+                        return Text("Empty Cache  ( ${value.data} )");
+                      }),
+                  trailing: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: (_) {
+                    setState(() {
+                      settings.emptyMapTileCache();
+                      // settings.purgeMapTileCache();
+                    });
+                  },
+                )
+              ]),
+
               // --- Debug Tools
               SettingsSection(
                   title: const Text(
@@ -244,7 +263,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                       // description: const Text(
                       //     "This will reset your pilot ID and profile!"),
                       leading: const Icon(
-                        Icons.warning_amber,
+                        Icons.badge,
                         color: Colors.red,
                       ),
                       onPressed: (value) => {

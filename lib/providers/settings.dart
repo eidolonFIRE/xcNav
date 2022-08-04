@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:xcnav/providers/adsb.dart';
+import 'package:intl/intl.dart';
 
+import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/units.dart';
 
 class Settings with ChangeNotifier {
@@ -21,10 +26,20 @@ class Settings with ChangeNotifier {
     "satellite": 1.0,
   };
   TileLayerOptions getMapTileLayer(String name) {
+    TileProvider makeTileProvider(name) {
+      return FMTC.instance(name).getTileProvider(
+            FMTCTileProviderSettings(
+              behavior: CacheBehavior.cacheFirst,
+              cachedValidDuration: const Duration(days: 14),
+            ),
+          );
+    }
+
     switch (name) {
       case "sectional":
         return TileLayerOptions(
             urlTemplate: 'http://wms.chartbundle.com/tms/v1.0/sec/{z}/{x}/{y}.png?type=google',
+            tileProvider: makeTileProvider(name),
             maxNativeZoom: 13,
             minZoom: 4,
             opacity: (_mapOpacity["sectional"] ?? 1.0) * 0.8 + 0.2);
@@ -32,11 +47,13 @@ class Settings with ChangeNotifier {
         return TileLayerOptions(
             urlTemplate:
                 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
+            tileProvider: makeTileProvider(name),
             maxNativeZoom: 20,
             opacity: (_mapOpacity["satellite"] ?? 1.0) * 0.8 + 0.2);
       default:
         return TileLayerOptions(
           urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+          tileProvider: makeTileProvider(name),
         );
     }
   }
@@ -88,6 +105,72 @@ class Settings with ChangeNotifier {
   Settings() {
     selectProximityConfig("Medium");
     _loadSettings();
+    initMapCache();
+  }
+
+  void initMapCache() async {
+    FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
+
+    for (final mapName in mapTileThumbnails.keys) {
+      final StoreDirectory store = FMTC.instance(mapName);
+      await store.manage.createAsync();
+      await store.metadata.addAsync(key: 'sourceURL', value: getMapTileLayer(mapName).urlTemplate!);
+      await store.metadata.addAsync(
+        key: 'validDuration',
+        value: '14',
+      );
+      await store.metadata.addAsync(
+        key: 'behaviour',
+        value: 'cacheFirst',
+      );
+    }
+
+    // Do a regular purge of old tiles
+    purgeMapTileCache();
+  }
+
+  String asReadableSize(double value) {
+    if (value <= 0) return '0 B';
+    final List<String> units = ['B', 'kB', 'MB', 'GB', 'TB'];
+    final int digitGroups = (log(value) / log(1024)).round();
+    return '${NumberFormat('#,##0.#').format(value / pow(1024, digitGroups))} ${units[digitGroups]}';
+  }
+
+  Future<String> getMapTileCacheSize() async {
+    double sum = 0;
+    for (final mapName in mapTileThumbnails.keys) {
+      final StoreDirectory store = FMTC.instance(mapName);
+      sum += (await store.stats.noCache.storeSizeAsync) * 1024;
+    }
+    return asReadableSize(sum);
+  }
+
+  void purgeMapTileCache() async {
+    final threshhold = DateTime.now().subtract(const Duration(days: 14));
+    for (final mapName in mapTileThumbnails.keys) {
+      final StoreDirectory store = FMTC.instance(mapName);
+      int countDelete = 0;
+      int countRemain = 0;
+      for (final tile in store.access.tiles.listSync()) {
+        if (tile.statSync().changed.isBefore(threshhold)) {
+          // debugPrint("Deleting Tile: ${tile.path}");
+          tile.deleteSync();
+          countDelete++;
+        } else {
+          countRemain++;
+        }
+      }
+      debugPrint("Scanned $mapName and deleted $countDelete / ${countRemain + countDelete} tiles.");
+      store.stats.invalidateCachedStatistics();
+    }
+  }
+
+  void emptyMapTileCache() {
+    for (final mapName in mapTileThumbnails.keys) {
+      final StoreDirectory store = FMTC.instance(mapName);
+      debugPrint("Clear Map Cache: $mapName");
+      store.manage.reset();
+    }
   }
 
   _loadSettings() {
