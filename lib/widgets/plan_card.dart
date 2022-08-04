@@ -15,6 +15,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/plans.dart';
 
 import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -288,14 +289,15 @@ class _PlanCardState extends State<PlanCard> {
                     // allowPanningOnScrollingParent: false
                   ),
                   layers: [
-                    TileLayerOptions(
-                      // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                      // subdomains: ['a', 'b', 'c'],
-                      urlTemplate:
-                          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                      // tileSize: 512,
-                      // zoomOffset: -1,
-                    ),
+                    // TileLayerOptions(
+                    //   // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    //   // subdomains: ['a', 'b', 'c'],
+                    //   urlTemplate:
+                    //       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                    //   // tileSize: 512,
+                    //   // zoomOffset: -1,
+                    // ),
+                    Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
 
                     // Trip snake lines
                     PolylineLayerOptions(polylines: widget.plan.buildTripSnake()),

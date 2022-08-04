@@ -1501,7 +1501,7 @@ class _MyHomePageState extends State<MyHomePage> {
           return Container(
             color: Theme.of(context).backgroundColor,
             child: SafeArea(
-              // minimum: const EdgeInsets.only(bottom: 10),
+              minimum: const EdgeInsets.only(bottom: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
