@@ -25,7 +25,7 @@ class Settings with ChangeNotifier {
     "sectional": 1.0,
     "satellite": 1.0,
   };
-  TileLayerOptions getMapTileLayer(String name) {
+  TileLayerOptions getMapTileLayer(String name, {double? opacity}) {
     TileProvider makeTileProvider(name) {
       return FMTC.instance(name).getTileProvider(
             FMTCTileProviderSettings(
@@ -42,18 +42,19 @@ class Settings with ChangeNotifier {
             tileProvider: makeTileProvider(name),
             maxNativeZoom: 13,
             minZoom: 4,
-            opacity: (_mapOpacity["sectional"] ?? 1.0) * 0.8 + 0.2);
+            opacity: (opacity ?? _mapOpacity["sectional"] ?? 1.0) * 0.8 + 0.2);
       case "satellite":
         return TileLayerOptions(
             urlTemplate:
                 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
             tileProvider: makeTileProvider(name),
             maxNativeZoom: 20,
-            opacity: (_mapOpacity["satellite"] ?? 1.0) * 0.8 + 0.2);
+            opacity: (opacity ?? _mapOpacity["satellite"] ?? 1.0) * 0.8 + 0.2);
       default:
         return TileLayerOptions(
           urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
           tileProvider: makeTileProvider(name),
+          opacity: opacity ?? 1.0,
         );
     }
   }

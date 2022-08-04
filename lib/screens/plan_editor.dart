@@ -161,7 +161,7 @@ class _PlanEditorState extends State<PlanEditor> {
                       //   urlTemplate:
                       //       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
                       // ),
-                      Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName),
+                      Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName, opacity: 1.0),
 
                       // Trip snake lines
                       PolylineLayerOptions(polylines: plan!.buildTripSnake()),
@@ -283,29 +283,30 @@ class _PlanEditorState extends State<PlanEditor> {
 
                 Align(
                     alignment: Alignment.topRight,
-                    child: ToggleButtons(
-                      isSelected: Settings.mapTileThumbnails.keys.map((e) => e == mapTileName).toList(),
-                      onPressed: (index) {
-                        setState(() {
-                          mapTileName = Settings.mapTileThumbnails.keys.toList()[index];
-                        });
-                      },
-                      children: Settings.mapTileThumbnails.keys
-                          .map((e) => SizedBox(
-                                width: MediaQuery.of(context).size.width / 6,
-                                height: 60,
-                                child: Container(
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                            color: e == mapTileName ? Colors.lightBlue : Colors.grey.shade900,
-                                            width: 4)),
-                                    margin: const EdgeInsets.all(4),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(16), child: Settings.mapTileThumbnails[e])),
-                              ))
-                          .toList(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: SizedBox(
+                        height: 40,
+                        child: ToggleButtons(
+                          isSelected: Settings.mapTileThumbnails.keys.map((e) => e == mapTileName).toList(),
+                          borderRadius: const BorderRadius.all(Radius.circular(10)),
+                          borderWidth: 3,
+                          borderColor: Colors.black,
+                          selectedBorderColor: Colors.blue,
+                          onPressed: (index) {
+                            setState(() {
+                              mapTileName = Settings.mapTileThumbnails.keys.toList()[index];
+                            });
+                          },
+                          children: Settings.mapTileThumbnails.keys
+                              .map((e) => SizedBox(
+                                    width: MediaQuery.of(context).size.width / 8,
+                                    // height: 50,
+                                    child: Settings.mapTileThumbnails[e],
+                                  ))
+                              .toList(),
+                        ),
+                      ),
                     ))
               ] +
               ((focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)

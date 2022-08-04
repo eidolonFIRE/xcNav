@@ -615,30 +615,31 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
             // --- Map Options
-            Builder(builder: (context) {
-              final settings = Provider.of<Settings>(context, listen: false);
-              return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: Settings.mapTileThumbnails.keys
-                      .map((e) => SizedBox(
-                            width: 100,
-                            height: 60,
-                            child: GestureDetector(
-                                onTap: () => {settings.curMapTiles = e},
-                                child: Container(
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                            color: e == settings.curMapTiles ? Colors.lightBlue : Colors.grey.shade900,
-                                            width: 4)),
-                                    margin: const EdgeInsets.all(4),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(16),
-                                        child: Settings.mapTileThumbnails[e]))),
-                          ))
-                      .toList());
-            }),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Consumer<Settings>(
+                    builder: (context, settings, _) => SizedBox(
+                          child: ToggleButtons(
+                              isSelected:
+                                  Settings.mapTileThumbnails.keys.map((e) => e == settings.curMapTiles).toList(),
+                              borderRadius: const BorderRadius.all(Radius.circular(10)),
+                              borderWidth: 4,
+                              borderColor: Colors.black,
+                              selectedBorderColor: Colors.lightBlue,
+                              onPressed: (index) {
+                                settings.curMapTiles = Settings.mapTileThumbnails.keys.toList()[index];
+                              },
+                              children: Settings.mapTileThumbnails.keys
+                                  .map((e) => SizedBox(
+                                        width: 80,
+                                        height: 50,
+                                        child: Settings.mapTileThumbnails[e],
+                                      ))
+                                  .toList()),
+                        )),
+              ],
+            ),
 
             // --- Map opacity slider
             if (Provider.of<Settings>(context).curMapTiles != "topo")
