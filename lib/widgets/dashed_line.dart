@@ -9,27 +9,22 @@ class DashedLine extends StatefulWidget {
   const DashedLine(this.color, this.width, {Key? key}) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _LineState(color, width);
+  State<StatefulWidget> createState() => _LineState();
 }
 
 class _LineState extends State<DashedLine> with SingleTickerProviderStateMixin {
-  final Color color;
-  final double width;
-
   double _progress = 0.0;
   late Animation<double> animation;
   late AnimationController controller;
 
-  _LineState(this.color, this.width);
+  _LineState();
 
   @override
   void initState() {
     super.initState();
 
-    controller = AnimationController(
-        duration: const Duration(milliseconds: 10000), vsync: this);
-    final CurvedAnimation curve =
-        CurvedAnimation(parent: controller, curve: Curves.decelerate);
+    controller = AnimationController(duration: const Duration(milliseconds: 10000), vsync: this);
+    final CurvedAnimation curve = CurvedAnimation(parent: controller, curve: Curves.decelerate);
     animation = Tween(begin: 0.0, end: 1.0).animate(curve)
       ..addListener(() {
         setState(() {
@@ -54,7 +49,7 @@ class _LineState extends State<DashedLine> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(painter: LinePainter(_progress, color, width));
+    return CustomPaint(painter: LinePainter(_progress, widget.color, widget.width));
   }
 }
 
@@ -82,10 +77,7 @@ class LinePainter extends CustomPainter {
 
     while (posX > 0) {
       // Draw a small line.
-      canvas.drawLine(
-          Offset(posX, posY),
-          Offset(max(0, posX - dashWidth), max(0, posY - dashWidth * skew)),
-          _paint);
+      canvas.drawLine(Offset(posX, posY), Offset(max(0, posX - dashWidth), max(0, posY - dashWidth * skew)), _paint);
 
       // Update the starting X
       posX -= dashWidth + dashSpace;

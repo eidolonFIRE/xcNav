@@ -146,7 +146,7 @@ Widget moreInstrumentsDrawer() {
                                   }
                                 },
                                 isSelected: [!wind.isRecording, wind.isRecording],
-                                children: const [Text("Hold"), Text("Active")]),
+                                children: const [Text("Hold"), Text("Measure")]),
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -231,7 +231,7 @@ Widget moreInstrumentsDrawer() {
                                                   )
                                                 ],
                                               )
-                                            : const Text("Activate to\nBegin",
+                                            : const Text("Tap Measure\nto begin",
                                                 textAlign: TextAlign.center, style: TextStyle(fontSize: 18)))
                                     : ClipRect(
                                         child: CustomPaint(

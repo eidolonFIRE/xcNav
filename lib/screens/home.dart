@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -173,6 +174,23 @@ class _MyHomePageState extends State<MyHomePage> {
           timer = null;
         }
       }
+    });
+
+    FeatureDiscovery.clearPreferences(context, <String>[
+      // "focusOnMe",
+      // "focusOnGroup",
+      // "instruments",
+      // "flightPlan",
+      // "qrScanner",
+    ]);
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      FeatureDiscovery.discoverFeatures(context, <String>[
+        "focusOnMe",
+        "focusOnGroup",
+        "instruments",
+        "flightPlan",
+        "qrScanner",
+      ]);
     });
   }
 
@@ -554,7 +572,18 @@ class _MyHomePageState extends State<MyHomePage> {
             automaticallyImplyLeading: true,
             leadingWidth: 35,
             toolbarHeight: 64,
-            title: Provider.of<Settings>(context).groundMode ? groundControlBar(context) : topInstruments(context)),
+            title: Provider.of<Settings>(context).groundMode
+                ? groundControlBar(context)
+                : DescribedFeatureOverlay(
+                    featureId: "instruments",
+                    title: const Text("Instruments"),
+                    description: const Text("Swipe down to show more instruments."),
+                    tapTarget: const Icon(
+                      Icons.swipe_down,
+                      color: Colors.black,
+                      size: 40,
+                    ),
+                    child: topInstruments(context))),
         // --- Main Menu
         drawer: Drawer(
             child: ListView(
@@ -719,13 +748,23 @@ class _MyHomePageState extends State<MyHomePage> {
                 "Group",
                 style: Theme.of(context).textTheme.headline5,
               ),
-              trailing: IconButton(
-                  iconSize: 30,
-                  onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
-                  icon: const Icon(
-                    Icons.qr_code_scanner,
-                    color: Colors.lightBlue,
-                  )),
+              trailing: DescribedFeatureOverlay(
+                featureId: "qrScanner",
+                title: const Text("Join / Invite"),
+                description: const Text("Scan a QR code to join a group."),
+                tapTarget: const Icon(
+                  Icons.qr_code_scanner,
+                  color: Colors.lightBlue,
+                  size: 50,
+                ),
+                child: IconButton(
+                    iconSize: 30,
+                    onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
+                    icon: const Icon(
+                      Icons.qr_code_scanner,
+                      color: Colors.lightBlue,
+                    )),
+              ),
             ),
 
             ListTile(
@@ -1337,12 +1376,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // --- Focus on Me
-                          MapButton(
-                            size: 60,
-                            selected: focusMode == FocusMode.me,
-                            child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
-                            onPressed: () =>
-                                setFocusMode(FocusMode.me, Provider.of<MyTelemetry>(context, listen: false).geo.latLng),
+                          DescribedFeatureOverlay(
+                            featureId: "focusOnMe",
+                            tapTarget: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                            title: const Text("Focus on Me"),
+                            overflowMode: OverflowMode.extendBackground,
+                            description: const Text("Keep me in center of view."),
+                            child: MapButton(
+                              size: 60,
+                              selected: focusMode == FocusMode.me,
+                              child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                              onPressed: () => setFocusMode(
+                                  FocusMode.me, Provider.of<MyTelemetry>(context, listen: false).geo.latLng),
+                            ),
                           ),
                           //
                           SizedBox(
@@ -1352,11 +1398,18 @@ class _MyHomePageState extends State<MyHomePage> {
                                 color: Colors.black,
                               )),
                           // --- Focus on Group
-                          MapButton(
-                            size: 60,
-                            selected: focusMode == FocusMode.group,
-                            onPressed: () => setFocusMode(FocusMode.group),
-                            child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                          DescribedFeatureOverlay(
+                            featureId: "focusOnGroup",
+                            tapTarget: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                            title: const Text("Follow Group"),
+                            overflowMode: OverflowMode.extendBackground,
+                            description: const Text("Keep everyone in view."),
+                            child: MapButton(
+                              size: 60,
+                              selected: focusMode == FocusMode.group,
+                              onPressed: () => setFocusMode(FocusMode.group),
+                              child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                            ),
                           ),
                         ],
                       ),
@@ -1522,83 +1575,93 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
 
                   // --- Next Waypoint Info
-                  Expanded(
-                    child: GestureDetector(
-                      onPanDown: (details) {
-                        // debugPrint("${MediaQuery.of(context).size.height - details.globalPosition.dy}");
-                        // Limit the hitbox at the very bottom so it doesn't interfere with system bar
-                        if (MediaQuery.of(context).size.height - details.globalPosition.dy > 30) {
-                          showFlightPlan();
-                        }
-                      },
-                      // onTap: showFlightPlan,
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 60),
-                        color: Theme.of(context).backgroundColor,
-                        child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: (curWp != null)
-                                  ? [
-                                      // --- Current Waypoint Label
-                                      // RichText(
-                                      Text.rich(
-                                        TextSpan(children: [
-                                          WidgetSpan(
-                                            child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
-                                          ),
-                                          const TextSpan(text: "  "),
-                                          TextSpan(
-                                            text: curWp.name,
-                                            style: const TextStyle(color: Colors.white, fontSize: 30),
-                                          ),
-                                        ]),
-                                        maxLines: 2,
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      SizedBox(
-                                        width: MediaQuery.of(context).size.width / 2,
-                                        child: Divider(
-                                          thickness: 1,
-                                          height: 8,
-                                          color: Colors.grey.shade700,
+                  DescribedFeatureOverlay(
+                    featureId: "flightPlan",
+                    title: const Text("Flight Plan"),
+                    description: const Text("Swipe up to see flight plan."),
+                    tapTarget: const Icon(
+                      Icons.swipe_up,
+                      color: Colors.black,
+                      size: 40,
+                    ),
+                    child: Expanded(
+                      child: GestureDetector(
+                        onPanDown: (details) {
+                          // debugPrint("${MediaQuery.of(context).size.height - details.globalPosition.dy}");
+                          // Limit the hitbox at the very bottom so it doesn't interfere with system bar
+                          if (MediaQuery.of(context).size.height - details.globalPosition.dy > 30) {
+                            showFlightPlan();
+                          }
+                        },
+                        // onTap: showFlightPlan,
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 60),
+                          color: Theme.of(context).backgroundColor,
+                          child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: (curWp != null)
+                                    ? [
+                                        // --- Current Waypoint Label
+                                        // RichText(
+                                        Text.rich(
+                                          TextSpan(children: [
+                                            WidgetSpan(
+                                              child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
+                                            ),
+                                            const TextSpan(text: "  "),
+                                            TextSpan(
+                                              text: curWp.name,
+                                              style: const TextStyle(color: Colors.white, fontSize: 30),
+                                            ),
+                                          ]),
+                                          maxLines: 2,
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-                                      // --- ETA next
-                                      Text.rich(
-                                        TextSpan(children: [
-                                          TextSpan(
-                                              text: printValue(
-                                                  value: convertDistValueCoarse(
-                                                      Provider.of<Settings>(context, listen: false).displayUnitsDist,
-                                                      etaNext.distance),
-                                                  digits: 4,
-                                                  decimals: 1),
-                                              style: instrLower),
-                                          TextSpan(
-                                              text: unitStrDistCoarse[
-                                                  Provider.of<Settings>(context, listen: false).displayUnitsDist],
-                                              style: instrLabel),
-                                          if (myTelemetry.inFlight) const TextSpan(text: "    "),
-                                          if (myTelemetry.inFlight)
-                                            richHrMin(
-                                                milliseconds: etaTime, valueStyle: instrLower, unitStyle: instrLabel),
-                                          if (myTelemetry.inFlight &&
-                                              myTelemetry.fuel > 0 &&
-                                              myTelemetry.fuelTimeRemaining < etaNext.time)
-                                            const WidgetSpan(
-                                                child: Padding(
-                                              padding: EdgeInsets.only(left: 20),
-                                              child: FuelWarning(35),
-                                            )),
-                                        ]),
-                                      ),
-                                    ]
-                                  : const [Text("Select Waypoint")],
-                            )),
+                                        SizedBox(
+                                          width: MediaQuery.of(context).size.width / 2,
+                                          child: Divider(
+                                            thickness: 1,
+                                            height: 8,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                        // --- ETA next
+                                        Text.rich(
+                                          TextSpan(children: [
+                                            TextSpan(
+                                                text: printValue(
+                                                    value: convertDistValueCoarse(
+                                                        Provider.of<Settings>(context, listen: false).displayUnitsDist,
+                                                        etaNext.distance),
+                                                    digits: 4,
+                                                    decimals: 1),
+                                                style: instrLower),
+                                            TextSpan(
+                                                text: unitStrDistCoarse[
+                                                    Provider.of<Settings>(context, listen: false).displayUnitsDist],
+                                                style: instrLabel),
+                                            if (myTelemetry.inFlight) const TextSpan(text: "    "),
+                                            if (myTelemetry.inFlight)
+                                              richHrMin(
+                                                  milliseconds: etaTime, valueStyle: instrLower, unitStyle: instrLabel),
+                                            if (myTelemetry.inFlight &&
+                                                myTelemetry.fuel > 0 &&
+                                                myTelemetry.fuelTimeRemaining < etaNext.time)
+                                              const WidgetSpan(
+                                                  child: Padding(
+                                                padding: EdgeInsets.only(left: 20),
+                                                child: FuelWarning(35),
+                                              )),
+                                          ]),
+                                        ),
+                                      ]
+                                    : const [Text("Select Waypoint")],
+                              )),
+                        ),
                       ),
                     ),
                   ),

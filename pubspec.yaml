@@ -76,6 +76,7 @@ dependencies:
   usb_serial: ^0.4.0
   latlong2: ^0.8.1
   collection: ^1.16.0
+  feature_discovery: ^0.14.1
 
 dev_dependencies:
   flutter_test:
