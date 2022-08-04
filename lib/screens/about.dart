@@ -101,18 +101,26 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         Container(),
-                        ElevatedButton(
-                            style: externalBtn,
-                            onPressed: () => {launchUrl(Uri.parse("https://www.patreon.com/xcnav"))},
-                            child: Image.asset(
-                              "assets/external/Digital-Patreon-Logo_FieryCoral.png",
-                              width: MediaQuery.of(context).size.width / 10,
-                            )),
-                        ElevatedButton(
-                            style: externalBtn,
-                            onPressed: () => {launchUrl(Uri.parse("https://github.com/eidolonFIRE/xcNav"))},
-                            child: Image.asset("assets/external/GitHub-Mark-120px-plus.png",
-                                width: MediaQuery.of(context).size.width / 10)),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width / 5,
+                          height: MediaQuery.of(context).size.width / 5,
+                          child: ElevatedButton(
+                              style: externalBtn,
+                              onPressed: () => {launchUrl(Uri.parse("https://www.patreon.com/xcnav"))},
+                              child: Image.asset(
+                                "assets/external/Digital-Patreon-Logo_FieryCoral.png",
+                                width: MediaQuery.of(context).size.width / 10,
+                              )),
+                        ),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width / 5,
+                          height: MediaQuery.of(context).size.width / 5,
+                          child: ElevatedButton(
+                              style: externalBtn,
+                              onPressed: () => {launchUrl(Uri.parse("https://github.com/eidolonFIRE/xcNav"))},
+                              child: Image.asset("assets/external/GitHub-Mark-120px-plus.png",
+                                  width: MediaQuery.of(context).size.width / 10)),
+                        ),
                         SizedBox(
                           width: MediaQuery.of(context).size.width / 5,
                           height: MediaQuery.of(context).size.width / 5,

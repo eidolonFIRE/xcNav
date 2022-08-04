@@ -76,6 +76,7 @@ dependencies:
   usb_serial: ^0.4.0
   latlong2: ^0.8.1
   collection: ^1.16.0
+  flutter_map_tile_caching: ^5.0.0-dev.6
 
 dev_dependencies:
   flutter_test:

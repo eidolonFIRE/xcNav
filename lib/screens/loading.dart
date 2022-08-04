@@ -11,6 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/util.dart';
 
 // widgets
 import 'package:xcnav/widgets/dashed_line.dart';
@@ -162,7 +163,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+    setSystemUI();
 
     checkPermissions(context);
 

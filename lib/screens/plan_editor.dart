@@ -47,6 +47,8 @@ class _PlanEditorState extends State<PlanEditor> {
 
   FocusMode focusMode = FocusMode.unlocked;
 
+  String mapTileName = "topo";
+
   @override
   void initState() {
     super.initState();
@@ -155,10 +157,11 @@ class _PlanEditorState extends State<PlanEditor> {
                       onTap: (tapPos, latlng) => onMapTap(context, latlng),
                     ),
                     layers: [
-                      TileLayerOptions(
-                        urlTemplate:
-                            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                      ),
+                      // TileLayerOptions(
+                      //   urlTemplate:
+                      //       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                      // ),
+                      Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName, opacity: 1.0),
 
                       // Trip snake lines
                       PolylineLayerOptions(polylines: plan!.buildTripSnake()),
@@ -276,7 +279,35 @@ class _PlanEditorState extends State<PlanEditor> {
                       )
                     ],
                   ),
-                )
+                ),
+
+                Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: SizedBox(
+                        height: 40,
+                        child: ToggleButtons(
+                          isSelected: Settings.mapTileThumbnails.keys.map((e) => e == mapTileName).toList(),
+                          borderRadius: const BorderRadius.all(Radius.circular(10)),
+                          borderWidth: 3,
+                          borderColor: Colors.black,
+                          selectedBorderColor: Colors.blue,
+                          onPressed: (index) {
+                            setState(() {
+                              mapTileName = Settings.mapTileThumbnails.keys.toList()[index];
+                            });
+                          },
+                          children: Settings.mapTileThumbnails.keys
+                              .map((e) => SizedBox(
+                                    width: MediaQuery.of(context).size.width / 8,
+                                    // height: 50,
+                                    child: Settings.mapTileThumbnails[e],
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    ))
               ] +
               ((focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
                   ? [

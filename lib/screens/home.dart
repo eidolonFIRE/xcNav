@@ -15,6 +15,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/patreon.dart';
 
@@ -548,7 +549,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     debugPrint("Build /home");
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+    setSystemUI();
     return Scaffold(
         appBar: AppBar(
             automaticallyImplyLeading: true,
@@ -614,30 +615,31 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
             // --- Map Options
-            Builder(builder: (context) {
-              final settings = Provider.of<Settings>(context, listen: false);
-              return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: settings.mapTileThumbnails.keys
-                      .map((e) => SizedBox(
-                            width: 100,
-                            height: 60,
-                            child: GestureDetector(
-                                onTap: () => {settings.curMapTiles = e},
-                                child: Container(
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                            color: e == settings.curMapTiles ? Colors.lightBlue : Colors.grey.shade900,
-                                            width: 4)),
-                                    margin: const EdgeInsets.all(4),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(16),
-                                        child: settings.mapTileThumbnails[e]))),
-                          ))
-                      .toList());
-            }),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Consumer<Settings>(
+                    builder: (context, settings, _) => SizedBox(
+                          child: ToggleButtons(
+                              isSelected:
+                                  Settings.mapTileThumbnails.keys.map((e) => e == settings.curMapTiles).toList(),
+                              borderRadius: const BorderRadius.all(Radius.circular(10)),
+                              borderWidth: 4,
+                              borderColor: Colors.black,
+                              selectedBorderColor: Colors.lightBlue,
+                              onPressed: (index) {
+                                settings.curMapTiles = Settings.mapTileThumbnails.keys.toList()[index];
+                              },
+                              children: Settings.mapTileThumbnails.keys
+                                  .map((e) => SizedBox(
+                                        width: 80,
+                                        height: 50,
+                                        child: Settings.mapTileThumbnails[e],
+                                      ))
+                                  .toList()),
+                        )),
+              ],
+            ),
 
             // --- Map opacity slider
             if (Provider.of<Settings>(context).curMapTiles != "topo")
@@ -651,20 +653,20 @@ class _MyHomePageState extends State<MyHomePage> {
               }),
 
             // --- Toggle airspace overlay
-            if (Provider.of<Settings>(context).curMapTiles == "topo")
-              ListTile(
-                minVerticalPadding: 20,
-                leading: const Icon(
-                  Icons.local_airport,
-                  size: 30,
-                ),
-                title: Text("Airspace", style: Theme.of(context).textTheme.headline5),
-                trailing: Switch(
-                  activeColor: Colors.lightBlueAccent,
-                  value: Provider.of<Settings>(context).showAirspace,
-                  onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
-                ),
-              ),
+            // if (Provider.of<Settings>(context).curMapTiles == "topo")
+            //   ListTile(
+            //     minVerticalPadding: 20,
+            //     leading: const Icon(
+            //       Icons.local_airport,
+            //       size: 30,
+            //     ),
+            //     title: Text("Airspace", style: Theme.of(context).textTheme.headline5),
+            //     trailing: Switch(
+            //       activeColor: Colors.lightBlueAccent,
+            //       value: Provider.of<Settings>(context).showAirspace,
+            //       onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
+            //     ),
+            //   ),
 
             ListTile(
                 minVerticalPadding: 20,
@@ -1367,6 +1369,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           selected: false,
                           onPressed: () {
                             mapController.move(mapController.center, mapController.zoom + 1);
+                            debugPrint("Map Zoom: ${mapController.zoom}");
                             lastMapChange = DateTime.now();
                           },
                           child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
@@ -1384,6 +1387,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           selected: false,
                           onPressed: () {
                             mapController.move(mapController.center, mapController.zoom - 1);
+                            debugPrint("Map Zoom: ${mapController.zoom}");
                             lastMapChange = DateTime.now();
                           },
                           child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
@@ -1498,7 +1502,7 @@ class _MyHomePageState extends State<MyHomePage> {
           return Container(
             color: Theme.of(context).backgroundColor,
             child: SafeArea(
-              // minimum: const EdgeInsets.only(bottom: 10),
+              minimum: const EdgeInsets.only(bottom: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
