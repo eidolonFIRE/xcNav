@@ -100,6 +100,14 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Polyline> polyLines = [];
   var editablePolyline = Polyline(color: Colors.amber, points: [], strokeWidth: 5);
 
+  final features = [
+    "focusOnMe",
+    "focusOnGroup",
+    "instruments",
+    "flightPlan",
+    "qrScanner",
+  ];
+
   @override
   _MyHomePageState();
 
@@ -176,21 +184,12 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     });
 
-    FeatureDiscovery.clearPreferences(context, <String>[
-      // "focusOnMe",
-      // "focusOnGroup",
-      // "instruments",
-      // "flightPlan",
-      // "qrScanner",
-    ]);
+    showFeatures();
+  }
+
+  void showFeatures() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      FeatureDiscovery.discoverFeatures(context, <String>[
-        "focusOnMe",
-        "focusOnGroup",
-        "instruments",
-        "flightPlan",
-        "qrScanner",
-      ]);
+      FeatureDiscovery.discoverFeatures(context, features);
     });
   }
 
@@ -815,6 +814,19 @@ class _MyHomePageState extends State<MyHomePage> {
               onTap: () => {Navigator.popAndPushNamed(context, "/about")},
               leading: const Icon(Icons.info, size: 30),
               title: Text("About", style: Theme.of(context).textTheme.headline5),
+            ),
+
+            ListTile(
+              minVerticalPadding: 20,
+              onTap: () {
+                Navigator.pop(context);
+                FeatureDiscovery.clearPreferences(context, features);
+                setState(() {
+                  showFeatures();
+                });
+              },
+              leading: const Icon(Icons.help, size: 30),
+              title: Text("Show Help", style: Theme.of(context).textTheme.headline5),
             )
           ],
         )),
@@ -1548,43 +1560,45 @@ class _MyHomePageState extends State<MyHomePage> {
 
           final curWp = activePlan.selectedWp;
 
-          return Container(
-            color: Theme.of(context).backgroundColor,
-            child: SafeArea(
-              // minimum: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // --- Previous Waypoint
-                  IconButton(
-                    onPressed: () {
-                      final wp = activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
-                      if (wp != null) activePlan.selectWaypoint(wp);
-                    },
-                    iconSize: 40,
-                    color: (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0)
-                        ? Colors.white
-                        : Colors.grey.shade700,
-                    icon: SvgPicture.asset(
-                      "assets/images/reverse_back.svg",
-                      color: ((activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint()) !=
-                              null)
+          return DescribedFeatureOverlay(
+            featureId: "flightPlan",
+            title: const Text("Flight Plan"),
+            description: const Text("Swipe up to see flight plan."),
+            tapTarget: const Icon(
+              Icons.swipe_up,
+              color: Colors.black,
+              size: 40,
+            ),
+            child: Container(
+              color: Theme.of(context).backgroundColor,
+              child: SafeArea(
+                // minimum: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // --- Previous Waypoint
+                    IconButton(
+                      onPressed: () {
+                        final wp =
+                            activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
+                        if (wp != null) activePlan.selectWaypoint(wp);
+                      },
+                      iconSize: 40,
+                      color: (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0)
                           ? Colors.white
                           : Colors.grey.shade700,
+                      icon: SvgPicture.asset(
+                        "assets/images/reverse_back.svg",
+                        color:
+                            ((activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint()) !=
+                                    null)
+                                ? Colors.white
+                                : Colors.grey.shade700,
+                      ),
                     ),
-                  ),
 
-                  // --- Next Waypoint Info
-                  DescribedFeatureOverlay(
-                    featureId: "flightPlan",
-                    title: const Text("Flight Plan"),
-                    description: const Text("Swipe up to see flight plan."),
-                    tapTarget: const Icon(
-                      Icons.swipe_up,
-                      color: Colors.black,
-                      size: 40,
-                    ),
-                    child: Expanded(
+                    // --- Next Waypoint Info
+                    Expanded(
                       child: GestureDetector(
                         onPanDown: (details) {
                           // debugPrint("${MediaQuery.of(context).size.height - details.globalPosition.dy}");
@@ -1664,26 +1678,26 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       ),
                     ),
-                  ),
-                  // --- Next Waypoint
-                  IconButton(
-                      onPressed: () {
-                        final wp =
-                            !activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
-                        if (wp != null) activePlan.selectWaypoint(wp);
-                      },
-                      iconSize: 40,
-                      color: (activePlan.selectedIndex != null &&
-                              (!activePlan.isReversed
-                                      ? activePlan.findNextWaypoint()
-                                      : activePlan.findPrevWaypoint()) !=
-                                  null)
-                          ? Colors.white
-                          : Colors.grey.shade700,
-                      icon: const Icon(
-                        Icons.arrow_forward,
-                      )),
-                ],
+                    // --- Next Waypoint
+                    IconButton(
+                        onPressed: () {
+                          final wp =
+                              !activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
+                          if (wp != null) activePlan.selectWaypoint(wp);
+                        },
+                        iconSize: 40,
+                        color: (activePlan.selectedIndex != null &&
+                                (!activePlan.isReversed
+                                        ? activePlan.findNextWaypoint()
+                                        : activePlan.findPrevWaypoint()) !=
+                                    null)
+                            ? Colors.white
+                            : Colors.grey.shade700,
+                        icon: const Icon(
+                          Icons.arrow_forward,
+                        )),
+                  ],
+                ),
               ),
             ),
           );
