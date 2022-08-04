@@ -619,7 +619,7 @@ class _MyHomePageState extends State<MyHomePage> {
               final settings = Provider.of<Settings>(context, listen: false);
               return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: settings.mapTileThumbnails.keys
+                  children: Settings.mapTileThumbnails.keys
                       .map((e) => SizedBox(
                             width: 100,
                             height: 60,
@@ -635,7 +635,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                     clipBehavior: Clip.antiAlias,
                                     child: ClipRRect(
                                         borderRadius: BorderRadius.circular(16),
-                                        child: settings.mapTileThumbnails[e]))),
+                                        child: Settings.mapTileThumbnails[e]))),
                           ))
                       .toList());
             }),

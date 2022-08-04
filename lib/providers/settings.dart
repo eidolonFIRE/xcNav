@@ -58,7 +58,7 @@ class Settings with ChangeNotifier {
     }
   }
 
-  final Map<String, Image> mapTileThumbnails = {
+  static final Map<String, Image> mapTileThumbnails = {
     "topo": Image.asset(
       "assets/images/topo.png",
       filterQuality: FilterQuality.high,

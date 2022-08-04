@@ -47,6 +47,8 @@ class _PlanEditorState extends State<PlanEditor> {
 
   FocusMode focusMode = FocusMode.unlocked;
 
+  String mapTileName = "topo";
+
   @override
   void initState() {
     super.initState();
@@ -155,10 +157,11 @@ class _PlanEditorState extends State<PlanEditor> {
                       onTap: (tapPos, latlng) => onMapTap(context, latlng),
                     ),
                     layers: [
-                      TileLayerOptions(
-                        urlTemplate:
-                            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                      ),
+                      // TileLayerOptions(
+                      //   urlTemplate:
+                      //       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                      // ),
+                      Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName),
 
                       // Trip snake lines
                       PolylineLayerOptions(polylines: plan!.buildTripSnake()),
@@ -276,7 +279,34 @@ class _PlanEditorState extends State<PlanEditor> {
                       )
                     ],
                   ),
-                )
+                ),
+
+                Align(
+                    alignment: Alignment.topRight,
+                    child: ToggleButtons(
+                      isSelected: Settings.mapTileThumbnails.keys.map((e) => e == mapTileName).toList(),
+                      onPressed: (index) {
+                        setState(() {
+                          mapTileName = Settings.mapTileThumbnails.keys.toList()[index];
+                        });
+                      },
+                      children: Settings.mapTileThumbnails.keys
+                          .map((e) => SizedBox(
+                                width: MediaQuery.of(context).size.width / 6,
+                                height: 60,
+                                child: Container(
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                            color: e == mapTileName ? Colors.lightBlue : Colors.grey.shade900,
+                                            width: 4)),
+                                    margin: const EdgeInsets.all(4),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(16), child: Settings.mapTileThumbnails[e])),
+                              ))
+                          .toList(),
+                    ))
               ] +
               ((focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
                   ? [

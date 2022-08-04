@@ -289,15 +289,15 @@ class _PlanCardState extends State<PlanCard> {
                     // allowPanningOnScrollingParent: false
                   ),
                   layers: [
-                    // TileLayerOptions(
-                    //   // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                    //   // subdomains: ['a', 'b', 'c'],
-                    //   urlTemplate:
-                    //       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                    //   // tileSize: 512,
-                    //   // zoomOffset: -1,
-                    // ),
-                    Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
+                    TileLayerOptions(
+                      // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      // subdomains: ['a', 'b', 'c'],
+                      urlTemplate:
+                          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                      // tileSize: 512,
+                      // zoomOffset: -1,
+                    ),
+                    // Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
 
                     // Trip snake lines
                     PolylineLayerOptions(polylines: widget.plan.buildTripSnake()),
