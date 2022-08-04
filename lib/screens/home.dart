@@ -4,18 +4,17 @@ import 'dart:math';
 import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:focus_detector/focus_detector.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/patreon.dart';
 
@@ -565,7 +564,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     debugPrint("Build /home");
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+    setSystemUI();
     return Scaffold(
         appBar: AppBar(
             automaticallyImplyLeading: true,
@@ -642,30 +641,31 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
             // --- Map Options
-            Builder(builder: (context) {
-              final settings = Provider.of<Settings>(context, listen: false);
-              return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: settings.mapTileThumbnails.keys
-                      .map((e) => SizedBox(
-                            width: 100,
-                            height: 60,
-                            child: GestureDetector(
-                                onTap: () => {settings.curMapTiles = e},
-                                child: Container(
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                            color: e == settings.curMapTiles ? Colors.lightBlue : Colors.grey.shade900,
-                                            width: 4)),
-                                    margin: const EdgeInsets.all(4),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(16),
-                                        child: settings.mapTileThumbnails[e]))),
-                          ))
-                      .toList());
-            }),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Consumer<Settings>(
+                    builder: (context, settings, _) => SizedBox(
+                          child: ToggleButtons(
+                              isSelected:
+                                  Settings.mapTileThumbnails.keys.map((e) => e == settings.curMapTiles).toList(),
+                              borderRadius: const BorderRadius.all(Radius.circular(10)),
+                              borderWidth: 4,
+                              borderColor: Colors.black,
+                              selectedBorderColor: Colors.lightBlue,
+                              onPressed: (index) {
+                                settings.curMapTiles = Settings.mapTileThumbnails.keys.toList()[index];
+                              },
+                              children: Settings.mapTileThumbnails.keys
+                                  .map((e) => SizedBox(
+                                        width: 80,
+                                        height: 50,
+                                        child: Settings.mapTileThumbnails[e],
+                                      ))
+                                  .toList()),
+                        )),
+              ],
+            ),
 
             // --- Map opacity slider
             if (Provider.of<Settings>(context).curMapTiles != "topo")
@@ -679,20 +679,20 @@ class _MyHomePageState extends State<MyHomePage> {
               }),
 
             // --- Toggle airspace overlay
-            if (Provider.of<Settings>(context).curMapTiles == "topo")
-              ListTile(
-                minVerticalPadding: 20,
-                leading: const Icon(
-                  Icons.local_airport,
-                  size: 30,
-                ),
-                title: Text("Airspace", style: Theme.of(context).textTheme.headline5),
-                trailing: Switch(
-                  activeColor: Colors.lightBlueAccent,
-                  value: Provider.of<Settings>(context).showAirspace,
-                  onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
-                ),
-              ),
+            // if (Provider.of<Settings>(context).curMapTiles == "topo")
+            //   ListTile(
+            //     minVerticalPadding: 20,
+            //     leading: const Icon(
+            //       Icons.local_airport,
+            //       size: 30,
+            //     ),
+            //     title: Text("Airspace", style: Theme.of(context).textTheme.headline5),
+            //     trailing: Switch(
+            //       activeColor: Colors.lightBlueAccent,
+            //       value: Provider.of<Settings>(context).showAirspace,
+            //       onChanged: (value) => {Provider.of<Settings>(context, listen: false).showAirspace = value},
+            //     ),
+            //   ),
 
             ListTile(
                 minVerticalPadding: 20,
@@ -1432,6 +1432,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           selected: false,
                           onPressed: () {
                             mapController.move(mapController.center, mapController.zoom + 1);
+                            debugPrint("Map Zoom: ${mapController.zoom}");
                             lastMapChange = DateTime.now();
                           },
                           child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
@@ -1449,6 +1450,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           selected: false,
                           onPressed: () {
                             mapController.move(mapController.center, mapController.zoom - 1);
+                            debugPrint("Map Zoom: ${mapController.zoom}");
                             lastMapChange = DateTime.now();
                           },
                           child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
@@ -1560,144 +1562,132 @@ class _MyHomePageState extends State<MyHomePage> {
 
           final curWp = activePlan.selectedWp;
 
-          return DescribedFeatureOverlay(
-            featureId: "flightPlan",
-            title: const Text("Flight Plan"),
-            description: const Text("Swipe up to see flight plan."),
-            tapTarget: const Icon(
-              Icons.swipe_up,
-              color: Colors.black,
-              size: 40,
-            ),
-            child: Container(
-              color: Theme.of(context).backgroundColor,
-              child: SafeArea(
-                // minimum: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // --- Previous Waypoint
-                    IconButton(
+          return Container(
+            color: Theme.of(context).backgroundColor,
+            child: SafeArea(
+              minimum: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // --- Previous Waypoint
+                  IconButton(
+                    onPressed: () {
+                      final wp = activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
+                      if (wp != null) activePlan.selectWaypoint(wp);
+                    },
+                    iconSize: 40,
+                    color: (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0)
+                        ? Colors.white
+                        : Colors.grey.shade700,
+                    icon: SvgPicture.asset(
+                      "assets/images/reverse_back.svg",
+                      color: ((activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint()) !=
+                              null)
+                          ? Colors.white
+                          : Colors.grey.shade700,
+                    ),
+                  ),
+
+                  // --- Next Waypoint Info
+                  Expanded(
+                    child: GestureDetector(
+                      onPanDown: (details) {
+                        // debugPrint("${MediaQuery.of(context).size.height - details.globalPosition.dy}");
+                        // Limit the hitbox at the very bottom so it doesn't interfere with system bar
+                        if (MediaQuery.of(context).size.height - details.globalPosition.dy > 30) {
+                          showFlightPlan();
+                        }
+                      },
+                      // onTap: showFlightPlan,
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 60),
+                        color: Theme.of(context).backgroundColor,
+                        child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: (curWp != null)
+                                  ? [
+                                      // --- Current Waypoint Label
+                                      // RichText(
+                                      Text.rich(
+                                        TextSpan(children: [
+                                          WidgetSpan(
+                                            child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
+                                          ),
+                                          const TextSpan(text: "  "),
+                                          TextSpan(
+                                            text: curWp.name,
+                                            style: const TextStyle(color: Colors.white, fontSize: 30),
+                                          ),
+                                        ]),
+                                        maxLines: 2,
+                                        textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width / 2,
+                                        child: Divider(
+                                          thickness: 1,
+                                          height: 8,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                      // --- ETA next
+                                      Text.rich(
+                                        TextSpan(children: [
+                                          TextSpan(
+                                              text: printValue(
+                                                  value: convertDistValueCoarse(
+                                                      Provider.of<Settings>(context, listen: false).displayUnitsDist,
+                                                      etaNext.distance),
+                                                  digits: 4,
+                                                  decimals: 1),
+                                              style: instrLower),
+                                          TextSpan(
+                                              text: unitStrDistCoarse[
+                                                  Provider.of<Settings>(context, listen: false).displayUnitsDist],
+                                              style: instrLabel),
+                                          if (myTelemetry.inFlight) const TextSpan(text: "    "),
+                                          if (myTelemetry.inFlight)
+                                            richHrMin(
+                                                milliseconds: etaTime, valueStyle: instrLower, unitStyle: instrLabel),
+                                          if (myTelemetry.inFlight &&
+                                              myTelemetry.fuel > 0 &&
+                                              myTelemetry.fuelTimeRemaining < etaNext.time)
+                                            const WidgetSpan(
+                                                child: Padding(
+                                              padding: EdgeInsets.only(left: 20),
+                                              child: FuelWarning(35),
+                                            )),
+                                        ]),
+                                      ),
+                                    ]
+                                  : const [Text("Select Waypoint")],
+                            )),
+                      ),
+                    ),
+                  ),
+                  // --- Next Waypoint
+                  IconButton(
                       onPressed: () {
                         final wp =
-                            activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
+                            !activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
                         if (wp != null) activePlan.selectWaypoint(wp);
                       },
                       iconSize: 40,
-                      color: (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0)
+                      color: (activePlan.selectedIndex != null &&
+                              (!activePlan.isReversed
+                                      ? activePlan.findNextWaypoint()
+                                      : activePlan.findPrevWaypoint()) !=
+                                  null)
                           ? Colors.white
                           : Colors.grey.shade700,
-                      icon: SvgPicture.asset(
-                        "assets/images/reverse_back.svg",
-                        color:
-                            ((activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint()) !=
-                                    null)
-                                ? Colors.white
-                                : Colors.grey.shade700,
-                      ),
-                    ),
-
-                    // --- Next Waypoint Info
-                    Expanded(
-                      child: GestureDetector(
-                        onPanDown: (details) {
-                          // debugPrint("${MediaQuery.of(context).size.height - details.globalPosition.dy}");
-                          // Limit the hitbox at the very bottom so it doesn't interfere with system bar
-                          if (MediaQuery.of(context).size.height - details.globalPosition.dy > 30) {
-                            showFlightPlan();
-                          }
-                        },
-                        // onTap: showFlightPlan,
-                        child: Container(
-                          constraints: const BoxConstraints(minHeight: 60),
-                          color: Theme.of(context).backgroundColor,
-                          child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: (curWp != null)
-                                    ? [
-                                        // --- Current Waypoint Label
-                                        // RichText(
-                                        Text.rich(
-                                          TextSpan(children: [
-                                            WidgetSpan(
-                                              child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
-                                            ),
-                                            const TextSpan(text: "  "),
-                                            TextSpan(
-                                              text: curWp.name,
-                                              style: const TextStyle(color: Colors.white, fontSize: 30),
-                                            ),
-                                          ]),
-                                          maxLines: 2,
-                                          textAlign: TextAlign.center,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(
-                                          width: MediaQuery.of(context).size.width / 2,
-                                          child: Divider(
-                                            thickness: 1,
-                                            height: 8,
-                                            color: Colors.grey.shade700,
-                                          ),
-                                        ),
-                                        // --- ETA next
-                                        Text.rich(
-                                          TextSpan(children: [
-                                            TextSpan(
-                                                text: printValue(
-                                                    value: convertDistValueCoarse(
-                                                        Provider.of<Settings>(context, listen: false).displayUnitsDist,
-                                                        etaNext.distance),
-                                                    digits: 4,
-                                                    decimals: 1),
-                                                style: instrLower),
-                                            TextSpan(
-                                                text: unitStrDistCoarse[
-                                                    Provider.of<Settings>(context, listen: false).displayUnitsDist],
-                                                style: instrLabel),
-                                            if (myTelemetry.inFlight) const TextSpan(text: "    "),
-                                            if (myTelemetry.inFlight)
-                                              richHrMin(
-                                                  milliseconds: etaTime, valueStyle: instrLower, unitStyle: instrLabel),
-                                            if (myTelemetry.inFlight &&
-                                                myTelemetry.fuel > 0 &&
-                                                myTelemetry.fuelTimeRemaining < etaNext.time)
-                                              const WidgetSpan(
-                                                  child: Padding(
-                                                padding: EdgeInsets.only(left: 20),
-                                                child: FuelWarning(35),
-                                              )),
-                                          ]),
-                                        ),
-                                      ]
-                                    : const [Text("Select Waypoint")],
-                              )),
-                        ),
-                      ),
-                    ),
-                    // --- Next Waypoint
-                    IconButton(
-                        onPressed: () {
-                          final wp =
-                              !activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
-                          if (wp != null) activePlan.selectWaypoint(wp);
-                        },
-                        iconSize: 40,
-                        color: (activePlan.selectedIndex != null &&
-                                (!activePlan.isReversed
-                                        ? activePlan.findNextWaypoint()
-                                        : activePlan.findPrevWaypoint()) !=
-                                    null)
-                            ? Colors.white
-                            : Colors.grey.shade700,
-                        icon: const Icon(
-                          Icons.arrow_forward,
-                        )),
-                  ],
-                ),
+                      icon: const Icon(
+                        Icons.arrow_forward,
+                      )),
+                ],
               ),
             ),
           );

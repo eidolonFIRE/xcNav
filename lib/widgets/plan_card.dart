@@ -15,6 +15,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/plans.dart';
 
 import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -296,6 +297,7 @@ class _PlanCardState extends State<PlanCard> {
                       // tileSize: 512,
                       // zoomOffset: -1,
                     ),
+                    // Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
 
                     // Trip snake lines
                     PolylineLayerOptions(polylines: widget.plan.buildTripSnake()),
