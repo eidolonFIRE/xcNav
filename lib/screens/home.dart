@@ -1,16 +1,15 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:focus_detector/focus_detector.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
@@ -100,6 +99,14 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Polyline> polyLines = [];
   var editablePolyline = Polyline(color: Colors.amber, points: [], strokeWidth: 5);
 
+  final features = [
+    "focusOnMe",
+    "focusOnGroup",
+    "instruments",
+    "flightPlan",
+    "qrScanner",
+  ];
+
   @override
   _MyHomePageState();
 
@@ -174,6 +181,14 @@ class _MyHomePageState extends State<MyHomePage> {
           timer = null;
         }
       }
+    });
+
+    showFeatures();
+  }
+
+  void showFeatures() {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      FeatureDiscovery.discoverFeatures(context, features);
     });
   }
 
@@ -555,7 +570,18 @@ class _MyHomePageState extends State<MyHomePage> {
             automaticallyImplyLeading: true,
             leadingWidth: 35,
             toolbarHeight: 64,
-            title: Provider.of<Settings>(context).groundMode ? groundControlBar(context) : topInstruments(context)),
+            title: Provider.of<Settings>(context).groundMode
+                ? groundControlBar(context)
+                : DescribedFeatureOverlay(
+                    featureId: "instruments",
+                    title: const Text("Instruments"),
+                    description: const Text("Swipe down to show more instruments."),
+                    tapTarget: const Icon(
+                      Icons.swipe_down,
+                      color: Colors.black,
+                      size: 40,
+                    ),
+                    child: topInstruments(context))),
         // --- Main Menu
         drawer: Drawer(
             child: ListView(
@@ -721,13 +747,23 @@ class _MyHomePageState extends State<MyHomePage> {
                 "Group",
                 style: Theme.of(context).textTheme.headline5,
               ),
-              trailing: IconButton(
-                  iconSize: 30,
-                  onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
-                  icon: const Icon(
-                    Icons.qr_code_scanner,
-                    color: Colors.lightBlue,
-                  )),
+              trailing: DescribedFeatureOverlay(
+                featureId: "qrScanner",
+                title: const Text("Join / Invite"),
+                description: const Text("Scan a QR code to join a group."),
+                tapTarget: const Icon(
+                  Icons.qr_code_scanner,
+                  color: Colors.lightBlue,
+                  size: 50,
+                ),
+                child: IconButton(
+                    iconSize: 30,
+                    onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
+                    icon: const Icon(
+                      Icons.qr_code_scanner,
+                      color: Colors.lightBlue,
+                    )),
+              ),
             ),
 
             ListTile(
@@ -778,6 +814,19 @@ class _MyHomePageState extends State<MyHomePage> {
               onTap: () => {Navigator.popAndPushNamed(context, "/about")},
               leading: const Icon(Icons.info, size: 30),
               title: Text("About", style: Theme.of(context).textTheme.headline5),
+            ),
+
+            ListTile(
+              minVerticalPadding: 20,
+              onTap: () {
+                Navigator.pop(context);
+                FeatureDiscovery.clearPreferences(context, features);
+                setState(() {
+                  showFeatures();
+                });
+              },
+              leading: const Icon(Icons.help, size: 30),
+              title: Text("Show Help", style: Theme.of(context).textTheme.headline5),
             )
           ],
         )),
@@ -1339,12 +1388,19 @@ class _MyHomePageState extends State<MyHomePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // --- Focus on Me
-                          MapButton(
-                            size: 60,
-                            selected: focusMode == FocusMode.me,
-                            child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
-                            onPressed: () =>
-                                setFocusMode(FocusMode.me, Provider.of<MyTelemetry>(context, listen: false).geo.latLng),
+                          DescribedFeatureOverlay(
+                            featureId: "focusOnMe",
+                            tapTarget: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                            title: const Text("Focus on Me"),
+                            overflowMode: OverflowMode.extendBackground,
+                            description: const Text("Keep me in center of view."),
+                            child: MapButton(
+                              size: 60,
+                              selected: focusMode == FocusMode.me,
+                              child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                              onPressed: () => setFocusMode(
+                                  FocusMode.me, Provider.of<MyTelemetry>(context, listen: false).geo.latLng),
+                            ),
                           ),
                           //
                           SizedBox(
@@ -1354,11 +1410,18 @@ class _MyHomePageState extends State<MyHomePage> {
                                 color: Colors.black,
                               )),
                           // --- Focus on Group
-                          MapButton(
-                            size: 60,
-                            selected: focusMode == FocusMode.group,
-                            onPressed: () => setFocusMode(FocusMode.group),
-                            child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                          DescribedFeatureOverlay(
+                            featureId: "focusOnGroup",
+                            tapTarget: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                            title: const Text("Follow Group"),
+                            overflowMode: OverflowMode.extendBackground,
+                            description: const Text("Keep everyone in view."),
+                            child: MapButton(
+                              size: 60,
+                              selected: focusMode == FocusMode.group,
+                              onPressed: () => setFocusMode(FocusMode.group),
+                              child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                            ),
                           ),
                         ],
                       ),
