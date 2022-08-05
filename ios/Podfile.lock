@@ -1,4 +1,9 @@
 PODS:
+  - battery_info (0.0.1):
+    - Flutter
+  - connectivity_plus (0.0.1):
+    - Flutter
+    - ReachabilitySwift
   - DKImagePickerController/Core (4.3.4):
     - DKImagePickerController/ImageDataManager
     - DKImagePickerController/Resource
@@ -65,6 +70,8 @@ PODS:
   - Mantle (2.2.0):
     - Mantle/extobjc (= 2.2.0)
   - Mantle/extobjc (2.2.0)
+  - move_to_background (0.0.1):
+    - Flutter
   - MTBBarcodeScanner (5.0.11)
   - network_info_plus (0.0.1):
     - Flutter
@@ -79,6 +86,7 @@ PODS:
   - qr_code_scanner (0.2.0):
     - Flutter
     - MTBBarcodeScanner
+  - ReachabilitySwift (5.0.0)
   - SDWebImage (5.13.0):
     - SDWebImage/Core (= 5.13.0)
   - SDWebImage/Core (5.13.0)
@@ -96,6 +104,8 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
+  - battery_info (from `.symlinks/plugins/battery_info/ios`)
+  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - flutter_barometer (from `.symlinks/plugins/flutter_barometer/ios`)
@@ -106,6 +116,7 @@ DEPENDENCIES:
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
   - image_crop (from `.symlinks/plugins/image_crop/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - move_to_background (from `.symlinks/plugins/move_to_background/ios`)
   - network_info_plus (from `.symlinks/plugins/network_info_plus/ios`)
   - open_file (from `.symlinks/plugins/open_file/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
@@ -124,11 +135,16 @@ SPEC REPOS:
     - libwebp
     - Mantle
     - MTBBarcodeScanner
+    - ReachabilitySwift
     - SDWebImage
     - SDWebImageWebPCoder
     - SwiftyGif
 
 EXTERNAL SOURCES:
+  battery_info:
+    :path: ".symlinks/plugins/battery_info/ios"
+  connectivity_plus:
+    :path: ".symlinks/plugins/connectivity_plus/ios"
   file_picker:
     :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
@@ -149,6 +165,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/image_crop/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
+  move_to_background:
+    :path: ".symlinks/plugins/move_to_background/ios"
   network_info_plus:
     :path: ".symlinks/plugins/network_info_plus/ios"
   open_file:
@@ -171,6 +189,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/wakelock/ios"
 
 SPEC CHECKSUMS:
+  battery_info: 09f5c9ee65394f2291c8c6227bedff345b8a730c
+  connectivity_plus: 413a8857dd5d9f1c399a39130850d02fe0feaf7e
   DKImagePickerController: b512c28220a2b8ac7419f21c491fc8534b7601ac
   DKPhotoGallery: fdfad5125a9fdda9cc57df834d49df790dbb4179
   file_picker: 817ab1d8cd2da9d2da412a417162deee3500fc95
@@ -185,6 +205,7 @@ SPEC CHECKSUMS:
   image_picker_ios: b786a5dcf033a8336a657191401bfdf12017dabb
   libwebp: 98a37e597e40bfdb4c911fc98f2c53d0b12d05fc
   Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
+  move_to_background: 39a5b79b26d577b0372cbe8a8c55e7aa9fcd3a2d
   MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
   network_info_plus: b78876159360f5580608c2cea620d6ceffabd0ad
   open_file: 02eb5cb6b21264bd3a696876f5afbfb7ca4f4b7d
@@ -192,6 +213,7 @@ SPEC CHECKSUMS:
   path_provider_ios: 14f3d2fd28c4fdb42f44e0f751d12861c43cee02
   permission_handler_apple: 44366e37eaf29454a1e7b1b7d736c2cceaeb17ce
   qr_code_scanner: bb67d64904c3b9658ada8c402e8b4d406d5d796e
+  ReachabilitySwift: 985039c6f7b23a1da463388634119492ff86c825
   SDWebImage: 0327043dbb9533e75f2eff8445b3df0f2ceca6ac
   SDWebImageWebPCoder: 3dc350894112feab5375cfba9ce0986544a66a69
   share_plus: 056a1e8ac890df3e33cb503afffaf1e9b4fbae68
@@ -200,6 +222,6 @@ SPEC CHECKSUMS:
   url_launcher_ios: 839c58cdb4279282219f5e248c3321761ff3c4de
   wakelock: d0fc7c864128eac40eba1617cb5264d9c940b46f
 
-PODFILE CHECKSUM: aa518c97e6285fce520962cb89fafffa86e92ab9
+PODFILE CHECKSUM: 6a0dae72d8ce4ba237d3b413aa5fb1a4828e15fe
 
 COCOAPODS: 1.11.3
