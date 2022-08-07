@@ -133,10 +133,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     });
   }
 
-  void updateGeo(Position position, {bool? bypassRecording}) {
+  void updateGeo(Position position, {bool bypassRecording = false}) {
     // debugPrint("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
+    recordGeo.add(geo);
 
     // fetch ambient baro from weather service
     if (baroAmbient == null && !baroAmbientRequested) {
@@ -165,7 +166,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
         takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
         lastSavedLog = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
-        debugPrint("In Flight!!!");
+        debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
 
         // clear the log
         recordGeo.removeRange(0, launchIndex);
@@ -173,7 +174,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         debugPrint("Flight Ended");
 
         // Save current flight to log
-        if (!(bypassRecording ?? false)) {
+        if (!(bypassRecording)) {
           saveFlight();
         }
       }
@@ -184,7 +185,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev.time) / 3600000.0);
 
       // --- Record path
-      if (!(bypassRecording ?? false)) recordGeo.add(geo);
       if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo.latLng) > 50)) {
         flightTrace.add(geo.latLng);
         // --- keep list from bloating
@@ -194,7 +194,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
 
       // --- Periodically save log
-      if (lastSavedLog != null && lastSavedLog!.add(const Duration(minutes: 5)).isBefore(DateTime.now())) {
+      if (!bypassRecording &&
+          lastSavedLog != null &&
+          lastSavedLog!.add(const Duration(minutes: 5)).isBefore(DateTime.now())) {
         saveFlight();
       }
     }
