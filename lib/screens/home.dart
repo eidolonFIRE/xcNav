@@ -161,7 +161,7 @@ class _MyHomePageState extends State<MyHomePage> {
           debugPrint("--- Starting Location Spoofer ---");
           Provider.of<MyTelemetry>(context, listen: false).baro = null;
           fakeFlight.initFakeFlight(Provider.of<MyTelemetry>(context, listen: false).geo);
-          timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+          timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
             handleGeomUpdate(context, fakeFlight.genFakeLocationFlight());
           });
         }
@@ -246,14 +246,12 @@ class _MyHomePageState extends State<MyHomePage> {
             accuracy: LocationAccuracy.best,
             distanceFilter: 0,
             forceLocationManager: false,
-            intervalDuration: const Duration(seconds: 5),
+            intervalDuration: const Duration(seconds: 3),
             //(Optional) Set foreground notification config to keep the app alive
             //when going to the background
             foregroundNotificationConfig: const ForegroundNotificationConfig(
                 notificationText: "Still sending your position to the group.",
                 notificationTitle: "xcNav",
-                // TODO: this is broken in the lib right now.
-                // notificationIcon:  name: "assets/images/xcnav.logo.wing.bw.png"}));
                 enableWakeLock: true));
       } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
