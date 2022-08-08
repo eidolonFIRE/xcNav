@@ -35,6 +35,9 @@ import 'package:xcnav/screens/weather_viewer.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
+import 'package:xcnav/tts_service.dart';
+
+late TtsService ttsService;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -102,6 +105,8 @@ class MyApp extends StatelessWidget {
     Wakelock.enable();
 
     configLocalNotification();
+
+    ttsService = TtsService();
 
     debugPrint("Building App");
 

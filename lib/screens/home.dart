@@ -14,6 +14,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/patreon.dart';
@@ -98,6 +100,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<Polyline> polyLines = [];
   var editablePolyline = Polyline(color: Colors.amber, points: [], strokeWidth: 5);
+
+  late final AudioCueService audioCueService;
 
   final features = [
     "focusOnMe",
@@ -184,6 +188,8 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     showFeatures();
+
+    audioCueService = AudioCueService(context);
   }
 
   void showFeatures() {
@@ -639,30 +645,36 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
             // --- Map Options
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Consumer<Settings>(
-                    builder: (context, settings, _) => SizedBox(
-                          child: ToggleButtons(
-                              isSelected:
-                                  Settings.mapTileThumbnails.keys.map((e) => e == settings.curMapTiles).toList(),
-                              borderRadius: const BorderRadius.all(Radius.circular(10)),
-                              borderWidth: 4,
-                              borderColor: Colors.black,
-                              selectedBorderColor: Colors.lightBlue,
-                              onPressed: (index) {
-                                settings.curMapTiles = Settings.mapTileThumbnails.keys.toList()[index];
-                              },
-                              children: Settings.mapTileThumbnails.keys
-                                  .map((e) => SizedBox(
-                                        width: 80,
-                                        height: 50,
-                                        child: Settings.mapTileThumbnails[e],
-                                      ))
-                                  .toList()),
-                        )),
-              ],
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Consumer<Settings>(
+                      builder: (context, settings, _) => SizedBox(
+                            child: ToggleButtons(
+                                isSelected:
+                                    Settings.mapTileThumbnails.keys.map((e) => e == settings.curMapTiles).toList(),
+                                borderRadius: const BorderRadius.all(Radius.circular(10)),
+                                borderWidth: 4,
+                                borderColor: Colors.grey.shade900,
+                                selectedBorderColor: Colors.lightBlue,
+                                onPressed: (index) {
+                                  settings.curMapTiles = Settings.mapTileThumbnails.keys.toList()[index];
+                                },
+                                children: Settings.mapTileThumbnails.keys
+                                    .map((e) => Opacity(
+                                          opacity: e == settings.curMapTiles ? 1.0 : 0.7,
+                                          child: SizedBox(
+                                            width: 80,
+                                            height: 50,
+                                            child: Settings.mapTileThumbnails[e],
+                                          ),
+                                        ))
+                                    .toList()),
+                          )),
+                ],
+              ),
             ),
 
             // --- Map opacity slider
@@ -692,6 +704,7 @@ class _MyHomePageState extends State<MyHomePage> {
             //     ),
             //   ),
 
+            // --- ADSB
             ListTile(
                 minVerticalPadding: 20,
                 leading: const Icon(Icons.radar, size: 30),
@@ -730,6 +743,47 @@ class _MyHomePageState extends State<MyHomePage> {
                                 )),
                           ]))
                     : null),
+
+            // --- Audio Cues
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 6, 22, 6),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: SvgPicture.asset(
+                    "assets/external/text_to_speech.svg",
+                    color: Colors.white,
+                    width: 30,
+                  ),
+                ),
+                ToggleButtons(
+                  borderWidth: 2,
+                  selectedBorderColor: Colors.lightBlueAccent,
+                  selectedColor: Colors.lightBlueAccent,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 30),
+                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  isSelected: audioCueIntervals.map((e) => e == audioCueService.interval).toList(),
+                  onPressed: (index) {
+                    setState(() {
+                      audioCueService.interval = audioCueIntervals[index];
+                    });
+                  },
+                  children: audioCueIntervals.map((e) => Text("${e ?? "Off"}")).toList(),
+                ),
+                IconButton(
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      showAudioCueConfigDialog(context, audioCueService.config).then((value) {
+                        if (value != null) {
+                          audioCueService.config = value;
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.settings)),
+              ]),
+            ),
 
             Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 

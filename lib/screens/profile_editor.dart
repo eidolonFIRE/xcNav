@@ -177,6 +177,36 @@ class _ProfileEditorState extends State<ProfileEditor> {
             mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // --- Text Input
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 20, top: 4),
+                    child: AvatarRound(
+                        croppedImage != null
+                            ? Image.file(croppedImage!)
+                            : Image.asset("assets/images/default_avatar.png"),
+                        25),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      textCapitalization: TextCapitalization.words,
+                      style: const TextStyle(fontSize: 20),
+                      maxLength: 20,
+                      autofocus: true,
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        label: Text("Pilot Name"),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
               // --- Image Cropper Window
               Container(
                 // TODO: rework this so that in keyboard doesn't cover up the text entry
@@ -216,36 +246,6 @@ class _ProfileEditorState extends State<ProfileEditor> {
                     ),
                   ),
                 ),
-              ),
-
-              // --- Text Input
-              Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 20, top: 4),
-                    child: AvatarRound(
-                        croppedImage != null
-                            ? Image.file(croppedImage!)
-                            : Image.asset("assets/images/default_avatar.png"),
-                        25),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      textCapitalization: TextCapitalization.words,
-                      style: const TextStyle(fontSize: 20),
-                      maxLength: 20,
-                      autofocus: true,
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        label: Text("Pilot Name"),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ]),
       ),
