@@ -189,7 +189,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
     showFeatures();
 
+    // --- Setup Audio Cue Service
     audioCueService = AudioCueService(context);
+    final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+    myTelemetry.addListener(() {
+      audioCueService.cueMyTelemetry(myTelemetry);
+    });
   }
 
   void showFeatures() {

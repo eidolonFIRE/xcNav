@@ -4,7 +4,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/main.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/tts_service.dart';
+import 'package:xcnav/units.dart';
 
 const List<int?> audioCueIntervals = [
   null,
@@ -16,6 +20,7 @@ const List<int?> audioCueIntervals = [
 
 class AudioCueService {
   final BuildContext context;
+  late final Settings settings;
   Timer? ticker;
   int? _interval;
 
@@ -37,6 +42,9 @@ class AudioCueService {
     "groupAwareness": [0, 1, 2],
   };
 
+  // --- Hysterisis
+  MyTelemetry? lastMyTelemetry;
+
   AudioCueService(this.context) {
     SharedPreferences.getInstance().then((instance) {
       prefs = instance;
@@ -46,6 +54,8 @@ class AudioCueService {
       }
       interval = prefs.getInt("audio_cues_interval");
     });
+
+    settings = Provider.of<Settings>(context, listen: false);
   }
 
   Map<String, int> get config => _config;
@@ -79,7 +89,28 @@ class AudioCueService {
 
   void triggerAudioCue() {
     final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+    final settings = Provider.of<Settings>(context, listen: false);
 
-    if (myTelemetry.inFlight) {}
+    if (myTelemetry.inFlight) {
+      // --- My Telemetry
+
+      final alt = convertDistValueFine(settings.displayUnitsDist, myTelemetry.geo.alt);
+
+      ttsService.speak(
+          AudioMessage("Altitude: ${alt}", volume: 0.8, expires: DateTime.now().add(const Duration(seconds: 10))));
+    }
+  }
+
+  bool checkAltTrigger(MyTelemetry myTelemetry) {
+    if (lastMyTelemetry != null) {
+      final altThresh = settings.displayUnitsDist == DisplayUnitsDist.metric ? 10 : 50;
+      return ((lastMyTelemetry!.geo.alt - myTelemetry.geo.alt).abs() > 50);
+    } else {
+      return true;
+    }
+  }
+
+  void cueMyTelemetry(MyTelemetry myTelemetry) {
+    if (lastMyTelemetry == null || checkAltTrigger(myTelemetry)) {}
   }
 }
