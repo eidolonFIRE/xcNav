@@ -69,6 +69,19 @@ String printHrMin({Duration? duration, int? milliseconds}) {
   }
 }
 
+String printHrMinVocal({Duration? duration, int? milliseconds}) {
+  int t = milliseconds ?? duration?.inMilliseconds ?? 0;
+
+  int hr = (t / 3600000).floor();
+  int min = ((t - hr * 3600000) / 60000).floor();
+
+  if (hr > 0) {
+    return "$hr hours $min minute${min == 1 ? "" : "s"}";
+  } else {
+    return "$min minute${min == 1 ? "" : "s"}";
+  }
+}
+
 TextSpan richHrMin(
     {Duration? duration,
     int? milliseconds,

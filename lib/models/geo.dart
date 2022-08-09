@@ -74,6 +74,7 @@ class Geo {
 
     if (prev != null) {
       vario = (alt - prev.alt) / (time - prev.time) * 1000;
+      if (vario.isNaN) vario = 0;
       // Blend vario with previous vario reading to offer some mild smoothing
       if (prev.vario.isFinite) vario = (vario + prev.vario) / 2;
     } else {
@@ -96,11 +97,11 @@ class Geo {
       if (isReversed ? (index > 0) : (index < path.length - 1)) {
         double delta = latlngCalc.bearing(path[index], latLng) -
             latlngCalc.bearing(path[index], path[index + (isReversed ? -1 : 1)]);
-        if (delta > 180) delta -= 360;
-        if (delta < -180) delta += 360;
+        delta = (delta + 180) % 360 - 180;
         angleToNext = delta.abs();
       }
-      if (dist < matchdist && (angleToNext == double.nan || angleToNext > 90)) {
+      if (dist < matchdist && (angleToNext == double.nan || angleToNext > 90) ||
+          (isReversed ? (index == 0) : (index == path.length - 1))) {
         matchdist = dist;
         matchIndex = index;
         // debugPrint("match: $index) $dist  $angleToNext");

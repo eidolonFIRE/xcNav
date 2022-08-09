@@ -153,8 +153,13 @@ class _MyHomePageState extends State<MyHomePage> {
     // --- Location Spoofer for debugging
     FakeFlight fakeFlight = FakeFlight();
     Timer? timer;
-    Provider.of<Settings>(context, listen: false).addListener(() {
-      if (Provider.of<Settings>(context, listen: false).spoofLocation) {
+
+    final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+    final settings = Provider.of<Settings>(context, listen: false);
+    final activePlan = Provider.of<ActivePlan>(context, listen: false);
+
+    settings.addListener(() {
+      if (settings.spoofLocation) {
         if (timer == null) {
           // --- Spoof Location / Disable Baro
           listenBaro?.cancel();
@@ -163,10 +168,15 @@ class _MyHomePageState extends State<MyHomePage> {
             _toggleListening();
           }
           debugPrint("--- Starting Location Spoofer ---");
-          Provider.of<MyTelemetry>(context, listen: false).baro = null;
-          fakeFlight.initFakeFlight(Provider.of<MyTelemetry>(context, listen: false).geo);
+          myTelemetry.baro = null;
+          fakeFlight.initFakeFlight(myTelemetry.geo);
           timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight());
+            final target = activePlan.selectedWp == null
+                ? null
+                : activePlan.selectedWp!.latlng.length > 1
+                    ? myTelemetry.geo.nearestPointOnPath(activePlan.selectedWp!.latlng, activePlan.isReversed).latlng
+                    : activePlan.selectedWp!.latlng[0];
+            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target));
           });
         }
       } else {
@@ -191,10 +201,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // --- Setup Audio Cue Service
     audioCueService = AudioCueService(context);
-    final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-    myTelemetry.addListener(() {
-      audioCueService.cueMyTelemetry(myTelemetry);
-    });
+    myTelemetry.addListener(audioCueService.cueMyTelemetry);
+    Provider.of<ChatMessages>(context, listen: false).addListener(audioCueService.cueChatMessage);
   }
 
   void showFeatures() {
@@ -766,15 +774,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   selectedBorderColor: Colors.lightBlueAccent,
                   selectedColor: Colors.lightBlueAccent,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 30),
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 30),
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
-                  isSelected: audioCueIntervals.map((e) => e == audioCueService.interval).toList(),
+                  isSelected: AudioCueService.modeOptions.values.map((e) => e == audioCueService.mode).toList(),
                   onPressed: (index) {
                     setState(() {
-                      audioCueService.interval = audioCueIntervals[index];
+                      audioCueService.mode = AudioCueService.modeOptions.values.toList()[index];
                     });
                   },
-                  children: audioCueIntervals.map((e) => Text("${e ?? "Off"}")).toList(),
+                  children: AudioCueService.modeOptions.keys.map((e) => Text(e)).toList(),
                 ),
                 IconButton(
                     padding: EdgeInsets.zero,

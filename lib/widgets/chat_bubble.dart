@@ -14,7 +14,7 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(2.0),
+      padding: const EdgeInsets.all(4.0),
       child: GestureDetector(
         onTap: () => Provider.of<ChatMessages>(context, listen: false).markAllRead(true),
         child: Column(
