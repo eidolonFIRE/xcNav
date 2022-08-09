@@ -10,6 +10,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
@@ -31,6 +32,7 @@ class AudioCueService {
   late final ChatMessages _chatMessages;
   late final Group _group;
   late final ActivePlan _activePlan;
+  late final Profile _profile;
 
   /// Current global multiplier
   int? _mode = 0;
@@ -40,7 +42,6 @@ class AudioCueService {
   Map<String, bool> _config = {
     "My Telemetry": true,
     "Next Waypoint": true,
-    // "Trip Remaining": true,
     "Chat Messages": true,
     "Group Awareness": true,
   };
@@ -48,7 +49,6 @@ class AudioCueService {
   static const Map<String, IconData> icons = {
     "My Telemetry": Icons.speed,
     "Next Waypoint": Icons.pin_drop,
-    "Trip Remaining": Icons.map,
     "Chat Messages": Icons.chat,
     "Group Awareness": Icons.groups,
   };
@@ -63,25 +63,25 @@ class AudioCueService {
 
   /// Values are in display value (not necessarily standard internal values)
   static const dynamic precisionLUT = {
-    "My Telemetry": {
-      "alt": {
-        DisplayUnitsDist.imperial: [50, 100, 200],
-        DisplayUnitsDist.metric: [10, 20, 50],
-      },
-      "spd": {
-        DisplayUnitsSpeed.mph: [2, 4, 8],
-        DisplayUnitsSpeed.kts: [2, 5, 10],
-        DisplayUnitsSpeed.kph: [5, 10, 20],
-        DisplayUnitsSpeed.mps: [1, 2, 5],
-      }
+    "alt": {
+      DisplayUnitsDist.imperial: [50, 100, 200], // ft
+      DisplayUnitsDist.metric: [10, 20, 50], // meters
     },
-    "Next Waypoint": {
-      "hdg": {
-        // heading threshold (radians)
-        0: 0.08,
-        1: 0.1,
-        2: 0.16,
-      }
+    "dist": {
+      DisplayUnitsDist.imperial: [0.25, 0.5, 1.0], // mi
+      DisplayUnitsDist.metric: [0.5, 1.0, 2.0], // km
+    },
+    "spd": {
+      DisplayUnitsSpeed.mph: [2, 4, 8],
+      DisplayUnitsSpeed.kts: [2, 5, 10],
+      DisplayUnitsSpeed.kph: [5, 10, 20],
+      DisplayUnitsSpeed.mps: [1, 2, 5],
+    },
+    "hdg": {
+      // heading threshold (radians)
+      0: 0.08,
+      1: 0.1,
+      2: 0.16,
     }
   };
 
@@ -99,6 +99,11 @@ class AudioCueService {
       1: [0.5, 5.0],
       2: [1.0, 15.0],
     },
+    "Fuel": {
+      0: [0.1, 3.0],
+      1: [0.2, 5.0],
+      2: [0.5, 15.0],
+    },
   };
 
   // --- Hysterisis in reporting
@@ -106,6 +111,8 @@ class AudioCueService {
   LastReport<double>? lastSpd;
   LastReport<int>? lastChat;
   LastReport<double>? lastHdg;
+  Map<String, LastReport<Vector>> lastPilotVector = {};
+  LastReport<double>? lastLowFuel;
 
   AudioCueService(this._context) {
     SharedPreferences.getInstance().then((instance) {
@@ -125,6 +132,7 @@ class AudioCueService {
     _chatMessages = Provider.of<ChatMessages>(_context, listen: false);
     _group = Provider.of<Group>(_context, listen: false);
     _activePlan = Provider.of<ActivePlan>(_context, listen: false);
+    _profile = Provider.of<Profile>(_context, listen: false);
   }
 
   Map<String, bool> get config => _config;
@@ -163,8 +171,7 @@ class AudioCueService {
     // --- My Telemetry
     if (_myTelemetry.inFlight && mode != null && (config["My Telemetry"] ?? false)) {
       // --- Altitude
-      final altPrecision = precisionLUT["My Telemetry"]["alt"][_settings.displayUnitsDist][mode];
-      final double altThresh = altPrecision is int ? altPrecision.toDouble() : altPrecision as double;
+      final altPrecision = (precisionLUT["alt"][_settings.displayUnitsDist][mode] as int).toDouble();
       // Value is transformed into display units before quantizing.
       // Triggers yes if:
       // 1: we don't have a previous value
@@ -176,7 +183,7 @@ class AudioCueService {
           DateTime.now().isAfter(lastAlt!.timestamp.add(maxInterval)) ||
           (DateTime.now().isAfter(lastAlt!.timestamp.add(minInterval)) &&
               (lastAlt!.value - convertDistValueFine(_settings.displayUnitsDist, _myTelemetry.geo.alt)).abs() >=
-                  altThresh * 0.8)) {
+                  altPrecision * 0.8)) {
         lastAlt = LastReport.now(
             ((convertDistValueFine(_settings.displayUnitsDist, _myTelemetry.geo.alt) / altPrecision).round() *
                     altPrecision)
@@ -187,13 +194,12 @@ class AudioCueService {
       }
 
       // --- Speed
-      final spdPrecision = precisionLUT["My Telemetry"]["spd"][_settings.displayUnitsSpeed][mode];
-      final double speedThresh = spdPrecision is int ? spdPrecision.toDouble() : spdPrecision as double;
+      final spdPrecision = (precisionLUT["spd"][_settings.displayUnitsSpeed][mode] as int).toDouble();
       if (lastSpd == null ||
           DateTime.now().isAfter(lastSpd!.timestamp.add(maxInterval)) ||
           (DateTime.now().isAfter(lastSpd!.timestamp.add(minInterval)) &&
               ((lastSpd!.value - convertSpeedValue(_settings.displayUnitsSpeed, _myTelemetry.geo.spd)).abs() >=
-                  speedThresh))) {
+                  spdPrecision))) {
         lastSpd = LastReport.now(convertSpeedValue(_settings.displayUnitsSpeed, _myTelemetry.geo.spd));
 
         final text = "Speed: ${lastSpd!.value.round()}";
@@ -201,11 +207,17 @@ class AudioCueService {
       }
     }
 
+    cueNextWaypoint();
+    cueGroupAwareness();
+    cueFuel();
+  }
+
+  void cueNextWaypoint() {
     // --- Next Waypoint
     if (_myTelemetry.inFlight && mode != null && _activePlan.selectedWp != null && (config["Next Waypoint"] ?? false)) {
       final maxInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][1]! as double) * 60).toInt());
       final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
-      final hdgPrecision = precisionLUT["Next Waypoint"]["hdg"][mode];
+      final hdgPrecision = precisionLUT["hdg"][mode];
 
       final target = _activePlan.selectedWp!.latlng.length > 1
           ? _myTelemetry.geo.nearestPointOnPath(_activePlan.selectedWp!.latlng, _activePlan.isReversed).latlng
@@ -222,33 +234,41 @@ class AudioCueService {
         lastHdg = LastReport.now(_myTelemetry.geo.hdg);
 
         final eta = _activePlan.etaToWaypoint(_myTelemetry.geo, _myTelemetry.geo.spd, _activePlan.selectedIndex!);
-        final etaTime = printHrMinVocal(milliseconds: eta.time);
-        final dist = printValue(
-            value: convertDistValueCoarse(_settings.displayUnitsDist, eta.distance),
-            digits: 3,
-            decimals: 0,
-            autoDecimalThresh: 1.0);
+        final etaTime = printHrMinLexical(milliseconds: eta.time);
+        final dist = printValueLexical(
+          value: convertDistValueCoarse(_settings.displayUnitsDist, eta.distance),
+        );
         final deltaDegrees = ((deltaHdg * 180 / pi) / 5).round() * 5;
         final text =
-            "Waypoint: $dist ${unitStrDistCoarseVerbal[_settings.displayUnitsDist]} out, at ${deltaDegrees.abs()} degrees ${deltaHdg > 0 ? "left" : "right"}. ETA $etaTime.";
+            "Waypoint: $dist ${unitStrDistCoarseLexical[_settings.displayUnitsDist]} out, at ${deltaDegrees.abs()} degrees ${deltaHdg > 0 ? "left" : "right"}. ETA $etaTime.";
         ttsService.speak(
             AudioMessage(text, volume: 0.75, priority: 4, expires: DateTime.now().add(const Duration(seconds: 4))));
       }
     }
+  }
 
-    // --- Group Awareness
-    if (_myTelemetry.inFlight && mode != null && (config["Group Awareness"] ?? false)) {
-      // --- small group (< 3)
-      // relative of each pilot
+  void cueFuel() {
+    if (_myTelemetry.inFlight &&
+        mode != null &&
+        _myTelemetry.fuel > 0 &&
+        _activePlan.selectedWp != null &&
+        _myTelemetry.fuelTimeRemaining <
+            _activePlan.etaToWaypoint(_myTelemetry.geo, _myTelemetry.geo.spd, _activePlan.selectedIndex!).time) {
+      final minInterval = Duration(seconds: ((intervalLUT["Fuel"][mode][0]! as double) * 60).toInt());
 
-      // --- large group
-      // disenters / lagging behind
-      // nearby people
+      if (lastLowFuel == null || DateTime.now().isAfter(lastLowFuel!.timestamp.add(minInterval))) {
+        // Insufficient fuel!
+        lastLowFuel = LastReport.now(_myTelemetry.fuel);
+
+        const text = "Check fuel needed for next waypoint!";
+        ttsService.speak(
+            AudioMessage(text, volume: 1.0, priority: 2, expires: DateTime.now().add(const Duration(seconds: 10))));
+      }
     }
   }
 
   void cueChatMessage() {
-    if (mode != null && (config["Chat Messages"] ?? false)) {
+    if (mode != null && ((config["Chat Messages"] ?? false) && _chatMessages.messages.last.pilotId != _profile.id)) {
       if (lastChat == null || lastChat!.value < _chatMessages.messages.length - 1) {
         // --- Read chat messages
 
@@ -262,5 +282,63 @@ class AudioCueService {
       }
     }
     lastChat = LastReport.now(_chatMessages.messages.length - 1);
+  }
+
+  void cueGroupAwareness() {
+    // --- Group Awareness
+    if (_myTelemetry.inFlight && mode != null && (config["Group Awareness"] ?? false)) {
+      // --- Small Group - Update on positions of each pilot
+      if (_group.activePilots.length < 3) {
+        // Borrow the intervals from "Next Waypoint"
+        final maxInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][1]! as double) * 60).toInt());
+        final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
+
+        final hdgPrecision = precisionLUT["hdg"][mode] * 3;
+        final distPrecision = precisionLUT["dist"][_settings.displayUnitsDist][mode];
+
+        // relative position of each pilot
+        for (final pilot in _group.activePilots) {
+          final relativeDist =
+              convertDistValueCoarse(_settings.displayUnitsDist, _myTelemetry.geo.distanceTo(pilot.geo));
+          final relativeHdg = _myTelemetry.geo.relativeHdg(pilot.geo);
+
+          // Will trigger message if:
+          // 1: we haven't done so yet
+          // 2: max interval reached
+          // 3: min interval satisfied and vector is changed
+          if (!lastPilotVector.containsKey(pilot.id) ||
+              DateTime.now().isAfter(lastPilotVector[pilot.id]!.timestamp.add(maxInterval)) ||
+              (DateTime.now().isAfter(lastPilotVector[pilot.id]!.timestamp.add(minInterval)) &&
+                  ((relativeDist - lastPilotVector[pilot.id]!.value.dist).abs() >= distPrecision ||
+                      (relativeHdg - lastPilotVector[pilot.id]!.value.hdg).abs() >= hdgPrecision))) {
+            // Record last values
+            lastPilotVector[pilot.id] = LastReport.now(Vector(relativeHdg, relativeDist));
+
+            // Build the message
+            final distVerbal = printValueLexical(value: relativeDist);
+            final int oclock = (((relativeHdg / (2 * pi) * 12.0).round() + 11) % 12) + 1;
+            final relativeAlt = pilot.geo.alt - _myTelemetry.geo.alt;
+            final verbalAlt = relativeAlt.abs() > 50 ? (relativeAlt > 0 ? " high" : " low") : "";
+
+            final text =
+                "${pilot.name} is $distVerbal ${unitStrDistCoarseLexical[_settings.displayUnitsDist]} out at $oclock o'clock$verbalAlt.";
+
+            ttsService.speak(
+                AudioMessage(text, volume: 0.75, priority: 6, expires: DateTime.now().add(const Duration(seconds: 6))));
+          }
+        }
+      } else {
+        // TODO: large group awareness
+        // --- Large Group
+        // (calculate group center of mass, group spread (standard deviation?) )
+        // how most of the group is around you
+        // disenters / lagging behind
+        // nearby people
+      }
+
+      // TODO: other group awareness warnings
+      // --- Any group size
+      // Pilot is flying towards you
+    }
   }
 }

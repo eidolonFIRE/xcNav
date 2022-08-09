@@ -46,7 +46,7 @@ const Map<DisplayUnitsDist, String> unitStrDistCoarse = {
   DisplayUnitsDist.metric: " km",
 };
 
-const Map<DisplayUnitsDist, String> unitStrDistCoarseVerbal = {
+const Map<DisplayUnitsDist, String> unitStrDistCoarseLexical = {
   DisplayUnitsDist.imperial: " mile",
   DisplayUnitsDist.metric: " kilometer",
 };
@@ -69,7 +69,7 @@ String printHrMin({Duration? duration, int? milliseconds}) {
   }
 }
 
-String printHrMinVocal({Duration? duration, int? milliseconds}) {
+String printHrMinLexical({Duration? duration, int? milliseconds}) {
   int t = milliseconds ?? duration?.inMilliseconds ?? 0;
 
   int hr = (t / 3600000).floor();
@@ -114,6 +114,32 @@ String printValue({required double value, required int digits, required int deci
   final int mag = (pow(10, digits) - 1).round();
   final double decPwr = pow(10, decimals).toDouble();
   return ((min(mag, max(-mag, value)) * decPwr).round() / decPwr).toStringAsFixed(decimals);
+}
+
+String printValueLexical(
+    {required double value, double halfThreshold = 10, double quarterThreshold = 2, double eighthThreshold = 1}) {
+  if (!value.isFinite) return "";
+
+  if (value < eighthThreshold) {
+    final numerator = ((value % 1.0) * 8).round();
+    if (numerator % 2 == 1) {
+      return "${value.floor() > 0 ? "${value.floor()} and " : ""}$numerator eighth${numerator == 1 ? "" : "s"}";
+    }
+  }
+  if (value < quarterThreshold) {
+    final numerator = ((value % 1.0) * 4).round();
+    if (numerator % 2 == 1) {
+      return "${value.floor() > 0 ? "${value.floor()} and " : ""}$numerator quarter${numerator == 1 ? "" : "s"}";
+    }
+  }
+  if (value < halfThreshold) {
+    final numerator = ((value % 1.0) * 2).round();
+    if (numerator % 2 == 1) {
+      return "${value.floor() > 0 ? "${value.floor()} and " : ""}a half";
+    }
+  }
+
+  return "${value.round()}";
 }
 
 double convertDistValueFine(DisplayUnitsDist mode, double value, {int? clampDigits}) {

@@ -62,6 +62,9 @@ class Group with ChangeNotifier {
     }
   }
 
+  Iterable<Pilot> get activePilots =>
+      pilots.values.where((each) => each.geo.time > (DateTime.now().millisecondsSinceEpoch - 600000));
+
   void _appendToPastGroups() {
     PastGroup pg = PastGroup(_currentGroupID!, DateTime.now(), pilots.values.toList());
     debugPrint("Appended to past groups. (id: ${pg.id}, ${pg.pilots.length} pilots)");

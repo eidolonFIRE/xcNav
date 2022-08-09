@@ -163,7 +163,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
 
         // --- Waypoint list
         Container(
-          constraints: const BoxConstraints(maxHeight: 300),
+          constraints: const BoxConstraints(maxHeight: 280),
           child: ListView(shrinkWrap: true, primary: true, children: [
             // --- List of waypoints
             ReorderableListView.builder(

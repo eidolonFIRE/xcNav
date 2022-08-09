@@ -16,7 +16,10 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="red_arrow.svg">
+   sodipodi:docname="red_arrow.svg"
+   inkscape:export-filename="/home/caleb/projects/xcNav/assets/images/src/red_arrow.png"
+   inkscape:export-xdpi="192.65215"
+   inkscape:export-ydpi="192.65215">
   <defs
      id="defs2">
     <linearGradient
@@ -50,8 +53,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="15.839192"
-     inkscape:cx="393.5327"
-     inkscape:cy="609.2394"
+     inkscape:cx="376.10757"
+     inkscape:cy="609.11313"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -83,7 +86,7 @@
      id="layer1">
     <path
        style="fill:url(#linearGradient825);fill-opacity:1;stroke:#000000;stroke-width:0.66500002;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 95,142 c 1,-2 8,-16 8,-16 0,0 7,14 8,16 1,2 -5,-3 -8,-3 -3,0 -9,5 -8,3 z"
+       d="m 98,142 7,-16 7,16 c 1,2 -4,-3 -7,-3 -3,0 -8,5 -7,3 z"
        id="path817"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="zczzz"

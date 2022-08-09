@@ -169,6 +169,23 @@ class _MyHomePageState extends State<MyHomePage> {
           }
           debugPrint("--- Starting Location Spoofer ---");
           myTelemetry.baro = null;
+
+          // if a waypoint is selected, teleport to there first (useful for doing testing)
+          if (activePlan.selectedWp != null) {
+            myTelemetry.updateGeo(
+                Position(
+                  latitude: activePlan.selectedWp!.latlng[0].latitude,
+                  longitude: activePlan.selectedWp!.latlng[0].longitude,
+                  altitude: myTelemetry.geo.alt,
+                  speed: 0,
+                  timestamp: DateTime.now(),
+                  heading: 0,
+                  accuracy: 0,
+                  speedAccuracy: 0,
+                ),
+                bypassRecording: true);
+          }
+
           fakeFlight.initFakeFlight(myTelemetry.geo);
           timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
             final target = activePlan.selectedWp == null
@@ -958,11 +975,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           // Other Pilot path trace
                           PolylineLayerOptions(
                               polylines: Provider.of<Group>(context)
-                                  .pilots
-                                  // Don't see locations older than 10minutes
-                                  .values
-                                  .where((p) => p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
-                                  .toList()
+                                  .activePilots
+                                  // .toList()
                                   .map((e) => e.buildFlightTrace())
                                   .toList()),
 
@@ -1134,11 +1148,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           // Live locations other pilots
                           MarkerLayerOptions(
                             markers: Provider.of<Group>(context)
-                                .pilots
-                                // Don't see locations older than 10minutes
-                                .values
-                                .where((p) => p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
-                                .toList()
+                                .activePilots
+                                // .toList()
                                 .map((pilot) => Marker(
                                     point: pilot.geo.latLng,
                                     width: 40,

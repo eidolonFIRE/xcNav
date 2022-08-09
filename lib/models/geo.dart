@@ -19,6 +19,15 @@ class PathIntercept {
   PathIntercept(this.index, this.latlng);
 }
 
+class Vector {
+  /// Radians
+  double hdg;
+
+  /// Meters
+  double dist;
+  Vector(this.hdg, this.dist);
+}
+
 class Geo {
   double lat = 0;
   double lng = 0;
@@ -86,7 +95,7 @@ class Geo {
   /// (Nearest point that doesn't have acute angle between next point and this point)
   PathIntercept nearestPointOnPath(List<LatLng> path, bool isReversed) {
     // Scan through all line segments and find intercept
-    int matchIndex = 0;
+    int matchIndex = isReversed ? 0 : path.length - 1;
     double matchdist = double.infinity;
 
     for (int index = isReversed ? path.length - 1 : 0;
@@ -100,8 +109,7 @@ class Geo {
         delta = (delta + 180) % 360 - 180;
         angleToNext = delta.abs();
       }
-      if (dist < matchdist && (angleToNext == double.nan || angleToNext > 90) ||
-          (isReversed ? (index == 0) : (index == path.length - 1))) {
+      if (dist < matchdist && (angleToNext == double.nan || angleToNext > 90)) {
         matchdist = dist;
         matchIndex = index;
         // debugPrint("match: $index) $dist  $angleToNext");
@@ -116,6 +124,12 @@ class Geo {
 
   double distanceToLatlng(LatLng other) {
     return latlngCalc.distance(other, latLng);
+  }
+
+  /// Returns radians +/- pi
+  double relativeHdg(Geo other) {
+    final delta = latlngCalc.bearing(latLng, other.latLng) * pi / 180 - hdg;
+    return (delta + pi) % (2 * pi) - pi;
   }
 
   static double distanceBetween(LatLng a, LatLng b) {

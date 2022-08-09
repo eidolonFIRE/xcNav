@@ -280,10 +280,8 @@ class ADSB with ChangeNotifier {
             1;
 
     // distance, eta
-    final int dist =
-        convertDistValueCoarse(settings.displayUnitsDist, latlngCalc.distance(ga.latlng, observer.latLng)).toInt();
-    final String distMsg =
-        ((dist > 0) ? dist.toStringAsFixed(0) : "less than one") + unitStrDistCoarseVerbal[settings.displayUnitsDist]!;
+    final dist = convertDistValueCoarse(settings.displayUnitsDist, latlngCalc.distance(ga.latlng, observer.latLng));
+    final String distMsg = printValueLexical(value: dist) + unitStrDistCoarseLexical[settings.displayUnitsDist]!;
     final String? etaStr = eta != null ? "${eta.toStringAsFixed(0)} seconds out" : null;
 
     // vertical separation

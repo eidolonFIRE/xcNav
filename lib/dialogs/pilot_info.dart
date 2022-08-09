@@ -213,7 +213,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
                                     TextSpan(children: [
                                       WidgetSpan(
                                         child: Container(
-                                          transform: Matrix4.translationValues(0, 15, 0),
+                                          transform: Matrix4.translationValues(0, 2, 0),
                                           child: SizedBox(
                                               width: 26 * 2 / 3,
                                               height: 26,
