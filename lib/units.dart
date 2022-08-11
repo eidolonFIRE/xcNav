@@ -69,11 +69,9 @@ String printHrMin({Duration? duration, int? milliseconds}) {
   }
 }
 
-String printHrMinLexical({Duration? duration, int? milliseconds}) {
-  int t = milliseconds ?? duration?.inMilliseconds ?? 0;
-
-  int hr = (t / 3600000).floor();
-  int min = ((t - hr * 3600000) / 60000).floor();
+String printHrMinLexical(Duration duration) {
+  int hr = duration.inHours;
+  int min = duration.inMinutes;
 
   if (hr > 0) {
     return "$hr hours $min minute${min == 1 ? "" : "s"}";
@@ -83,28 +81,26 @@ String printHrMinLexical({Duration? duration, int? milliseconds}) {
 }
 
 TextSpan richHrMin(
-    {Duration? duration,
-    int? milliseconds,
-    required TextStyle valueStyle,
-    TextStyle? unitStyle,
-    bool longUnits = false}) {
-  int t = milliseconds ?? duration?.inMilliseconds ?? 0;
-
-  int hr = (t / 3600000).floor();
-  int min = ((t - hr * 3600000) / 60000).floor();
-
-  if (hr > 0) {
-    return TextSpan(children: [
-      TextSpan(text: hr.toString(), style: valueStyle),
-      TextSpan(text: longUnits ? "hr " : "h ", style: unitStyle ?? valueStyle),
-      TextSpan(text: min.toString(), style: valueStyle),
-      TextSpan(text: longUnits ? "min" : "m", style: unitStyle ?? valueStyle),
-    ]);
+    {required Duration? duration, required TextStyle valueStyle, TextStyle? unitStyle, bool longUnits = false}) {
+  if (duration == null) {
+    return TextSpan(text: "∞", style: valueStyle);
   } else {
-    return TextSpan(children: [
-      TextSpan(text: min.toString(), style: valueStyle),
-      TextSpan(text: "min", style: unitStyle ?? valueStyle),
-    ]);
+    int hr = duration.inHours;
+    int min = duration.inMinutes;
+
+    if (hr > 0) {
+      return TextSpan(children: [
+        TextSpan(text: hr.toString(), style: valueStyle),
+        TextSpan(text: longUnits ? "hr " : "h ", style: unitStyle ?? valueStyle),
+        TextSpan(text: min.toString(), style: valueStyle),
+        TextSpan(text: longUnits ? "min" : "m", style: unitStyle ?? valueStyle),
+      ]);
+    } else {
+      return TextSpan(children: [
+        TextSpan(text: min.toString(), style: valueStyle),
+        TextSpan(text: "min", style: unitStyle ?? valueStyle),
+      ]);
+    }
   }
 }
 

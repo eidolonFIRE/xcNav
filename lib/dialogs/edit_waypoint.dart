@@ -40,7 +40,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
           // --- Build icon selection buttons
           List<Widget> iconWidgets = [];
           if (showIconOptions) {
-            iconOptions.keys.forEach((name) => iconWidgets.add(IconButton(
+            iconOptions.keys.map((name) => iconWidgets.add(IconButton(
                   onPressed: () => {setState(() => selectedIcon = name)},
                   padding: const EdgeInsets.all(0),
                   iconSize: 50,

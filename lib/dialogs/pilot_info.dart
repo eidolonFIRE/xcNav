@@ -169,7 +169,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
                     ]),
 
                     /// --- Intercept
-                    if (etaIntercept.time > 0 && etaIntercept.time < 5 * 3600000 && dist > 300)
+                    if (etaIntercept.time != null && etaIntercept.time! < const Duration(hours: 5) && dist > 300)
                       TableRow(children: [
                         const TableCell(
                           child: Text(
@@ -190,7 +190,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
                             richHrMin(
                               valueStyle: valueStyle,
                               unitStyle: unitStyle,
-                              milliseconds: etaIntercept.time,
+                              duration: etaIntercept.time!,
                               longUnits: true,
                             )
                           ]),
@@ -199,7 +199,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
                       ]),
 
                     /// --- Waypoint
-                    if (etaWp != null && etaWp.time > 0 && etaWp.time < 10 * 3600000)
+                    if (etaWp != null && etaWp.time != null && etaWp.time! < const Duration(hours: 100))
                       TableRow(children: [
                         TableCell(
                           child: Align(
@@ -244,10 +244,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
                             child: Text.rich(
                           TextSpan(children: [
                             richHrMin(
-                                milliseconds: etaWp.time,
-                                valueStyle: valueStyle,
-                                unitStyle: unitStyle,
-                                longUnits: true),
+                                duration: etaWp.time!, valueStyle: valueStyle, unitStyle: unitStyle, longUnits: true),
                           ]),
                           softWrap: false,
                         ))

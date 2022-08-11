@@ -21,11 +21,25 @@ class PathIntercept {
 
 class Vector {
   /// Radians
-  double hdg;
+  late final double hdg;
 
   /// Meters
-  double dist;
-  Vector(this.hdg, this.dist);
+  late final double dist;
+
+  /// Meters
+  late final double alt;
+  Vector(this.hdg, this.dist, {this.alt = 0});
+
+  Vector.fromGeoToGeo(Geo a, Geo b) {
+    hdg = a.relativeHdg(b);
+    dist = a.distanceTo(b);
+    alt = a.alt - b.alt;
+  }
+}
+
+/// Return the difference in radian heading. (+/- pi)
+double deltaHdg(double a, double b) {
+  return (a - b + pi) % (2 * pi) - pi;
 }
 
 class Geo {

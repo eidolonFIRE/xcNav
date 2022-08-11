@@ -217,8 +217,21 @@ class _MyHomePageState extends State<MyHomePage> {
     showFeatures();
 
     // --- Setup Audio Cue Service
-    audioCueService = AudioCueService(context);
-    myTelemetry.addListener(audioCueService.cueMyTelemetry);
+    audioCueService = AudioCueService(
+      settings: Provider.of<Settings>(context, listen: false),
+      chatMessages: Provider.of<ChatMessages>(context, listen: false),
+      group: Provider.of<Group>(context, listen: false),
+      activePlan: Provider.of<ActivePlan>(context, listen: false),
+      profile: Provider.of<Profile>(context, listen: false),
+    );
+    myTelemetry.addListener(() {
+      if (myTelemetry.inFlight) {
+        audioCueService.cueMyTelemetry(myTelemetry.geo);
+        audioCueService.cueNextWaypoint(myTelemetry.geo);
+        audioCueService.cueGroupAwareness(myTelemetry.geo);
+        audioCueService.cueFuel(myTelemetry.geo, myTelemetry.fuel, myTelemetry.fuelTimeRemaining);
+      }
+    });
     Provider.of<ChatMessages>(context, listen: false).addListener(audioCueService.cueChatMessage);
   }
 
@@ -1632,9 +1645,7 @@ class _MyHomePageState extends State<MyHomePage> {
         bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
           ETA etaNext = activePlan.selectedIndex != null
               ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
-              : ETA(0, 0);
-
-          int etaTime = min(999 * 60000, etaNext.time);
+              : ETA(0, const Duration());
 
           final curWp = activePlan.selectedWp;
 
@@ -1739,10 +1750,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                             if (myTelemetry.inFlight) const TextSpan(text: "    "),
                                             if (myTelemetry.inFlight)
                                               richHrMin(
-                                                  milliseconds: etaTime, valueStyle: instrLower, unitStyle: instrLabel),
+                                                  duration: etaNext.time,
+                                                  valueStyle: instrLower,
+                                                  unitStyle: instrLabel),
                                             if (myTelemetry.inFlight &&
                                                 myTelemetry.fuel > 0 &&
-                                                myTelemetry.fuelTimeRemaining < etaNext.time)
+                                                etaNext.time != null &&
+                                                myTelemetry.fuelTimeRemaining < etaNext.time!)
                                               const WidgetSpan(
                                                   child: Padding(
                                                 padding: EdgeInsets.only(left: 20),

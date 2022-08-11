@@ -33,7 +33,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
   return Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
     ETA etaNext = activePlan.selectedIndex != null
         ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
-        : ETA(0, 0);
+        : ETA(0, const Duration());
     ETA etaTrip = activePlan.etaToTripEnd(
         myTelemetry.geo.spd, activePlan.selectedIndex ?? 0, Provider.of<Wind>(context, listen: false));
     etaTrip += etaNext;
@@ -41,16 +41,6 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
     if (activePlan.includeReturnTrip && !activePlan.isReversed) {
       // optionally include eta for return trip
       etaTrip += activePlan.etaToTripEnd(myTelemetry.geo.spd, 0, Provider.of<Wind>(context, listen: false));
-    }
-
-    int etaTripMin = min(999 * 60, (etaTrip.time / 60000).ceil());
-    String etaTripValue = (etaTripMin >= 60) ? (etaTripMin / 60).toStringAsFixed(1) : etaTripMin.toString();
-    String etaTripUnit = (etaTripMin >= 60) ? "hr" : "min";
-
-    // Handle infinite ETA
-    if (etaTrip.time < 0) {
-      etaTripValue = "∞";
-      etaTripUnit = "";
     }
 
     return Column(
@@ -346,12 +336,11 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                           text: unitStrDistCoarse[Provider.of<Settings>(context, listen: false).displayUnitsDist],
                           style: instrLabel),
                       if (myTelemetry.inFlight)
-                        TextSpan(
-                          text: "   $etaTripValue",
-                          style: instrLower,
-                        ),
-                      if (myTelemetry.inFlight) TextSpan(text: etaTripUnit, style: instrLabel),
-                      if (myTelemetry.inFlight && myTelemetry.fuel > 0 && myTelemetry.fuelTimeRemaining < etaNext.time)
+                        richHrMin(duration: etaTrip.time, valueStyle: instrLower, unitStyle: instrLabel),
+                      if (myTelemetry.inFlight &&
+                          myTelemetry.fuel > 0 &&
+                          etaNext.time != null &&
+                          myTelemetry.fuelTimeRemaining < etaNext.time!)
                         const WidgetSpan(
                             child: Padding(
                           padding: EdgeInsets.only(left: 20),

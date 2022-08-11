@@ -219,11 +219,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   Color fuelIndicatorColor(ETA next, ETA trip) {
     double fuelTime = fuel / fuelBurnRate;
-    if (fuelTime > 0.0001 && inFlight) {
-      if (fuelTime < 0.25 || (fuelTime < next.time / 3600000)) {
+    if (fuelTime > 0.0001 && inFlight && next.time != null) {
+      if (fuelTime < 0.25 || (fuelTime < next.time!.inMilliseconds.toDouble() / 3600000)) {
         // Red at 15minutes of fuel left or can't make selected waypoint
         return Colors.red.shade900;
-      } else if (fuelTime < trip.time / 3600000) {
+      } else if (fuelTime < trip.time!.inMilliseconds.toDouble() / 3600000) {
         // Orange if not enough fuel to finish the plan
         return Colors.amber.shade900;
       }
@@ -231,7 +231,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     return Colors.grey.shade900;
   }
 
-  int get fuelTimeRemaining => ((fuel / fuelBurnRate) * 3600000).ceil();
+  Duration get fuelTimeRemaining => Duration(milliseconds: ((fuel / fuelBurnRate) * 3600000).ceil());
 
   Polyline buildFlightTrace() {
     return Polyline(points: flightTrace, strokeWidth: 4, color: const Color.fromARGB(150, 255, 50, 50), isDotted: true);
