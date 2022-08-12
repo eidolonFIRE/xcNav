@@ -19,6 +19,29 @@ class PathIntercept {
   PathIntercept(this.index, this.latlng);
 }
 
+class Vector {
+  /// Radians
+  late final double hdg;
+
+  /// Meters
+  late final double dist;
+
+  /// Meters
+  late final double alt;
+  Vector(this.hdg, this.dist, {this.alt = 0});
+
+  Vector.fromGeoToGeo(Geo a, Geo b) {
+    hdg = a.relativeHdg(b);
+    dist = a.distanceTo(b);
+    alt = a.alt - b.alt;
+  }
+}
+
+/// Return the difference in radian heading. (+/- pi)
+double deltaHdg(double a, double b) {
+  return (a - b + pi) % (2 * pi) - pi;
+}
+
 class Geo {
   double lat = 0;
   double lng = 0;
@@ -74,6 +97,7 @@ class Geo {
 
     if (prev != null) {
       vario = (alt - prev.alt) / (time - prev.time) * 1000;
+      if (vario.isNaN) vario = 0;
       // Blend vario with previous vario reading to offer some mild smoothing
       if (prev.vario.isFinite) vario = (vario + prev.vario) / 2;
     } else {
@@ -85,7 +109,7 @@ class Geo {
   /// (Nearest point that doesn't have acute angle between next point and this point)
   PathIntercept nearestPointOnPath(List<LatLng> path, bool isReversed) {
     // Scan through all line segments and find intercept
-    int matchIndex = 0;
+    int matchIndex = isReversed ? 0 : path.length - 1;
     double matchdist = double.infinity;
 
     for (int index = isReversed ? path.length - 1 : 0;
@@ -96,8 +120,7 @@ class Geo {
       if (isReversed ? (index > 0) : (index < path.length - 1)) {
         double delta = latlngCalc.bearing(path[index], latLng) -
             latlngCalc.bearing(path[index], path[index + (isReversed ? -1 : 1)]);
-        if (delta > 180) delta -= 360;
-        if (delta < -180) delta += 360;
+        delta = (delta + 180) % 360 - 180;
         angleToNext = delta.abs();
       }
       if (dist < matchdist && (angleToNext == double.nan || angleToNext > 90)) {
@@ -115,6 +138,17 @@ class Geo {
 
   double distanceToLatlng(LatLng other) {
     return latlngCalc.distance(other, latLng);
+  }
+
+  /// Returns radians +/- pi
+  double relativeHdg(Geo other) {
+    final delta = latlngCalc.bearing(latLng, other.latLng) * pi / 180 - hdg;
+    return (delta + pi) % (2 * pi) - pi;
+  }
+
+  double relativeHdgLatlng(LatLng other) {
+    final delta = latlngCalc.bearing(latLng, other) * pi / 180 - hdg;
+    return (delta + pi) % (2 * pi) - pi;
   }
 
   static double distanceBetween(LatLng a, LatLng b) {

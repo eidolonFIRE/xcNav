@@ -133,8 +133,9 @@ Widget moreInstrumentsDrawer() {
                             ),
                             ToggleButtons(
                                 selectedColor: Colors.white,
+                                selectedBorderColor: Colors.lightBlueAccent,
                                 color: Colors.grey.shade700,
-                                fillColor: Colors.blue,
+                                // fillColor: Colors.blue,
                                 constraints:
                                     BoxConstraints(minWidth: MediaQuery.of(context).size.width / 5, minHeight: 40),
                                 borderRadius: const BorderRadius.all(Radius.circular(4)),

@@ -10,11 +10,13 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:usb_serial/transaction.dart';
 import 'package:usb_serial/usb_serial.dart';
+import 'package:xcnav/main.dart';
 
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/geo.dart';
 
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
 
 import 'package:xcnav/models/gdl90.dart' as gdl90;
@@ -41,7 +43,6 @@ class ADSB with ChangeNotifier {
   RawDatagramSocket? sock;
   Map<String, GA> planes = {};
 
-  late FlutterTts flutterTts;
   TtsState ttsState = TtsState.stopped;
   late final BuildContext context;
 
@@ -126,26 +127,6 @@ class ADSB with ChangeNotifier {
   ADSB(BuildContext ctx) {
     context = ctx;
 
-    flutterTts = FlutterTts();
-    flutterTts.awaitSpeakCompletion(true);
-    flutterTts.setStartHandler(() {
-      ttsState = TtsState.playing;
-    });
-
-    flutterTts.setCompletionHandler(() {
-      ttsState = TtsState.stopped;
-    });
-
-    flutterTts.setCancelHandler(() {
-      ttsState = TtsState.stopped;
-    });
-
-    flutterTts.setErrorHandler((msg) {
-      ttsState = TtsState.stopped;
-    });
-
-    Provider.of<Settings>(context, listen: false).addListener(() async {});
-
     if (Platform.isAndroid) {
       UsbSerial.usbEventStream!.listen((UsbEvent event) {
         _getPorts();
@@ -166,7 +147,6 @@ class ADSB with ChangeNotifier {
   void dispose() {
     if (sock != null) sock!.close();
     super.dispose();
-    flutterTts.stop();
     if (Platform.isAndroid) {
       _connectTo(null);
     }
@@ -300,10 +280,8 @@ class ADSB with ChangeNotifier {
             1;
 
     // distance, eta
-    final int dist =
-        convertDistValueCoarse(settings.displayUnitsDist, latlngCalc.distance(ga.latlng, observer.latLng)).toInt();
-    final String distMsg =
-        ((dist > 0) ? dist.toStringAsFixed(0) : "less than one") + unitStrDistCoarseVerbal[settings.displayUnitsDist]!;
+    final dist = convertDistValueCoarse(settings.displayUnitsDist, latlngCalc.distance(ga.latlng, observer.latLng));
+    final String distMsg = printValueLexical(value: dist) + unitStrDistCoarseLexical[settings.displayUnitsDist]!;
     final String? etaStr = eta != null ? "${eta.toStringAsFixed(0)} seconds out" : null;
 
     // vertical separation
@@ -317,8 +295,8 @@ class ADSB with ChangeNotifier {
 
     String msg = "Warning! $typeStr $oclock o'clock$vertSep ${etaStr ?? distMsg}... ";
     debugPrint(msg);
-    flutterTts.setVolume(1);
-    flutterTts.speak(msg);
+    ttsService
+        .speak(AudioMessage(msg, priority: 0, expires: DateTime.now().add(const Duration(seconds: 20)), volume: 1));
   }
 
   /// Trigger update refresh

@@ -344,13 +344,13 @@ class ActivePlan with ChangeNotifier {
         }
       }
     }
-    return ETA(0, 0);
+    return ETA(0, const Duration());
   }
 
   /// ETA from a waypoint to the end of the trip
   ETA etaToTripEnd(double speed, int waypointIndex, Wind wind) {
     // sum up the route
-    var retval = ETA(0, 0);
+    var retval = ETA(0, const Duration());
     if (waypointIndex < waypoints.length) {
       int? prevIndex;
       for (int i = waypointIndex; isReversed ? (i >= 0) : (i < waypoints.length); i += isReversed ? -1 : 1) {
@@ -367,7 +367,7 @@ class ActivePlan with ChangeNotifier {
             if (wind.result!.windSpd >= wind.result!.airspeed) {
               // NO SOLUTION!
               debugPrint("No solution!");
-              retval += ETA(latlngCalc.distance(nextLatlng, prevLatlng) + wpIndex.length, -1);
+              retval += ETA(latlngCalc.distance(nextLatlng, prevLatlng) + wpIndex.length, null);
             } else {
               /// This works by first canceling lateral speed loss by rotating our vector to compensate.
               /// Then, account for forward loss of speed.
@@ -404,6 +404,6 @@ class ActivePlan with ChangeNotifier {
       }
       return retval;
     }
-    return ETA(0, 0);
+    return ETA(0, const Duration());
   }
 }

@@ -14,6 +14,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
+import 'package:xcnav/main.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/patreon.dart';
@@ -99,6 +102,8 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Polyline> polyLines = [];
   var editablePolyline = Polyline(color: Colors.amber, points: [], strokeWidth: 5);
 
+  late final AudioCueService audioCueService;
+
   final features = [
     "focusOnMe",
     "focusOnGroup",
@@ -149,8 +154,13 @@ class _MyHomePageState extends State<MyHomePage> {
     // --- Location Spoofer for debugging
     FakeFlight fakeFlight = FakeFlight();
     Timer? timer;
-    Provider.of<Settings>(context, listen: false).addListener(() {
-      if (Provider.of<Settings>(context, listen: false).spoofLocation) {
+
+    final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+    final settings = Provider.of<Settings>(context, listen: false);
+    final activePlan = Provider.of<ActivePlan>(context, listen: false);
+
+    settings.addListener(() {
+      if (settings.spoofLocation) {
         if (timer == null) {
           // --- Spoof Location / Disable Baro
           listenBaro?.cancel();
@@ -159,10 +169,32 @@ class _MyHomePageState extends State<MyHomePage> {
             _toggleListening();
           }
           debugPrint("--- Starting Location Spoofer ---");
-          Provider.of<MyTelemetry>(context, listen: false).baro = null;
-          fakeFlight.initFakeFlight(Provider.of<MyTelemetry>(context, listen: false).geo);
+          myTelemetry.baro = null;
+
+          // if a waypoint is selected, teleport to there first (useful for doing testing)
+          if (activePlan.selectedWp != null) {
+            myTelemetry.updateGeo(
+                Position(
+                  latitude: activePlan.selectedWp!.latlng[0].latitude,
+                  longitude: activePlan.selectedWp!.latlng[0].longitude,
+                  altitude: myTelemetry.geo.alt,
+                  speed: 0,
+                  timestamp: DateTime.now(),
+                  heading: 0,
+                  accuracy: 0,
+                  speedAccuracy: 0,
+                ),
+                bypassRecording: true);
+          }
+
+          fakeFlight.initFakeFlight(myTelemetry.geo);
           timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight());
+            final target = activePlan.selectedWp == null
+                ? null
+                : activePlan.selectedWp!.latlng.length > 1
+                    ? myTelemetry.geo.nearestPointOnPath(activePlan.selectedWp!.latlng, activePlan.isReversed).latlng
+                    : activePlan.selectedWp!.latlng[0];
+            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target));
           });
         }
       } else {
@@ -184,6 +216,25 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     showFeatures();
+
+    // --- Setup Audio Cue Service
+    audioCueService = AudioCueService(
+      ttsService: ttsService,
+      settings: Provider.of<Settings>(context, listen: false),
+      chatMessages: Provider.of<ChatMessages>(context, listen: false),
+      group: Provider.of<Group>(context, listen: false),
+      activePlan: Provider.of<ActivePlan>(context, listen: false),
+      profile: Provider.of<Profile>(context, listen: false),
+    );
+    myTelemetry.addListener(() {
+      if (myTelemetry.inFlight) {
+        audioCueService.cueMyTelemetry(myTelemetry.geo);
+        audioCueService.cueNextWaypoint(myTelemetry.geo);
+        audioCueService.cueGroupAwareness(myTelemetry.geo);
+        audioCueService.cueFuel(myTelemetry.geo, myTelemetry.fuel, myTelemetry.fuelTimeRemaining);
+      }
+    });
+    Provider.of<ChatMessages>(context, listen: false).addListener(audioCueService.cueChatMessage);
   }
 
   void showFeatures() {
@@ -639,30 +690,36 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
 
             // --- Map Options
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Consumer<Settings>(
-                    builder: (context, settings, _) => SizedBox(
-                          child: ToggleButtons(
-                              isSelected:
-                                  Settings.mapTileThumbnails.keys.map((e) => e == settings.curMapTiles).toList(),
-                              borderRadius: const BorderRadius.all(Radius.circular(10)),
-                              borderWidth: 4,
-                              borderColor: Colors.black,
-                              selectedBorderColor: Colors.lightBlue,
-                              onPressed: (index) {
-                                settings.curMapTiles = Settings.mapTileThumbnails.keys.toList()[index];
-                              },
-                              children: Settings.mapTileThumbnails.keys
-                                  .map((e) => SizedBox(
-                                        width: 80,
-                                        height: 50,
-                                        child: Settings.mapTileThumbnails[e],
-                                      ))
-                                  .toList()),
-                        )),
-              ],
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Consumer<Settings>(
+                      builder: (context, settings, _) => SizedBox(
+                            child: ToggleButtons(
+                                isSelected:
+                                    Settings.mapTileThumbnails.keys.map((e) => e == settings.curMapTiles).toList(),
+                                borderRadius: const BorderRadius.all(Radius.circular(10)),
+                                borderWidth: 4,
+                                borderColor: Colors.grey.shade900,
+                                selectedBorderColor: Colors.lightBlue,
+                                onPressed: (index) {
+                                  settings.curMapTiles = Settings.mapTileThumbnails.keys.toList()[index];
+                                },
+                                children: Settings.mapTileThumbnails.keys
+                                    .map((e) => Opacity(
+                                          opacity: e == settings.curMapTiles ? 1.0 : 0.7,
+                                          child: SizedBox(
+                                            width: 80,
+                                            height: 50,
+                                            child: Settings.mapTileThumbnails[e],
+                                          ),
+                                        ))
+                                    .toList()),
+                          )),
+                ],
+              ),
             ),
 
             // --- Map opacity slider
@@ -692,6 +749,7 @@ class _MyHomePageState extends State<MyHomePage> {
             //     ),
             //   ),
 
+            // --- ADSB
             ListTile(
                 minVerticalPadding: 20,
                 leading: const Icon(Icons.radar, size: 30),
@@ -730,6 +788,47 @@ class _MyHomePageState extends State<MyHomePage> {
                                 )),
                           ]))
                     : null),
+
+            // --- Audio Cues
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 6, 22, 6),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: SvgPicture.asset(
+                    "assets/external/text_to_speech.svg",
+                    color: Colors.white,
+                    width: 30,
+                  ),
+                ),
+                ToggleButtons(
+                  borderWidth: 2,
+                  selectedBorderColor: Colors.lightBlueAccent,
+                  selectedColor: Colors.lightBlueAccent,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 30),
+                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  isSelected: AudioCueService.modeOptions.values.map((e) => e == audioCueService.mode).toList(),
+                  onPressed: (index) {
+                    setState(() {
+                      audioCueService.mode = AudioCueService.modeOptions.values.toList()[index];
+                    });
+                  },
+                  children: AudioCueService.modeOptions.keys.map((e) => Text(e)).toList(),
+                ),
+                IconButton(
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      showAudioCueConfigDialog(context, audioCueService.config).then((value) {
+                        if (value != null) {
+                          audioCueService.config = value;
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.settings)),
+              ]),
+            ),
 
             Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 
@@ -891,11 +990,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           // Other Pilot path trace
                           PolylineLayerOptions(
                               polylines: Provider.of<Group>(context)
-                                  .pilots
-                                  // Don't see locations older than 10minutes
-                                  .values
-                                  .where((p) => p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
-                                  .toList()
+                                  .activePilots
+                                  // .toList()
                                   .map((e) => e.buildFlightTrace())
                                   .toList()),
 
@@ -1067,11 +1163,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           // Live locations other pilots
                           MarkerLayerOptions(
                             markers: Provider.of<Group>(context)
-                                .pilots
-                                // Don't see locations older than 10minutes
-                                .values
-                                .where((p) => p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
-                                .toList()
+                                .activePilots
+                                // .toList()
                                 .map((pilot) => Marker(
                                     point: pilot.geo.latLng,
                                     width: 40,
@@ -1554,9 +1647,7 @@ class _MyHomePageState extends State<MyHomePage> {
         bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
           ETA etaNext = activePlan.selectedIndex != null
               ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
-              : ETA(0, 0);
-
-          int etaTime = min(999 * 60000, etaNext.time);
+              : ETA(0, const Duration());
 
           final curWp = activePlan.selectedWp;
 
@@ -1658,13 +1749,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 text: unitStrDistCoarse[
                                                     Provider.of<Settings>(context, listen: false).displayUnitsDist],
                                                 style: instrLabel),
-                                            if (myTelemetry.inFlight) const TextSpan(text: "    "),
+                                            if (myTelemetry.inFlight) TextSpan(text: "   ", style: instrLower),
                                             if (myTelemetry.inFlight)
                                               richHrMin(
-                                                  milliseconds: etaTime, valueStyle: instrLower, unitStyle: instrLabel),
+                                                  duration: etaNext.time,
+                                                  valueStyle: instrLower,
+                                                  unitStyle: instrLabel),
                                             if (myTelemetry.inFlight &&
                                                 myTelemetry.fuel > 0 &&
-                                                myTelemetry.fuelTimeRemaining < etaNext.time)
+                                                etaNext.time != null &&
+                                                myTelemetry.fuelTimeRemaining < etaNext.time!)
                                               const WidgetSpan(
                                                   child: Padding(
                                                 padding: EdgeInsets.only(left: 20),

@@ -2,26 +2,24 @@
 class ETA {
   /// Meters
   late double distance;
-
-  /// Milliseconds
-  late int time;
+  late Duration? time;
 
   ETA(this.distance, this.time);
   ETA.fromSpeed(this.distance, double speed) {
     if (speed > 0) {
-      time = distance * 1000 ~/ speed;
+      time = Duration(milliseconds: distance * 1000 ~/ speed);
     } else {
-      time = -1;
+      time = null;
     }
   }
 
   ETA operator +(ETA other) {
-    final retTime = (time < 0 || other.time < 0) ? -1 : time + other.time;
+    final retTime = (time == null || other.time == null) ? null : time! + other.time!;
     return ETA(distance + other.distance, retTime);
   }
 
   ETA operator -(ETA other) {
-    final retTime = (time < 0 || other.time < 0) ? -1 : time + other.time;
+    final retTime = (time != null || other.time != null) ? null : time! + other.time!;
     return ETA(distance - other.distance, retTime);
   }
 }

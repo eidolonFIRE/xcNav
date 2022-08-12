@@ -15,7 +15,6 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/plans.dart';
 
 import 'package:xcnav/models/flight_plan.dart';
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
