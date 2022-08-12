@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -50,6 +51,19 @@ class TtsService {
     // instance.setCompletionHandler(waitAndTryNext);
     // instance.setCancelHandler(waitAndTryNext);
     instance.setErrorHandler((_) => _waitAndTryNext());
+
+    if (Platform.isIOS) {
+      instance.setSharedInstance(true);
+
+      instance.setIosAudioCategory(
+          IosTextToSpeechAudioCategory.ambient,
+          [
+            IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+            IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+            IosTextToSpeechAudioCategoryOptions.mixWithOthers
+          ],
+          IosTextToSpeechAudioMode.voicePrompt);
+    }
   }
 
   void _speakNextInQueue() {
