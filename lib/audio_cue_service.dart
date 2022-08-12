@@ -25,6 +25,7 @@ class LastReport<T> {
 }
 
 class AudioCueService {
+  late final TtsService ttsService;
   late final Settings settings;
   late final ChatMessages chatMessages;
   late final Group group;
@@ -103,8 +104,8 @@ class AudioCueService {
     },
   };
 
-  static const groupProxmityH = 50;
-  static const groupProxmityV = 50;
+  static const groupProxmityH = 100;
+  static const groupProxmityV = 100;
   static const groupRadialSize = pi / 6.0;
 
   // --- Hysterisis in reporting
@@ -116,6 +117,7 @@ class AudioCueService {
   LastReport<double>? lastLowFuel;
 
   AudioCueService({
+    required this.ttsService,
     required this.settings,
     required this.chatMessages,
     required this.group,
@@ -150,22 +152,6 @@ class AudioCueService {
       _prefs.remove("audio_cues_mode");
     }
   }
-
-  // void refreshTicker(int? interval) {
-  //   // kill the previous one
-  //   ticker?.cancel();
-
-  //   if (interval != null && interval > 0) {
-  //     debugPrint("Audio Cue interval set: $interval");
-  //     // start a new periodic timer quantized to the clock
-  //     Timer(Duration(minutes: interval - DateTime.now().minute % interval), () {
-  //       ticker = Timer.periodic(Duration(minutes: interval), (timer) {
-  //         // Do the thing!
-  //         triggerAudioCue();
-  //       });
-  //     });
-  //   }
-  // }
 
   void cueMyTelemetry(Geo myGeo) {
     // --- My Telemetry
@@ -217,8 +203,7 @@ class AudioCueService {
           ? myGeo.nearestPointOnPath(activePlan.selectedWp!.latlng, activePlan.isReversed).latlng
           : activePlan.selectedWp!.latlng[0];
 
-      final wpHdg = latlngCalc.bearing(myGeo.latLng, target) * pi / 180;
-      final relativeHdg = (myGeo.hdg - wpHdg + pi) % (2 * pi) - pi;
+      final relativeHdg = myGeo.relativeHdgLatlng(target);
 
       debugPrint("Time Since last Hdg: ${(lastHdg?.timestamp ?? DateTime.now()).difference(DateTime.now()).inSeconds}");
 
@@ -282,7 +267,17 @@ class AudioCueService {
     lastChat = LastReport.now(chatMessages.messages.length - 1);
   }
 
-  void _cuePilots(List<Pilot> pilots, Vector vector) {
+  String _assembleNames(List<Pilot> pilots) {
+    if (pilots.length > 2) {
+      return "${pilots.length} pilots are";
+    } else if (pilots.length > 1) {
+      return "${pilots.map((e) => e.name).join(" and ")} are";
+    } else {
+      return "${pilots.first.name} is";
+    }
+  }
+
+  bool _checkLastPilotVector(String id, Vector vector) {
     // Borrow the intervals from "Next Waypoint"
     final maxInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][1]! as double) * 60).toInt());
     final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
@@ -290,69 +285,121 @@ class AudioCueService {
     final hdgPrecision = precisionLUT["hdg"][mode] * 3;
     final distPrecision = precisionLUT["dist"][settings.displayUnitsDist][mode];
 
-    // Will trigger message if:
     // 1: we haven't done so yet
     // 2: max interval reached
     // 3: min interval satisfied and vector is changed
-    if (!lastPilotVector.containsKey(pilots.first.id) ||
-        DateTime.now().isAfter(lastPilotVector[pilots.first.id]!.timestamp.add(maxInterval)) ||
-        (DateTime.now().isAfter(lastPilotVector[pilots.first.id]!.timestamp.add(minInterval)) &&
-            ((vector.dist - lastPilotVector[pilots.first.id]!.value.dist).abs() >= distPrecision ||
-                (vector.hdg - lastPilotVector[pilots.first.id]!.value.hdg).abs() >= hdgPrecision))) {
-      // Record last values
-      lastPilotVector[pilots.first.id] = LastReport.now(Vector(vector.hdg, vector.dist));
 
+    // if (lastPilotVector.containsKey(id)) {
+    //   debugPrint("CheckLastPilotVector: interval = ${lastPilotVector[id]!.timestamp.difference(DateTime.now())}");
+    //   debugPrint("CheckLastPilotVector: dist = ${(vector.dist - lastPilotVector[id]!.value.dist).abs()}");
+    //   debugPrint("CheckLastPilotVector: hdg = ${(vector.hdg - lastPilotVector[id]!.value.hdg).abs()}");
+    // }
+
+    if (!lastPilotVector.containsKey(id) ||
+        DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(maxInterval)) ||
+        (DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(minInterval)) &&
+            (convertDistValueCoarse(settings.displayUnitsDist, (vector.dist - lastPilotVector[id]!.value.dist).abs()) >=
+                    distPrecision ||
+                (vector.hdg - lastPilotVector[id]!.value.hdg).abs() >= hdgPrecision))) {
+      // Record last values
+      lastPilotVector[id] = LastReport.now(Vector(vector.hdg, vector.dist));
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  void _cuePilots(List<Pilot> pilots, Vector vector) {
+    // Make a stable key for that group of pilots so it doesn't re-trigger when they change order in the list.
+    var sorted = pilots.map((e) => e.id).toList();
+    sorted.sort((a, b) => a.compareTo(b));
+    final key = sorted.join(",");
+    debugPrint(key);
+    if (_checkLastPilotVector(key, vector)) {
       // Build the message
-      final distVerbal = printValueLexical(value: vector.dist);
+      final distVerbal = printValueLexical(value: convertDistValueCoarse(settings.displayUnitsDist, vector.dist));
       final int oclock = (((vector.hdg / (2 * pi) * 12.0).round() + 11) % 12) + 1;
-      final verbalAlt = vector.alt.abs() > groupProxmityV ? (vector.alt > 0 ? " high" : " low") : "";
+      final verbalAlt = vector.alt.abs() > groupProxmityV ? (vector.alt < 0 ? " high" : " low") : "";
+
+      final nameVerbal = _assembleNames(pilots);
 
       final text =
-          "${pilots.length == 1 ? "${pilots.first.name} is" : "${pilots.map((e) => e.name).join(" and ")} are"} $distVerbal ${unitStrDistCoarseLexical[settings.displayUnitsDist]} out at $oclock o'clock$verbalAlt.";
+          "$nameVerbal $distVerbal ${unitStrDistCoarseLexical[settings.displayUnitsDist]} out at $oclock o'clock$verbalAlt.";
 
       ttsService.speak(
           AudioMessage(text, volume: 0.75, priority: 6, expires: DateTime.now().add(const Duration(seconds: 6))));
     }
   }
 
+  void _cuePilotsCustom(List<Pilot> pilots, String customMsg) {
+    if (_checkLastPilotVector(pilots.first.id, Vector(0, 0))) {
+      final text = "${_assembleNames(pilots.toList())} $customMsg";
+      ttsService
+          .speak(AudioMessage(text, volume: 0.8, priority: 4, expires: DateTime.now().add(const Duration(seconds: 6))));
+    }
+  }
+
   void cueGroupAwareness(Geo myGeo) {
     if (mode != null && (config["Group Awareness"] ?? false)) {
       final activePilots = group.activePilots.toList();
+      final List<Pilot> sortedPilots = [];
       final Map<String, Vector> pilotVectors =
           Map.fromEntries(activePilots.map((e) => MapEntry(e.id, Vector.fromGeoToGeo(myGeo, e.geo))));
 
-      final Map<String, Pilot> pilotsClose = {};
-      final Map<String, Pilot> pilotsAbove = {};
-      final Map<String, Pilot> pilotsBelow = {};
+      final List<Pilot> pilotsClose = [];
+      final List<Pilot> pilotsAbove = [];
+      final List<Pilot> pilotsBelow = [];
 
       // separate pilots "above" / "close" / "below"
       for (final pilot in activePilots) {
         if (pilotVectors[pilot.id]!.dist <= groupProxmityH) {
           if (pilotVectors[pilot.id]!.alt < -groupProxmityV) {
             // Pilot is above us
-            pilotsAbove[pilot.id] = pilot;
+            pilotsAbove.add(pilot);
           } else if (pilotVectors[pilot.id]!.alt > groupProxmityV) {
             // Pilot is below us
-            pilotsBelow[pilot.id] = pilot;
+            pilotsBelow.add(pilot);
           } else {
             // Pilot is in close proximity
-            pilotsClose[pilot.id] = pilot;
+            pilotsClose.add(pilot);
           }
-          activePilots.remove(pilot);
+        } else {
+          sortedPilots.add(pilot);
         }
       }
 
+      // debugPrint("PilotsClose: ${pilotsClose.map((e) => e.name).join(", ")}");
+      // debugPrint("PilotsAbove: ${pilotsAbove.map((e) => e.name).join(", ")}");
+      // debugPrint("PilotsBelow: ${pilotsBelow.map((e) => e.name).join(", ")}");
+      // debugPrint("PilotsActive: ${activePilots.map((e) => e.name).join(", ")}");
+
+      /// --- Cue Pilots: proximity close
+      if (pilotsClose.isNotEmpty) {
+        _cuePilotsCustom(pilotsClose, " close proximity!");
+      }
+
+      /// --- Cue Pilots: above
+      if (pilotsAbove.isNotEmpty) {
+        _cuePilotsCustom(pilotsAbove, " above you.");
+      }
+
+      /// --- Cue Pilots: below
+      if (pilotsBelow.isNotEmpty) {
+        _cuePilotsCustom(pilotsBelow, " belove you");
+      }
+
       // Sort remaining pilots radialy
-      activePilots.sort((a, b) => pilotVectors[a.id]!.hdg < pilotVectors[b.id]!.hdg ? 0 : 1);
+      sortedPilots.sort((a, b) => pilotVectors[a.id]!.hdg < pilotVectors[b.id]!.hdg ? 0 : 1);
 
       /// Binary reduction to cluster into groups.
       /// Start with a list of lists, holding only 1 value.
-      final List<List<String>> clusters = activePilots.map((e) => [e.id]).toList();
+      final List<List<String>> clusters = sortedPilots.map((e) => [e.id]).toList();
       int wrapsWithoutChange = 0;
       int i = 0;
-      int maxIter = activePilots.length * activePilots.length;
+      int maxIter = sortedPilots.length * sortedPilots.length;
 
-      while (wrapsWithoutChange < (activePilots.length / 2 + 2) && maxIter > 0) {
+      while (wrapsWithoutChange < (sortedPilots.length / 2 + 2) && maxIter > 0 && clusters.length > 1) {
+        debugPrint("--- Cluster Iteration $maxIter");
         final int leftI = (i - 1) % clusters.length;
         final int rightI = (i + 1) % clusters.length;
         // check an entry for nearest valid neighbor
@@ -361,12 +408,12 @@ class AudioCueService {
 
         if (left < right && left < groupRadialSize) {
           // left is closer and valid to include
-          clusters[i].insertAll(0, clusters[leftI]);
+          clusters[i].insertAll(0, clusters[leftI].toList());
           clusters.removeAt(leftI);
           wrapsWithoutChange = 0;
         } else if (right <= left && right < groupRadialSize) {
           // right is closer and valid to include
-          clusters[i].insertAll(clusters[i].length, clusters[rightI]);
+          clusters[i].addAll(clusters[rightI].toList());
           clusters.removeAt(rightI);
           wrapsWithoutChange = 0;
         } else {
@@ -385,6 +432,8 @@ class AudioCueService {
         maxIter--;
       }
 
+      debugPrint("Clusters: ${clusters.toString()}");
+
       // if (max num groups met)
       if (clusters.length < 5) {
         // Cue each cluster
@@ -392,6 +441,7 @@ class AudioCueService {
           if (clusterGroup.length < 3) {
             final vectors = clusterGroup.map((e) => pilotVectors[e]!);
             // Average the altitude and distance
+            // TODO: do some distance separation
             final double alt = vectors.map((e) => e.alt).reduce((a, b) => a + b) / clusterGroup.length;
             final double dist = vectors.map((e) => e.dist).reduce((a, b) => a + b) / clusterGroup.length;
             // Find center of the cluster
@@ -413,9 +463,11 @@ class AudioCueService {
         }
       } else {
         // pilots are too dispursed to group sufficiently
-        final text = "${activePilots.length} pilots are dispursed around you.";
-        ttsService.speak(
-            AudioMessage(text, volume: 0.75, priority: 8, expires: DateTime.now().add(const Duration(seconds: 4))));
+        if (_checkLastPilotVector("scattered", Vector(0, 0))) {
+          final text = "${activePilots.length} pilots are scattered around you.";
+          ttsService.speak(
+              AudioMessage(text, volume: 0.75, priority: 8, expires: DateTime.now().add(const Duration(seconds: 4))));
+        }
       }
     }
   }

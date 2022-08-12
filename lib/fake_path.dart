@@ -72,7 +72,7 @@ class FakeFlight {
   Position genFakeLocationFlight(LatLng? target) {
     if (target != null) {
       final delta = ((latlngCalc.bearing(latlng, target)) - hdg + 180) % (360) - 180;
-      debugPrint("Delta Degrees to Target $delta");
+      // debugPrint("Delta Degrees to Target $delta");
       hdg += randomCentered() * 5 + min(15.0, max(-15.0, delta)) * (rand.nextDouble() + 0.2);
     } else {
       hdg += randomCentered() * 30 + 10;

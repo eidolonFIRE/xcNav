@@ -32,24 +32,28 @@ class TtsService {
 
   QueueList<AudioMessage> msgQueue = QueueList();
 
+  void _waitAndTryNext() {
+    if (msgQueue.isNotEmpty) {
+      Timer(const Duration(seconds: 2), _speakNextInQueue);
+    } else {
+      _state = TtsState.stopped;
+    }
+  }
+
   TtsService() {
     instance.awaitSpeakCompletion(true);
-    instance.setStartHandler(() {
-      _state = TtsState.playing;
-    });
-
-    void waitAndTryNext() {
-      _state = TtsState.stopped;
-      Timer(const Duration(seconds: 2), _speakNextInQueue);
-    }
+    // instance.setStartHandler(() {
+    //   _state = TtsState.playing;
+    // });
 
     // Any time the messages stop, try playing the next one.
-    instance.setCompletionHandler(waitAndTryNext);
-    instance.setCancelHandler(waitAndTryNext);
-    instance.setErrorHandler((_) => waitAndTryNext());
+    // instance.setCompletionHandler(waitAndTryNext);
+    // instance.setCancelHandler(waitAndTryNext);
+    instance.setErrorHandler((_) => _waitAndTryNext());
   }
 
   void _speakNextInQueue() {
+    // _state = TtsState.playing;
     // debugPrint("Speak next in queue");
     if (msgQueue.isNotEmpty) {
       final msg = msgQueue.removeFirst();
@@ -57,7 +61,8 @@ class TtsService {
       if (msg.expires == null || msg.expires!.isAfter(DateTime.now())) {
         instance.setVolume(msg.volume ?? 1.0);
         debugPrint("Speak: \"${msg.text}\"");
-        instance.speak(msg.text);
+        _state = TtsState.playing;
+        instance.speak(msg.text).then((_) => _waitAndTryNext());
       }
     } else {
       // debugPrint("Speak queue is empty");
@@ -80,7 +85,11 @@ class TtsService {
       }
     }
 
+    debugPrint("Speak queue length: ${msgQueue.length}");
+
     // if nothing is playing... start it
-    if (_state != TtsState.playing) _speakNextInQueue();
+    if (_state != TtsState.playing) {
+      _speakNextInQueue();
+    }
   }
 }

@@ -14,7 +14,7 @@ class ETA {
   }
 
   ETA operator +(ETA other) {
-    final retTime = (time != null || other.time != null) ? null : time! + other.time!;
+    final retTime = (time == null || other.time == null) ? null : time! + other.time!;
     return ETA(distance + other.distance, retTime);
   }
 

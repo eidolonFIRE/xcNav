@@ -16,6 +16,7 @@ import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
+import 'package:xcnav/main.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/patreon.dart';
@@ -218,6 +219,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // --- Setup Audio Cue Service
     audioCueService = AudioCueService(
+      ttsService: ttsService,
       settings: Provider.of<Settings>(context, listen: false),
       chatMessages: Provider.of<ChatMessages>(context, listen: false),
       group: Provider.of<Group>(context, listen: false),
@@ -1747,7 +1749,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 text: unitStrDistCoarse[
                                                     Provider.of<Settings>(context, listen: false).displayUnitsDist],
                                                 style: instrLabel),
-                                            if (myTelemetry.inFlight) const TextSpan(text: "    "),
+                                            if (myTelemetry.inFlight) TextSpan(text: "   ", style: instrLower),
                                             if (myTelemetry.inFlight)
                                               richHrMin(
                                                   duration: etaNext.time,

@@ -335,6 +335,7 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                       TextSpan(
                           text: unitStrDistCoarse[Provider.of<Settings>(context, listen: false).displayUnitsDist],
                           style: instrLabel),
+                      if (myTelemetry.inFlight) TextSpan(text: "   ", style: instrLower),
                       if (myTelemetry.inFlight)
                         richHrMin(duration: etaTrip.time, valueStyle: instrLower, unitStyle: instrLabel),
                       if (myTelemetry.inFlight &&

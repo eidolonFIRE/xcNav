@@ -146,6 +146,11 @@ class Geo {
     return (delta + pi) % (2 * pi) - pi;
   }
 
+  double relativeHdgLatlng(LatLng other) {
+    final delta = latlngCalc.bearing(latLng, other) * pi / 180 - hdg;
+    return (delta + pi) % (2 * pi) - pi;
+  }
+
   static double distanceBetween(LatLng a, LatLng b) {
     return latlngCalc.distance(a, b);
   }
