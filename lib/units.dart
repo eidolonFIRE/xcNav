@@ -71,7 +71,7 @@ String printHrMin({Duration? duration, int? milliseconds}) {
 
 String printHrMinLexical(Duration duration) {
   int hr = duration.inHours;
-  int min = duration.inMinutes;
+  int min = duration.inMinutes - duration.inHours * 60;
 
   if (hr > 0) {
     return "$hr hours $min minute${min == 1 ? "" : "s"}";
@@ -86,7 +86,7 @@ TextSpan richHrMin(
     return TextSpan(text: "∞", style: valueStyle);
   } else {
     int hr = duration.inHours;
-    int min = duration.inMinutes;
+    int min = duration.inMinutes - duration.inHours * 60;
 
     if (hr > 0) {
       return TextSpan(children: [

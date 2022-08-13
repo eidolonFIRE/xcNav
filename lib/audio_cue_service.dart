@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:xcnav/main.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/providers/active_plan.dart';
