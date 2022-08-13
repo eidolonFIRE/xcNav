@@ -56,25 +56,12 @@ const Map<DisplayUnitsFuel, String> unitStrFuel = {
   DisplayUnitsFuel.gal: " gal",
 };
 
-String printHrMin({Duration? duration, int? milliseconds}) {
-  int t = milliseconds ?? duration?.inMilliseconds ?? 0;
-
-  int hr = (t / 3600000).floor();
-  int min = ((t - hr * 3600000) / 60000).floor();
-
-  if (hr > 0) {
-    return "${hr}h ${min}m";
-  } else {
-    return "$min min";
-  }
-}
-
 String printHrMinLexical(Duration duration) {
   int hr = duration.inHours;
   int min = duration.inMinutes - duration.inHours * 60;
 
   if (hr > 0) {
-    return "$hr hours $min minute${min == 1 ? "" : "s"}";
+    return "$hr hour${hr == 1 ? "" : "s"} $min minute${min == 1 ? "" : "s"}";
   } else {
     return "$min minute${min == 1 ? "" : "s"}";
   }
@@ -106,10 +93,10 @@ TextSpan richHrMin(
 
 String printValue({required double value, required int digits, required int decimals, double? autoDecimalThresh}) {
   if (!value.isFinite) return "?";
-  if (autoDecimalThresh != null && value < autoDecimalThresh) decimals++;
-  final int mag = (pow(10, digits) - 1).round();
+  if (autoDecimalThresh != null && value.abs() < autoDecimalThresh) decimals++;
+  final int mag = (pow(10, digits + decimals) - 1).round();
   final double decPwr = pow(10, decimals).toDouble();
-  return ((min(mag, max(-mag, value)) * decPwr).round() / decPwr).toStringAsFixed(decimals);
+  return ((min(mag, max(-mag, value * decPwr))).round() / decPwr).toStringAsFixed(decimals);
 }
 
 String printValueLexical(
