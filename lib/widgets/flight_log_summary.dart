@@ -23,6 +23,70 @@ class FlightLogSummary extends StatelessWidget {
     debugPrint("Built log: ${log.filename}");
   }
 
+  void exportLog(BuildContext context, String fileType) {
+    final filename = DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
+    (Platform.isIOS ? getApplicationDocumentsDirectory() : Future(() => Directory('/storage/emulated/0/Documents')))
+        .then((Directory path) {
+      var outFile = File("${path.path}/xcNav_$fileType/$filename.$fileType");
+      outFile.create(recursive: true).then(
+          (value) => value.writeAsString(fileType == "kml" ? log.toKML() : log.toGPX()).then((value) => showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                    title: const Text("File Exported to:"),
+                    content: GestureDetector(
+                        onTap: () => OpenFile.open(outFile.path),
+                        child: Text(
+                          outFile.path,
+                          style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                        )),
+                    actions: [
+                      IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(
+                            Icons.check,
+                            color: Colors.green,
+                          ))
+                    ],
+                  ))));
+    });
+  }
+
+  void deleteLog(BuildContext context) {
+    // Delete the log file!
+    showDialog(
+        context: context,
+        builder: (BuildContext ctx) {
+          return AlertDialog(
+            title: const Text('Please Confirm'),
+            content: const Text('Are you sure you want to delete this log?'),
+            actions: [
+              // The "Yes" button
+              TextButton.icon(
+                  onPressed: () {
+                    // Delete Log File
+                    File logFile = File(log.filename);
+                    logFile.exists().then((value) {
+                      logFile.delete();
+                      Navigator.of(context).pop();
+                      onDelete();
+                    });
+                  },
+                  icon: const Icon(
+                    Icons.delete_forever,
+                    color: Colors.red,
+                  ),
+                  label: const Text('Delete')),
+              TextButton(
+                  onPressed: () {
+                    // Close the dialog
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'))
+            ],
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -44,90 +108,65 @@ class FlightLogSummary extends StatelessWidget {
                       .merge(TextStyle(color: log.goodFile ? Colors.white : Colors.red)),
                 ),
               ),
-              // --- Action buttons
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                      visualDensity: VisualDensity.compact,
-                      iconSize: 16,
-                      onPressed: () {
-                        final filename = DateFormat("yyyy_MM_dd_hh_mm")
-                            .format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
-                        (Platform.isIOS
-                                ? getApplicationDocumentsDirectory()
-                                : Future(() => Directory('/storage/emulated/0/Documents')))
-                            .then((Directory path) {
-                          var outFile = File("${path.path}/xcNav_kml/$filename.kml");
-                          outFile
-                              .create(recursive: true)
-                              .then((value) => value.writeAsString(log.toKML()).then((value) => showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                        title: const Text("File Exported to:"),
-                                        content: GestureDetector(
-                                            onTap: () => OpenFile.open(outFile.path),
-                                            child: Text(
-                                              outFile.path,
-                                              style: const TextStyle(
-                                                  color: Colors.blue, decoration: TextDecoration.underline),
-                                            )),
-                                        actions: [
-                                          IconButton(
-                                              onPressed: () => Navigator.pop(context),
-                                              icon: const Icon(
-                                                Icons.check,
-                                                color: Colors.green,
-                                              ))
-                                        ],
-                                      ))));
-                        });
-                      },
-                      icon: const Icon(
-                        Icons.download,
-                        size: 24,
-                      )),
-                  IconButton(
-                      visualDensity: VisualDensity.compact,
-                      iconSize: 16,
-                      onPressed: () {
-                        // Delete the log file!
-                        showDialog(
-                            context: context,
-                            builder: (BuildContext ctx) {
-                              return AlertDialog(
-                                title: const Text('Please Confirm'),
-                                content: const Text('Are you sure you want to delete this log?'),
-                                actions: [
-                                  // The "Yes" button
-                                  TextButton.icon(
-                                      onPressed: () {
-                                        // Delete Log File
-                                        File logFile = File(log.filename);
-                                        logFile.exists().then((value) {
-                                          logFile.delete();
-                                          Navigator.of(context).pop();
-                                          onDelete();
-                                        });
-                                      },
-                                      icon: const Icon(
-                                        Icons.delete_forever,
-                                        color: Colors.red,
-                                      ),
-                                      label: const Text('Delete')),
-                                  TextButton(
-                                      onPressed: () {
-                                        // Close the dialog
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text('Cancel'))
-                                ],
-                              );
-                            });
-                      },
-                      icon: const Icon(Icons.delete, color: Colors.red, size: 24))
-                ],
-              )
+              PopupMenuButton(
+                  onSelected: (value) {
+                    switch (value) {
+                      case "export_kml":
+                        exportLog(context, "kml");
+                        break;
+
+                      case "export_gpx":
+                        exportLog(context, "gpx");
+                        break;
+
+                      case "delete":
+                        deleteLog(context);
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => const <PopupMenuEntry<String>>[
+                        PopupMenuItem(
+                            enabled: false,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 16),
+                              child: Text("Export Options:"),
+                            )),
+                        PopupMenuItem(
+                            value: "export_kml",
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.file_download,
+                                size: 28,
+                              ),
+                              title: Text.rich(TextSpan(children: [
+                                TextSpan(text: "KML ", style: TextStyle(fontSize: 20)),
+                                TextSpan(text: "(Google Earth)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                              ])),
+                            )),
+                        PopupMenuItem(
+                            value: "export_gpx",
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.file_download,
+                                size: 28,
+                              ),
+                              title: Text.rich(TextSpan(children: [
+                                TextSpan(text: "GPX ", style: TextStyle(fontSize: 20)),
+                                TextSpan(text: "(Ayvri.com)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                              ])),
+                            )),
+                        PopupMenuDivider(),
+                        PopupMenuItem(
+                            value: "delete",
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                                size: 28,
+                              ),
+                              title: Text("Delete", style: TextStyle(fontSize: 20)),
+                            ))
+                      ])
             ],
           ),
           const Divider(height: 10),
@@ -173,7 +212,7 @@ class FlightLogSummary extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Table(
-                    columnWidths: const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
+                    columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
                     children: [
                       TableRow(children: [
                         TableCell(
@@ -248,6 +287,22 @@ class FlightLogSummary extends StatelessWidget {
                                   )),
                       ]),
                       TableRow(children: [
+                        const TableCell(child: Text("Avg Speed")),
+                        TableCell(
+                            child: log.meanSpd != null
+                                ? Text(
+                                    convertSpeedValue(Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
+                                                log.meanSpd!)
+                                            .toStringAsFixed(1) +
+                                        unitStrSpeed[Provider.of<Settings>(context, listen: false).displayUnitsSpeed]!,
+                                    textAlign: TextAlign.end,
+                                  )
+                                : const Text(
+                                    "?",
+                                    textAlign: TextAlign.end,
+                                  )),
+                      ]),
+                      TableRow(children: [
                         const TableCell(child: Text("Max Altitude")),
                         TableCell(
                             child: log.maxAlt != null
@@ -264,7 +319,23 @@ class FlightLogSummary extends StatelessWidget {
                                     textAlign: TextAlign.end,
                                   )),
                       ]),
-                      const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
+                      TableRow(children: [
+                        const TableCell(child: Text("Best 1min Climb")),
+                        TableCell(
+                            child: log.bestClimb != null
+                                ? Text(
+                                    convertVarioValue(Provider.of<Settings>(context, listen: false).displayUnitsVario,
+                                                log.bestClimb!)
+                                            .toStringAsFixed(1) +
+                                        unitStrVario[Provider.of<Settings>(context, listen: false).displayUnitsVario]!,
+                                    textAlign: TextAlign.end,
+                                  )
+                                : const Text(
+                                    "?",
+                                    textAlign: TextAlign.end,
+                                  )),
+                      ]),
+                      // const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
                     ],
                   ),
                 ),
