@@ -16,8 +16,16 @@ class FlightLog {
   // computed
   late String title;
   Duration? durationTime;
+
+  /// Meters
   double? durationDist;
+
+  /// Meters
   double? maxAlt;
+
+  /// Fastest climb sustained for 1min
+  /// `m/s`
+  double? bestClimb;
 
   get filename => _filename;
 
@@ -40,6 +48,30 @@ class FlightLog {
       }
 
       maxAlt = samples.reduce((a, b) => a.alt > b.alt ? a : b).alt;
+
+      // --- Sliding window search for bestClimb
+      int left = 0;
+      int right = 0;
+      while (left < samples.length) {
+        // grow window
+        while (right < samples.length &&
+            Duration(milliseconds: samples[right].time - samples[left].time) < const Duration(seconds: 60)) {
+          right++;
+        }
+
+        if (right >= samples.length - 1) {
+          break;
+        }
+
+        // check max
+        double newClimb = (samples[right].alt - samples[left].alt) / (samples[right].time - samples[left].time) * 1000;
+        if (newClimb > (bestClimb ?? 0)) {
+          bestClimb = newClimb;
+        }
+
+        // scoot window
+        left++;
+      }
 
       goodFile = true;
     } catch (e) {

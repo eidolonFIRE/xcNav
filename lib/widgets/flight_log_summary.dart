@@ -264,7 +264,23 @@ class FlightLogSummary extends StatelessWidget {
                                     textAlign: TextAlign.end,
                                   )),
                       ]),
-                      const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
+                      TableRow(children: [
+                        const TableCell(child: Text("Best Climb")),
+                        TableCell(
+                            child: log.bestClimb != null
+                                ? Text(
+                                    convertVarioValue(Provider.of<Settings>(context, listen: false).displayUnitsVario,
+                                                log.bestClimb!)
+                                            .toStringAsFixed(1) +
+                                        unitStrVario[Provider.of<Settings>(context, listen: false).displayUnitsVario]!,
+                                    textAlign: TextAlign.end,
+                                  )
+                                : const Text(
+                                    "?",
+                                    textAlign: TextAlign.end,
+                                  )),
+                      ]),
+                      // const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
                     ],
                   ),
                 ),
