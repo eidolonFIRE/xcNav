@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
+import 'package:xml/xml.dart';
 
 class FlightLog {
   late final String _filename;
@@ -13,7 +14,6 @@ class FlightLog {
 
   static var calc = const Distance(roundResult: false);
 
-  // computed
   late String title;
   Duration? durationTime;
 
@@ -27,6 +27,9 @@ class FlightLog {
   /// `m/s`
   double? bestClimb;
 
+  /// `m/s`
+  double? meanSpd;
+
   get filename => _filename;
 
   FlightLog.fromJson(String filename, dynamic data) {
@@ -36,11 +39,11 @@ class FlightLog {
       List<dynamic> dataSamples = data["samples"];
       samples = dataSamples.map((e) => Geo.fromJson(e)).toList();
 
-      var date = DateTime.fromMillisecondsSinceEpoch(samples[0].time);
+      var date = DateTime.fromMillisecondsSinceEpoch(samples.first.time);
       title = DateFormat("MMM d - yyyy").format(date);
 
       // --- Calculate Stuff
-      durationTime = Duration(milliseconds: samples.last.time - samples[0].time);
+      durationTime = Duration(milliseconds: samples.last.time - samples.first.time);
 
       durationDist = 0;
       for (int i = 0; i < samples.length - 1; i++) {
@@ -48,6 +51,8 @@ class FlightLog {
       }
 
       maxAlt = samples.reduce((a, b) => a.alt > b.alt ? a : b).alt;
+
+      meanSpd = durationDist! / durationTime!.inSeconds;
 
       // --- Sliding window search for bestClimb
       int left = 0;
@@ -154,5 +159,28 @@ class FlightLog {
     ${linestrings.join("\n")}
     </Document>
     </kml>""";
+  }
+
+  String toGPX() {
+    final builder = XmlBuilder();
+
+    builder.processing("xml", 'version="1.0"');
+
+    builder.element("gpx", attributes: {"creator": "xcNav"}, nest: () {
+      builder.element("trk", nest: () {
+        builder.element("name", nest: title);
+
+        builder.element("trkseg", nest: () {
+          for (final geo in samples) {
+            builder.element("trkpt", attributes: {"lat": geo.lat.toString(), "lon": geo.lng.toString()}, nest: () {
+              builder.element("ele", nest: geo.alt.toString());
+              builder.element("time", nest: DateTime.fromMillisecondsSinceEpoch(geo.time).toIso8601String());
+            });
+          }
+        });
+      });
+    });
+
+    return builder.buildDocument().toString();
   }
 }
