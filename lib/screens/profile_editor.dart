@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -33,12 +34,16 @@ class _ProfileEditorState extends State<ProfileEditor> {
   String? currentName;
   bool isOptional = false;
 
+  late GlobalKey<FormState> formKey;
+
   @override
   _ProfileEditorState();
 
   @override
   void initState() {
     super.initState();
+    formKey = GlobalKey<FormState>();
+
     var profile = Provider.of<Profile>(context, listen: false);
     currentName = profile.name;
     isOptional = currentName != null && currentName != "";
@@ -72,6 +77,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
   @override
   void dispose() {
+    updateLoop.cancel();
     super.dispose();
     croppedImage?.delete();
   }
@@ -124,19 +130,19 @@ class _ProfileEditorState extends State<ProfileEditor> {
     });
   }
 
-  void accept(BuildContext contex, bool isOptional) {
-    // TODO: validate text correctly
+  void accept(BuildContext context, bool isOptional) {
     if (cropKey.currentState != null) {
       refreshCropped();
     }
-    if (nameController.text.length > 1 && croppedImage != null) {
+    debugPrint("${(formKey.currentState?.validate() ?? false)}");
+    if ((formKey.currentState?.validate() ?? false) && croppedImage != null) {
       updateLoop.cancel();
       croppedImage!.readAsBytes().then((value) {
         // (workaround to clear animations)
         Timer(const Duration(seconds: 1), () {
           Provider.of<Profile>(context, listen: false).updateNameAvatar(nameController.text, value);
           if (isOptional) {
-            Navigator.pop(contex);
+            Navigator.pop(context);
           } else {
             Navigator.popAndPushNamed(context, "/home");
           }
@@ -192,24 +198,32 @@ class _ProfileEditorState extends State<ProfileEditor> {
                         25),
                   ),
                   Expanded(
-                    child: TextField(
-                      textCapitalization: TextCapitalization.words,
-                      style: const TextStyle(fontSize: 20),
-                      maxLength: 20,
-                      autofocus: true,
+                      child: Form(
+                    key: formKey,
+                    child: TextFormField(
                       controller: nameController,
+                      autofocus: true,
+                      maxLength: 20,
+                      style: const TextStyle(fontSize: 20),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ ]"))],
+                      validator: (value) {
+                        if (value != null) {
+                          if (value.trim().length < 2) return "Must be at least 2 characters.";
+                        }
+                        return null;
+                      },
                       decoration: const InputDecoration(
                         label: Text("Pilot Name"),
                         border: OutlineInputBorder(),
                       ),
+                      // onFieldSubmitted: (value) => formKey.currentState?.validate(),
                     ),
-                  ),
+                  )),
                 ],
               ),
 
               // --- Image Cropper Window
               Container(
-                // TODO: rework this so that in keyboard doesn't cover up the text entry
                 constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 3),
                 child: Padding(
                   padding: const EdgeInsets.only(left: 20, bottom: 10, right: 20),
@@ -223,7 +237,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
                                 child: Padding(
                                   padding: EdgeInsets.only(bottom: 70),
                                   child: Text(
-                                    "Set Avatar",
+                                    "Set Avatar*",
                                     style: TextStyle(fontStyle: FontStyle.italic),
                                   ),
                                 ),
