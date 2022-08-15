@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:latlong2/latlong.dart';
 
 import 'package:xcnav/models/ga.dart';
-import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/units.dart';
 
 int _decode24bit(Uint8List data) {
   int value = ((data[0] & 0x7f) << 16) | (data[1] << 8) | data[2];

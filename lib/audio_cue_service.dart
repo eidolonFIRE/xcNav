@@ -167,11 +167,9 @@ class AudioCueService {
       if (lastAlt == null ||
           DateTime.now().isAfter(lastAlt!.timestamp.add(maxInterval)) ||
           (DateTime.now().isAfter(lastAlt!.timestamp.add(minInterval)) &&
-              (lastAlt!.value - convertDistValueFine(settings.displayUnitsDist, myGeo.alt)).abs() >=
-                  altPrecision * 0.8)) {
+              (lastAlt!.value - unitConverters[UnitType.distFine]!(myGeo.alt)).abs() >= altPrecision * 0.8)) {
         lastAlt = LastReport.now(
-            ((convertDistValueFine(settings.displayUnitsDist, myGeo.alt) / altPrecision).round() * altPrecision)
-                .toDouble());
+            ((unitConverters[UnitType.distFine]!(myGeo.alt) / altPrecision).round() * altPrecision).toDouble());
 
         final text = "Altitude: ${lastAlt!.value.round()}";
         ttsService.speak(AudioMessage(text, volume: 0.75, expires: DateTime.now().add(const Duration(seconds: 4))));
@@ -182,8 +180,8 @@ class AudioCueService {
       if (lastSpd == null ||
           DateTime.now().isAfter(lastSpd!.timestamp.add(maxInterval)) ||
           (DateTime.now().isAfter(lastSpd!.timestamp.add(minInterval)) &&
-              ((lastSpd!.value - convertSpeedValue(settings.displayUnitsSpeed, myGeo.spd)).abs() >= spdPrecision))) {
-        lastSpd = LastReport.now(convertSpeedValue(settings.displayUnitsSpeed, myGeo.spd));
+              ((lastSpd!.value - unitConverters[UnitType.speed]!(myGeo.spd)).abs() >= spdPrecision))) {
+        lastSpd = LastReport.now(unitConverters[UnitType.speed]!(myGeo.spd));
 
         final text = "Speed: ${lastSpd!.value.round()}";
         ttsService.speak(AudioMessage(text, volume: 0.75, expires: DateTime.now().add(const Duration(seconds: 4))));
@@ -214,8 +212,8 @@ class AudioCueService {
         final eta = activePlan.etaToWaypoint(myGeo, myGeo.spd, activePlan.selectedIndex!);
         if (eta.time != null) {
           final etaTime = printHrMinLexical(eta.time!);
-          final dist = printValueLexical(
-            value: convertDistValueCoarse(settings.displayUnitsDist, eta.distance),
+          final dist = printDoubleLexical(
+            value: unitConverters[UnitType.distCoarse]!(eta.distance),
           );
           final deltaDegrees = ((relativeHdg * 180 / pi) / 5).round() * 5;
           final degreesVerbal = "at ${deltaDegrees.abs()} degrees ${relativeHdg > 0 ? "left" : "right"}";
@@ -223,7 +221,7 @@ class AudioCueService {
           final oclockVerbal = "$oclock o'clock";
 
           final text =
-              "Waypoint: $dist ${unitStrDistCoarseLexical[settings.displayUnitsDist]} out, ${deltaDegrees.abs() <= 45 ? degreesVerbal : oclockVerbal}. ETA $etaTime.";
+              "Waypoint: $dist ${getUnitStr(UnitType.distCoarse, lexical: true)} out, ${deltaDegrees.abs() <= 45 ? degreesVerbal : oclockVerbal}. ETA $etaTime.";
           ttsService.speak(
               AudioMessage(text, volume: 0.75, priority: 4, expires: DateTime.now().add(const Duration(seconds: 4))));
         }
@@ -297,7 +295,7 @@ class AudioCueService {
     if (!lastPilotVector.containsKey(id) ||
         DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(maxInterval)) ||
         (DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(minInterval)) &&
-            (convertDistValueCoarse(settings.displayUnitsDist, (vector.dist - lastPilotVector[id]!.value.dist).abs()) >=
+            (unitConverters[UnitType.distCoarse]!((vector.dist - lastPilotVector[id]!.value.dist).abs()) >=
                     distPrecision ||
                 (vector.hdg - lastPilotVector[id]!.value.hdg).abs() >= hdgPrecision))) {
       // Record last values
@@ -316,14 +314,14 @@ class AudioCueService {
     debugPrint(key);
     if (_checkLastPilotVector(key, vector)) {
       // Build the message
-      final distVerbal = printValueLexical(value: convertDistValueCoarse(settings.displayUnitsDist, vector.dist));
+      final distVerbal = printDoubleLexical(value: unitConverters[UnitType.distCoarse]!(vector.dist));
       final int oclock = (((vector.hdg / (2 * pi) * 12.0).round() + 11) % 12) + 1;
       final verbalAlt = vector.alt.abs() > groupProxmityV ? (vector.alt < 0 ? " high" : " low") : "";
 
       final nameVerbal = _assembleNames(pilots);
 
       final text =
-          "$nameVerbal $distVerbal ${unitStrDistCoarseLexical[settings.displayUnitsDist]} out at $oclock o'clock$verbalAlt.";
+          "$nameVerbal $distVerbal ${getUnitStr(UnitType.distCoarse, lexical: true)} out at $oclock o'clock$verbalAlt.";
 
       ttsService.speak(
           AudioMessage(text, volume: 0.75, priority: 6, expires: DateTime.now().add(const Duration(seconds: 6))));

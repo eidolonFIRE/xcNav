@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:usb_serial/transaction.dart';
 import 'package:usb_serial/usb_serial.dart';
@@ -33,8 +32,8 @@ class ProximityConfig {
   ProximityConfig({required this.vertical, required this.horizontalDist, required this.horizontalTime});
 
   String toMultilineString(Settings settings) {
-    return "Vertical: ${(convertDistValueFine(settings.displayUnitsDist, vertical) / 50).ceil() * 50}${unitStrDistFine[settings.displayUnitsDist]}\n"
-        "Horiz Dist: ${(convertDistValueFine(settings.displayUnitsDist, horizontalDist) / 100).ceil() * 100}${unitStrDistFine[settings.displayUnitsDist]}\n"
+    return "Vertical: ${(unitConverters[UnitType.distFine]!(vertical) / 50).ceil() * 50}${getUnitStr(UnitType.distFine)}\n"
+        "Horiz Dist: ${(unitConverters[UnitType.distFine]!(horizontalDist) / 100).ceil() * 100}${getUnitStr(UnitType.distFine)}\n"
         "Horiz Time: ${horizontalTime.toStringAsFixed(0)} sec";
   }
 }
@@ -252,7 +251,7 @@ class ADSB with ChangeNotifier {
         rand.nextDouble() * 200 - 100,
         35 + rand.nextDouble() * 50,
         rand.nextDouble() * 360,
-        GAtype.values[rand.nextInt(GAtype.values.length)],
+        GAtype.values[rand.nextInt(GAtype.values.length - 1) + 1],
         DateTime.now().millisecondsSinceEpoch);
 
     final double dist = latlngCalc.distance(ga.latlng, observer);
@@ -270,8 +269,6 @@ class ADSB with ChangeNotifier {
   }
 
   void speakWarning(GA ga, Geo observer, double? eta) {
-    final settings = Provider.of<Settings>(context, listen: false);
-
     // direction
     final int oclock =
         (((deltaHdg(latlngCalc.bearing(observer.latLng, ga.latlng), observer.hdg * 180 / pi) / 360.0 * 12.0).round() +
@@ -280,8 +277,8 @@ class ADSB with ChangeNotifier {
             1;
 
     // distance, eta
-    final dist = convertDistValueCoarse(settings.displayUnitsDist, latlngCalc.distance(ga.latlng, observer.latLng));
-    final String distMsg = printValueLexical(value: dist) + unitStrDistCoarseLexical[settings.displayUnitsDist]!;
+    final dist = unitConverters[UnitType.distCoarse]!(latlngCalc.distance(ga.latlng, observer.latLng));
+    final String distMsg = "${printDoubleLexical(value: dist)} ${getUnitStr(UnitType.distFine, lexical: true)}";
     final String? etaStr = eta != null ? "${eta.toStringAsFixed(0)} seconds out" : null;
 
     // vertical separation

@@ -264,15 +264,10 @@ class _PlanEditorState extends State<PlanEditor> {
                           child: Text.rich(
                             TextSpan(children: [
                               const TextSpan(text: "Total Length: ", style: TextStyle(fontWeight: FontWeight.normal)),
-                              TextSpan(
-                                  text: convertDistValueCoarse(
-                                          Provider.of<Settings>(context, listen: false).displayUnitsDist, plan!.length)
-                                      .toStringAsFixed(1)),
-                              TextSpan(
-                                  text: unitStrDistCoarse[
-                                      Provider.of<Settings>(context, listen: false).displayUnitsDist]),
+                              richValue(UnitType.distCoarse, plan!.length,
+                                  decimals: 1, valueStyle: const TextStyle(fontWeight: FontWeight.bold)),
                             ]),
-                            style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+                            style: const TextStyle(color: Colors.black),
                             textAlign: TextAlign.end,
                           ),
                         ),

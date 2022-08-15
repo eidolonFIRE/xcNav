@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:xcnav/dialogs/fuel_adjustment.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/units.dart';
@@ -70,18 +69,10 @@ Widget moreInstrumentsDrawer() {
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 Text.rich(
-                                  TextSpan(
-                                    children: [
-                                      TextSpan(
-                                          text: convertFuelValue(
-                                                  Provider.of<Settings>(context).displayUnitsFuel, myTelemetry.fuel)
-                                              .toStringAsFixed(1),
-                                          style: Theme.of(context).textTheme.headline4),
-                                      TextSpan(
-                                          text: unitStrFuel[Provider.of<Settings>(context).displayUnitsFuel],
-                                          style: instrLabel)
-                                    ],
-                                  ),
+                                  richValue(UnitType.fuel, myTelemetry.fuel,
+                                      decimals: 1,
+                                      valueStyle: Theme.of(context).textTheme.headline4,
+                                      unitStyle: instrLabel),
                                   softWrap: false,
                                 ),
                                 Text.rich(
@@ -153,24 +144,10 @@ Widget moreInstrumentsDrawer() {
                               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                 const Text("Airspeed"),
                                 wind.result != null
-                                    ? Text.rich(TextSpan(children: [
-                                        TextSpan(
-                                            style: const TextStyle(fontSize: 30),
-                                            text: printValue(
-                                                value: convertSpeedValue(
-                                                    Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
-                                                    wind.result!.airspeed),
-                                                digits: 3,
-                                                decimals:
-                                                    Provider.of<Settings>(context, listen: false).displayUnitsSpeed ==
-                                                            DisplayUnitsSpeed.mps
-                                                        ? 1
-                                                        : 0)),
-                                        TextSpan(
-                                            style: const TextStyle(fontSize: 14, color: Colors.grey),
-                                            text: unitStrSpeed[
-                                                Provider.of<Settings>(context, listen: false).displayUnitsSpeed]!)
-                                      ]))
+                                    ? Text.rich(richValue(UnitType.speed, wind.result!.airspeed,
+                                        digits: 3,
+                                        valueStyle: const TextStyle(fontSize: 30),
+                                        unitStyle: const TextStyle(fontSize: 14, color: Colors.grey)))
                                     : const Text("?"),
                               ]),
                             ),
@@ -179,26 +156,14 @@ Widget moreInstrumentsDrawer() {
                               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                 const Text("Wind Speed"),
                                 wind.result != null
-                                    ? Text.rich(TextSpan(children: [
-                                        TextSpan(
-                                            style: const TextStyle(
+                                    ? Text.rich(
+                                        richValue(UnitType.speed, wind.result!.windSpd,
+                                            digits: 3,
+                                            valueStyle: const TextStyle(
                                               fontSize: 30,
                                             ),
-                                            text: printValue(
-                                                value: convertSpeedValue(
-                                                    Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
-                                                    wind.result!.windSpd),
-                                                digits: 3,
-                                                decimals:
-                                                    Provider.of<Settings>(context, listen: false).displayUnitsSpeed ==
-                                                            DisplayUnitsSpeed.mps
-                                                        ? 1
-                                                        : 0)),
-                                        TextSpan(
-                                            style: const TextStyle(fontSize: 14, color: Colors.grey),
-                                            text: unitStrSpeed[
-                                                Provider.of<Settings>(context, listen: false).displayUnitsSpeed]!)
-                                      ]))
+                                            unitStyle: const TextStyle(fontSize: 14, color: Colors.grey)),
+                                      )
                                     : const Text("?"),
                               ]),
                             )
@@ -274,16 +239,14 @@ Widget moreInstrumentsDrawer() {
                         data: myTelemetry.recordGeo,
                         colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
                         domainFn: (value, _) => DateTime.fromMillisecondsSinceEpoch(value.time),
-                        measureFn: (value, _) => convertDistValueFine(
-                            Provider.of<Settings>(context, listen: false).displayUnitsDist, value.alt),
+                        measureFn: (value, _) => unitConverters[UnitType.distFine]!(value.alt),
                       )
                     ],
                     defaultRenderer: charts.LineRendererConfig(includeArea: true, stacked: true),
                     animate: false,
 
                     behaviors: [
-                      charts.ChartTitle(
-                          "Altitude   (${unitStrDistFine[Provider.of<Settings>(context).displayUnitsDist]} )",
+                      charts.ChartTitle("Altitude   (${getUnitStr(UnitType.distFine)})",
                           behaviorPosition: charts.BehaviorPosition.start,
                           titleOutsideJustification: charts.OutsideJustification.middleDrawArea,
                           titleStyleSpec: const charts.TextStyleSpec(color: charts.MaterialPalette.white)),

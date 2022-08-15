@@ -3,11 +3,9 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:open_file/open_file.dart';
 
 import 'package:xcnav/models/flight_log.dart';
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
 
 class FlightLogSummary extends StatelessWidget {
@@ -16,6 +14,7 @@ class FlightLogSummary extends StatelessWidget {
   late final LatLngBounds mapBounds;
 
   final dateFormat = DateFormat("h:mm a");
+  static const unitStyle = TextStyle(color: Colors.grey, fontSize: 12);
 
   FlightLogSummary(this.log, this.onDelete, {Key? key}) : super(key: key) {
     mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
@@ -258,10 +257,7 @@ class FlightLogSummary extends StatelessWidget {
                                         duration: log.durationTime,
                                         longUnits: true,
                                         valueStyle: Theme.of(context).textTheme.bodyMedium!,
-                                        unitStyle: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall!
-                                            .merge(const TextStyle(color: Colors.white38))),
+                                        unitStyle: unitStyle),
                                     textAlign: TextAlign.end)
                                 : const Text(
                                     "?",
@@ -272,13 +268,9 @@ class FlightLogSummary extends StatelessWidget {
                         const TableCell(child: Text("Distance")),
                         TableCell(
                             child: log.durationDist != null
-                                ? Text(
-                                    convertDistValueCoarse(
-                                                Provider.of<Settings>(context, listen: false).displayUnitsDist,
-                                                log.durationDist!)
-                                            .toStringAsFixed(1) +
-                                        unitStrDistCoarse[
-                                            Provider.of<Settings>(context, listen: false).displayUnitsDist]!,
+                                ? Text.rich(
+                                    richValue(UnitType.distCoarse, log.durationDist!,
+                                        decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -290,11 +282,8 @@ class FlightLogSummary extends StatelessWidget {
                         const TableCell(child: Text("Avg Speed")),
                         TableCell(
                             child: log.meanSpd != null
-                                ? Text(
-                                    convertSpeedValue(Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
-                                                log.meanSpd!)
-                                            .toStringAsFixed(1) +
-                                        unitStrSpeed[Provider.of<Settings>(context, listen: false).displayUnitsSpeed]!,
+                                ? Text.rich(
+                                    richValue(UnitType.speed, log.meanSpd!, decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -306,12 +295,8 @@ class FlightLogSummary extends StatelessWidget {
                         const TableCell(child: Text("Max Altitude")),
                         TableCell(
                             child: log.maxAlt != null
-                                ? Text(
-                                    convertDistValueFine(Provider.of<Settings>(context, listen: false).displayUnitsDist,
-                                                log.maxAlt!)
-                                            .toStringAsFixed(1) +
-                                        unitStrDistFine[
-                                            Provider.of<Settings>(context, listen: false).displayUnitsDist]!,
+                                ? Text.rich(
+                                    richValue(UnitType.distFine, log.maxAlt!, decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -323,11 +308,8 @@ class FlightLogSummary extends StatelessWidget {
                         const TableCell(child: Text("Best 1min Climb")),
                         TableCell(
                             child: log.bestClimb != null
-                                ? Text(
-                                    convertVarioValue(Provider.of<Settings>(context, listen: false).displayUnitsVario,
-                                                log.bestClimb!)
-                                            .toStringAsFixed(1) +
-                                        unitStrVario[Provider.of<Settings>(context, listen: false).displayUnitsVario]!,
+                                ? Text.rich(
+                                    richValue(UnitType.vario, log.bestClimb!, decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(

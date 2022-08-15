@@ -1,6 +1,18 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:xcnav/models/geo.dart';
+
+// --- Constant unit converters
+const km2Miles = 0.621371;
+const meters2Feet = 3.28084;
+const meters2Miles = km2Miles / 1000;
+
+enum UnitType {
+  speed,
+  vario,
+  distFine,
+  distCoarse,
+  fuel,
+}
 
 enum DisplayUnitsSpeed {
   mph,
@@ -24,37 +36,165 @@ enum DisplayUnitsFuel {
   gal,
 }
 
-const Map<DisplayUnitsSpeed, String> unitStrSpeed = {
-  DisplayUnitsSpeed.mph: " mph",
-  DisplayUnitsSpeed.kts: " kts",
-  DisplayUnitsSpeed.kph: " kph",
-  DisplayUnitsSpeed.mps: " m/s",
+const Map<bool, Map<UnitType, dynamic>> _unitStr = {
+  false: {
+    UnitType.speed: {
+      DisplayUnitsSpeed.mph: "mph",
+      DisplayUnitsSpeed.kts: "kts",
+      DisplayUnitsSpeed.kph: "kph",
+      DisplayUnitsSpeed.mps: "m/s",
+    },
+    UnitType.vario: {
+      DisplayUnitsVario.fpm: "ft/m",
+      DisplayUnitsVario.mps: "m/s",
+    },
+    UnitType.distFine: {
+      DisplayUnitsDist.imperial: "ft",
+      DisplayUnitsDist.metric: "m",
+    },
+    UnitType.distCoarse: {
+      DisplayUnitsDist.imperial: "mi",
+      DisplayUnitsDist.metric: "km",
+    },
+    UnitType.fuel: {
+      DisplayUnitsFuel.liter: "L",
+      DisplayUnitsFuel.gal: "gal",
+    }
+  },
+  true: {
+    UnitType.speed: {
+      DisplayUnitsSpeed.mph: "miles per hour",
+      DisplayUnitsSpeed.kts: "knots",
+      DisplayUnitsSpeed.kph: "kilometers per hour",
+      DisplayUnitsSpeed.mps: "meters per second",
+    },
+    UnitType.vario: {
+      DisplayUnitsVario.fpm: "feet per minute",
+      DisplayUnitsVario.mps: "meters per second",
+    },
+    UnitType.distFine: {
+      DisplayUnitsDist.imperial: "feet",
+      DisplayUnitsDist.metric: "meters",
+    },
+    UnitType.distCoarse: {
+      DisplayUnitsDist.imperial: "miles",
+      DisplayUnitsDist.metric: "kilometers",
+    },
+    UnitType.fuel: {
+      DisplayUnitsFuel.liter: "liters",
+      DisplayUnitsFuel.gal: "gallons",
+    }
+  }
 };
 
-const Map<DisplayUnitsVario, String> unitStrVario = {
-  DisplayUnitsVario.fpm: " ft/m",
-  DisplayUnitsVario.mps: " m/s",
+String getUnitStr(UnitType type, {bool lexical = false}) {
+  switch (type) {
+    case UnitType.speed:
+      return _unitStr[lexical]![type][_unitSpeed];
+    case UnitType.vario:
+      return _unitStr[lexical]![type][_unitVario];
+    case UnitType.distFine:
+      return _unitStr[lexical]![type][_unitDist];
+    case UnitType.distCoarse:
+      return _unitStr[lexical]![type][_unitDist];
+    case UnitType.fuel:
+      return _unitStr[lexical]![type][_unitFuel];
+    default:
+      return "";
+  }
+}
+
+/// Map of converter functions
+/// `double => double`
+Map<UnitType, double Function(double)> unitConverters = {
+  UnitType.speed: (double value) => value,
+  UnitType.vario: (double value) => value,
+  UnitType.distFine: (double value) => value,
+  UnitType.distCoarse: (double value) => value,
+  UnitType.fuel: (double value) => value,
 };
 
-const Map<DisplayUnitsDist, String> unitStrDistFine = {
-  DisplayUnitsDist.imperial: " ft",
-  DisplayUnitsDist.metric: " m",
-};
+var _unitSpeed = DisplayUnitsSpeed.values.first;
+var _unitVario = DisplayUnitsVario.values.first;
+var _unitDist = DisplayUnitsDist.values.first;
+var _unitFuel = DisplayUnitsFuel.values.first;
 
-const Map<DisplayUnitsDist, String> unitStrDistCoarse = {
-  DisplayUnitsDist.imperial: " mi",
-  DisplayUnitsDist.metric: " km",
-};
+/// Reconfigure the unit converter functions for different destination types
+void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUnitsDist? dist, DisplayUnitsFuel? fuel}) {
+  // Remember the unit types selected
+  _unitSpeed = speed ?? _unitSpeed;
+  _unitVario = vario ?? _unitVario;
+  _unitDist = dist ?? _unitDist;
+  _unitFuel = fuel ?? _unitFuel;
 
-const Map<DisplayUnitsDist, String> unitStrDistCoarseLexical = {
-  DisplayUnitsDist.imperial: " mile",
-  DisplayUnitsDist.metric: " kilometer",
-};
+  // --- Speed
+  if (speed != null) {
+    switch (speed) {
+      case DisplayUnitsSpeed.mph:
+        unitConverters[UnitType.speed] = (double value) => value * 3.6 * km2Miles;
+        break;
+      case DisplayUnitsSpeed.kph:
+        unitConverters[UnitType.speed] = (double value) => value * 3.6;
+        break;
+      case DisplayUnitsSpeed.kts:
+        unitConverters[UnitType.speed] = (double value) => value * 1.943844;
+        break;
+      case DisplayUnitsSpeed.mps:
+        unitConverters[UnitType.speed] = (double value) => value;
+        break;
+      default:
+        Exception("Unsupported unit");
+        break;
+    }
+  }
 
-const Map<DisplayUnitsFuel, String> unitStrFuel = {
-  DisplayUnitsFuel.liter: " L",
-  DisplayUnitsFuel.gal: " gal",
-};
+  // --- Vario
+  if (vario != null) {
+    switch (vario) {
+      case DisplayUnitsVario.fpm:
+        unitConverters[UnitType.vario] = (double value) => value * 60 * meters2Feet;
+        break;
+      case DisplayUnitsVario.mps:
+        unitConverters[UnitType.vario] = (double value) => value;
+        break;
+      default:
+        Exception("Unsupported unit");
+        break;
+    }
+  }
+
+  // --- Dist
+  if (dist != null) {
+    switch (dist) {
+      case DisplayUnitsDist.imperial:
+        unitConverters[UnitType.distFine] = (double value) => value * meters2Feet;
+        unitConverters[UnitType.distCoarse] = (double value) => value * meters2Miles;
+        break;
+      case DisplayUnitsDist.metric:
+        unitConverters[UnitType.distFine] = (double value) => value;
+        unitConverters[UnitType.distCoarse] = (double value) => value / 1000;
+        break;
+      default:
+        Exception("Unsupported unit");
+        break;
+    }
+  }
+
+// --- Fuel
+  if (fuel != null) {
+    switch (fuel) {
+      case DisplayUnitsFuel.gal:
+        unitConverters[UnitType.fuel] = (double value) => value / 3.785411784;
+        break;
+      case DisplayUnitsFuel.liter:
+        unitConverters[UnitType.fuel] = (double value) => value;
+        break;
+      default:
+        Exception("Unsupported unit");
+        break;
+    }
+  }
+}
 
 String printHrMinLexical(Duration duration) {
   int hr = duration.inHours;
@@ -91,7 +231,8 @@ TextSpan richHrMin(
   }
 }
 
-String printValue({required double value, required int digits, required int decimals, double? autoDecimalThresh}) {
+String printDouble({required double value, required int digits, required int decimals, double? autoDecimalThresh}) {
+  if (value.isInfinite) return "∞";
   if (!value.isFinite) return "?";
   if (autoDecimalThresh != null && value.abs() < autoDecimalThresh) decimals++;
   final int mag = (pow(10, digits + decimals) - 1).round();
@@ -99,7 +240,7 @@ String printValue({required double value, required int digits, required int deci
   return ((min(mag, max(-mag, value * decPwr))).round() / decPwr).toStringAsFixed(decimals);
 }
 
-String printValueLexical(
+String printDoubleLexical(
     {required double value, double halfThreshold = 10, double quarterThreshold = 2, double eighthThreshold = 1}) {
   if (!value.isFinite) return "";
 
@@ -125,51 +266,18 @@ String printValueLexical(
   return "${value.round()}";
 }
 
-double convertDistValueFine(DisplayUnitsDist mode, double value, {int? clampDigits}) {
-  switch (mode) {
-    case DisplayUnitsDist.imperial:
-      return value * meters2Feet;
-    case DisplayUnitsDist.metric:
-      return value;
+TextSpan richValue(UnitType type, double value,
+    {int digits = 4, int decimals = 0, TextStyle? valueStyle, TextStyle? unitStyle, bool autoDecimal = true}) {
+  // Cases for increasing decimals
+  if (autoDecimal) {
+    if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps) decimals++;
+    if (type == UnitType.speed && _unitSpeed == DisplayUnitsVario.mps) decimals++;
   }
-}
 
-double convertDistValueCoarse(DisplayUnitsDist mode, double value) {
-  switch (mode) {
-    case DisplayUnitsDist.imperial:
-      return value * meters2Miles;
-    case DisplayUnitsDist.metric:
-      return value / 1000;
-  }
-}
-
-double convertSpeedValue(DisplayUnitsSpeed mode, double value) {
-  switch (mode) {
-    case DisplayUnitsSpeed.mph:
-      return value * 3.6 * km2Miles;
-    case DisplayUnitsSpeed.kph:
-      return value / 60 * 1000;
-    case DisplayUnitsSpeed.kts:
-      return value * 1.943844;
-    case DisplayUnitsSpeed.mps:
-      return value;
-  }
-}
-
-double convertVarioValue(DisplayUnitsVario mode, double value) {
-  switch (mode) {
-    case DisplayUnitsVario.fpm:
-      return value * 60 * meters2Feet;
-    case DisplayUnitsVario.mps:
-      return value;
-  }
-}
-
-double convertFuelValue(DisplayUnitsFuel mode, double value) {
-  switch (mode) {
-    case DisplayUnitsFuel.gal:
-      return value / 3.785411784;
-    case DisplayUnitsFuel.liter:
-      return value;
-  }
+  // Make the textspan
+  return TextSpan(children: [
+    TextSpan(
+        text: printDouble(value: unitConverters[type]!(value), digits: digits, decimals: decimals), style: valueStyle),
+    TextSpan(text: getUnitStr(type), style: unitStyle),
+  ]);
 }

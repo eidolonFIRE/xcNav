@@ -179,9 +179,13 @@ class Settings with ChangeNotifier {
       _displayUnitsSpeed = DisplayUnitsSpeed.values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
       _displayUnitsVario = DisplayUnitsVario.values[prefs.getInt("settings.displayUnitsVario") ?? 0];
       _displayUnitsDist = DisplayUnitsDist.values[prefs.getInt("settings.displayUnitsDist") ?? 0];
+      _displayUnitsFuel = DisplayUnitsFuel.values[prefs.getInt("settings.displayUnitsFuel") ?? 0];
+
+      configUnits(
+          speed: displayUnitsSpeed, vario: _displayUnitsVario, dist: _displayUnitsDist, fuel: _displayUnitsFuel);
+
       _mapControlsRightSide = prefs.getBool("settings.mapControlsRightSide") ?? false;
       _showPilotNames = prefs.getBool("settings.showPilotNames") ?? false;
-      _displayUnitsFuel = DisplayUnitsFuel.values[prefs.getInt("settings.displayUnitsFuel") ?? 0];
 
       _groundMode = prefs.getBool("settings.groundMode") ?? false;
       _groundModeTelemetry = prefs.getBool("settings.groundModeTelemetry") ?? false;
@@ -227,6 +231,7 @@ class Settings with ChangeNotifier {
     SharedPreferences.getInstance().then((prefs) {
       prefs.setInt("settings.displayUnitsSpeed", _displayUnitsSpeed.index);
     });
+    configUnits(speed: _displayUnitsSpeed);
     notifyListeners();
   }
 
@@ -236,6 +241,7 @@ class Settings with ChangeNotifier {
     SharedPreferences.getInstance().then((prefs) {
       prefs.setInt("settings.displayUnitsVario", _displayUnitsVario.index);
     });
+    configUnits(vario: _displayUnitsVario);
     notifyListeners();
   }
 
@@ -245,6 +251,7 @@ class Settings with ChangeNotifier {
     SharedPreferences.getInstance().then((prefs) {
       prefs.setInt("settings.displayUnitsDist", _displayUnitsDist.index);
     });
+    configUnits(dist: _displayUnitsDist);
     notifyListeners();
   }
 
@@ -254,6 +261,7 @@ class Settings with ChangeNotifier {
     SharedPreferences.getInstance().then((prefs) {
       prefs.setInt("settings.displayUnitsFuel", _displayUnitsFuel.index);
     });
+    configUnits(fuel: _displayUnitsFuel);
     notifyListeners();
   }
 

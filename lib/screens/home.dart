@@ -530,43 +530,17 @@ class _MyHomePageState extends State<MyHomePage> {
               builder: (context, myTelementy, settings, child) =>
                   Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                 // --- Speedometer
-                Text.rich(TextSpan(children: [
-                  TextSpan(
-                    text: printValue(
-                        value: convertSpeedValue(settings.displayUnitsSpeed, myTelementy.geo.spd),
-                        digits: 3,
-                        decimals: settings.displayUnitsSpeed == DisplayUnitsSpeed.mps ? 1 : 0),
-                    style: instrUpper,
-                  ),
-                  TextSpan(
-                    text: unitStrSpeed[settings.displayUnitsSpeed],
-                    style: instrLabel,
-                  )
-                ])),
+                Text.rich(richValue(UnitType.speed, myTelementy.geo.spd,
+                    digits: 3, valueStyle: instrUpper, unitStyle: instrLabel)),
+
                 const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
                 // --- Altimeter
-                Text.rich(TextSpan(children: [
-                  TextSpan(
-                    text: printValue(
-                        value: convertDistValueFine(settings.displayUnitsDist, myTelementy.geo.alt),
-                        digits: 5,
-                        decimals: 0),
-                    style: instrUpper,
-                  ),
-                  TextSpan(text: unitStrDistFine[settings.displayUnitsDist], style: instrLabel)
-                ])),
+                Text.rich(richValue(UnitType.distFine, myTelementy.geo.alt,
+                    digits: 5, valueStyle: instrUpper, unitStyle: instrLabel)),
                 const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
                 // --- Vario
-                Text.rich(TextSpan(children: [
-                  TextSpan(
-                    text: printValue(
-                        value: convertVarioValue(settings.displayUnitsVario, myTelementy.geo.vario),
-                        digits: 3,
-                        decimals: settings.displayUnitsVario == DisplayUnitsVario.fpm ? 0 : 1),
-                    style: instrUpper.merge(const TextStyle(fontSize: 30)),
-                  ),
-                  TextSpan(text: unitStrVario[settings.displayUnitsVario], style: instrLabel)
-                ])),
+                Text.rich(richValue(UnitType.vario, myTelementy.geo.vario,
+                    digits: 3, valueStyle: instrUpper.merge(const TextStyle(fontSize: 30)), unitStyle: instrLabel)),
               ]),
             ),
           ),
@@ -1135,17 +1109,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                                             size: 21,
                                                           ),
                                                         ),
-                                                        TextSpan(
-                                                          text: printValue(
-                                                              value: convertDistValueFine(settings.displayUnitsDist,
-                                                                  (e.alt - myTelemetry.geo.alt).abs()),
-                                                              digits: 5,
-                                                              decimals: 0),
-                                                          style: const TextStyle(color: Colors.black),
-                                                        ),
-                                                        TextSpan(
-                                                            text: unitStrDistFine[settings.displayUnitsDist],
-                                                            style: TextStyle(color: Colors.grey.shade700, fontSize: 12))
+                                                        richValue(
+                                                            UnitType.distFine, (e.alt - myTelemetry.geo.alt).abs(),
+                                                            digits: 5,
+                                                            valueStyle: const TextStyle(color: Colors.black),
+                                                            unitStyle:
+                                                                TextStyle(color: Colors.grey.shade700, fontSize: 12)),
                                                       ]),
                                                       overflow: TextOverflow.visible,
                                                       softWrap: false,
@@ -1258,22 +1227,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                                     // transformAlignment: const Alignment(0, 0),
                                                     transform: Matrix4.translationValues(0, 40, 0),
                                                     child: Text.rich(
-                                                      TextSpan(children: [
-                                                        TextSpan(
-                                                            style: const TextStyle(color: Colors.black, fontSize: 18),
-                                                            text: printValue(
-                                                                value: convertDistValueCoarse(
-                                                                    Provider.of<Settings>(context, listen: false)
-                                                                        .displayUnitsDist,
-                                                                    dist),
-                                                                digits: 4,
-                                                                decimals: 1)),
-                                                        TextSpan(
-                                                            style: const TextStyle(color: Colors.black87, fontSize: 14),
-                                                            text: unitStrDistCoarse[
-                                                                Provider.of<Settings>(context, listen: false)
-                                                                    .displayUnitsDist]),
-                                                      ]),
+                                                      richValue(UnitType.distCoarse, dist,
+                                                          digits: 4,
+                                                          decimals: 1,
+                                                          valueStyle:
+                                                              const TextStyle(color: Colors.black, fontSize: 18),
+                                                          unitStyle:
+                                                              const TextStyle(color: Colors.black87, fontSize: 14)),
                                                       softWrap: false,
                                                       textAlign: TextAlign.center,
                                                       overflow: TextOverflow.visible,
@@ -1610,9 +1570,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Padding(
                       padding: const EdgeInsets.all(42),
                       child: Text(
-                        printValue(
-                            value: convertSpeedValue(Provider.of<Settings>(context, listen: false).displayUnitsSpeed,
-                                Provider.of<Wind>(context).result!.windSpd),
+                        printDouble(
+                            value: unitConverters[UnitType.speed]!(Provider.of<Wind>(context).result!.windSpd),
                             digits: 2,
                             decimals: 0),
                         style: const TextStyle(color: Colors.black),
@@ -1737,18 +1696,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                         // --- ETA next
                                         Text.rich(
                                           TextSpan(children: [
-                                            TextSpan(
-                                                text: printValue(
-                                                    value: convertDistValueCoarse(
-                                                        Provider.of<Settings>(context, listen: false).displayUnitsDist,
-                                                        etaNext.distance),
-                                                    digits: 4,
-                                                    decimals: 1),
-                                                style: instrLower),
-                                            TextSpan(
-                                                text: unitStrDistCoarse[
-                                                    Provider.of<Settings>(context, listen: false).displayUnitsDist],
-                                                style: instrLabel),
+                                            richValue(UnitType.distCoarse, etaNext.distance,
+                                                digits: 4, decimals: 1, valueStyle: instrLower, unitStyle: instrLabel),
                                             if (myTelemetry.inFlight) TextSpan(text: "   ", style: instrLower),
                                             if (myTelemetry.inFlight)
                                               richHrMin(

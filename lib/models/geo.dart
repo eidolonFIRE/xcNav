@@ -5,11 +5,7 @@ import 'package:flutter/painting.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-
-// --- Constant unit converters
-const km2Miles = 0.621371;
-const meters2Feet = 3.28084;
-const meters2Miles = km2Miles / 1000;
+import 'package:xcnav/units.dart';
 
 Distance latlngCalc = const Distance(roundResult: false);
 
