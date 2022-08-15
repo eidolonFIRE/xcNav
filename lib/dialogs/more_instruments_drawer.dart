@@ -246,7 +246,7 @@ Widget moreInstrumentsDrawer() {
                     animate: false,
 
                     behaviors: [
-                      charts.ChartTitle("Altitude   (${getUnitStr(UnitType.distFine)} )",
+                      charts.ChartTitle("Altitude   (${getUnitStr(UnitType.distFine)})",
                           behaviorPosition: charts.BehaviorPosition.start,
                           titleOutsideJustification: charts.OutsideJustification.middleDrawArea,
                           titleStyleSpec: const charts.TextStyleSpec(color: charts.MaterialPalette.white)),

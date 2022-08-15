@@ -14,6 +14,7 @@ class FlightLogSummary extends StatelessWidget {
   late final LatLngBounds mapBounds;
 
   final dateFormat = DateFormat("h:mm a");
+  static const unitStyle = TextStyle(color: Colors.grey, fontSize: 12);
 
   FlightLogSummary(this.log, this.onDelete, {Key? key}) : super(key: key) {
     mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
@@ -256,10 +257,7 @@ class FlightLogSummary extends StatelessWidget {
                                         duration: log.durationTime,
                                         longUnits: true,
                                         valueStyle: Theme.of(context).textTheme.bodyMedium!,
-                                        unitStyle: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall!
-                                            .merge(const TextStyle(color: Colors.white38))),
+                                        unitStyle: unitStyle),
                                     textAlign: TextAlign.end)
                                 : const Text(
                                     "?",
@@ -272,7 +270,7 @@ class FlightLogSummary extends StatelessWidget {
                             child: log.durationDist != null
                                 ? Text.rich(
                                     richValue(UnitType.distCoarse, log.durationDist!,
-                                        unitStyle: const TextStyle(color: Colors.grey)),
+                                        decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -285,8 +283,7 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.meanSpd != null
                                 ? Text.rich(
-                                    richValue(UnitType.speed, log.meanSpd!,
-                                        unitStyle: const TextStyle(color: Colors.grey)),
+                                    richValue(UnitType.speed, log.meanSpd!, decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -299,8 +296,7 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.maxAlt != null
                                 ? Text.rich(
-                                    richValue(UnitType.distFine, log.maxAlt!,
-                                        unitStyle: const TextStyle(color: Colors.grey)),
+                                    richValue(UnitType.distFine, log.maxAlt!, decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -313,8 +309,7 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.bestClimb != null
                                 ? Text.rich(
-                                    richValue(UnitType.vario, log.bestClimb!,
-                                        decimals: 1, unitStyle: const TextStyle(color: Colors.grey)),
+                                    richValue(UnitType.vario, log.bestClimb!, decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(

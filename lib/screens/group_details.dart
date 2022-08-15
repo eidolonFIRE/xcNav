@@ -95,7 +95,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                                   // dist
                                   richValue(
                                       UnitType.distCoarse, p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo),
-                                      valueStyle: valueStyle, unitStyle: unitStyle),
+                                      decimals: 1, valueStyle: valueStyle, unitStyle: unitStyle),
 
                                   TextSpan(style: fillStyle, text: " away"),
                                 ]))
