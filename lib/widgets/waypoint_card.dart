@@ -7,7 +7,6 @@ import 'package:collection/collection.dart';
 
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_marker.dart';
@@ -43,7 +42,6 @@ class _WaypointCardState extends State<WaypointCard> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = Provider.of<Settings>(context, listen: false);
     final textColor =
         widget.isSelected ? Colors.black : (widget.waypoint.isOptional ? Colors.grey.shade600 : Colors.white);
     return Container(
@@ -121,14 +119,14 @@ class _WaypointCardState extends State<WaypointCard> {
                           TextSpan(text: widget.waypoint.name, style: TextStyle(color: textColor, fontSize: 24)),
                           // --- Length
                           if (widget.waypoint.latlng.length > 1)
-                            TextSpan(
-                                text:
-                                    " (${printValue(value: convertDistValueCoarse(settings.displayUnitsDist, widget.waypoint.length), digits: 3, decimals: 1)}",
-                                style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
+                            TextSpan(text: "(", style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
                           if (widget.waypoint.latlng.length > 1)
-                            TextSpan(
-                                text: unitStrDistCoarse[settings.displayUnitsDist],
-                                style: TextStyle(color: textColor.withAlpha(150), fontSize: 12)),
+                            richValue(UnitType.distCoarse, widget.waypoint.length,
+                                digits: 3,
+                                decimals: 1,
+                                valueStyle: TextStyle(color: textColor.withAlpha(150), fontSize: 18),
+                                unitStyle: TextStyle(color: textColor.withAlpha(150), fontSize: 12)),
+
                           if (widget.waypoint.latlng.length > 1)
                             TextSpan(text: ")", style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
                         ]),

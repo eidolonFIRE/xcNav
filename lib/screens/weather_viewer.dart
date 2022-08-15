@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/sounding_plot_therm.dart';
@@ -53,7 +52,6 @@ class _WeatherViewerState extends State<WeatherViewer> {
                         } else {
                           sample = sounding.data!.sampleBaro(myBaro);
                         }
-                        var settings = Provider.of<Settings>(context, listen: false);
 
                         return Column(
                           // crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -80,11 +78,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                         flex: 3,
                                         child: Text.rich(
                                           TextSpan(children: [
-                                            TextSpan(
-                                                text: convertDistValueFine(settings.displayUnitsDist,
-                                                            getElevation(sample.baroAlt, 1013.25))
-                                                        .toStringAsFixed(0) +
-                                                    unitStrDistFine[settings.displayUnitsDist]!),
+                                            richValue(UnitType.distFine, getElevation(sample.baroAlt, 1013.25)),
                                             const TextSpan(text: ",  "),
                                             TextSpan(
                                                 style: const TextStyle(color: Colors.blue),
@@ -124,11 +118,8 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                                 padding: const EdgeInsets.only(top: 42, bottom: 42),
                                                 child: Text(
                                                   (sample.wVel != null)
-                                                      ? printValue(
-                                                          value: convertSpeedValue(
-                                                              Provider.of<Settings>(context, listen: false)
-                                                                  .displayUnitsSpeed,
-                                                              sample.wVel!),
+                                                      ? printDouble(
+                                                          value: unitConverters[UnitType.speed]!(sample.wVel!),
                                                           digits: 2,
                                                           decimals: 0)
                                                       : "",

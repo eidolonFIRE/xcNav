@@ -85,29 +85,29 @@ class _GroupDetailsState extends State<GroupDetails> {
                           subtitle: (p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
                               ? Text.rich(TextSpan(children: [
                                   // speed
-                                  TextSpan(
-                                      style: valueStyle,
-                                      text:
-                                          convertSpeedValue(settings.displayUnitsSpeed, p.geo.spd).toStringAsFixed(0)),
-                                  TextSpan(style: unitStyle, text: unitStrSpeed[settings.displayUnitsSpeed]),
+                                  richValue(UnitType.speed, p.geo.spd, valueStyle: valueStyle, unitStyle: unitStyle),
+
                                   TextSpan(style: fillStyle, text: ", at "),
                                   // alt
-                                  TextSpan(
-                                      style: valueStyle,
-                                      text: convertDistValueFine(settings.displayUnitsDist, p.geo.alt)
-                                          .toStringAsFixed(0)),
-                                  TextSpan(style: unitStyle, text: unitStrDistFine[settings.displayUnitsDist]),
+                                  richValue(UnitType.distFine, p.geo.alt, valueStyle: valueStyle, unitStyle: unitStyle),
+
                                   TextSpan(style: fillStyle, text: " MSL, "),
                                   // dist
-                                  TextSpan(
-                                      style: valueStyle,
-                                      text: convertDistValueCoarse(settings.displayUnitsDist,
-                                              p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo))
-                                          .toStringAsFixed(1)),
-                                  TextSpan(style: unitStyle, text: unitStrDistCoarse[settings.displayUnitsDist]),
+                                  richValue(
+                                      UnitType.distCoarse, p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo),
+                                      valueStyle: valueStyle, unitStyle: unitStyle),
+
                                   TextSpan(style: fillStyle, text: " away"),
                                 ]))
-                              : const Text("( outdated telemetry )"),
+                              : Text.rich(TextSpan(children: [
+                                  const TextSpan(text: "( Telemetry is "),
+                                  richHrMin(
+                                      duration:
+                                          DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(p.geo.time)),
+                                      valueStyle: valueStyle,
+                                      unitStyle: unitStyle),
+                                  const TextSpan(text: " old )"),
+                                ])),
                         ))
                     .toList())));
   }

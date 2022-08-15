@@ -262,16 +262,8 @@ class _PlanEditorState extends State<PlanEditor> {
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text.rich(
-                            TextSpan(children: [
-                              const TextSpan(text: "Total Length: ", style: TextStyle(fontWeight: FontWeight.normal)),
-                              TextSpan(
-                                  text: convertDistValueCoarse(
-                                          Provider.of<Settings>(context, listen: false).displayUnitsDist, plan!.length)
-                                      .toStringAsFixed(1)),
-                              TextSpan(
-                                  text: unitStrDistCoarse[
-                                      Provider.of<Settings>(context, listen: false).displayUnitsDist]),
-                            ]),
+                            richValue(UnitType.distCoarse, plan!.length,
+                                valueStyle: const TextStyle(fontWeight: FontWeight.normal)),
                             style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
                             textAlign: TextAlign.end,
                           ),

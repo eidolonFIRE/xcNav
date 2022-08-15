@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +12,6 @@ import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 
 // --- Widgets
@@ -327,14 +324,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                   padding: const EdgeInsets.all(8),
                   child: Text.rich(
                     TextSpan(children: [
-                      TextSpan(
-                          text: convertDistValueCoarse(
-                                  Provider.of<Settings>(context, listen: false).displayUnitsDist, etaTrip.distance)
-                              .toStringAsFixed(1),
-                          style: instrLower),
-                      TextSpan(
-                          text: unitStrDistCoarse[Provider.of<Settings>(context, listen: false).displayUnitsDist],
-                          style: instrLabel),
+                      richValue(UnitType.distCoarse, etaTrip.distance,
+                          decimals: 1, valueStyle: instrLower, unitStyle: instrLabel),
                       if (myTelemetry.inFlight) TextSpan(text: "   ", style: instrLower),
                       if (myTelemetry.inFlight)
                         richHrMin(duration: etaTrip.time, valueStyle: instrLower, unitStyle: instrLabel),

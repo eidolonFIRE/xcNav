@@ -56,14 +56,10 @@ class PilotMarker extends StatelessWidget {
                     size: 21,
                   ),
                 ),
-                TextSpan(
-                  text: printValue(
-                      value: convertDistValueFine(settings.displayUnitsDist, relAlt!.abs()), digits: 5, decimals: 0),
-                  style: const TextStyle(color: Colors.black),
-                ),
-                TextSpan(
-                    text: unitStrDistFine[settings.displayUnitsDist],
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 12))
+                richValue(UnitType.distFine, relAlt!.abs(),
+                    digits: 5,
+                    valueStyle: const TextStyle(color: Colors.black),
+                    unitStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12))
               ]),
               overflow: TextOverflow.visible,
               softWrap: false,

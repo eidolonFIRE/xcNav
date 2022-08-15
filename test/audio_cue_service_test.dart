@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/models/geo.dart';
@@ -7,7 +6,6 @@ import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
-import 'package:mockito/mockito.dart';
 import 'package:xcnav/tts_service.dart';
 
 class MockTtsService extends TtsService {

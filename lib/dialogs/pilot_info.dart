@@ -9,7 +9,6 @@ import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_marker.dart';
@@ -20,8 +19,6 @@ void showPilotInfo(BuildContext context, String pilotId) {
   const valueStyle = TextStyle(fontSize: 22, color: Colors.white);
   const unitStyle = TextStyle(fontSize: 16, color: Colors.grey);
   const fillStyle = TextStyle(fontSize: 14, color: Colors.grey);
-
-  final settings = Provider.of<Settings>(context, listen: false);
 
   showDialog(
       context: context,
@@ -100,22 +97,14 @@ void showPilotInfo(BuildContext context, String pilotId) {
                       // speed
                       TableCell(
                         child: Text.rich(TextSpan(children: [
-                          TextSpan(
-                              style: valueStyle,
-                              text: printValue(
-                                  value: convertSpeedValue(settings.displayUnitsSpeed, pilot.geo.spd),
-                                  digits: 3,
-                                  decimals: 0)),
-                          TextSpan(style: unitStyle, text: unitStrSpeed[settings.displayUnitsSpeed]),
+                          richValue(UnitType.speed, pilot.geo.spd,
+                              digits: 3, valueStyle: valueStyle, unitStyle: unitStyle),
+
                           const TextSpan(style: fillStyle, text: ",  "),
                           // alt
-                          TextSpan(
-                              style: valueStyle,
-                              text: printValue(
-                                  value: convertDistValueFine(settings.displayUnitsDist, pilot.geo.alt),
-                                  digits: 5,
-                                  decimals: 0)),
-                          TextSpan(style: unitStyle, text: unitStrDistFine[settings.displayUnitsDist]),
+                          richValue(UnitType.distFine, pilot.geo.alt,
+                              digits: 5, valueStyle: valueStyle, unitStyle: unitStyle),
+
                           const TextSpan(style: fillStyle, text: " MSL"),
                         ])),
                       ),
@@ -139,14 +128,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
                       TableCell(
                           child: Text.rich(
                         TextSpan(children: [
-                          TextSpan(
-                              style: valueStyle,
-                              text: printValue(
-                                  value: convertDistValueCoarse(settings.displayUnitsDist, dist),
-                                  digits: 3,
-                                  decimals: 0,
-                                  autoDecimalThresh: 1.0)),
-                          TextSpan(style: unitStyle, text: unitStrDistCoarse[settings.displayUnitsDist]),
+                          richValue(UnitType.distCoarse, dist, digits: 3, valueStyle: valueStyle, unitStyle: unitStyle),
                           const TextSpan(style: fillStyle, text: ",  "),
                           WidgetSpan(
                             child: Icon(
@@ -155,14 +137,8 @@ void showPilotInfo(BuildContext context, String pilotId) {
                               size: 25,
                             ),
                           ),
-                          TextSpan(
-                            text: printValue(
-                                value: convertDistValueFine(settings.displayUnitsDist, relAlt.abs()),
-                                digits: 4,
-                                decimals: 0),
-                            style: valueStyle,
-                          ),
-                          TextSpan(text: unitStrDistFine[settings.displayUnitsDist], style: unitStyle)
+                          richValue(UnitType.distFine, relAlt.abs(),
+                              digits: 4, valueStyle: valueStyle, unitStyle: unitStyle),
                         ]),
                         softWrap: false,
                       ))
