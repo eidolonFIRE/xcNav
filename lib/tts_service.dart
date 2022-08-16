@@ -28,20 +28,22 @@ enum TtsState {
 
 /// Singleton for queueing up messages to speak to users
 class TtsService {
-  final instance = FlutterTts();
+  late final FlutterTts instance;
   TtsState _state = TtsState.stopped;
 
   QueueList<AudioMessage> msgQueue = QueueList();
 
   void _waitAndTryNext() {
     if (msgQueue.isNotEmpty) {
-      Timer(const Duration(seconds: 2), _speakNextInQueue);
+      Timer(const Duration(seconds: 2), speakNextInQueue);
     } else {
       _state = TtsState.stopped;
     }
   }
 
-  TtsService() {
+  void init() {
+    instance = FlutterTts();
+
     instance.awaitSpeakCompletion(true);
     // instance.setStartHandler(() {
     //   _state = TtsState.playing;
@@ -66,7 +68,7 @@ class TtsService {
     }
   }
 
-  void _speakNextInQueue() {
+  void speakNextInQueue() {
     // _state = TtsState.playing;
     // debugPrint("Speak next in queue");
     if (msgQueue.isNotEmpty) {
@@ -103,7 +105,7 @@ class TtsService {
 
     // if nothing is playing... start it
     if (_state != TtsState.playing) {
-      _speakNextInQueue();
+      speakNextInQueue();
     }
   }
 }

@@ -107,6 +107,7 @@ class MyApp extends StatelessWidget {
     configLocalNotification();
 
     ttsService = TtsService();
+    ttsService.init();
 
     debugPrint("Building App");
 
