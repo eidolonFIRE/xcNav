@@ -55,6 +55,16 @@ class Profile with ChangeNotifier {
     prefs.remove("profile.secretID");
     prefs.remove("profile.avatar");
     prefs.remove("profile.tier");
+
+    // Delete cached avatar
+    path_provider.getTemporaryDirectory().then((tempDir) {
+      var infile = File("${tempDir.path}/avatar.jpg");
+      infile.exists().then((exists) {
+        if (exists) {
+          infile.delete();
+        }
+      });
+    });
   }
 
   updateAvatarHash() {
