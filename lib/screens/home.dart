@@ -217,6 +217,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
     showFeatures();
 
+    myTelemetry.addListener(() {
+      Provider.of<Wind>(context, listen: false).handleVector(Vector(myTelemetry.geo.hdg, myTelemetry.geo.spd));
+    });
+
     // --- Setup Audio Cue Service
     audioCueService = AudioCueService(
       ttsService: ttsService,

@@ -292,11 +292,11 @@ class AudioCueService {
     if (!lastPilotVector.containsKey(id) ||
         DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(maxInterval)) ||
         (DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(minInterval)) &&
-            (unitConverters[UnitType.distCoarse]!((vector.dist - lastPilotVector[id]!.value.dist).abs()) >=
+            (unitConverters[UnitType.distCoarse]!((vector.value - lastPilotVector[id]!.value.value).abs()) >=
                     distPrecision ||
                 (vector.hdg - lastPilotVector[id]!.value.hdg).abs() >= hdgPrecision))) {
       // Record last values
-      lastPilotVector[id] = LastReport.now(Vector(vector.hdg, vector.dist));
+      lastPilotVector[id] = LastReport.now(Vector(vector.hdg, vector.value));
       return true;
     } else {
       return false;
@@ -311,7 +311,7 @@ class AudioCueService {
     debugPrint(key);
     if (_checkLastPilotVector(key, vector)) {
       // Build the message
-      final distVerbal = printDoubleLexical(value: unitConverters[UnitType.distCoarse]!(vector.dist));
+      final distVerbal = printDoubleLexical(value: unitConverters[UnitType.distCoarse]!(vector.value));
       final int oclock = (((vector.hdg / (2 * pi) * 12.0).round() + 11) % 12) + 1;
       final verbalAlt = vector.alt.abs() > groupProxmityV ? (vector.alt < 0 ? " high" : " low") : "";
 
@@ -338,7 +338,7 @@ class AudioCueService {
       final activePilots = group.activePilots.toList();
       final List<Pilot> sortedPilots = [];
       final Map<String, Vector> pilotVectors =
-          Map.fromEntries(activePilots.map((e) => MapEntry(e.id, Vector.fromGeoToGeo(myGeo, e.geo))));
+          Map.fromEntries(activePilots.map((e) => MapEntry(e.id, Vector.distFromGeoToGeo(myGeo, e.geo))));
 
       final List<Pilot> pilotsClose = [];
       final List<Pilot> pilotsAbove = [];
@@ -346,7 +346,7 @@ class AudioCueService {
 
       // separate pilots "above" / "close" / "below"
       for (final pilot in activePilots) {
-        if (pilotVectors[pilot.id]!.dist <= groupProxmityH) {
+        if (pilotVectors[pilot.id]!.value <= groupProxmityH) {
           if (pilotVectors[pilot.id]!.alt < -groupProxmityV) {
             // Pilot is above us
             pilotsAbove.add(pilot);
@@ -437,7 +437,7 @@ class AudioCueService {
             // Average the altitude and distance
             // TODO: do some distance separation
             final double alt = vectors.map((e) => e.alt).reduce((a, b) => a + b) / clusterGroup.length;
-            final double dist = vectors.map((e) => e.dist).reduce((a, b) => a + b) / clusterGroup.length;
+            final double dist = vectors.map((e) => e.value).reduce((a, b) => a + b) / clusterGroup.length;
             // Find center of the cluster
             double? hdgSum;
             double hdgPrev = 0;

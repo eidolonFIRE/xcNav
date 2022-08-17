@@ -1,9 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:xcnav/models/geo.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 
 class WindSolveResult {
   late final double airspeed;
@@ -13,17 +11,16 @@ class WindSolveResult {
   final double windHdg;
   final Offset circleCenter;
   final double maxSpd;
-  late final int timestamp;
+  late final DateTime timestamp;
   List<double> samplesX;
   List<double> samplesY;
-  WindSolveResult(
-      this.airspeed, this.windSpd, this.windHdg, this.circleCenter, this.maxSpd, this.samplesX, this.samplesY) {
-    timestamp = DateTime.now().millisecondsSinceEpoch;
-  }
+  WindSolveResult(this.airspeed, this.windSpd, this.windHdg, this.circleCenter, this.maxSpd, this.samplesX,
+      this.samplesY, this.timestamp);
 }
 
 class Wind with ChangeNotifier {
-  late final BuildContext _context;
+  /// Recorded
+  List<Vector> samples = [];
 
   /// Most recent wind calculation performed
   WindSolveResult? _result;
@@ -31,10 +28,6 @@ class Wind with ChangeNotifier {
 
   bool _isRecording = false;
   bool _triggerStop = false;
-
-  // Recorded
-  int? windSampleFirst;
-  int? windSampleLast;
 
   /// At 5s/sample, this is 10minutes
   static const maxSamples = 120;
@@ -49,22 +42,24 @@ class Wind with ChangeNotifier {
       sqrt(pow(mySpd, 2) - pow(wSpd * sin(theta), 2)) - cos(theta) * wSpd;
 
   void clearResult() {
-    windSampleLast = null;
     _result = null;
+    samples.clear();
     notifyListeners();
   }
 
   void start() {
-    windSampleFirst = Provider.of<MyTelemetry>(_context, listen: false).recordGeo.length - 1;
     clearResult();
     isRecording = true;
   }
 
   void stop({bool waitTillSolution = false}) {
+    for (final each in samples) {
+      debugPrint("wind.handleVector(Vector(${each.hdg}, ${each.value}));");
+    }
+
     if (waitTillSolution && _result == null) {
       _triggerStop = true;
     } else {
-      windSampleLast = Provider.of<MyTelemetry>(_context, listen: false).recordGeo.length - 1;
       _triggerStop = false;
       isRecording = false;
     }
@@ -74,58 +69,37 @@ class Wind with ChangeNotifier {
     _triggerStop = false;
   }
 
-  Wind(BuildContext context) {
-    _context = context;
-    Provider.of<MyTelemetry>(context, listen: false).addListener(() {
-      if (isRecording) {
-        final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-        final cardinality = myTelemetry.recordGeo.length;
-        // Conditions for skipping the solve
-        if (cardinality < 2 || windSampleFirst == null || ((windSampleFirst ?? cardinality) > cardinality - 3)) return;
-
-        final firstIndex = min(
-            cardinality - 1,
-            max(
-                0,
-                max(((isRecording || windSampleLast == null) ? cardinality - 1 : windSampleLast!) - maxSamples,
-                    windSampleFirst!)));
-
-        // clamp
-        if (windSampleLast != null) {
-          windSampleLast = min(cardinality - 1, windSampleLast!);
-        }
-
-        final List<Geo> samples = myTelemetry.recordGeo.sublist(firstIndex, windSampleLast);
-        if (samples.isNotEmpty) {
-          // Check sampled field-of-view is sufficient for confidence
-          var prev = samples.first.hdg;
-          var left = prev;
-          var right = prev;
-          for (var each in samples) {
-            var cur = each.hdg;
-            while (cur - prev > pi) {
-              cur -= 2 * pi;
-            }
-            while (cur - prev < -pi) {
-              cur += 2 * pi;
-            }
-            left = min(left, cur);
-            right = max(right, cur);
-            prev = cur;
-          }
-          final fov = right - left;
-          // debugPrint("FOV: $fov  (${samples.length} samples)");
-
-          if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
-        }
+  void handleVector(Vector newSample) {
+    if (isRecording) {
+      samples.add(newSample);
+      if (samples.length > maxSamples) {
+        samples.removeAt(0);
       }
-    });
+
+      if (samples.length > 2) {
+        // Check sampled field-of-view is sufficient for confidence
+        var prev = samples.first.hdg;
+        var left = prev;
+        var right = prev;
+        for (var each in samples) {
+          final cur = prev + deltaHdg(each.hdg, prev);
+
+          left = min(left, cur);
+          right = max(right, cur);
+          prev = cur;
+        }
+        final fov = right - left;
+        // debugPrint("FOV: $fov  (${samples.length} samples)");
+
+        if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
+      }
+    }
   }
 
   /// #Solve wind direction from GPS samples.
   /// https://people.cas.uab.edu/~mosya/cl/
-  void solve(List<Geo> samples) {
-    debugPrint("Solve Wind");
+  void solve(List<Vector> samples) {
+    // debugPrint("Solve Wind");
     double mXX = 0;
     double mYY = 0;
     double mXY = 0;
@@ -134,9 +108,9 @@ class Wind with ChangeNotifier {
     double mZZ = 0;
 
     // Transform to cartesian
-    final samplesX = samples.map((e) => cos(e.hdg - pi / 2) * e.spd).toList();
-    final samplesY = samples.map((e) => sin(e.hdg - pi / 2) * e.spd).toList();
-    final maxSpd = samples.reduce((a, b) => a.spd > b.spd ? a : b).spd * 1.1;
+    final samplesX = samples.map((e) => cos(e.hdg - pi / 2) * e.value).toList();
+    final samplesY = samples.map((e) => sin(e.hdg - pi / 2) * e.value).toList();
+    final maxSpd = samples.reduce((a, b) => a.value > b.value ? a : b).value * 1.1;
 
     // Remove DC offset (translate to cener over origin)
     final xMean = samplesX.reduce((a, b) => a + b) / samplesX.length;
@@ -209,7 +183,8 @@ class Wind with ChangeNotifier {
 
     // More conditions for good result
     if (windSpd < 90 && radius < 40) {
-      _result = WindSolveResult(radius, windSpd, windHdg, Offset(xCenter, yCenter), maxSpd, samplesX, samplesY);
+      _result = WindSolveResult(
+          radius, windSpd, windHdg, Offset(xCenter, yCenter), maxSpd, samplesX, samplesY, DateTime.now());
       notifyListeners();
 
       if (_triggerStop) stop();

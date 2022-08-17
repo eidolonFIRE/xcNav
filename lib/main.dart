@@ -59,7 +59,7 @@ void main() {
             lazy: false,
           ),
           ChangeNotifierProvider(
-            create: (context) => Wind(context),
+            create: (context) => Wind(),
             lazy: false,
           ),
           ChangeNotifierProvider(

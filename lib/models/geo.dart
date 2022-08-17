@@ -15,20 +15,21 @@ class PathIntercept {
   PathIntercept(this.index, this.latlng);
 }
 
+/// Simple direction and value
 class Vector {
   /// Radians
   late final double hdg;
 
   /// Meters
-  late final double dist;
+  late final double value;
 
   /// Meters
   late final double alt;
-  Vector(this.hdg, this.dist, {this.alt = 0});
+  Vector(this.hdg, this.value, {this.alt = 0});
 
-  Vector.fromGeoToGeo(Geo a, Geo b) {
+  Vector.distFromGeoToGeo(Geo a, Geo b) {
     hdg = a.relativeHdg(b);
-    dist = a.distanceTo(b);
+    value = a.distanceTo(b);
     alt = a.alt - b.alt;
   }
 }
