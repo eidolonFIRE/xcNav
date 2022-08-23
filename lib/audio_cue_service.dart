@@ -4,11 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/providers/active_plan.dart';
-import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
@@ -26,10 +25,8 @@ class LastReport<T> {
 class AudioCueService {
   late final TtsService ttsService;
   late final Settings settings;
-  late final ChatMessages chatMessages;
   late final Group group;
   late final ActivePlan activePlan;
-  late final Profile profile;
 
   /// Current global multiplier
   int? _mode = 0;
@@ -110,7 +107,7 @@ class AudioCueService {
   // --- Hysterisis in reporting
   LastReport<double>? lastAlt;
   LastReport<double>? lastSpd;
-  LastReport<int>? lastChat;
+  LastReport<String>? lastChat;
   LastReport<double>? lastHdg;
   Map<String, LastReport<Vector>> lastPilotVector = {};
   LastReport<double>? lastLowFuel;
@@ -118,10 +115,8 @@ class AudioCueService {
   AudioCueService({
     required this.ttsService,
     required this.settings,
-    required this.chatMessages,
     required this.group,
     required this.activePlan,
-    required this.profile,
   }) {
     SharedPreferences.getInstance().then((instance) {
       _prefs = instance;
@@ -165,26 +160,30 @@ class AudioCueService {
       final maxInterval = Duration(seconds: ((intervalLUT["My Telemetry"][mode][1]! as double) * 60).toInt());
       final minInterval = Duration(seconds: ((intervalLUT["My Telemetry"][mode][0]! as double) * 60).toInt());
       if (lastAlt == null ||
-          DateTime.now().isAfter(lastAlt!.timestamp.add(maxInterval)) ||
-          (DateTime.now().isAfter(lastAlt!.timestamp.add(minInterval)) &&
+          DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastAlt!.timestamp.add(maxInterval)) ||
+          (DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastAlt!.timestamp.add(minInterval)) &&
               (lastAlt!.value - unitConverters[UnitType.distFine]!(myGeo.alt)).abs() >= altPrecision * 0.8)) {
-        lastAlt = LastReport.now(
-            ((unitConverters[UnitType.distFine]!(myGeo.alt) / altPrecision).round() * altPrecision).toDouble());
+        lastAlt = LastReport(
+            ((unitConverters[UnitType.distFine]!(myGeo.alt) / altPrecision).round() * altPrecision).toDouble(),
+            DateTime.fromMillisecondsSinceEpoch(myGeo.time));
 
         final text = "Altitude: ${lastAlt!.value.round()}";
-        ttsService.speak(AudioMessage(text, volume: 0.75, expires: DateTime.now().add(const Duration(seconds: 4))));
+        ttsService.speak(AudioMessage(text,
+            volume: 0.75, expires: DateTime.fromMillisecondsSinceEpoch(myGeo.time).add(const Duration(seconds: 4))));
       }
 
       // --- Speed
       final spdPrecision = (precisionLUT["spd"][settings.displayUnitsSpeed][mode] as int).toDouble();
       if (lastSpd == null ||
-          DateTime.now().isAfter(lastSpd!.timestamp.add(maxInterval)) ||
-          (DateTime.now().isAfter(lastSpd!.timestamp.add(minInterval)) &&
+          DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(maxInterval)) ||
+          (DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(minInterval)) &&
               ((lastSpd!.value - unitConverters[UnitType.speed]!(myGeo.spd)).abs() >= spdPrecision))) {
-        lastSpd = LastReport.now(unitConverters[UnitType.speed]!(myGeo.spd));
+        lastSpd =
+            LastReport(unitConverters[UnitType.speed]!(myGeo.spd), DateTime.fromMillisecondsSinceEpoch(myGeo.time));
 
         final text = "Speed: ${lastSpd!.value.round()}";
-        ttsService.speak(AudioMessage(text, volume: 0.75, expires: DateTime.now().add(const Duration(seconds: 4))));
+        ttsService.speak(AudioMessage(text,
+            volume: 0.75, expires: DateTime.fromMillisecondsSinceEpoch(myGeo.time).add(const Duration(seconds: 4))));
       }
     }
   }
@@ -247,12 +246,10 @@ class AudioCueService {
     }
   }
 
-  void cueChatMessage() {
-    if (mode != null && ((config["Chat Messages"] ?? false) && chatMessages.messages.last.pilotId != profile.id)) {
-      if (lastChat == null || lastChat!.value < chatMessages.messages.length - 1) {
+  void cueChatMessage(Message msg) {
+    if (mode != null && (config["Chat Messages"] ?? false)) {
+      if (lastChat == null || lastChat!.value != msg.pilotId + msg.text) {
         // --- Read chat messages
-
-        final msg = chatMessages.messages.last;
         final pilotName = group.pilots[msg.pilotId]?.name;
 
         final text = "${pilotName != null ? "$pilotName says" : ""} ${msg.text}.";
@@ -261,7 +258,7 @@ class AudioCueService {
             .speak(AudioMessage(text, volume: msg.text.toLowerCase().contains("emergency") ? 1.0 : 0.75, priority: 7));
       }
     }
-    lastChat = LastReport.now(chatMessages.messages.length - 1);
+    lastChat = LastReport.now(msg.pilotId + msg.text);
   }
 
   String _assembleNames(List<Pilot> pilots) {
@@ -295,11 +292,11 @@ class AudioCueService {
     if (!lastPilotVector.containsKey(id) ||
         DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(maxInterval)) ||
         (DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(minInterval)) &&
-            (unitConverters[UnitType.distCoarse]!((vector.dist - lastPilotVector[id]!.value.dist).abs()) >=
+            (unitConverters[UnitType.distCoarse]!((vector.value - lastPilotVector[id]!.value.value).abs()) >=
                     distPrecision ||
                 (vector.hdg - lastPilotVector[id]!.value.hdg).abs() >= hdgPrecision))) {
       // Record last values
-      lastPilotVector[id] = LastReport.now(Vector(vector.hdg, vector.dist));
+      lastPilotVector[id] = LastReport.now(Vector(vector.hdg, vector.value));
       return true;
     } else {
       return false;
@@ -314,7 +311,7 @@ class AudioCueService {
     debugPrint(key);
     if (_checkLastPilotVector(key, vector)) {
       // Build the message
-      final distVerbal = printDoubleLexical(value: unitConverters[UnitType.distCoarse]!(vector.dist));
+      final distVerbal = printDoubleLexical(value: unitConverters[UnitType.distCoarse]!(vector.value));
       final int oclock = (((vector.hdg / (2 * pi) * 12.0).round() + 11) % 12) + 1;
       final verbalAlt = vector.alt.abs() > groupProxmityV ? (vector.alt < 0 ? " high" : " low") : "";
 
@@ -341,7 +338,7 @@ class AudioCueService {
       final activePilots = group.activePilots.toList();
       final List<Pilot> sortedPilots = [];
       final Map<String, Vector> pilotVectors =
-          Map.fromEntries(activePilots.map((e) => MapEntry(e.id, Vector.fromGeoToGeo(myGeo, e.geo))));
+          Map.fromEntries(activePilots.map((e) => MapEntry(e.id, Vector.distFromGeoToGeo(myGeo, e.geo))));
 
       final List<Pilot> pilotsClose = [];
       final List<Pilot> pilotsAbove = [];
@@ -349,7 +346,7 @@ class AudioCueService {
 
       // separate pilots "above" / "close" / "below"
       for (final pilot in activePilots) {
-        if (pilotVectors[pilot.id]!.dist <= groupProxmityH) {
+        if (pilotVectors[pilot.id]!.value <= groupProxmityH) {
           if (pilotVectors[pilot.id]!.alt < -groupProxmityV) {
             // Pilot is above us
             pilotsAbove.add(pilot);
@@ -440,7 +437,7 @@ class AudioCueService {
             // Average the altitude and distance
             // TODO: do some distance separation
             final double alt = vectors.map((e) => e.alt).reduce((a, b) => a + b) / clusterGroup.length;
-            final double dist = vectors.map((e) => e.dist).reduce((a, b) => a + b) / clusterGroup.length;
+            final double dist = vectors.map((e) => e.value).reduce((a, b) => a + b) / clusterGroup.length;
             // Find center of the cluster
             double? hdgSum;
             double hdgPrev = 0;

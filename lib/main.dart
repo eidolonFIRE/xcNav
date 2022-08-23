@@ -59,7 +59,7 @@ void main() {
             lazy: false,
           ),
           ChangeNotifierProvider(
-            create: (context) => Wind(context),
+            create: (context) => Wind(),
             lazy: false,
           ),
           ChangeNotifierProvider(
@@ -107,6 +107,7 @@ class MyApp extends StatelessWidget {
     configLocalNotification();
 
     ttsService = TtsService();
+    ttsService.init();
 
     debugPrint("Building App");
 

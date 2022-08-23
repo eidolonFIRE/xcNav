@@ -217,14 +217,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
     showFeatures();
 
+    myTelemetry.addListener(() {
+      Provider.of<Wind>(context, listen: false).handleVector(Vector(myTelemetry.geo.hdg, myTelemetry.geo.spd));
+    });
+
     // --- Setup Audio Cue Service
     audioCueService = AudioCueService(
       ttsService: ttsService,
       settings: Provider.of<Settings>(context, listen: false),
-      chatMessages: Provider.of<ChatMessages>(context, listen: false),
       group: Provider.of<Group>(context, listen: false),
       activePlan: Provider.of<ActivePlan>(context, listen: false),
-      profile: Provider.of<Profile>(context, listen: false),
     );
     myTelemetry.addListener(() {
       if (myTelemetry.inFlight) {
@@ -234,7 +236,12 @@ class _MyHomePageState extends State<MyHomePage> {
         audioCueService.cueFuel(myTelemetry.geo, myTelemetry.fuel, myTelemetry.fuelTimeRemaining);
       }
     });
-    Provider.of<ChatMessages>(context, listen: false).addListener(audioCueService.cueChatMessage);
+    final chatMessages = Provider.of<ChatMessages>(context, listen: false);
+    chatMessages.addListener(() {
+      if (chatMessages.messages.last.pilotId != Provider.of<Profile>(context, listen: false).id) {
+        audioCueService.cueChatMessage(chatMessages.messages.last);
+      }
+    });
   }
 
   void showFeatures() {
