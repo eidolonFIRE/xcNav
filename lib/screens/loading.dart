@@ -75,6 +75,11 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   }
 
   void checkPermissions(BuildContext context) async {
+    if (Platform.isIOS) {
+      Permission.camera.request();
+      Permission.photos.request();
+    }
+
     if (checked) {
       debugPrint("Skipping location permission check...");
       return;
