@@ -278,7 +278,7 @@ class ADSB with ChangeNotifier {
 
     // distance, eta
     final dist = unitConverters[UnitType.distCoarse]!(latlngCalc.distance(ga.latlng, observer.latLng));
-    final String distMsg = "${printDoubleLexical(value: dist)} ${getUnitStr(UnitType.distFine, lexical: true)}";
+    final String distMsg = "${printDoubleLexical(value: dist)} ${getUnitStr(UnitType.distCoarse, lexical: true)}";
     final String? etaStr = eta != null ? "${eta.toStringAsFixed(0)} seconds out" : null;
 
     // vertical separation

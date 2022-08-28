@@ -36,7 +36,7 @@ class TtsService {
 
   void _waitAndTryNext() {
     if (msgQueue.isNotEmpty) {
-      Timer(const Duration(seconds: 2), speakNextInQueue);
+      Timer(const Duration(seconds: 1), speakNextInQueue);
     } else {
       _state = TtsState.stopped;
     }
@@ -81,9 +81,13 @@ class TtsService {
         _state = TtsState.playing;
         currentPriority = msg.priority;
         instance.speak(msg.text).then((_) => _waitAndTryNext());
+      } else {
+        // Msg was expired, try again
+        speakNextInQueue();
       }
     } else {
       // debugPrint("Speak queue is empty");
+      _state = TtsState.stopped;
     }
   }
 
@@ -92,7 +96,7 @@ class TtsService {
     if (msg.priority == 0) {
       msgQueue.addFirst(msg);
       if (currentPriority != 0) {
-        instance.stop();
+        instance.stop().then((value) => speakNextInQueue());
       }
     } else {
       // insertion

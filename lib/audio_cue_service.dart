@@ -201,7 +201,7 @@ class AudioCueService {
 
       final relativeHdg = myGeo.relativeHdgLatlng(target);
 
-      debugPrint("Time Since last Hdg: ${(lastHdg?.timestamp ?? DateTime.now()).difference(DateTime.now()).inSeconds}");
+      // debugPrint("Time Since last Hdg: ${(lastHdg?.timestamp ?? DateTime.now()).difference(DateTime.now()).inSeconds}");
 
       if (lastHdg == null ||
           DateTime.now().isAfter(lastHdg!.timestamp.add(maxInterval)) ||
@@ -426,7 +426,7 @@ class AudioCueService {
         maxIter--;
       }
 
-      debugPrint("Clusters: ${clusters.toString()}");
+      // debugPrint("Clusters: ${clusters.toString()}");
 
       // if (max num groups met)
       if (clusters.length < 5) {

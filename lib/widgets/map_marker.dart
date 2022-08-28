@@ -18,6 +18,8 @@ final iconOptions = {
   "fuel": Icons.local_gas_station,
   "sleep": Icons.local_hotel,
   "camera": Icons.photo_camera,
+  "takeoff": Icons.flight_takeoff,
+  "landing": Icons.flight_land,
 };
 
 Widget getWpIcon(String? name, double size, Color? color) {

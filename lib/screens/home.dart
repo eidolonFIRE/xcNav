@@ -238,7 +238,8 @@ class _MyHomePageState extends State<MyHomePage> {
     });
     final chatMessages = Provider.of<ChatMessages>(context, listen: false);
     chatMessages.addListener(() {
-      if (chatMessages.messages.last.pilotId != Provider.of<Profile>(context, listen: false).id) {
+      if (chatMessages.messages.isNotEmpty &&
+          chatMessages.messages.last.pilotId != Provider.of<Profile>(context, listen: false).id) {
         audioCueService.cueChatMessage(chatMessages.messages.last);
       }
     });
