@@ -82,32 +82,35 @@ class _GroupDetailsState extends State<GroupDetails> {
                                 child: tierBadge(p.tier),
                               )
                           ]),
-                          subtitle: (p.geo.time > DateTime.now().millisecondsSinceEpoch - 5000 * 60)
+                          subtitle: (group.activePilots.contains(p))
                               ? Text.rich(TextSpan(children: [
                                   // speed
-                                  richValue(UnitType.speed, p.geo.spd, valueStyle: valueStyle, unitStyle: unitStyle),
+                                  richValue(UnitType.speed, p.geo!.spd, valueStyle: valueStyle, unitStyle: unitStyle),
 
                                   TextSpan(style: fillStyle, text: ", at "),
                                   // alt
-                                  richValue(UnitType.distFine, p.geo.alt, valueStyle: valueStyle, unitStyle: unitStyle),
+                                  richValue(UnitType.distFine, p.geo!.alt,
+                                      valueStyle: valueStyle, unitStyle: unitStyle),
 
                                   TextSpan(style: fillStyle, text: " MSL, "),
                                   // dist
                                   richValue(
-                                      UnitType.distCoarse, p.geo.distanceTo(Provider.of<MyTelemetry>(context).geo),
+                                      UnitType.distCoarse, p.geo!.distanceTo(Provider.of<MyTelemetry>(context).geo),
                                       decimals: 1, valueStyle: valueStyle, unitStyle: unitStyle),
 
                                   TextSpan(style: fillStyle, text: " away"),
                                 ]))
-                              : Text.rich(TextSpan(children: [
-                                  const TextSpan(text: "( Telemetry is "),
-                                  richHrMin(
-                                      duration:
-                                          DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(p.geo.time)),
-                                      valueStyle: valueStyle,
-                                      unitStyle: unitStyle),
-                                  const TextSpan(text: " old )"),
-                                ])),
+                              : (p.geo != null
+                                  ? Text.rich(TextSpan(children: [
+                                      const TextSpan(text: "( Telemetry is "),
+                                      richHrMin(
+                                          duration: DateTime.now()
+                                              .difference(DateTime.fromMillisecondsSinceEpoch(p.geo!.time)),
+                                          valueStyle: valueStyle,
+                                          unitStyle: unitStyle),
+                                      const TextSpan(text: " old )"),
+                                    ]))
+                                  : const Text("( No Telemetry )")),
                         ))
                     .toList())));
   }

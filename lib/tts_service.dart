@@ -30,6 +30,7 @@ enum TtsState {
 class TtsService {
   late final FlutterTts instance;
   TtsState _state = TtsState.stopped;
+  int currentPriority = 10;
 
   QueueList<AudioMessage> msgQueue = QueueList();
 
@@ -78,6 +79,7 @@ class TtsService {
         instance.setVolume(msg.volume ?? 1.0);
         debugPrint("Speak: \"${msg.text}\"");
         _state = TtsState.playing;
+        currentPriority = msg.priority;
         instance.speak(msg.text).then((_) => _waitAndTryNext());
       }
     } else {
@@ -89,7 +91,9 @@ class TtsService {
   void speak(AudioMessage msg) {
     if (msg.priority == 0) {
       msgQueue.addFirst(msg);
-      instance.stop();
+      if (currentPriority != 0) {
+        instance.stop();
+      }
     } else {
       // insertion
       for (int index = 0; index <= msgQueue.length; index++) {

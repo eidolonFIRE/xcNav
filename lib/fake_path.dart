@@ -48,7 +48,7 @@ class FakeFlight {
   FakeFlight() {
     rand = Random(DateTime.now().millisecondsSinceEpoch);
 
-    initFakeFlight(Geo.fromValues(0, 0, 0, 0, 0, 0, 0));
+    initFakeFlight(Geo.fromValues(0, 0, 0, DateTime.now().millisecondsSinceEpoch, 0, 0, 0));
     spd = 11.15 + 4.5 * rand.nextDouble();
   }
 

@@ -338,7 +338,7 @@ class AudioCueService {
       final activePilots = group.activePilots.toList();
       final List<Pilot> sortedPilots = [];
       final Map<String, Vector> pilotVectors =
-          Map.fromEntries(activePilots.map((e) => MapEntry(e.id, Vector.distFromGeoToGeo(myGeo, e.geo))));
+          Map.fromEntries(activePilots.map((e) => MapEntry(e.id, Vector.distFromGeoToGeo(myGeo, e.geo!))));
 
       final List<Pilot> pilotsClose = [];
       final List<Pilot> pilotsAbove = [];

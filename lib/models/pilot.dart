@@ -20,7 +20,7 @@ class Pilot {
   late String name;
 
   // telemetry
-  late Geo geo;
+  Geo? geo;
   double? fuel;
 
   // visuals
@@ -43,7 +43,6 @@ class Pilot {
     name = json["name"];
     avatarHash = json["avatar_hash"];
     tier = json["tier"];
-    geo = Geo();
     _loadAvatar();
   }
 
@@ -75,7 +74,7 @@ class Pilot {
           geo,
           null,
           null);
-      flightTrace.add(geo);
+      flightTrace.add(geo!);
     } else {
       debugPrint("skipped");
     }

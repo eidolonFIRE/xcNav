@@ -393,13 +393,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (focusMode == FocusMode.me) {
       centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
     } else if (focusMode == FocusMode.group) {
-      List<LatLng> points = Provider.of<Group>(context, listen: false)
-          .pilots
-          // Don't consider telemetry older than 5 minutes
-          .values
-          .where((p) => p.geo.time > DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch)
-          .map((e) => e.geo.latLng)
-          .toList();
+      List<LatLng> points = Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latLng).toList();
       points.add(LatLng(geo.lat, geo.lng));
       if (lastMapChange == null ||
           (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
@@ -1141,7 +1135,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 .activePilots
                                 // .toList()
                                 .map((pilot) => Marker(
-                                    point: pilot.geo.latLng,
+                                    point: pilot.geo!.latLng,
                                     width: 40,
                                     height: 40,
                                     builder: (ctx) => Container(
@@ -1150,8 +1144,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                         child: PilotMarker(
                                           pilot,
                                           20,
-                                          hdg: pilot.geo.hdg + mapController.rotation * pi / 180,
-                                          relAlt: pilot.geo.alt - myTelemetry.geo.alt,
+                                          hdg: pilot.geo!.hdg + mapController.rotation * pi / 180,
+                                          relAlt: pilot.geo!.alt - myTelemetry.geo.alt,
                                         ))))
                                 .toList(),
                           ),
@@ -1187,18 +1181,16 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: Stack(
                             // fit: StackFit.expand,
                             children: Provider.of<Group>(context)
-                                .pilots
-                                .values
-                                .where((p) => p.geo.time > DateTime.now().millisecondsSinceEpoch - 10000 * 60)
-                                .where((e) => !markerIsInView(e.geo.latLng))
+                                .activePilots
+                                .where((e) => !markerIsInView(e.geo!.latLng))
                                 .map((e) => Builder(builder: (context) {
-                                      final theta = (latlngCalc.bearing(mapController.center, e.geo.latLng) +
+                                      final theta = (latlngCalc.bearing(mapController.center, e.geo!.latLng) +
                                               mapController.rotation -
                                               90) *
                                           pi /
                                           180;
                                       final hypo = MediaQuery.of(context).size.width * 0.8 - 40;
-                                      final dist = latlngCalc.distance(mapController.center, e.geo.latLng);
+                                      final dist = latlngCalc.distance(mapController.center, e.geo!.latLng);
 
                                       return Opacity(
                                           opacity: 0.5,
