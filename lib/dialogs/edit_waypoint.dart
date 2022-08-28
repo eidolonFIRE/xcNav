@@ -40,29 +40,32 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
           // --- Build icon selection buttons
           List<Widget> iconWidgets = [];
           if (showIconOptions) {
-            iconOptions.keys.map((name) => iconWidgets.add(IconButton(
-                  onPressed: () => {setState(() => selectedIcon = name)},
-                  padding: const EdgeInsets.all(0),
-                  iconSize: 50,
-                  color: selectedIcon == name ? selectedColor : Colors.grey,
-                  icon: Container(
-                    decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(Radius.circular(20)),
-                        border: Border.all(
-                            style: BorderStyle.solid,
-                            width: 2,
-                            color: (selectedIcon == name) ? Colors.white : Colors.transparent)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: getWpIcon(
-                        name,
-                        30,
-                        (selectedIcon == name) ? Colors.white : Colors.grey,
-                      ),
+            for (final name in iconOptions.keys) {
+              iconWidgets.add(IconButton(
+                onPressed: () => {setState(() => selectedIcon = name)},
+                padding: const EdgeInsets.all(0),
+                iconSize: 50,
+                color: selectedIcon == name ? selectedColor : Colors.grey,
+                icon: Container(
+                  decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.all(Radius.circular(20)),
+                      border: Border.all(
+                          style: BorderStyle.solid,
+                          width: 2,
+                          color: (selectedIcon == name) ? Colors.white : Colors.transparent)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: getWpIcon(
+                      name,
+                      30,
+                      (selectedIcon == name) ? Colors.white : Colors.grey,
                     ),
                   ),
-                )));
+                ),
+              ));
+            }
           }
+
           return AlertDialog(
             title: Text(
               (isNew ? "Add " : "Edit ") + (isPath ? "Path" : "Waypoint"),
