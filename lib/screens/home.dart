@@ -1029,15 +1029,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                         width: 40 * 0.8,
                                         updateMapNearEdge: true,
                                         useLongPress: true,
-                                        offset: const Offset(0, -30 * 0.8),
-                                        feedbackOffset: const Offset(0, -30 * 0.8),
                                         onTap: (_) => plan.selectWaypoint(i),
                                         onLongDragEnd: (p0, p1) => {
                                               plan.moveWaypoint(i, [p1])
                                             },
+                                        rotateMarker: true,
                                         builder: (context) => Container(
                                             transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                            transform: Matrix4.translationValues(0, -30 * 0.8, 0),
                                             child: MapMarker(e, 60 * 0.8)))
                                     : null)
                                 .whereNotNull()
