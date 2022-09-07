@@ -28,22 +28,22 @@ class PlansViewer extends StatefulWidget {
 
 class _PlansViewerState extends State<PlansViewer> {
   void selectKmlImport(BuildContext context) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ["kml"]);
 
     if (result != null) {
       File file = File(result.files.single.path!);
-      file.readAsString().then((data) {
+      file.readAsString().then((data) async {
         final document = XmlDocument.parse(data).getElement("kml")!.getElement("Document")!;
 
         // Select which folders to import
         final folderNames = document.findAllElements("Folder").toList();
-        selectKmlFolders(context, folderNames).then((selectedFolders) {
-          var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
-          // TODO: notify if broken file
-          if (newPlan.goodFile) {
-            Provider.of<Plans>(context, listen: false).setPlan(newPlan);
-          }
-        });
+
+        final selectedFolders = folderNames.isNotEmpty ? await selectKmlFolders(context, folderNames) : null;
+        var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
+        // TODO: notify if broken file
+        if (newPlan.goodFile) {
+          Provider.of<Plans>(context, listen: false).setPlan(newPlan);
+        }
       });
     } else {
       // User canceled the picker

@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:xcnav/providers/active_plan.dart';
 import 'package:xml/xml.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
+
+import 'package:xcnav/providers/active_plan.dart';
 
 class FlightPlan {
   String name;
@@ -136,24 +137,31 @@ class FlightPlan {
   FlightPlan.fromKml(this.name, XmlElement document, List<XmlElement> folders) {
     waypoints = [];
 
-    try {
-      for (final each in folders) {
-        each.findAllElements("Placemark").forEach((element) {
-          final String name = element.getElement("name")!.text;
-          if (element.getElement("Point") != null || element.getElement("LineString") != null) {
-            final List<LatLng> points = (element.getElement("Point") ?? element.getElement("LineString"))!
-                .getElement("coordinates")!
-                .text
-                .trim()
-                .split("\n")
-                .map((e) {
-              final raw = e.split(",");
-              return LatLng(double.parse(raw[1]), double.parse(raw[0]));
-            }).toList();
+    void scanElement(XmlElement element) {
+      element.findAllElements("Placemark").forEach((element) {
+        final String name = element.getElement("name")?.text ?? "untitled";
+        if (element.getElement("Point") != null || element.getElement("LineString") != null) {
+          final List<LatLng> points = (element.getElement("Point") ?? element.getElement("LineString"))!
+              .getElement("coordinates")!
+              .text
+              .trim()
+              .split(RegExp(r'[\n ]'))
+              .where((element) => element.isNotEmpty)
+              .map((e) {
+            final raw = e.split(",");
+            return LatLng(double.parse(raw[1]), double.parse(raw[0]));
+          }).toList();
 
-            final styleElement = document
-                .findAllElements("Style")
-                .where((e) => e.getAttribute("id")!.startsWith(element.getElement("styleUrl")!.text.substring(1)));
+          // (substr 1 to trim off the # symbol)
+          final styleUrl = element.getElement("styleUrl")!.text.substring(1);
+
+          int? color;
+
+          // First try old style
+          final styleElement = document
+              .findAllElements("Style")
+              .where((e) => e.getAttribute("id") != null && e.getAttribute("id")!.startsWith(styleUrl));
+          if (styleElement.isNotEmpty) {
             String? colorText =
                 (styleElement.first.getElement("IconStyle") ?? styleElement.first.getElement("LineStyle"))
                     ?.getElement("color")
@@ -163,22 +171,70 @@ class FlightPlan {
                   colorText.substring(6, 8) +
                   colorText.substring(4, 6) +
                   colorText.substring(2, 4);
+              color = int.parse((colorText), radix: 16) | 0xff000000;
             }
-            final int color = int.parse((colorText ?? Colors.black.value.toString()), radix: 16) | 0xff000000;
+          } else {
+            // Try the new goggle style format
 
-            if (points.isNotEmpty) {
-              waypoints.add(Waypoint(name, points, name.toLowerCase().startsWith("alt"), null, color));
+            // first styleMap and the destination url
+            final styleMap = document.findAllElements("StyleMap").where((e) => e.getAttribute("id")! == styleUrl).first;
+            final finalStyleUrl = styleMap
+                .findAllElements("Pair")
+                .where((e) => e.getElement("key")!.text == "normal")
+                .first
+                .getElement("styleUrl")!
+                .text
+                .substring(1);
+            // grab destination url
+            final finalStyleElement = document
+                .findAllElements("gx:CascadingStyle")
+                .where((e) => e.getAttribute("kml:id") == finalStyleUrl)
+                .first;
+            if (points.length > 1) {
+              // LineStyle
+              final finalColorString =
+                  finalStyleElement.getElement("Style")!.getElement("LineStyle")!.getElement("color")!.text;
+              color = int.parse((finalColorString), radix: 16) | 0xff000000;
             } else {
-              debugPrint("Dropping $name with no points.");
+              // IconStyle
+              String href = finalStyleElement
+                  .getElement("Style")!
+                  .getElement("IconStyle")!
+                  .getElement("Icon")!
+                  .getElement("href")!
+                  .text;
+              String? finalColorString = RegExp(r'color=([a-f0-9]{6})').firstMatch(href)?.group(1).toString();
+              if (finalColorString != null) {
+                color = int.parse((finalColorString), radix: 16) | 0xff000000;
+              }
             }
           }
 
-          _calcLength();
-        });
-      }
-      goodFile = true;
-    } catch (e) {
-      goodFile = false;
+          if (points.isNotEmpty) {
+            waypoints.add(Waypoint(name, points, name.toLowerCase().startsWith("alt"), null, color));
+          } else {
+            debugPrint("Dropping $name with no points.");
+          }
+        }
+
+        _calcLength();
+      });
     }
+
+    // try {
+    if (folders.isNotEmpty) {
+      for (final each in folders) {
+        scanElement(each);
+      }
+    } else {
+      // if no folders selected, scan whole document
+      scanElement(document);
+    }
+
+    goodFile = true;
+    // } catch (e) {
+    //   debugPrint("Error loading kml file: ${e.toString()}");
+    //   goodFile = false;
+    // }
   }
 }

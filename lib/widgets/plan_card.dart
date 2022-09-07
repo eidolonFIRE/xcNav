@@ -128,14 +128,17 @@ class _PlanCardState extends State<PlanCard> {
             mainAxisSize: MainAxisSize.max,
             children: [
               // --- Title
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Text(
-                  widget.plan.goodFile ? widget.plan.name : "Broken File",
-                  style: Theme.of(context)
-                      .textTheme
-                      .headline6!
-                      .merge(TextStyle(color: widget.plan.goodFile ? Colors.white : Colors.red)),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    widget.plan.goodFile ? widget.plan.name : "Broken File",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6!
+                        .merge(TextStyle(color: widget.plan.goodFile ? Colors.white : Colors.red)),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
               // --- Action buttons
