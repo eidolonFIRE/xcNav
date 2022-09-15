@@ -44,6 +44,7 @@ class _PlanEditorState extends State<PlanEditor> {
   int? editingIndex;
   late PolyEditor polyEditor;
   final List<LatLng> editablePolyline = [];
+  ScrollController scrollController = ScrollController();
 
   FocusMode focusMode = FocusMode.unlocked;
 
@@ -173,7 +174,7 @@ class _PlanEditorState extends State<PlanEditor> {
                             .mapIndexed((i, e) => e.latlng.length > 1 && i != editingIndex
                                 ? Polyline(
                                     points: e.latlng,
-                                    strokeWidth: i == selectedIndex ? 6 : 4,
+                                    strokeWidth: i == selectedIndex ? 8 : 4,
                                     color: e.getColor(),
                                     isDotted: e.isOptional)
                                 : null)
@@ -198,12 +199,20 @@ class _PlanEditorState extends State<PlanEditor> {
                           markers: plan!.waypoints
                               .mapIndexed((i, e) => e.latlng.length == 1
                                   ? DragMarker(
+                                      useLongPress: true,
                                       point: e.latlng[0],
                                       height: 60 * (i == selectedIndex ? 0.8 : 0.6),
                                       width: 40 * (i == selectedIndex ? 0.8 : 0.6),
                                       offset: Offset(0, -30 * (i == selectedIndex ? 0.8 : 0.6)),
                                       feedbackOffset: Offset(0, -30 * (i == selectedIndex ? 0.8 : 0.6)),
-                                      onTap: (_) => {selectedIndex = i},
+                                      onTap: (_) => {
+                                            setState(() {
+                                              selectedIndex = i;
+                                              scrollController.animateTo(60.0 * i,
+                                                  duration: const Duration(milliseconds: 100),
+                                                  curve: Curves.fastLinearToSlowEaseIn);
+                                            }),
+                                          },
                                       onDragEnd: (p0, p1) {
                                         setState(() {
                                           plan!.waypoints[i].latlng = [p1];
@@ -293,11 +302,11 @@ class _PlanEditorState extends State<PlanEditor> {
                               mapTileName = Settings.mapTileThumbnails.keys.toList()[index];
                             });
                           },
-                          children: Settings.mapTileThumbnails.keys
+                          children: Settings.mapTileThumbnails.values
                               .map((e) => SizedBox(
-                                    width: MediaQuery.of(context).size.width / 8,
+                                    width: MediaQuery.of(context).size.width / 7,
                                     // height: 50,
-                                    child: Settings.mapTileThumbnails[e],
+                                    child: e,
                                   ))
                               .toList(),
                         ),
@@ -454,6 +463,7 @@ class _PlanEditorState extends State<PlanEditor> {
                       :
                       // --- List of waypoints
                       ReorderableListView.builder(
+                          scrollController: scrollController,
                           shrinkWrap: true,
                           primary: false,
                           itemCount: plan!.waypoints.length,

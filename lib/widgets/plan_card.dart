@@ -311,7 +311,7 @@ class _PlanCardState extends State<PlanCard> {
                           .mapIndexed((i, e) => e.latlng.length > 1
                               ? Polyline(
                                   points: e.latlng,
-                                  strokeWidth: checkedElements.contains(i) ? 6 : 3,
+                                  strokeWidth: checkedElements.contains(i) ? 8 : 3,
                                   color: e.getColor(),
                                   isDotted: e.isOptional)
                               : null)

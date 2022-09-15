@@ -38,8 +38,10 @@ class _PlansViewerState extends State<PlansViewer> {
         // Select which folders to import
         final folderNames = document.findAllElements("Folder").toList();
 
-        final selectedFolders = folderNames.isNotEmpty ? await selectKmlFolders(context, folderNames) : null;
-        var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
+        final selectedFolderOptions = await selectKmlFolders(context, folderNames);
+        final selectedFolders = folderNames.isNotEmpty ? selectedFolderOptions?.folders : null;
+        var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? [],
+            setAllOptional: selectedFolderOptions?.allOptional ?? false);
         // TODO: notify if broken file
         if (newPlan.goodFile) {
           Provider.of<Plans>(context, listen: false).setPlan(newPlan);

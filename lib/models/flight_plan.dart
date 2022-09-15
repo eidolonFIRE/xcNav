@@ -134,7 +134,7 @@ class FlightPlan {
     }
   }
 
-  FlightPlan.fromKml(this.name, XmlElement document, List<XmlElement> folders) {
+  FlightPlan.fromKml(this.name, XmlElement document, List<XmlElement> folders, {bool setAllOptional = false}) {
     waypoints = [];
 
     void scanElement(XmlElement element) {
@@ -211,7 +211,7 @@ class FlightPlan {
           }
 
           if (points.isNotEmpty) {
-            waypoints.add(Waypoint(name, points, name.toLowerCase().startsWith("alt"), null, color));
+            waypoints.add(Waypoint(name, points, setAllOptional, null, color));
           } else {
             debugPrint("Dropping $name with no points.");
           }
