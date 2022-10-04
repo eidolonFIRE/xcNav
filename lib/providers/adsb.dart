@@ -42,7 +42,6 @@ class ADSB with ChangeNotifier {
   RawDatagramSocket? sock;
   Map<String, GA> planes = {};
 
-  TtsState ttsState = TtsState.stopped;
   late final BuildContext context;
 
   int lastHeartbeat = 0;
@@ -119,6 +118,9 @@ class ADSB with ChangeNotifier {
       debugPrint("${device.productName}, ${device.serial}, ${device.pid}, ${device.vid}");
       if ((device.productName ?? "").contains("UART")) {
         _connectTo(device);
+
+        // Go ahead and turn ADSB on.
+        enabled = true;
       }
     }
   }
@@ -234,7 +236,7 @@ class ADSB with ChangeNotifier {
 
       planes[each.id]!.warning = warning;
 
-      if (warning && ttsState == TtsState.stopped) {
+      if (warning) {
         speakWarning(each, observer, eta);
       }
     }
