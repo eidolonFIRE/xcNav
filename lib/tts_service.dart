@@ -59,13 +59,14 @@ class TtsService {
       instance.setSharedInstance(true);
 
       instance.setIosAudioCategory(
-          IosTextToSpeechAudioCategory.ambient,
+          IosTextToSpeechAudioCategory.playback,
           [
             IosTextToSpeechAudioCategoryOptions.allowBluetooth,
             IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
-            IosTextToSpeechAudioCategoryOptions.mixWithOthers
+            IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+            IosTextToSpeechAudioCategoryOptions.duckOthers
           ],
-          IosTextToSpeechAudioMode.voicePrompt);
+          IosTextToSpeechAudioMode.spokenAudio);
     }
   }
 
