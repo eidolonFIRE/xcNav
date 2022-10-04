@@ -118,6 +118,12 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                         }
                       });
                       break;
+                    case "all_optional":
+                      final plan = Provider.of<ActivePlan>(context, listen: false);
+                      for (final element in plan.waypoints) {
+                        element.isOptional = true;
+                      }
+                      Provider.of<Client>(context, listen: false).pushFlightPlan();
                   }
                 },
                 itemBuilder: (context) => const <PopupMenuEntry<String>>[
@@ -138,6 +144,12 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                           title: Text("Clear Waypoints"),
                         ),
                       ),
+                      PopupMenuItem(
+                          value: "all_optional",
+                          child: ListTile(
+                            leading: Icon(Icons.circle_outlined),
+                            title: Text("Set all optional"),
+                          ))
                     ]),
           ],
         ),
