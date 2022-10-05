@@ -135,6 +135,12 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                         ),
                       ),
                       PopupMenuItem(
+                          value: "all_optional",
+                          child: ListTile(
+                            leading: Icon(Icons.circle_outlined),
+                            title: Text("Set all optional"),
+                          )),
+                      PopupMenuItem(
                         value: "clear",
                         child: ListTile(
                           leading: Icon(
@@ -144,12 +150,6 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                           title: Text("Clear Waypoints"),
                         ),
                       ),
-                      PopupMenuItem(
-                          value: "all_optional",
-                          child: ListTile(
-                            leading: Icon(Icons.circle_outlined),
-                            title: Text("Set all optional"),
-                          ))
                     ]),
           ],
         ),
