@@ -10,10 +10,12 @@ import 'package:xcnav/providers/profile.dart';
 // Models
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
+import 'package:xcnav/providers/settings.dart';
 
 // Widgets
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
+import 'package:xcnav/widgets/icon_image.dart';
 
 const List<String> quickchat = [
   "Waiting here... ⏱️",
@@ -73,7 +75,6 @@ class _ChatState extends State<Chat> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
@@ -81,32 +82,22 @@ class _ChatState extends State<Chat> {
               Navigator.of(context).pop();
             },
           ),
-          title: IconButton(
-              icon: const Icon(Icons.auto_awesome),
-              onPressed: () => {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return SimpleDialog(
-                            alignment: Alignment.topCenter,
-                            children: quickchat
-                                .map((msg) => (msg == "")
-                                    ? const Divider(
-                                        thickness: 2,
-                                        height: 10,
-                                      )
-                                    : SimpleDialogOption(
-                                        child: Text(
-                                          msg.startsWith("Emergency:") ? msg.substring(11) : msg,
-                                          style: Theme.of(context).textTheme.headline6!.merge(TextStyle(
-                                              color: msg.startsWith("Emergency:") ? Colors.red : Colors.white)),
-                                        ),
-                                        onPressed: () => Navigator.pop(context, msg),
-                                      ))
-                                .toList());
-                      },
-                    ).then((value) => {if (value != null) sendChatMessage(value)})
-                  }),
+          title: const Text("Group Chat"),
+          actions: [
+            Consumer<Settings>(
+                builder: (context, settings, child) => Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Transform.scale(
+                        scale: 1.5,
+                        child: Switch(
+                          activeThumbImage: IconImageProvider(Icons.volume_up, color: Colors.black),
+                          inactiveThumbImage: IconImageProvider(Icons.volume_off, color: Colors.black),
+                          value: settings.chatTts,
+                          onChanged: (value) => settings.chatTts = value,
+                        ),
+                      ),
+                    ))
+          ],
         ),
         // --- Chat Bubble List
         body: Center(
@@ -133,6 +124,33 @@ class _ChatState extends State<Chat> {
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            /// Quick messages
+            IconButton(
+                icon: const Icon(Icons.bolt),
+                onPressed: () => {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return SimpleDialog(
+                              alignment: Alignment.topCenter,
+                              children: quickchat
+                                  .map((msg) => (msg == "")
+                                      ? const Divider(
+                                          thickness: 2,
+                                          height: 10,
+                                        )
+                                      : SimpleDialogOption(
+                                          child: Text(
+                                            msg.startsWith("Emergency:") ? msg.substring(11) : msg,
+                                            style: Theme.of(context).textTheme.headline6!.merge(TextStyle(
+                                                color: msg.startsWith("Emergency:") ? Colors.red : Colors.white)),
+                                          ),
+                                          onPressed: () => Navigator.pop(context, msg),
+                                        ))
+                                  .toList());
+                        },
+                      ).then((value) => {if (value != null) sendChatMessage(value)})
+                    }),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(4.0),

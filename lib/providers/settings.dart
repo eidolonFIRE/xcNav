@@ -103,6 +103,9 @@ class Settings with ChangeNotifier {
   String _patreonName = "";
   String _patreonEmail = "";
 
+  // --- Misc
+  bool _chatTts = false;
+
   Settings() {
     selectProximityConfig("Medium");
     _loadSettings();
@@ -201,6 +204,9 @@ class Settings with ChangeNotifier {
       // --- Patreon
       _patreonName = prefs.getString("settings.patreonName") ?? "";
       _patreonEmail = prefs.getString("settings.patreonEmail") ?? "";
+
+      // --- Misc
+      _chatTts = prefs.getBool("settings.chatTts") ?? false;
     });
   }
 
@@ -338,6 +344,16 @@ class Settings with ChangeNotifier {
     _mapOpacity[name] = value;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setDouble("settings.mapOpacity_$name", value);
+    });
+    notifyListeners();
+  }
+
+  // --- Misc
+  bool get chatTts => _chatTts;
+  set chatTts(bool value) {
+    _chatTts = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.chatTts", _chatTts);
     });
     notifyListeners();
   }

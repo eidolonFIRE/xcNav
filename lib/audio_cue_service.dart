@@ -36,14 +36,12 @@ class AudioCueService {
   Map<String, bool> _config = {
     "My Telemetry": true,
     "Next Waypoint": true,
-    "Chat Messages": true,
     "Group Awareness": true,
   };
 
   static const Map<String, IconData> icons = {
     "My Telemetry": Icons.speed,
     "Next Waypoint": Icons.pin_drop,
-    "Chat Messages": Icons.chat,
     "Group Awareness": Icons.groups,
   };
 
@@ -247,7 +245,7 @@ class AudioCueService {
   }
 
   void cueChatMessage(Message msg) {
-    if (mode != null && (config["Chat Messages"] ?? false)) {
+    if (settings.chatTts) {
       if (lastChat == null || lastChat!.value != msg.pilotId + msg.text) {
         // --- Read chat messages
         final pilotName = group.pilots[msg.pilotId]?.name;
