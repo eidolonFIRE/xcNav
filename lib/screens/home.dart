@@ -1251,7 +1251,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Consumer<ChatMessages>(
                   builder: (context, chat, child) {
                     // get valid bubbles
-                    const numSeconds = 10;
+                    const numSeconds = 20;
                     List<Message> bubbles = [];
                     for (int i = chat.messages.length - 1; i >= 0; i--) {
                       if (chat.messages[i].timestamp >

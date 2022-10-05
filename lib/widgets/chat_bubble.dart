@@ -37,13 +37,13 @@ class ChatBubble extends StatelessWidget {
                               topRight: const Radius.circular(10),
                               bottomRight: isMe ? const Radius.circular(10) : const Radius.circular(1))),
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(10.0),
                         child: Text(
                           text,
                           maxLines: 15,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.start,
-                          style: const TextStyle(fontSize: 18, color: Colors.black),
+                          style: const TextStyle(fontSize: 22, color: Colors.black),
                         ),
                       ),
                     ),
