@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class About extends StatefulWidget {
@@ -136,6 +137,10 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                     ),
                   ],
                 ),
+                FutureBuilder<PackageInfo>(
+                    future: PackageInfo.fromPlatform(),
+                    builder: (context, version) => Text(
+                        "Version:  ${version.data?.version ?? "?"}  -  ( build ${version.data?.buildNumber ?? "?"} )"))
               ],
             ),
           ),
