@@ -139,7 +139,7 @@ class FlightPlan {
 
     void scanElement(XmlElement element) {
       element.findAllElements("Placemark").forEach((element) {
-        final String name = element.getElement("name")?.text ?? "untitled";
+        String name = element.getElement("name")?.text.trim() ?? "untitled";
         if (element.getElement("Point") != null || element.getElement("LineString") != null) {
           final List<LatLng> points = (element.getElement("Point") ?? element.getElement("LineString"))!
               .getElement("coordinates")!
@@ -211,6 +211,12 @@ class FlightPlan {
           }
 
           if (points.isNotEmpty) {
+            if (points.length > 1) {
+              // Trim length strings from title
+              debugPrint("path ${name}");
+              final match = RegExp(r'(.*)[\s]+(?:[-])[\s]*([0-9\.]+)[\s]*(miles|mi|km|Miles|Mi|Km)$').firstMatch(name);
+              name = match?.group(1) ?? name;
+            }
             waypoints.add(Waypoint(name, points, setAllOptional, null, color));
           } else {
             debugPrint("Dropping $name with no points.");
