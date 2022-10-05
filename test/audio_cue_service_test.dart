@@ -46,7 +46,6 @@ class MockGroup extends Group {
 
 void main() {
   late AudioCueService cueService;
-  late Geo myGeo;
   late TtsService ttsService;
   late MockFlutterTts flutterTts;
 
@@ -59,8 +58,6 @@ void main() {
     ttsService.instance = flutterTts;
     // First "init" message is just to plug the queue so it waits for the tick to fire
     ttsService.speak(AudioMessage("init"));
-
-    myGeo = Geo.fromValues(-37, 122.5, 100, 0, 0, 0, 0);
 
     cueService = AudioCueService(
       ttsService: ttsService,
@@ -97,11 +94,10 @@ void main() {
 
     expect(ttsService.msgQueue.map((element) => element.text).toList(),
         ["Altitude: 350", "Speed: 0", "Altitude: 1300", "Speed: 22"]);
-    ttsService.speakNextInQueue();
 
     cueService.cueMyTelemetry(Geo.fromValues(-37, 122.5, 500, const Duration(minutes: 10).inMilliseconds, 0, 20, 0));
 
     expect(ttsService.msgQueue.map((element) => element.text).toList(),
-        ["Speed: 0", "Altitude: 1300", "Speed: 22", "Altitude: 1650", "Speed: 45"]);
+        ["Altitude: 350", "Speed: 0", "Altitude: 1300", "Speed: 22", "Altitude: 1650", "Speed: 45"]);
   });
 }

@@ -74,10 +74,7 @@ class ActivePlan with ChangeNotifier {
     if (items != null) {
       for (String wpUnparsed in items) {
         Map wp = jsonDecode(wpUnparsed);
-        List<dynamic> latlng = wp["latlng"];
-        waypoints.add(Waypoint(wp["name"], latlng.map((e) => LatLng(e[0], e[1])).toList(), wp["isOptional"] ?? false,
-            wp["icon"], wp["color"]));
-        debugPrint("+ ${wp["name"]}");
+        waypoints.add(Waypoint.fromJson(wp));
       }
     }
   }

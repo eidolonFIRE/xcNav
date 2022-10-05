@@ -91,7 +91,7 @@ class Group with ChangeNotifier {
             // parse each object
             .map((e) => PastGroup.fromJson(jsonDecode(e)))
             // remove any groups too old
-            .where((each) => each.timestamp.isAfter(DateTime.now().subtract(const Duration(hours: 48))))
+            .where((each) => each.timestamp.isAfter(DateTime.now().subtract(const Duration(hours: 72))))
             .forEach((g) {
           pastGroups[g.id] = g;
         });

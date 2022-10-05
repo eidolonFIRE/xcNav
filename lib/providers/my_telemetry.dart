@@ -165,7 +165,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         launchGeo = recordGeo[launchIndex];
 
         takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
-        lastSavedLog = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
         debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
 
         // clear the log
@@ -174,7 +173,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         debugPrint("Flight Ended");
 
         // Save current flight to log
-        if (!(bypassRecording)) {
+        if (!bypassRecording) {
           saveFlight();
         }
       }
@@ -194,9 +193,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
 
       // --- Periodically save log
-      if (!bypassRecording &&
-          lastSavedLog != null &&
-          lastSavedLog!.add(const Duration(minutes: 5)).isBefore(DateTime.now())) {
+      if (!bypassRecording && lastSavedLog == null ||
+          lastSavedLog!.add(const Duration(minutes: 2)).isBefore(DateTime.now())) {
         saveFlight();
       }
     }

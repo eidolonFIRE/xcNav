@@ -158,10 +158,6 @@ class _PlanEditorState extends State<PlanEditor> {
                       onTap: (tapPos, latlng) => onMapTap(context, latlng),
                     ),
                     layers: [
-                      // TileLayerOptions(
-                      //   urlTemplate:
-                      //       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                      // ),
                       Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName, opacity: 1.0),
 
                       // Trip snake lines
@@ -213,7 +209,7 @@ class _PlanEditorState extends State<PlanEditor> {
                                                   curve: Curves.fastLinearToSlowEaseIn);
                                             }),
                                           },
-                                      onDragEnd: (p0, p1) {
+                                      onLongDragEnd: (p0, p1) {
                                         setState(() {
                                           plan!.waypoints[i].latlng = [p1];
                                           plan!.refreshLength();
