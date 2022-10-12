@@ -41,7 +41,8 @@ dependencies:
   intl: any
   flutter_map_line_editor:
     git:
-      url: https://github.com/eidolonFIRE/flutter_map_line_editor.git
+      url: https://github.com/adrienbernede/flutter_map_line_editor.git
+      ref: ab/fix/https-url-plugins
   shared_preferences: ^2.0.13
   fullscreen: ^1.0.3
   image_picker: ^0.8.4+9

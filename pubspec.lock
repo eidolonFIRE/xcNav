@@ -322,16 +322,16 @@ packages:
       path: "."
       ref: HEAD
       resolved-ref: a96a5ca9df0231b3b43dc475cfced1c0e1e8bf2a
-      url: "git@github.com:eidolonFIRE/flutter_map_dragmarker.git"
+      url: "https://github.com/eidolonFIRE/flutter_map_dragmarker.git"
     source: git
     version: "3.0.0"
   flutter_map_line_editor:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: fa8bebac9d9408b3f33c9b101eaf0313344a69ab
-      url: "https://github.com/eidolonFIRE/flutter_map_line_editor.git"
+      ref: "ab/fix/https-url-plugins"
+      resolved-ref: "8aea3eea5a1a2904b22818bb0af24e2a890cc05f"
+      url: "https://github.com/adrienbernede/flutter_map_line_editor.git"
     source: git
     version: "3.0.0"
   flutter_map_tile_caching:
