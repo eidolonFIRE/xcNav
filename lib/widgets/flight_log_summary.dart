@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
 
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/units.dart';
@@ -33,7 +33,7 @@ class FlightLogSummary extends StatelessWidget {
               builder: (context) => AlertDialog(
                     title: const Text("File Exported to:"),
                     content: GestureDetector(
-                        onTap: () => OpenFile.open(outFile.path),
+                        onTap: () => OpenFilex.open(outFile.path),
                         child: Text(
                           outFile.path,
                           style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),

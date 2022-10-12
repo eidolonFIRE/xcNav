@@ -271,7 +271,7 @@ packages:
       path: "."
       ref: HEAD
       resolved-ref: ef0a769c046fbdfc9ea5bdff8542a218846069f1
-      url: "git@github.com:eidolonFIRE/flutter_barometer.git"
+      url: "https://github.com/eidolonFIRE/flutter_barometer.git"
     source: git
     version: "0.1.2+5"
   flutter_image_compress:
@@ -331,7 +331,7 @@ packages:
       path: "."
       ref: HEAD
       resolved-ref: fa8bebac9d9408b3f33c9b101eaf0313344a69ab
-      url: "git@github.com:eidolonFIRE/flutter_map_line_editor.git"
+      url: "https://github.com/eidolonFIRE/flutter_map_line_editor.git"
     source: git
     version: "3.0.0"
   flutter_map_tile_caching:
@@ -659,13 +659,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.5.0"
-  open_file:
+  open_filex:
     dependency: "direct main"
     description:
-      name: open_file
+      name: open_filex
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.2.1"
+    version: "3.4.0"
   package_config:
     dependency: transitive
     description:
