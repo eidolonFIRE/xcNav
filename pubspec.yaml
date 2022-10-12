@@ -41,7 +41,7 @@ dependencies:
   intl: any
   flutter_map_line_editor:
     git:
-      url: git@github.com:eidolonFIRE/flutter_map_line_editor.git
+      url: https://github.com/eidolonFIRE/flutter_map_line_editor.git
   shared_preferences: ^2.0.13
   fullscreen: ^1.0.3
   image_picker: ^0.8.4+9
@@ -64,7 +64,7 @@ dependencies:
   flutter_tts: ^3.3.3
   flutter_barometer:
     git:
-      url: git@github.com:eidolonFIRE/flutter_barometer.git
+      url: https://github.com/eidolonFIRE/flutter_barometer.git
   package_info_plus: ^1.4.2
   flutter_slidable: ^2.0.0
   network_info_plus: ^2.1.3
