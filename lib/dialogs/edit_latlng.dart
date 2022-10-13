@@ -33,7 +33,8 @@ Future<LatLng?> editLatLng(BuildContext context, {LatLng? latlng}) {
                     validator: (value) {
                       if (value != null) {
                         if (value.trim().isEmpty) return "Must not be empty";
-                        if (!reMatch.hasMatch(value)) return "Unrecognized Format";
+                        if (!reMatch.hasMatch(value))
+                          return "Unrecognized Format";
                       }
                       return null;
                     },
@@ -65,8 +66,10 @@ Future<LatLng?> editLatLng(BuildContext context, {LatLng? latlng}) {
                       final latLngValues = reMatch.firstMatch(latlngText.text);
 
                       if (latLngValues != null) {
-                        Navigator.pop(context,
-                            LatLng(double.parse(latLngValues.group(1)!), double.parse(latLngValues.group(2)!)));
+                        Navigator.pop(
+                            context,
+                            LatLng(double.parse(latLngValues.group(1)!),
+                                double.parse(latLngValues.group(2)!)));
                       } else {
                         Navigator.pop(context);
                       }

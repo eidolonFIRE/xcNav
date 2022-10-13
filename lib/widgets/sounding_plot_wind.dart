@@ -45,12 +45,18 @@ class SoundingPlotWindPainter extends CustomPainter {
 
     /// Top of the graph in meters
     const ceil = 6000;
-    double windCeil = max(9, sounding.data.reduce((a, b) => (a.wVel ?? 0) > (b.wVel ?? 0) ? a : b).wVel! + 1);
+    double windCeil = max(
+        9,
+        sounding.data
+                .reduce((a, b) => (a.wVel ?? 0) > (b.wVel ?? 0) ? a : b)
+                .wVel! +
+            1);
 
     double toX(double vel) => vel / windCeil * size.width;
 
     // --- danger area
-    canvas.drawRect(Rect.fromLTWH(toX(8), 0, size.width - toX(8), size.height), _paintDanger);
+    canvas.drawRect(Rect.fromLTWH(toX(8), 0, size.width - toX(8), size.height),
+        _paintDanger);
 
     // --- Wind Velocity
     canvas.drawPoints(
@@ -68,18 +74,29 @@ class SoundingPlotWindPainter extends CustomPainter {
     // --- Selected Isobar
     if (selectedY != null) {
       selectedY = max(0, min(size.height, selectedY!));
-      canvas.drawLine(Offset(4, selectedY!), Offset(size.width - 4, selectedY!), _paintGrid);
+      canvas.drawLine(Offset(4, selectedY!), Offset(size.width - 4, selectedY!),
+          _paintGrid);
     }
 
     // --- My Current Isobar
-    final myBaroY =
-        max(0, min(size.height, size.height - getElevation(myBaro, 1013.25) * size.height / ceil)).toDouble();
-    canvas.drawLine(Offset(4, myBaroY), Offset(size.width - 4, myBaroY), _paintGrid..strokeWidth = 2);
+    final myBaroY = max(
+            0,
+            min(
+                size.height,
+                size.height -
+                    getElevation(myBaro, 1013.25) * size.height / ceil))
+        .toDouble();
+    canvas.drawLine(Offset(4, myBaroY), Offset(size.width - 4, myBaroY),
+        _paintGrid..strokeWidth = 2);
     var path = Path();
-    path.addPolygon([Offset(2, myBaroY + 5), Offset(10, myBaroY), Offset(2, myBaroY - 5)], true);
     path.addPolygon(
-        [Offset(size.width - 2, myBaroY + 5), Offset(size.width - 10, myBaroY), Offset(size.width - 2, myBaroY - 5)],
+        [Offset(2, myBaroY + 5), Offset(10, myBaroY), Offset(2, myBaroY - 5)],
         true);
+    path.addPolygon([
+      Offset(size.width - 2, myBaroY + 5),
+      Offset(size.width - 10, myBaroY),
+      Offset(size.width - 2, myBaroY - 5)
+    ], true);
     canvas.drawPath(path, _paintBarb);
   }
 

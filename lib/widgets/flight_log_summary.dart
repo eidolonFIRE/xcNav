@@ -17,18 +17,23 @@ class FlightLogSummary extends StatelessWidget {
   static const unitStyle = TextStyle(color: Colors.grey, fontSize: 12);
 
   FlightLogSummary(this.log, this.onDelete, {Key? key}) : super(key: key) {
-    mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
+    mapBounds =
+        LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
     mapBounds.pad(0.2);
     debugPrint("Built log: ${log.filename}");
   }
 
   void exportLog(BuildContext context, String fileType) {
-    final filename = DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
-    (Platform.isIOS ? getApplicationDocumentsDirectory() : Future(() => Directory('/storage/emulated/0/Documents')))
+    final filename = DateFormat("yyyy_MM_dd_hh_mm")
+        .format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
+    (Platform.isIOS
+            ? getApplicationDocumentsDirectory()
+            : Future(() => Directory('/storage/emulated/0/Documents')))
         .then((Directory path) {
       var outFile = File("${path.path}/xcNav_$fileType/$filename.$fileType");
-      outFile.create(recursive: true).then(
-          (value) => value.writeAsString(fileType == "kml" ? log.toKML() : log.toGPX()).then((value) => showDialog(
+      outFile.create(recursive: true).then((value) => value
+          .writeAsString(fileType == "kml" ? log.toKML() : log.toGPX())
+          .then((value) => showDialog(
               context: context,
               builder: (context) => AlertDialog(
                     title: const Text("File Exported to:"),
@@ -36,7 +41,9 @@ class FlightLogSummary extends StatelessWidget {
                         onTap: () => OpenFilex.open(outFile.path),
                         child: Text(
                           outFile.path,
-                          style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                          style: const TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline),
                         )),
                     actions: [
                       IconButton(
@@ -101,10 +108,8 @@ class FlightLogSummary extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 4),
                 child: Text(
                   log.title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headline6!
-                      .merge(TextStyle(color: log.goodFile ? Colors.white : Colors.red)),
+                  style: Theme.of(context).textTheme.headline6!.merge(TextStyle(
+                      color: log.goodFile ? Colors.white : Colors.red)),
                 ),
               ),
               PopupMenuButton(
@@ -138,8 +143,13 @@ class FlightLogSummary extends StatelessWidget {
                                 size: 28,
                               ),
                               title: Text.rich(TextSpan(children: [
-                                TextSpan(text: "KML ", style: TextStyle(fontSize: 20)),
-                                TextSpan(text: "(Google Earth)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                                TextSpan(
+                                    text: "KML ",
+                                    style: TextStyle(fontSize: 20)),
+                                TextSpan(
+                                    text: "(Google Earth)",
+                                    style: TextStyle(
+                                        fontSize: 20, color: Colors.grey))
                               ])),
                             )),
                         PopupMenuItem(
@@ -150,8 +160,13 @@ class FlightLogSummary extends StatelessWidget {
                                 size: 28,
                               ),
                               title: Text.rich(TextSpan(children: [
-                                TextSpan(text: "GPX ", style: TextStyle(fontSize: 20)),
-                                TextSpan(text: "(Ayvri.com)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                                TextSpan(
+                                    text: "GPX ",
+                                    style: TextStyle(fontSize: 20)),
+                                TextSpan(
+                                    text: "(Ayvri.com)",
+                                    style: TextStyle(
+                                        fontSize: 20, color: Colors.grey))
                               ])),
                             )),
                         PopupMenuDivider(),
@@ -163,7 +178,8 @@ class FlightLogSummary extends StatelessWidget {
                                 color: Colors.red,
                                 size: 28,
                               ),
-                              title: Text("Delete", style: TextStyle(fontSize: 20)),
+                              title: Text("Delete",
+                                  style: TextStyle(fontSize: 20)),
                             ))
                       ])
             ],
@@ -211,7 +227,10 @@ class FlightLogSummary extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Table(
-                    columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
+                    columnWidths: const {
+                      0: IntrinsicColumnWidth(),
+                      1: FlexColumnWidth()
+                    },
                     children: [
                       TableRow(children: [
                         TableCell(
@@ -237,7 +256,8 @@ class FlightLogSummary extends StatelessWidget {
                             padding: const EdgeInsets.only(bottom: 14),
                             child: Text.rich(
                               TextSpan(children: [
-                                const WidgetSpan(child: Icon(Icons.flight_land, size: 18)),
+                                const WidgetSpan(
+                                    child: Icon(Icons.flight_land, size: 18)),
                                 TextSpan(
                                   text:
                                       "  ${dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.last.time))}",
@@ -256,7 +276,9 @@ class FlightLogSummary extends StatelessWidget {
                                     richHrMin(
                                         duration: log.durationTime,
                                         longUnits: true,
-                                        valueStyle: Theme.of(context).textTheme.bodyMedium!,
+                                        valueStyle: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium!,
                                         unitStyle: unitStyle),
                                     textAlign: TextAlign.end)
                                 : const Text(
@@ -269,7 +291,8 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.durationDist != null
                                 ? Text.rich(
-                                    richValue(UnitType.distCoarse, log.durationDist!,
+                                    richValue(
+                                        UnitType.distCoarse, log.durationDist!,
                                         decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
@@ -283,7 +306,8 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.meanSpd != null
                                 ? Text.rich(
-                                    richValue(UnitType.speed, log.meanSpd!, decimals: 1, unitStyle: unitStyle),
+                                    richValue(UnitType.speed, log.meanSpd!,
+                                        decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -296,7 +320,8 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.maxAlt != null
                                 ? Text.rich(
-                                    richValue(UnitType.distFine, log.maxAlt!, decimals: 1, unitStyle: unitStyle),
+                                    richValue(UnitType.distFine, log.maxAlt!,
+                                        decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(
@@ -309,7 +334,8 @@ class FlightLogSummary extends StatelessWidget {
                         TableCell(
                             child: log.bestClimb != null
                                 ? Text.rich(
-                                    richValue(UnitType.vario, log.bestClimb!, decimals: 1, unitStyle: unitStyle),
+                                    richValue(UnitType.vario, log.bestClimb!,
+                                        decimals: 1, unitStyle: unitStyle),
                                     textAlign: TextAlign.end,
                                   )
                                 : const Text(

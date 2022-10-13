@@ -35,7 +35,8 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
 
   void refreshLogsFromDirectory() async {
     final Directory appDocDir = await getApplicationDocumentsDirectory();
-    final Directory appDocDirFolder = Directory("${appDocDir.path}/flight_logs/");
+    final Directory appDocDirFolder =
+        Directory("${appDocDir.path}/flight_logs/");
     if (await appDocDirFolder.exists()) {
       //if folder already exists return path
       setState(() {
@@ -45,7 +46,9 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
       logs.clear();
 
       // Async load in all the files
-      var files = await appDocDirFolder.list(recursive: false, followLinks: false).toList();
+      var files = await appDocDirFolder
+          .list(recursive: false, followLinks: false)
+          .toList();
       // debugPrint("${files.length} log files found.");
       List<Completer> completers = [];
       for (var each in files) {
@@ -53,7 +56,8 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
         completers.add(completer);
         File.fromUri(each.uri).readAsString().then((value) {
           try {
-            logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
+            logs[each.uri.path] =
+                FlightLog.fromJson(each.path, jsonDecode(value));
           } catch (e) {
             debugPrint(e.toString());
             if (logs[each.uri.path] != null) {
@@ -93,7 +97,8 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
             )
           : ListView.builder(
               itemCount: keys.length,
-              itemBuilder: (context, index) => FlightLogSummary(logs[keys[index]]!, refreshLogsFromDirectory),
+              itemBuilder: (context, index) => FlightLogSummary(
+                  logs[keys[index]]!, refreshLogsFromDirectory),
             ),
     );
   }

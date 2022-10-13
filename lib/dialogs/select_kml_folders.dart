@@ -7,7 +7,8 @@ class SelectedFoldersOptions {
   SelectedFoldersOptions(this.allOptional, this.folders);
 }
 
-Future<SelectedFoldersOptions?> selectKmlFolders(BuildContext context, List<XmlElement> folders) {
+Future<SelectedFoldersOptions?> selectKmlFolders(
+    BuildContext context, List<XmlElement> folders) {
   return showDialog<SelectedFoldersOptions>(
       context: context,
       builder: (context) {
@@ -31,7 +32,9 @@ Future<SelectedFoldersOptions?> selectKmlFolders(BuildContext context, List<XmlE
                   onPressed: () {
                     // Return list of selected folders
                     Navigator.pop(
-                        context, SelectedFoldersOptions(allOptional, checkedElements.map((e) => folders[e]).toList()));
+                        context,
+                        SelectedFoldersOptions(allOptional,
+                            checkedElements.map((e) => folders[e]).toList()));
                   },
                   icon: const Icon(
                     Icons.check,

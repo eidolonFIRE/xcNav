@@ -24,22 +24,28 @@ void showPilotInfo(BuildContext context, String pilotId) {
       context: context,
       barrierLabel: "pilot_info_dialog",
       barrierDismissible: true,
-      builder: (context) => Consumer2<MyTelemetry, Group>(builder: (context, myTelemetry, group, child) {
+      builder: (context) => Consumer2<MyTelemetry, Group>(
+              builder: (context, myTelemetry, group, child) {
             if (group.pilots[pilotId]?.geo != null) {
               final Pilot pilot = group.pilots[pilotId]!;
               final double dist = pilot.geo!.distanceTo(myTelemetry.geo);
 
-              final double relHdg = latlngCalc.bearing(myTelemetry.geo.latLng, pilot.geo!.latLng) * pi / 180;
+              final double relHdg = latlngCalc.bearing(
+                      myTelemetry.geo.latLng, pilot.geo!.latLng) *
+                  pi /
+                  180;
 
-              final double closingSpd = myTelemetry.geo.spd * cos(myTelemetry.geo.hdg - relHdg) -
-                  pilot.geo!.spd * cos(pilot.geo!.hdg - relHdg);
+              final double closingSpd =
+                  myTelemetry.geo.spd * cos(myTelemetry.geo.hdg - relHdg) -
+                      pilot.geo!.spd * cos(pilot.geo!.hdg - relHdg);
 
               final etaIntercept = ETA.fromSpeed(dist, closingSpd);
 
               final plan = Provider.of<ActivePlan>(context, listen: false);
 
               final etaWp = pilot.selectedWaypoint != null
-                  ? plan.etaToWaypoint(pilot.geo!, pilot.geo!.spd, pilot.selectedWaypoint!)
+                  ? plan.etaToWaypoint(
+                      pilot.geo!, pilot.geo!.spd, pilot.selectedWaypoint!)
                   : null;
 
               final relAlt = pilot.geo!.alt - myTelemetry.geo.alt;
@@ -50,7 +56,8 @@ void showPilotInfo(BuildContext context, String pilotId) {
                 insetPadding: EdgeInsets.zero,
                 // contentPadding: EdgeInsets.all(10),
                 titleTextStyle: const TextStyle(fontSize: 36),
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+                shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(20))),
                 title: SizedBox(
                   width: MediaQuery.of(context).size.width * 0.8,
                   child: Row(
@@ -99,12 +106,16 @@ void showPilotInfo(BuildContext context, String pilotId) {
                         TableCell(
                           child: Text.rich(TextSpan(children: [
                             richValue(UnitType.speed, pilot.geo!.spd,
-                                digits: 3, valueStyle: valueStyle, unitStyle: unitStyle),
+                                digits: 3,
+                                valueStyle: valueStyle,
+                                unitStyle: unitStyle),
 
                             const TextSpan(style: fillStyle, text: ",  "),
                             // alt
                             richValue(UnitType.distFine, pilot.geo!.alt,
-                                digits: 5, valueStyle: valueStyle, unitStyle: unitStyle),
+                                digits: 5,
+                                valueStyle: valueStyle,
+                                unitStyle: unitStyle),
 
                             const TextSpan(style: fillStyle, text: " MSL"),
                           ])),
@@ -130,24 +141,32 @@ void showPilotInfo(BuildContext context, String pilotId) {
                             child: Text.rich(
                           TextSpan(children: [
                             richValue(UnitType.distCoarse, dist,
-                                digits: 3, valueStyle: valueStyle, unitStyle: unitStyle),
+                                digits: 3,
+                                valueStyle: valueStyle,
+                                unitStyle: unitStyle),
                             const TextSpan(style: fillStyle, text: ",  "),
                             WidgetSpan(
                               child: Icon(
-                                relAlt > 0 ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                relAlt > 0
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down,
                                 color: Colors.white,
                                 size: 25,
                               ),
                             ),
                             richValue(UnitType.distFine, relAlt.abs(),
-                                digits: 4, valueStyle: valueStyle, unitStyle: unitStyle),
+                                digits: 4,
+                                valueStyle: valueStyle,
+                                unitStyle: unitStyle),
                           ]),
                           softWrap: false,
                         ))
                       ]),
 
                       /// --- Intercept
-                      if (etaIntercept.time != null && etaIntercept.time! < const Duration(hours: 5) && dist > 300)
+                      if (etaIntercept.time != null &&
+                          etaIntercept.time! < const Duration(hours: 5) &&
+                          dist > 300)
                         TableRow(children: [
                           const TableCell(
                             child: Text(
@@ -177,7 +196,9 @@ void showPilotInfo(BuildContext context, String pilotId) {
                         ]),
 
                       /// --- Waypoint
-                      if (etaWp != null && etaWp.time != null && etaWp.time! < const Duration(hours: 100))
+                      if (etaWp != null &&
+                          etaWp.time != null &&
+                          etaWp.time! < const Duration(hours: 100))
                         TableRow(children: [
                           TableCell(
                             child: Align(
@@ -186,21 +207,30 @@ void showPilotInfo(BuildContext context, String pilotId) {
                                   margin: EdgeInsets.zero,
                                   color: Colors.grey.shade900,
                                   child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(10, 5, 10, 8),
+                                    padding:
+                                        const EdgeInsets.fromLTRB(10, 5, 10, 8),
                                     child: Text.rich(
                                       TextSpan(children: [
                                         WidgetSpan(
                                           child: Container(
-                                            transform: Matrix4.translationValues(0, 2, 0),
+                                            transform:
+                                                Matrix4.translationValues(
+                                                    0, 2, 0),
                                             child: SizedBox(
                                                 width: 26 * 2 / 3,
                                                 height: 26,
-                                                child: MapMarker(plan.waypoints[pilot.selectedWaypoint!], 24)),
+                                                child: MapMarker(
+                                                    plan.waypoints[pilot
+                                                        .selectedWaypoint!],
+                                                    24)),
                                           ),
                                         ),
                                         const TextSpan(text: "  "),
                                         TextSpan(
-                                          text: plan.waypoints[pilot.selectedWaypoint!].name,
+                                          text: plan
+                                              .waypoints[
+                                                  pilot.selectedWaypoint!]
+                                              .name,
                                           style: valueStyle,
                                         ),
                                       ]),
@@ -222,7 +252,10 @@ void showPilotInfo(BuildContext context, String pilotId) {
                               child: Text.rich(
                             TextSpan(children: [
                               richHrMin(
-                                  duration: etaWp.time!, valueStyle: valueStyle, unitStyle: unitStyle, longUnits: true),
+                                  duration: etaWp.time!,
+                                  valueStyle: valueStyle,
+                                  unitStyle: unitStyle,
+                                  longUnits: true),
                             ]),
                             softWrap: false,
                           ))
@@ -236,7 +269,8 @@ void showPilotInfo(BuildContext context, String pilotId) {
                   insetPadding: EdgeInsets.zero,
                   // contentPadding: EdgeInsets.all(10),
                   titleTextStyle: const TextStyle(fontSize: 36),
-                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+                  shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(20))),
                   title: SizedBox(
                     width: MediaQuery.of(context).size.width * 0.8,
                     child: Row(

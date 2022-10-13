@@ -23,8 +23,13 @@ double getGAtransparency(double relativeAlt) {
   const verticalClose = 300;
   const verticalFade = 800;
   const minTransparency = 0.3;
-  return max(minTransparency,
-      min(1.0, (1.0 - max(0, relativeAlt.abs() - verticalClose) * ((1.0 - minTransparency) / verticalFade))));
+  return max(
+      minTransparency,
+      min(
+          1.0,
+          (1.0 -
+              max(0, relativeAlt.abs() - verticalClose) *
+                  ((1.0 - minTransparency) / verticalFade))));
 }
 
 class GA {
@@ -61,7 +66,8 @@ class GA {
     }
   }
 
-  GA(this.id, this.latlng, this.alt, this.spd, this.hdg, this.type, this.timestamp) {
+  GA(this.id, this.latlng, this.alt, this.spd, this.hdg, this.type,
+      this.timestamp) {
     // debugPrint("GA $id (${gaTypeStr[type]}): $latlng, $spd m/s  $alt m, $hdg deg");
     debugPrint("GA \"$id\" $latlng, $spd m/s  $alt m, $hdg deg");
   }

@@ -57,7 +57,9 @@ class _GroupDetailsState extends State<GroupDetails> {
             const VerticalDivider(
               thickness: 2,
             ),
-            IconButton(onPressed: () => {selectPastGroup(context)}, icon: const Icon(Icons.history)),
+            IconButton(
+                onPressed: () => {selectPastGroup(context)},
+                icon: const Icon(Icons.history)),
             IconButton(
                 onPressed: () => {promptLeaveGroup(context)},
                 icon: const Icon(
@@ -85,18 +87,26 @@ class _GroupDetailsState extends State<GroupDetails> {
                           subtitle: (group.activePilots.contains(p))
                               ? Text.rich(TextSpan(children: [
                                   // speed
-                                  richValue(UnitType.speed, p.geo!.spd, valueStyle: valueStyle, unitStyle: unitStyle),
+                                  richValue(UnitType.speed, p.geo!.spd,
+                                      valueStyle: valueStyle,
+                                      unitStyle: unitStyle),
 
                                   TextSpan(style: fillStyle, text: ", at "),
                                   // alt
                                   richValue(UnitType.distFine, p.geo!.alt,
-                                      valueStyle: valueStyle, unitStyle: unitStyle),
+                                      valueStyle: valueStyle,
+                                      unitStyle: unitStyle),
 
                                   TextSpan(style: fillStyle, text: " MSL, "),
                                   // dist
                                   richValue(
-                                      UnitType.distCoarse, p.geo!.distanceTo(Provider.of<MyTelemetry>(context).geo),
-                                      decimals: 1, valueStyle: valueStyle, unitStyle: unitStyle),
+                                      UnitType.distCoarse,
+                                      p.geo!.distanceTo(
+                                          Provider.of<MyTelemetry>(context)
+                                              .geo),
+                                      decimals: 1,
+                                      valueStyle: valueStyle,
+                                      unitStyle: unitStyle),
 
                                   TextSpan(style: fillStyle, text: " away"),
                                 ]))
@@ -104,8 +114,10 @@ class _GroupDetailsState extends State<GroupDetails> {
                                   ? Text.rich(TextSpan(children: [
                                       const TextSpan(text: "( Telemetry is "),
                                       richHrMin(
-                                          duration: DateTime.now()
-                                              .difference(DateTime.fromMillisecondsSinceEpoch(p.geo!.time)),
+                                          duration: DateTime.now().difference(
+                                              DateTime
+                                                  .fromMillisecondsSinceEpoch(
+                                                      p.geo!.time)),
                                           valueStyle: valueStyle,
                                           unitStyle: unitStyle),
                                       const TextSpan(text: " old )"),

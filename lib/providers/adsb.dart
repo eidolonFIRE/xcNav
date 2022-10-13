@@ -29,7 +29,10 @@ class ProximityConfig {
   final double horizontalTime;
 
   /// Units in meters and seconds
-  ProximityConfig({required this.vertical, required this.horizontalDist, required this.horizontalTime});
+  ProximityConfig(
+      {required this.vertical,
+      required this.horizontalDist,
+      required this.horizontalTime});
 
   String toMultilineString(Settings settings) {
     return "Vertical: ${(unitConverters[UnitType.distFine]!(vertical) / 50).ceil() * 50}${getUnitStr(UnitType.distFine)}\n"
@@ -86,9 +89,11 @@ class ADSB with ChangeNotifier {
 
       await _usbPort!.setDTR(true);
       await _usbPort!.setRTS(true);
-      await _usbPort!.setPortParameters(57600, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
+      await _usbPort!.setPortParameters(
+          57600, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
 
-      _transaction = Transaction.magicHeader(_usbPort!.inputStream as Stream<Uint8List>, [0xFE, 38]);
+      _transaction = Transaction.magicHeader(
+          _usbPort!.inputStream as Stream<Uint8List>, [0xFE, 38]);
       _subscription = _transaction!.stream.listen((data) {
         final ga = mavlink.decodeMavlink(data);
         if (ga != null) {
@@ -115,7 +120,8 @@ class ADSB with ChangeNotifier {
     }
 
     for (final device in devices) {
-      debugPrint("${device.productName}, ${device.serial}, ${device.pid}, ${device.vid}");
+      debugPrint(
+          "${device.productName}, ${device.serial}, ${device.pid}, ${device.vid}");
       if ((device.productName ?? "").contains("UART")) {
         _connectTo(device);
 
@@ -163,7 +169,8 @@ class ADSB with ChangeNotifier {
       debugPrint("WifiName: $wifiName, WifiGateway: $wifiGateway");
 
       dynamic address = InternetAddress.loopbackIPv4;
-      if (wifiName != null && (wifiName.startsWith("Ping-") || wifiName.startsWith("Sentry_"))) {
+      if (wifiName != null &&
+          (wifiName.startsWith("Ping-") || wifiName.startsWith("Sentry_"))) {
         // Temporary hard coded for Ping...
         address = wifiGateway ?? "0.0.0.0";
       }
@@ -216,7 +223,8 @@ class ADSB with ChangeNotifier {
   }
 
   void checkProximity(Geo observer) {
-    ProximityConfig config = Provider.of<Settings>(context, listen: false).proximityProfile;
+    ProximityConfig config =
+        Provider.of<Settings>(context, listen: false).proximityProfile;
 
     for (GA each in planes.values) {
       final double dist = latlngCalc.distance(each.latlng, observer.latLng);
@@ -229,10 +237,14 @@ class ADSB with ChangeNotifier {
 
       // TODO: deduce speed if not provided?
       final double? eta =
-          (each.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist) ? dist / each.spd : null;
+          (each.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist)
+              ? dist / each.spd
+              : null;
 
-      final bool warning = (((eta ?? double.infinity) < config.horizontalTime) || dist < config.horizontalDist) &&
-          altOffset.abs() < config.vertical;
+      final bool warning =
+          (((eta ?? double.infinity) < config.horizontalTime) ||
+                  dist < config.horizontalDist) &&
+              altOffset.abs() < config.vertical;
 
       planes[each.id]!.warning = warning;
 
@@ -243,13 +255,15 @@ class ADSB with ChangeNotifier {
   }
 
   void testWarning() {
-    ProximityConfig config = Provider.of<Settings>(context, listen: false).proximityProfile;
+    ProximityConfig config =
+        Provider.of<Settings>(context, listen: false).proximityProfile;
     var rand = Random(DateTime.now().millisecondsSinceEpoch);
     var observer = LatLng(0, 0);
 
     var ga = GA(
         "",
-        latlngCalc.offset(LatLng(0, 0), 10 + rand.nextDouble() * 3000, rand.nextDouble() * 360),
+        latlngCalc.offset(LatLng(0, 0), 10 + rand.nextDouble() * 3000,
+            rand.nextDouble() * 360),
         rand.nextDouble() * 200 - 100,
         35 + rand.nextDouble() * 50,
         rand.nextDouble() * 360,
@@ -262,26 +276,36 @@ class ADSB with ChangeNotifier {
     final double delta = deltaHdg(bearing, ga.hdg).abs();
 
     final double tangentOffset = sin(delta * pi / 180) * dist;
-    final double? eta = (ga.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist) ? dist / ga.spd : null;
+    final double? eta =
+        (ga.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist)
+            ? dist / ga.spd
+            : null;
     speakWarning(
         ga,
-        Geo.fromValues(0, 0, 0, DateTime.now().millisecondsSinceEpoch, rand.nextDouble() * 2 * pi,
-            11.15 + 4.5 * rand.nextDouble(), 0),
+        Geo.fromValues(0, 0, 0, DateTime.now().millisecondsSinceEpoch,
+            rand.nextDouble() * 2 * pi, 11.15 + 4.5 * rand.nextDouble(), 0),
         eta);
   }
 
   void speakWarning(GA ga, Geo observer, double? eta) {
     // direction
-    final int oclock =
-        (((deltaHdg(latlngCalc.bearing(observer.latLng, ga.latlng), observer.hdg * 180 / pi) / 360.0 * 12.0).round() +
-                    11) %
-                12) +
-            1;
+    final int oclock = (((deltaHdg(
+                            latlngCalc.bearing(observer.latLng, ga.latlng),
+                            observer.hdg * 180 / pi) /
+                        360.0 *
+                        12.0)
+                    .round() +
+                11) %
+            12) +
+        1;
 
     // distance, eta
-    final dist = unitConverters[UnitType.distCoarse]!(latlngCalc.distance(ga.latlng, observer.latLng));
-    final String distMsg = "${printDoubleLexical(value: dist)} ${getUnitStr(UnitType.distCoarse, lexical: true)}";
-    final String? etaStr = eta != null ? "${eta.toStringAsFixed(0)} seconds out" : null;
+    final dist = unitConverters[UnitType.distCoarse]!(
+        latlngCalc.distance(ga.latlng, observer.latLng));
+    final String distMsg =
+        "${printDoubleLexical(value: dist)} ${getUnitStr(UnitType.distCoarse, lexical: true)}";
+    final String? etaStr =
+        eta != null ? "${eta.toStringAsFixed(0)} seconds out" : null;
 
     // vertical separation
     String vertSep = ".";
@@ -292,10 +316,13 @@ class ADSB with ChangeNotifier {
     // Type
     final String typeStr = gaTypeStr[ga.type] ?? "";
 
-    String msg = "Warning! $typeStr $oclock o'clock$vertSep ${etaStr ?? distMsg}... ";
+    String msg =
+        "Warning! $typeStr $oclock o'clock$vertSep ${etaStr ?? distMsg}... ";
     debugPrint(msg);
-    ttsService
-        .speak(AudioMessage(msg, priority: 0, expires: DateTime.now().add(const Duration(seconds: 20)), volume: 1));
+    ttsService.speak(AudioMessage(msg,
+        priority: 0,
+        expires: DateTime.now().add(const Duration(seconds: 20)),
+        volume: 1));
   }
 
   /// Trigger update refresh

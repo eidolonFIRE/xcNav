@@ -22,13 +22,16 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
   void onDone(BuildContext context) {
     final newPlan = FlightPlan.fromActivePlan(filename.text, activePlan);
     activePlan.isSaved = true;
-    Provider.of<Plans>(context, listen: false).setPlan(newPlan).then((_) => Navigator.pop(context, true));
+    Provider.of<Plans>(context, listen: false)
+        .setPlan(newPlan)
+        .then((_) => Navigator.pop(context, true));
   }
 
   return showDialog<bool?>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text("Save Active Plan to Library${isSavingFirst ? " before it is replaced?" : ""}"),
+      title: Text(
+          "Save Active Plan to Library${isSavingFirst ? " before it is replaced?" : ""}"),
       content: Form(
         key: formKey,
         child: TextFormField(

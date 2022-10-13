@@ -87,7 +87,8 @@ class SoundingSample {
   double? get dpt => _dpt ?? (rh != null ? (tmp! - (100 - rh!) / 5.0) : null);
 
   SoundingSample blend(SoundingSample other, double ratio) {
-    var sample = SoundingSample(baroAlt: baroAlt * (1 - ratio) + other.baroAlt * ratio);
+    var sample =
+        SoundingSample(baroAlt: baroAlt * (1 - ratio) + other.baroAlt * ratio);
     // tmp
     if (tmp != null && other.tmp != null) {
       sample.tmp = tmp! * (1 - ratio) + other.tmp! * ratio;
@@ -131,7 +132,10 @@ class Sounding {
     for (int t = 0; t < data.length - 1; t++) {
       if (data[t].baroAlt <= baroAlt && data[t + 1].baroAlt > baroAlt) {
         // debugPrint("found ($t, ${t + 1})");
-        return data[t].blend(data[t + 1], (baroAlt - data[t].baroAlt) / (data[t + 1].baroAlt - data[t].baroAlt));
+        return data[t].blend(
+            data[t + 1],
+            (baroAlt - data[t].baroAlt) /
+                (data[t + 1].baroAlt - data[t].baroAlt));
       }
     }
     return data.last;
@@ -159,11 +163,15 @@ class Weather with ChangeNotifier {
     final completer = Completer<Sounding?>();
     MyTelemetry myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
     if (lastPull == null ||
-        DateTime.now().subtract(const Duration(minutes: 60)).isAfter(lastPull!) ||
+        DateTime.now()
+            .subtract(const Duration(minutes: 60))
+            .isAfter(lastPull!) ||
         (_sounding != null &&
             ((_sounding!.center.longitude - myTelemetry.geo.lng).abs() > 0.2 ||
-                (_sounding!.center.latitude - myTelemetry.geo.lat).abs() > 0.2))) {
-      final box = Rect.fromCircle(center: myTelemetry.geo.latLngOffset, radius: 0.3);
+                (_sounding!.center.latitude - myTelemetry.geo.lat).abs() >
+                    0.2))) {
+      final box =
+          Rect.fromCircle(center: myTelemetry.geo.latLngOffset, radius: 0.3);
 
       _updateSounding(box).then((value) => completer.complete(value));
     } else {
@@ -183,7 +191,10 @@ class Weather with ChangeNotifier {
     // Round back to last 6hr posting
     genTime = genTime.subtract(Duration(hours: genTime.hour % 6));
     // forecast ahead number of hours
-    final aheadTime = (DateTime.now().toUtc().difference(genTime).inHours).floor().toString().padLeft(2, "0");
+    final aheadTime = (DateTime.now().toUtc().difference(genTime).inHours)
+        .floor()
+        .toString()
+        .padLeft(2, "0");
     String uri =
         "https://nomads.ncep.noaa.gov/cgi-bin/filter_nam_conusnest.pl?file=nam.t${genTime.hour.toString().padLeft(2, "0")}z.conusnest.hiresf$aheadTime.tm00.grib2&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_1000_mb=on&lev_500_mb=on&lev_525_mb=on&lev_550_mb=on&lev_575_mb=on&lev_600_mb=on&lev_625_mb=on&lev_650_mb=on&lev_675_mb=on&lev_700_mb=on&lev_725_mb=on&lev_750_mb=on&lev_775_mb=on&lev_800_mb=on&lev_825_mb=on&lev_850_mb=on&lev_875_mb=on&lev_900_mb=on&lev_925_mb=on&lev_950_mb=on&lev_975_mb=on&var_RH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&subregion=&leftlon=${bounds.left.toStringAsFixed(2)}&rightlon=${bounds.right.toStringAsFixed(2)}&toplat=${bounds.bottom.toStringAsFixed(2)}&bottomlat=${bounds.top.toStringAsFixed(2)}&dir=%2Fnam.$dateStr";
     debugPrint(uri);
@@ -193,7 +204,8 @@ class Weather with ChangeNotifier {
 
     debugPrint("Pulled NAM weather.");
     if (response.statusCode == 200) {
-      _sounding = _buildSounding(LatLng(bounds.center.dy, bounds.center.dx), parseRawFile(response.bodyBytes));
+      _sounding = _buildSounding(LatLng(bounds.center.dy, bounds.center.dx),
+          parseRawFile(response.bodyBytes));
     } else {
       // Unblock to try again.
       lastPull = null;
@@ -217,7 +229,9 @@ class Weather with ChangeNotifier {
         // Interpolate between points
         final grid = each.gridConfig!;
         final latSize = grid.numY * grid.dY / 111320.0;
-        final lngSize = grid.numX * grid.dX / (40075017 * cos(center.latitude * pi / 180.0) / 360);
+        final lngSize = grid.numX *
+            grid.dX /
+            (40075017 * cos(center.latitude * pi / 180.0) / 360);
         // print("Aprox. Grid Size: $latSize x $lngSize");
         final yIndex = (center.latitude - grid.la1) / latSize * grid.numY;
         final xIndex = (center.longitude - grid.lo1) / lngSize * grid.numX;
@@ -234,9 +248,12 @@ class Weather with ChangeNotifier {
         if (each.product == "UGRD") curSample.uGrd = v;
         if (each.product == "VGRD") curSample.vGrd = v;
 
-        if ((each.product == "UGRD" || each.product == "VGRD") && curSample.uGrd != null && curSample.vGrd != null) {
+        if ((each.product == "UGRD" || each.product == "VGRD") &&
+            curSample.uGrd != null &&
+            curSample.vGrd != null) {
           // Both wind vector now set, so we can calculate...
-          curSample.wVel = sqrt(pow(curSample.uGrd!, 2) + pow(curSample.vGrd!, 2));
+          curSample.wVel =
+              sqrt(pow(curSample.uGrd!, 2) + pow(curSample.vGrd!, 2));
           curSample.wHdg = atan2(curSample.uGrd!, curSample.vGrd!);
         }
       }

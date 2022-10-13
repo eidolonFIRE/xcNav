@@ -11,7 +11,9 @@ import 'package:xcnav/widgets/map_marker.dart';
 final TextEditingController newWaypointName = TextEditingController();
 
 Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
-    {VoidCallback? editPointsCallback, bool isPath = false, bool isNew = false}) {
+    {VoidCallback? editPointsCallback,
+    bool isPath = false,
+    bool isNew = false}) {
   newWaypointName.value = TextEditingValue(text: waypoint.name);
   var formKey = GlobalKey<FormState>();
 
@@ -52,7 +54,9 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                       border: Border.all(
                           style: BorderStyle.solid,
                           width: 2,
-                          color: (selectedIcon == name) ? Colors.white : Colors.transparent)),
+                          color: (selectedIcon == name)
+                              ? Colors.white
+                              : Colors.transparent)),
                   child: Padding(
                     padding: const EdgeInsets.all(4.0),
                     child: getWpIcon(
@@ -84,7 +88,8 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                     autofocus: true,
                     validator: (value) {
                       if (value != null) {
-                        if (value.trim().isEmpty || value.isEmpty) return "Must not be empty";
+                        if (value.trim().isEmpty || value.isEmpty)
+                          return "Must not be empty";
                       }
                       return null;
                     },
@@ -124,8 +129,12 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                 if (!showIconOptions && editPointsCallback != null)
                   TextButton.icon(
                       onPressed: () {
-                        var newWaypoint = Waypoint(newWaypointName.text, waypoint.latlng, waypoint.isOptional,
-                            selectedIcon, selectedColor.value);
+                        var newWaypoint = Waypoint(
+                            newWaypointName.text,
+                            waypoint.latlng,
+                            waypoint.isOptional,
+                            selectedIcon,
+                            selectedColor.value);
                         Navigator.pop(context, newWaypoint);
                         editPointsCallback();
                       },
@@ -135,7 +144,10 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                       ),
                       label: Text(
                         "Edit Path Points",
-                        style: Theme.of(context).textTheme.button!.merge(const TextStyle(fontSize: 20)),
+                        style: Theme.of(context)
+                            .textTheme
+                            .button!
+                            .merge(const TextStyle(fontSize: 20)),
                       ))
               ],
             ),
@@ -152,8 +164,12 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                   label: Text(isNew ? "Add" : "Update"),
                   onPressed: () {
                     if (formKey.currentState?.validate() ?? false) {
-                      var newWaypoint = Waypoint(newWaypointName.text, waypoint.latlng, waypoint.isOptional,
-                          selectedIcon, selectedColor.value);
+                      var newWaypoint = Waypoint(
+                          newWaypointName.text,
+                          waypoint.latlng,
+                          waypoint.isOptional,
+                          selectedIcon,
+                          selectedColor.value);
 
                       Navigator.pop(context, newWaypoint);
                     }

@@ -18,7 +18,8 @@ Future<String?> editPlanName(BuildContext context, String? prevName) {
       context: context,
       builder: (context) {
         return AlertDialog(
-            title: Text("${((prevName != null && prevName.isNotEmpty) ? "Rename" : "New")} Plan / Collection"),
+            title: Text(
+                "${((prevName != null && prevName.isNotEmpty) ? "Rename" : "New")} Plan / Collection"),
             actions: [
               TextButton.icon(
                   label: const Text("Cancel"),
@@ -43,11 +44,15 @@ Future<String?> editPlanName(BuildContext context, String? prevName) {
                   textInputAction: TextInputAction.done,
                   controller: textController,
                   autofocus: true,
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ -()]"))],
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp("[a-zA-Z0-9_ -()]"))
+                  ],
                   validator: (value) {
                     if (value != null) {
                       if (value.trim().isEmpty) return "Must not be empty";
-                      if (Provider.of<Plans>(context, listen: false).hasPlan(value)) return "Name already in use";
+                      if (Provider.of<Plans>(context, listen: false)
+                          .hasPlan(value)) return "Name already in use";
                     }
                     return null;
                   },

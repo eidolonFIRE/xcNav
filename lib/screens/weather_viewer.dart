@@ -39,16 +39,25 @@ class _WeatherViewerState extends State<WeatherViewer> {
                     future: Provider.of<Weather>(context).getSounding(),
                     builder: (context, sounding) {
                       if (sounding.hasData && sounding.data != null) {
-                        double myBaro = Provider.of<MyTelemetry>(context, listen: false).baro?.hectpascal ??
-                            pressureFromElevation(Provider.of<MyTelemetry>(context, listen: false).geo.alt, 1013.25);
+                        double myBaro = Provider.of<MyTelemetry>(context,
+                                    listen: false)
+                                .baro
+                                ?.hectpascal ??
+                            pressureFromElevation(
+                                Provider.of<MyTelemetry>(context, listen: false)
+                                    .geo
+                                    .alt,
+                                1013.25);
                         // Get the sample from selection
                         SoundingSample? sample;
                         if (selectedY != null) {
-                          sample = sounding.data!.sampleBaro(pressureFromElevation(
-                              (MediaQuery.of(context).size.width - selectedY!) /
-                                  (MediaQuery.of(context).size.width) *
-                                  6000.0,
-                              1013.25));
+                          sample = sounding.data!.sampleBaro(
+                              pressureFromElevation(
+                                  (MediaQuery.of(context).size.width -
+                                          selectedY!) /
+                                      (MediaQuery.of(context).size.width) *
+                                      6000.0,
+                                  1013.25));
                         } else {
                           sample = sounding.data!.sampleBaro(myBaro);
                         }
@@ -78,16 +87,21 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                         flex: 3,
                                         child: Text.rich(
                                           TextSpan(children: [
-                                            richValue(UnitType.distFine, getElevation(sample.baroAlt, 1013.25)),
+                                            richValue(
+                                                UnitType.distFine,
+                                                getElevation(
+                                                    sample.baroAlt, 1013.25)),
                                             const TextSpan(text: ",  "),
                                             TextSpan(
-                                                style: const TextStyle(color: Colors.blue),
+                                                style: const TextStyle(
+                                                    color: Colors.blue),
                                                 text: sample.dpt == null
                                                     ? "?"
                                                     : "${cToF(sample.dpt)!.toStringAsFixed(0)} F"),
                                             const TextSpan(text: ",  "),
                                             TextSpan(
-                                                style: const TextStyle(color: Colors.red),
+                                                style: const TextStyle(
+                                                    color: Colors.red),
                                                 text: sample.tmp == null
                                                     ? "?"
                                                     : "${cToF(sample.tmp)!.toStringAsFixed(0)} F"),
@@ -99,12 +113,15 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                         fit: FlexFit.tight,
                                         flex: 1,
                                         child: Padding(
-                                          padding: const EdgeInsets.only(left: 10),
+                                          padding:
+                                              const EdgeInsets.only(left: 10),
                                           child: Stack(children: [
                                             if (sample.wHdg != null)
                                               Container(
-                                                transformAlignment: const Alignment(0, 0),
-                                                transform: Matrix4.rotationZ(sample.wHdg!),
+                                                transformAlignment:
+                                                    const Alignment(0, 0),
+                                                transform: Matrix4.rotationZ(
+                                                    sample.wHdg!),
                                                 child: SvgPicture.asset(
                                                   "assets/images/arrow.svg",
                                                   width: 100,
@@ -115,16 +132,22 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                             Align(
                                               alignment: Alignment.center,
                                               child: Padding(
-                                                padding: const EdgeInsets.only(top: 42, bottom: 42),
+                                                padding: const EdgeInsets.only(
+                                                    top: 42, bottom: 42),
                                                 child: Text(
                                                   (sample.wVel != null)
                                                       ? printDouble(
-                                                          value: unitConverters[UnitType.speed]!(sample.wVel!),
+                                                          value: unitConverters[
+                                                                  UnitType
+                                                                      .speed]!(
+                                                              sample.wVel!),
                                                           digits: 2,
                                                           decimals: 0)
                                                       : "",
-                                                  style:
-                                                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                                  style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                               ),
                                             ),
@@ -135,7 +158,8 @@ class _WeatherViewerState extends State<WeatherViewer> {
 
                             /// --- Graph plots
                             Padding(
-                              padding: const EdgeInsets.only(left: 10, right: 10),
+                              padding:
+                                  const EdgeInsets.only(left: 10, right: 10),
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width,
                                 height: MediaQuery.of(context).size.width,
@@ -147,17 +171,23 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                     onPointerMove: (e) => setState(() {
                                           selectedY = e.localPosition.dy;
                                         }),
-                                    child: Stack(fit: StackFit.loose, children: [
+                                    child:
+                                        Stack(fit: StackFit.loose, children: [
                                       Flex(
                                         direction: Axis.horizontal,
-                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
                                         children: [
                                           Flexible(
                                             fit: FlexFit.tight,
                                             flex: 3,
                                             child: ClipRect(
                                               child: CustomPaint(
-                                                painter: SoundingPlotThermPainter(sounding.data!, selectedY, myBaro),
+                                                painter:
+                                                    SoundingPlotThermPainter(
+                                                        sounding.data!,
+                                                        selectedY,
+                                                        myBaro),
                                               ),
                                             ),
                                           ),
@@ -165,10 +195,15 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                             fit: FlexFit.tight,
                                             flex: 1,
                                             child: Padding(
-                                              padding: const EdgeInsets.only(left: 10),
+                                              padding: const EdgeInsets.only(
+                                                  left: 10),
                                               child: ClipRRect(
                                                 child: CustomPaint(
-                                                  painter: SoundingPlotWindPainter(sounding.data!, selectedY, myBaro),
+                                                  painter:
+                                                      SoundingPlotWindPainter(
+                                                          sounding.data!,
+                                                          selectedY,
+                                                          myBaro),
                                                 ),
                                               ),
                                             ),
@@ -185,10 +220,16 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                                 Icons.touch_app,
                                                 size: 26,
                                               )),
-                                              TextSpan(text: "  Select an Altitude")
+                                              TextSpan(
+                                                  text: "  Select an Altitude")
                                             ]),
                                             style: TextStyle(
-                                                fontSize: 18, shadows: [Shadow(color: Colors.black, blurRadius: 20)]),
+                                                fontSize: 18,
+                                                shadows: [
+                                                  Shadow(
+                                                      color: Colors.black,
+                                                      blurRadius: 20)
+                                                ]),
                                           ),
                                         ),
                                     ])),
@@ -198,7 +239,9 @@ class _WeatherViewerState extends State<WeatherViewer> {
                               padding: const EdgeInsets.all(10.0),
                               child: Text(
                                 "NAM-NEST-conus updated  ${DateTime.now().difference(Provider.of<Weather>(context, listen: false).lastPull ?? DateTime.now()).inMinutes.toString()}  minutes ago.",
-                                style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                                style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontStyle: FontStyle.italic),
                               ),
                             )
                           ],

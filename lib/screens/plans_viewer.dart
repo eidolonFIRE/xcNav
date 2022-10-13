@@ -28,19 +28,24 @@ class PlansViewer extends StatefulWidget {
 
 class _PlansViewerState extends State<PlansViewer> {
   void selectKmlImport(BuildContext context) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ["kml"]);
+    FilePickerResult? result = await FilePicker.platform
+        .pickFiles(type: FileType.custom, allowedExtensions: ["kml"]);
 
     if (result != null) {
       File file = File(result.files.single.path!);
       file.readAsString().then((data) async {
-        final document = XmlDocument.parse(data).getElement("kml")!.getElement("Document")!;
+        final document =
+            XmlDocument.parse(data).getElement("kml")!.getElement("Document")!;
 
         // Select which folders to import
         final folderNames = document.findAllElements("Folder").toList();
 
-        final selectedFolderOptions = await selectKmlFolders(context, folderNames);
-        final selectedFolders = folderNames.isNotEmpty ? selectedFolderOptions?.folders : null;
-        var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? [],
+        final selectedFolderOptions =
+            await selectKmlFolders(context, folderNames);
+        final selectedFolders =
+            folderNames.isNotEmpty ? selectedFolderOptions?.folders : null;
+        var newPlan = FlightPlan.fromKml(
+            result.files.single.name, document, selectedFolders ?? [],
             setAllOptional: selectedFolderOptions?.allOptional ?? false);
         // TODO: notify if broken file
         if (newPlan.goodFile) {
@@ -67,14 +72,20 @@ class _PlansViewerState extends State<PlansViewer> {
                   editPlanName(context, null).then((value) {
                     if (value != null && value != "") {
                       var plan = FlightPlan(value);
-                      Navigator.pushNamed(context, "/planEditor", arguments: plan);
+                      Navigator.pushNamed(context, "/planEditor",
+                          arguments: plan);
                     }
                   });
                 },
                 icon: const Icon(Icons.add)),
-            IconButton(iconSize: 30, onPressed: () => {savePlan(context)}, icon: const Icon(Icons.save_as)),
             IconButton(
-                iconSize: 30, onPressed: () => {selectKmlImport(context)}, icon: const Icon(Icons.file_upload_outlined))
+                iconSize: 30,
+                onPressed: () => {savePlan(context)},
+                icon: const Icon(Icons.save_as)),
+            IconButton(
+                iconSize: 30,
+                onPressed: () => {selectKmlImport(context)},
+                icon: const Icon(Icons.file_upload_outlined))
           ],
         ),
         body: plans.loadedPlans.isEmpty
@@ -88,14 +99,17 @@ class _PlansViewerState extends State<PlansViewer> {
                   // ),
                   Padding(
                     padding: EdgeInsets.all(8.0),
-                    child: Text("Use the buttons in the upper right corner to:", softWrap: true, maxLines: 3),
+                    child: Text("Use the buttons in the upper right corner to:",
+                        softWrap: true, maxLines: 3),
                   ),
-                  Text("- Create a new plan / collection\n- Save the active plan\n- Import a KML file"),
+                  Text(
+                      "- Create a new plan / collection\n- Save the active plan\n- Import a KML file"),
                 ],
               ))
             : ListView.builder(
                 itemCount: plans.loadedPlans.length,
-                itemBuilder: (context, index) => PlanCard(plans.loadedPlans[keys[index]]!),
+                itemBuilder: (context, index) =>
+                    PlanCard(plans.loadedPlans[keys[index]]!),
               ),
       );
     }));

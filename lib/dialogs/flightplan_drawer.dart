@@ -26,18 +26,24 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/screens/home.dart';
 
 /// Flightplan Menu
-Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function onEditPoints) {
-  return Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
+Widget flightPlanDrawer(
+    Function setFocusMode, VoidCallback onNewPath, Function onEditPoints) {
+  return Consumer2<ActivePlan, MyTelemetry>(
+      builder: (context, activePlan, myTelemetry, child) {
     ETA etaNext = activePlan.selectedIndex != null
-        ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
+        ? activePlan.etaToWaypoint(
+            myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
         : ETA(0, const Duration());
     ETA etaTrip = activePlan.etaToTripEnd(
-        myTelemetry.geo.spd, activePlan.selectedIndex ?? 0, Provider.of<Wind>(context, listen: false));
+        myTelemetry.geo.spd,
+        activePlan.selectedIndex ?? 0,
+        Provider.of<Wind>(context, listen: false));
     etaTrip += etaNext;
 
     if (activePlan.includeReturnTrip && !activePlan.isReversed) {
       // optionally include eta for return trip
-      etaTrip += activePlan.etaToTripEnd(myTelemetry.geo.spd, 0, Provider.of<Wind>(context, listen: false));
+      etaTrip += activePlan.etaToTripEnd(
+          myTelemetry.geo.spd, 0, Provider.of<Wind>(context, listen: false));
     }
 
     return Column(
@@ -54,30 +60,43 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                   Navigator.pop(context);
                   setFocusMode(FocusMode.addWaypoint);
                 },
-                icon: const ImageIcon(AssetImage("assets/images/add_waypoint_pin.png"), color: Colors.lightGreen)),
+                icon: const ImageIcon(
+                    AssetImage("assets/images/add_waypoint_pin.png"),
+                    color: Colors.lightGreen)),
             // --- Add New Path
             IconButton(
                 iconSize: 25,
                 onPressed: onNewPath,
-                icon: const ImageIcon(AssetImage("assets/images/add_waypoint_path.png"), color: Colors.yellow)),
+                icon: const ImageIcon(
+                    AssetImage("assets/images/add_waypoint_path.png"),
+                    color: Colors.yellow)),
             // --- New from Lat Lng
             IconButton(
                 iconSize: 25,
                 onPressed: () {
                   editLatLng(context).then((value) {
                     if (value != null) {
-                      editWaypoint(context, Waypoint("", [value], false, null, null), isNew: true, isPath: false)
+                      editWaypoint(
+                              context, Waypoint("", [value], false, null, null),
+                              isNew: true, isPath: false)
                           ?.then((newWaypoint) {
                         if (newWaypoint != null) {
-                          final plan = Provider.of<ActivePlan>(context, listen: false);
-                          plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false,
-                              newWaypoint.icon, newWaypoint.color);
+                          final plan =
+                              Provider.of<ActivePlan>(context, listen: false);
+                          plan.insertWaypoint(
+                              plan.waypoints.length,
+                              newWaypoint.name,
+                              newWaypoint.latlng,
+                              false,
+                              newWaypoint.icon,
+                              newWaypoint.color);
                         }
                       });
                     }
                   });
                 },
-                icon: const ImageIcon(AssetImage("assets/images/crosshair.png"))),
+                icon:
+                    const ImageIcon(AssetImage("assets/images/crosshair.png"))),
             // --- Save Plan
             PopupMenuButton<String>(
                 onSelected: (value) {
@@ -92,7 +111,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                           builder: (BuildContext ctx) {
                             return AlertDialog(
                               title: const Text('Are you sure?'),
-                              content: const Text('This will clear the flight plan for everyone in the group!'),
+                              content: const Text(
+                                  'This will clear the flight plan for everyone in the group!'),
                               actions: [
                                 TextButton.icon(
                                     onPressed: () {
@@ -114,16 +134,19 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                           }).then((value) {
                         if (value) {
                           activePlan.waypoints.clear();
-                          Provider.of<Client>(context, listen: false).pushFlightPlan();
+                          Provider.of<Client>(context, listen: false)
+                              .pushFlightPlan();
                         }
                       });
                       break;
                     case "all_optional":
-                      final plan = Provider.of<ActivePlan>(context, listen: false);
+                      final plan =
+                          Provider.of<ActivePlan>(context, listen: false);
                       for (final element in plan.waypoints) {
                         element.isOptional = true;
                       }
-                      Provider.of<Client>(context, listen: false).pushFlightPlan();
+                      Provider.of<Client>(context, listen: false)
+                          .pushFlightPlan();
                   }
                 },
                 itemBuilder: (context) => const <PopupMenuEntry<String>>[
@@ -172,14 +195,17 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
               itemBuilder: (context, i) => Slidable(
                 key: ValueKey(activePlan.waypoints[i]),
                 dragStartBehavior: DragStartBehavior.start,
-                startActionPane: ActionPane(extentRatio: 0.15, motion: const ScrollMotion(), children: [
-                  SlidableAction(
-                    onPressed: (e) => {activePlan.removeWaypoint(i)},
-                    icon: Icons.delete,
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                  ),
-                ]),
+                startActionPane: ActionPane(
+                    extentRatio: 0.15,
+                    motion: const ScrollMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: (e) => {activePlan.removeWaypoint(i)},
+                        icon: Icons.delete,
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ]),
                 endActionPane: ActionPane(
                   extentRatio: 0.3,
                   motion: const ScrollMotion(),
@@ -193,8 +219,13 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                         )?.then((newWaypoint) {
                           if (newWaypoint != null) {
                             // --- Update selected waypoint
-                            Provider.of<ActivePlan>(context, listen: false).updateWaypoint(
-                                i, newWaypoint.name, newWaypoint.icon, newWaypoint.color, newWaypoint.latlng);
+                            Provider.of<ActivePlan>(context, listen: false)
+                                .updateWaypoint(
+                                    i,
+                                    newWaypoint.name,
+                                    newWaypoint.icon,
+                                    newWaypoint.color,
+                                    newWaypoint.latlng);
                           }
                         });
                       },
@@ -207,15 +238,21 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                         showDialog<String>(
                             context: context,
                             builder: (context) => SimpleDialog(
-                                  title: Text(Provider.of<Plans>(context, listen: false).loadedPlans.isEmpty
+                                  title: Text(Provider.of<Plans>(context,
+                                              listen: false)
+                                          .loadedPlans
+                                          .isEmpty
                                       ? "Oops, make a plan / collection in Waypoints menu first!"
                                       : "Save waypoint into:"),
-                                  children: Provider.of<Plans>(context, listen: false)
-                                      .loadedPlans
-                                      .keys
-                                      .map((name) => SimpleDialogOption(
-                                          onPressed: () => Navigator.pop(context, name), child: Text(name)))
-                                      .toList(),
+                                  children:
+                                      Provider.of<Plans>(context, listen: false)
+                                          .loadedPlans
+                                          .keys
+                                          .map((name) => SimpleDialogOption(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, name),
+                                              child: Text(name)))
+                                          .toList(),
                                 )).then((value) {
                           if (value != null) {
                             Provider.of<Plans>(context, listen: false)
@@ -256,7 +293,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                     activePlan.toggleOptional(i);
                   },
                   onDoubleTap: () {
-                    zoomMainMapToLatLng.sink.add(activePlan.waypoints[i].latlng[0]);
+                    zoomMainMapToLatLng.sink
+                        .add(activePlan.waypoints[i].latlng[0]);
                   },
                   isSelected: i == activePlan.selectedIndex,
                 ),
@@ -264,7 +302,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
               onReorder: (oldIndex, newIndex) {
                 debugPrint("WP order: $oldIndex --> $newIndex");
                 activePlan.sortWaypoint(oldIndex, newIndex);
-                Provider.of<Group>(context, listen: false).fixPilotSelectionsOnSort(oldIndex, newIndex);
+                Provider.of<Group>(context, listen: false)
+                    .fixPilotSelectionsOnSort(oldIndex, newIndex);
               },
             ),
             // This shows when flight plan is empty
@@ -286,8 +325,9 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                   child: Container(
                     decoration: BoxDecoration(
                         color: Colors.grey.shade900,
-                        borderRadius:
-                            const BorderRadius.only(bottomLeft: Radius.circular(40), bottomRight: Radius.circular(40))),
+                        borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(40),
+                            bottomRight: Radius.circular(40))),
                     child: Padding(
                       padding: const EdgeInsets.only(left: 20, right: 10),
                       child: Row(
@@ -300,7 +340,8 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                           Switch(
                               activeColor: Colors.lightBlueAccent,
                               value: activePlan.includeReturnTrip,
-                              onChanged: (value) => {activePlan.includeReturnTrip = value}),
+                              onChanged: (value) =>
+                                  {activePlan.includeReturnTrip = value}),
                         ],
                       ),
                     ),
@@ -337,10 +378,16 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                   child: Text.rich(
                     TextSpan(children: [
                       richValue(UnitType.distCoarse, etaTrip.distance,
-                          decimals: 1, valueStyle: instrLower, unitStyle: instrLabel),
-                      if (myTelemetry.inFlight) TextSpan(text: "   ", style: instrLower),
+                          decimals: 1,
+                          valueStyle: instrLower,
+                          unitStyle: instrLabel),
                       if (myTelemetry.inFlight)
-                        richHrMin(duration: etaTrip.time, valueStyle: instrLower, unitStyle: instrLabel),
+                        TextSpan(text: "   ", style: instrLower),
+                      if (myTelemetry.inFlight)
+                        richHrMin(
+                            duration: etaTrip.time,
+                            valueStyle: instrLower,
+                            unitStyle: instrLabel),
                       if (myTelemetry.inFlight &&
                           myTelemetry.fuel > 0 &&
                           etaNext.time != null &&
@@ -369,9 +416,11 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                       value: activePlan.useWind,
                       activeColor: Colors.lightBlueAccent,
                       onChanged: (value) => {activePlan.useWind = value},
-                      activeThumbImage: Provider.of<Wind>(context).result != null
+                      activeThumbImage: Provider.of<Wind>(context).result !=
+                              null
                           ? IconImageProvider(Icons.check, color: Colors.black)
-                          : IconImageProvider(Icons.question_mark, color: Colors.black),
+                          : IconImageProvider(Icons.question_mark,
+                              color: Colors.black),
                     ),
                   ],
                 ),
@@ -384,8 +433,11 @@ Widget flightPlanDrawer(Function setFocusMode, VoidCallback onNewPath, Function 
                     Switch(
                         value: activePlan.isReversed,
                         activeColor: Colors.lightBlueAccent,
-                        activeThumbImage: IconImageProvider(Icons.arrow_upward, color: Colors.black),
-                        inactiveThumbImage: IconImageProvider(Icons.arrow_downward, color: Colors.black),
+                        activeThumbImage: IconImageProvider(Icons.arrow_upward,
+                            color: Colors.black),
+                        inactiveThumbImage: IconImageProvider(
+                            Icons.arrow_downward,
+                            color: Colors.black),
                         onChanged: (value) => {activePlan.isReversed = value}),
                   ],
                 ),

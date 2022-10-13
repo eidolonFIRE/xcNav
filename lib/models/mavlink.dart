@@ -84,12 +84,20 @@ GA? _decodeTraffic(Uint8List data) {
   GAtype type = GAtype.large;
   if (data[36] == 0x07) {
     type = GAtype.heli;
-  } else if (data[36] == 0x01 || data[36] == 0x02 || data[36] == 0x09 || data[36] == 0x0A || data[36] == 0x0C) {
+  } else if (data[36] == 0x01 ||
+      data[36] == 0x02 ||
+      data[36] == 0x09 ||
+      data[36] == 0x0A ||
+      data[36] == 0x0C) {
     type = GAtype.small;
   }
 
-  if (type.index > 0 && type.index < 22 && (lat != 0 || lng != 0) && (lat < 90 && lat > -90)) {
-    return GA(id, LatLng(lat, lng), alt, spd, hdg, type, DateTime.now().millisecondsSinceEpoch);
+  if (type.index > 0 &&
+      type.index < 22 &&
+      (lat != 0 || lng != 0) &&
+      (lat < 90 && lat > -90)) {
+    return GA(id, LatLng(lat, lng), alt, spd, hdg, type,
+        DateTime.now().millisecondsSinceEpoch);
   }
   return null;
 }
@@ -117,7 +125,8 @@ GA? decodeMavlink(Uint8List data) {
     if (data[5] == 246) {
       if (data.length >= len + 8) {
         int checkSum = data[len + 6] | (data[len + 7] << 8);
-        int finalCheck = crcAccumulateBuffer(checkSum, data.sublist(1), len + 5);
+        int finalCheck =
+            crcAccumulateBuffer(checkSum, data.sublist(1), len + 5);
         if (checkSum == finalCheck) {
           return _decodeTraffic(data.sublist(6));
         } else {

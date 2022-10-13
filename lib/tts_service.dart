@@ -102,7 +102,8 @@ class TtsService {
     } else {
       // insertion
       for (int index = 0; index <= msgQueue.length; index++) {
-        if (index == msgQueue.length || msgQueue[index].priority > msg.priority) {
+        if (index == msgQueue.length ||
+            msgQueue[index].priority > msg.priority) {
           // debugPrint("Speak queue insert $index / ${msgQueue.length}");
           msgQueue.insert(index, msg);
           break;

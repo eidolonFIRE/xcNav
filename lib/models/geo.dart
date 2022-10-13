@@ -62,22 +62,28 @@ class Geo {
   Offset get latLngOffset => Offset(lng, lat);
 
   Geo();
-  Geo.fromValues(this.lat, this.lng, this.alt, this.time, this.hdg, this.spd, this.vario);
+  Geo.fromValues(
+      this.lat, this.lng, this.alt, this.time, this.hdg, this.spd, this.vario);
 
-  Geo.fromPosition(Position location, Geo? prev, BarometerValue? baro, BarometerValue? baroAmbient) {
+  Geo.fromPosition(Position location, Geo? prev, BarometerValue? baro,
+      BarometerValue? baroAmbient) {
     lat = location.latitude;
     lng = location.longitude;
-    time = location.timestamp?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch;
+    time = location.timestamp?.millisecondsSinceEpoch ??
+        DateTime.now().millisecondsSinceEpoch;
 
     if (prev != null && prev.time < time) {
       // prefer our own calculations
-      final double dist = latlngCalc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
+      final double dist =
+          latlngCalc.distance(LatLng(prev.lat, prev.lng), LatLng(lat, lng));
 
       spd = dist / (time - prev.time) * 1000;
       if (dist < 1) {
         hdg = prev.hdg;
       } else {
-        hdg = latlngCalc.bearing(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) * 3.1415926 / 180;
+        hdg = latlngCalc.bearing(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) *
+            3.1415926 /
+            180;
       }
     } else {
       spd = location.speed;
@@ -87,7 +93,8 @@ class Geo {
     if (baro != null) {
       // altitude / vario filtering
       final double amb = baroAmbient?.hectpascal ?? 1013.25;
-      alt = 145366.45 * (1 - pow(baro.hectpascal / amb, 0.190284)) / meters2Feet;
+      alt =
+          145366.45 * (1 - pow(baro.hectpascal / amb, 0.190284)) / meters2Feet;
     } else {
       alt = location.altitude;
     }
@@ -116,7 +123,8 @@ class Geo {
       double angleToNext = double.nan;
       if (isReversed ? (index > 0) : (index < path.length - 1)) {
         double delta = latlngCalc.bearing(path[index], latLng) -
-            latlngCalc.bearing(path[index], path[index + (isReversed ? -1 : 1)]);
+            latlngCalc.bearing(
+                path[index], path[index + (isReversed ? -1 : 1)]);
         delta = (delta + 180) % 360 - 180;
         angleToNext = delta.abs();
       }
@@ -171,6 +179,8 @@ class Geo {
     time = data["time"] as int;
     hdg = data["hdg"] is int ? (data["hdg"] as int).toDouble() : data["hdg"];
     spd = data["spd"] is int ? (data["spd"] as int).toDouble() : data["spd"];
-    vario = data["vario"] is int ? (data["vario"] as int).toDouble() : data["vario"];
+    vario = data["vario"] is int
+        ? (data["vario"] as int).toDouble()
+        : data["vario"];
   }
 }

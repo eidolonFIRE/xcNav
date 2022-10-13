@@ -42,8 +42,9 @@ class _WaypointCardState extends State<WaypointCard> {
 
   @override
   Widget build(BuildContext context) {
-    final textColor =
-        widget.isSelected ? Colors.black : (widget.waypoint.isOptional ? Colors.grey.shade600 : Colors.white);
+    final textColor = widget.isSelected
+        ? Colors.black
+        : (widget.waypoint.isOptional ? Colors.grey.shade600 : Colors.white);
     return Container(
       color: widget.isSelected ? Colors.grey.shade200 : Colors.grey.shade900,
       key: ValueKey(widget.waypoint),
@@ -54,7 +55,9 @@ class _WaypointCardState extends State<WaypointCard> {
           Column(
             children: [
               Expanded(
-                child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
+                child: SizedBox(
+                    width: 4,
+                    child: Container(color: widget.waypoint.getColor())),
               ),
               GestureDetector(
                 onTap: widget.onToggleOptional,
@@ -80,7 +83,9 @@ class _WaypointCardState extends State<WaypointCard> {
                 ),
               ),
               Expanded(
-                child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
+                child: SizedBox(
+                    width: 4,
+                    child: Container(color: widget.waypoint.getColor())),
               ),
             ],
           ),
@@ -91,7 +96,9 @@ class _WaypointCardState extends State<WaypointCard> {
                 Expanded(
                   child: TextButton(
                     onPressed: () {
-                      final delta = _lastSelect != null ? DateTime.now().difference(_lastSelect!) : null;
+                      final delta = _lastSelect != null
+                          ? DateTime.now().difference(_lastSelect!)
+                          : null;
                       if (delta == null || delta.inMilliseconds > 300) {
                         widget.onSelect();
                       } else if (delta.inMilliseconds < 300) {
@@ -114,21 +121,37 @@ class _WaypointCardState extends State<WaypointCard> {
                                 textColor,
                               ),
                             ),
-                          if (widget.waypoint.icon != null) const TextSpan(text: " "),
+                          if (widget.waypoint.icon != null)
+                            const TextSpan(text: " "),
                           // --- Name
-                          TextSpan(text: widget.waypoint.name, style: TextStyle(color: textColor, fontSize: 24)),
+                          TextSpan(
+                              text: widget.waypoint.name,
+                              style: TextStyle(color: textColor, fontSize: 24)),
                           // --- Length
                           if (widget.waypoint.latlng.length > 1)
-                            TextSpan(text: " (", style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
+                            TextSpan(
+                                text: " (",
+                                style: TextStyle(
+                                    color: textColor.withAlpha(150),
+                                    fontSize: 18)),
                           if (widget.waypoint.latlng.length > 1)
-                            richValue(UnitType.distCoarse, widget.waypoint.length,
+                            richValue(
+                                UnitType.distCoarse, widget.waypoint.length,
                                 digits: 3,
                                 decimals: 1,
-                                valueStyle: TextStyle(color: textColor.withAlpha(150), fontSize: 18),
-                                unitStyle: TextStyle(color: textColor.withAlpha(150), fontSize: 12)),
+                                valueStyle: TextStyle(
+                                    color: textColor.withAlpha(150),
+                                    fontSize: 18),
+                                unitStyle: TextStyle(
+                                    color: textColor.withAlpha(150),
+                                    fontSize: 12)),
 
                           if (widget.waypoint.latlng.length > 1)
-                            TextSpan(text: ")", style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
+                            TextSpan(
+                                text: ")",
+                                style: TextStyle(
+                                    color: textColor.withAlpha(150),
+                                    fontSize: 18)),
                         ]),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
@@ -141,13 +164,14 @@ class _WaypointCardState extends State<WaypointCard> {
                 /// Pilot Avatars
                 if (widget.showPilots)
                   Consumer<Group>(builder: (context, group, child) {
-                    var pilots = group.pilots.values.where((element) => element.selectedWaypoint == widget.index);
+                    var pilots = group.pilots.values.where(
+                        (element) => element.selectedWaypoint == widget.index);
 
                     if (pilots.isEmpty) return Container();
 
-                    final width =
-                        min(MediaQuery.of(context).size.width / 3, pilots.length * 48 / pow(pilots.length, 0.3))
-                            .toDouble();
+                    final width = min(MediaQuery.of(context).size.width / 3,
+                            pilots.length * 48 / pow(pilots.length, 0.3))
+                        .toDouble();
                     return SizedBox(
                       width: width,
                       height: 48,
@@ -156,7 +180,9 @@ class _WaypointCardState extends State<WaypointCard> {
                             .map((e) => AvatarRound(e.avatar, 24))
                             .mapIndexed(
                               (index, element) => Positioned(
-                                left: (width - 48) / max(1, pilots.length - 1) * index,
+                                left: (width - 48) /
+                                    max(1, pilots.length - 1) *
+                                    index,
                                 child: element,
                               ),
                             )

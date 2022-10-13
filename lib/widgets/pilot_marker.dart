@@ -16,19 +16,22 @@ class PilotMarker extends StatelessWidget {
   final double? hdg;
   final double? relAlt;
 
-  const PilotMarker(this.pilot, this.radius, {Key? key, this.hdg, this.relAlt}) : super(key: key);
+  const PilotMarker(this.pilot, this.radius, {Key? key, this.hdg, this.relAlt})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     var settings = Provider.of<Settings>(context, listen: false);
-    final offsetInfo = (max(0, sin(hdg ?? 0)) * radius / 2 + radius * 2).toDouble();
+    final offsetInfo =
+        (max(0, sin(hdg ?? 0)) * radius / 2 + radius * 2).toDouble();
     return Stack(fit: StackFit.loose, children: [
       // Relative Altitude Indicator
 
       if (hdg != null)
         Container(
           transformAlignment: const Alignment(0, 0),
-          transform: Matrix4.rotationZ(hdg!) * Matrix4.translationValues(0, -12, 0),
+          transform:
+              Matrix4.rotationZ(hdg!) * Matrix4.translationValues(0, -12, 0),
           child: SizedBox(
             child: SvgPicture.asset(
               "assets/images/pilot_direction_arrow.svg",
@@ -51,7 +54,9 @@ class PilotMarker extends StatelessWidget {
               TextSpan(children: [
                 WidgetSpan(
                   child: Icon(
-                    relAlt! > 0 ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    relAlt! > 0
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
                     color: Colors.black,
                     size: 21,
                   ),
@@ -59,7 +64,8 @@ class PilotMarker extends StatelessWidget {
                 richValue(UnitType.distFine, relAlt!.abs(),
                     digits: 5,
                     valueStyle: const TextStyle(color: Colors.black),
-                    unitStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12))
+                    unitStyle:
+                        TextStyle(color: Colors.grey.shade700, fontSize: 12))
               ]),
               overflow: TextOverflow.visible,
               softWrap: false,

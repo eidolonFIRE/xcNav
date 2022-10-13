@@ -70,7 +70,8 @@ class _ProfileEditorState extends State<ProfileEditor> {
     }
 
     // This is a hack to work around the lack of callbacks in the cropper
-    updateLoop = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
+    updateLoop =
+        Timer.periodic(const Duration(milliseconds: 500), (timer) async {
       refreshCropped();
     });
   }
@@ -140,7 +141,8 @@ class _ProfileEditorState extends State<ProfileEditor> {
       croppedImage!.readAsBytes().then((value) {
         // (workaround to clear animations)
         Timer(const Duration(seconds: 1), () {
-          Provider.of<Profile>(context, listen: false).updateNameAvatar(nameController.text, value);
+          Provider.of<Profile>(context, listen: false)
+              .updateNameAvatar(nameController.text, value);
           if (isOptional) {
             Navigator.pop(context);
           } else {
@@ -205,10 +207,14 @@ class _ProfileEditorState extends State<ProfileEditor> {
                       autofocus: true,
                       maxLength: 20,
                       style: const TextStyle(fontSize: 20),
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ ]"))],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp("[a-zA-Z0-9_ ]"))
+                      ],
                       validator: (value) {
                         if (value != null) {
-                          if (value.trim().length < 2) return "Must be at least 2 characters.";
+                          if (value.trim().length < 2)
+                            return "Must be at least 2 characters.";
                         }
                         return null;
                       },
@@ -224,9 +230,11 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
               // --- Image Cropper Window
               Container(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 3),
+                constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height / 3),
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 20, bottom: 10, right: 20),
+                  padding:
+                      const EdgeInsets.only(left: 20, bottom: 10, right: 20),
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: Card(
@@ -238,17 +246,26 @@ class _ProfileEditorState extends State<ProfileEditor> {
                                   padding: EdgeInsets.only(bottom: 70),
                                   child: Text(
                                     "Set Avatar*",
-                                    style: TextStyle(fontStyle: FontStyle.italic),
+                                    style:
+                                        TextStyle(fontStyle: FontStyle.italic),
                                   ),
                                 ),
                               ),
                         // --- buttons
                         Row(
-                          mainAxisAlignment: inputImage != null ? MainAxisAlignment.start : MainAxisAlignment.center,
-                          crossAxisAlignment: inputImage != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                          mainAxisAlignment: inputImage != null
+                              ? MainAxisAlignment.start
+                              : MainAxisAlignment.center,
+                          crossAxisAlignment: inputImage != null
+                              ? CrossAxisAlignment.start
+                              : CrossAxisAlignment.center,
                           children: [
-                            IconButton(onPressed: pickGallery, icon: const Icon(Icons.collections)),
-                            IconButton(onPressed: pickCamera, icon: const Icon(Icons.photo_camera))
+                            IconButton(
+                                onPressed: pickGallery,
+                                icon: const Icon(Icons.collections)),
+                            IconButton(
+                                onPressed: pickCamera,
+                                icon: const Icon(Icons.photo_camera))
                           ]
                               .map((e) => Padding(
                                     padding: const EdgeInsets.all(4),

@@ -39,7 +39,8 @@ class MockFlutterTts extends Mock implements FlutterTts {
 class MockGroup extends Group {
   MockGroup() {
     pilots = {
-      "testPilot": Pilot("testPilot", "John", null, Geo.fromValues(-37, 122, 100, 0, 0, 4, 0), null),
+      "testPilot": Pilot("testPilot", "John", null,
+          Geo.fromValues(-37, 122, 100, 0, 0, 4, 0), null),
     };
   }
 }
@@ -75,7 +76,8 @@ void main() {
     ttsService.speak(AudioMessage("4", priority: 5));
     ttsService.speak(AudioMessage("5", priority: 6));
     ttsService.speak(AudioMessage("6", priority: 2));
-    expect(ttsService.msgQueue.map((element) => element.text).toList(), ["3", "6", "1", "2", "4", "5"]);
+    expect(ttsService.msgQueue.map((element) => element.text).toList(),
+        ["3", "6", "1", "2", "4", "5"]);
   });
 
   test("chatMessage", () {
@@ -83,22 +85,34 @@ void main() {
     cueService.cueChatMessage(Message(0, "testPilot", "message", false));
     cueService.cueChatMessage(Message(0, "testPilot", "message2", false));
 
-    expect(ttsService.msgQueue.map((element) => element.text).toList(), ["John says message.", "John says message2."]);
+    expect(ttsService.msgQueue.map((element) => element.text).toList(),
+        ["John says message.", "John says message2."]);
   });
 
   test("myTelemetry", () {
     cueService.cueMyTelemetry(Geo.fromValues(-37, 122.5, 100, 0, 0, 0, 0));
-    cueService.cueMyTelemetry(Geo.fromValues(-37, 122.5, 100, const Duration(seconds: 1).inMilliseconds, 0, 0, 0));
-    cueService.cueMyTelemetry(Geo.fromValues(-37, 122.5, 200, const Duration(seconds: 2).inMilliseconds, 0, 0, 0));
-    cueService.cueMyTelemetry(Geo.fromValues(-37, 122.5, 300, const Duration(seconds: 3).inMilliseconds, 0, 0, 0));
-    cueService.cueMyTelemetry(Geo.fromValues(-37, 122.5, 400, const Duration(seconds: 40).inMilliseconds, 0, 10, 0));
+    cueService.cueMyTelemetry(Geo.fromValues(
+        -37, 122.5, 100, const Duration(seconds: 1).inMilliseconds, 0, 0, 0));
+    cueService.cueMyTelemetry(Geo.fromValues(
+        -37, 122.5, 200, const Duration(seconds: 2).inMilliseconds, 0, 0, 0));
+    cueService.cueMyTelemetry(Geo.fromValues(
+        -37, 122.5, 300, const Duration(seconds: 3).inMilliseconds, 0, 0, 0));
+    cueService.cueMyTelemetry(Geo.fromValues(
+        -37, 122.5, 400, const Duration(seconds: 40).inMilliseconds, 0, 10, 0));
 
     expect(ttsService.msgQueue.map((element) => element.text).toList(),
         ["Altitude: 350", "Speed: 0", "Altitude: 1300", "Speed: 22"]);
 
-    cueService.cueMyTelemetry(Geo.fromValues(-37, 122.5, 500, const Duration(minutes: 10).inMilliseconds, 0, 20, 0));
+    cueService.cueMyTelemetry(Geo.fromValues(
+        -37, 122.5, 500, const Duration(minutes: 10).inMilliseconds, 0, 20, 0));
 
-    expect(ttsService.msgQueue.map((element) => element.text).toList(),
-        ["Altitude: 350", "Speed: 0", "Altitude: 1300", "Speed: 22", "Altitude: 1650", "Speed: 45"]);
+    expect(ttsService.msgQueue.map((element) => element.text).toList(), [
+      "Altitude: 350",
+      "Speed: 0",
+      "Altitude: 1300",
+      "Speed: 22",
+      "Altitude: 1650",
+      "Speed: 45"
+    ]);
   });
 }

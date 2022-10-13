@@ -38,7 +38,8 @@ class Settings with ChangeNotifier {
     switch (name) {
       case "sectional":
         return TileLayerOptions(
-            urlTemplate: 'http://wms.chartbundle.com/tms/v1.0/sec/{z}/{x}/{y}.png?type=google',
+            urlTemplate:
+                'http://wms.chartbundle.com/tms/v1.0/sec/{z}/{x}/{y}.png?type=google',
             tileProvider: makeTileProvider(name),
             maxNativeZoom: 13,
             minZoom: 4,
@@ -52,7 +53,8 @@ class Settings with ChangeNotifier {
             opacity: (opacity ?? _mapOpacity["satellite"] ?? 1.0) * 0.8 + 0.2);
       default:
         return TileLayerOptions(
-          urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+          urlTemplate:
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
           tileProvider: makeTileProvider(name),
           opacity: opacity ?? 1.0,
         );
@@ -91,10 +93,14 @@ class Settings with ChangeNotifier {
   // --- ADSB
   final Map<String, ProximityConfig> proximityProfileOptions = {
     "Off": ProximityConfig(vertical: 0, horizontalDist: 0, horizontalTime: 0),
-    "Small": ProximityConfig(vertical: 200, horizontalDist: 600, horizontalTime: 30),
-    "Medium": ProximityConfig(vertical: 400, horizontalDist: 1200, horizontalTime: 45),
-    "Large": ProximityConfig(vertical: 800, horizontalDist: 2000, horizontalTime: 60),
-    "X-Large": ProximityConfig(vertical: 1200, horizontalDist: 3000, horizontalTime: 90),
+    "Small":
+        ProximityConfig(vertical: 200, horizontalDist: 600, horizontalTime: 30),
+    "Medium": ProximityConfig(
+        vertical: 400, horizontalDist: 1200, horizontalTime: 45),
+    "Large": ProximityConfig(
+        vertical: 800, horizontalDist: 2000, horizontalTime: 60),
+    "X-Large": ProximityConfig(
+        vertical: 1200, horizontalDist: 3000, horizontalTime: 90),
   };
   late ProximityConfig proximityProfile;
   late String proximityProfileName;
@@ -118,7 +124,8 @@ class Settings with ChangeNotifier {
     for (final mapName in mapTileThumbnails.keys) {
       final StoreDirectory store = FMTC.instance(mapName);
       await store.manage.createAsync();
-      await store.metadata.addAsync(key: 'sourceURL', value: getMapTileLayer(mapName).urlTemplate!);
+      await store.metadata.addAsync(
+          key: 'sourceURL', value: getMapTileLayer(mapName).urlTemplate!);
       await store.metadata.addAsync(
         key: 'validDuration',
         value: '14',
@@ -164,7 +171,8 @@ class Settings with ChangeNotifier {
           countRemain++;
         }
       }
-      debugPrint("Scanned $mapName and deleted $countDelete / ${countRemain + countDelete} tiles.");
+      debugPrint(
+          "Scanned $mapName and deleted $countDelete / ${countRemain + countDelete} tiles.");
       store.stats.invalidateCachedStatistics();
     }
   }
@@ -179,27 +187,38 @@ class Settings with ChangeNotifier {
 
   _loadSettings() {
     SharedPreferences.getInstance().then((prefs) {
-      _displayUnitsSpeed = DisplayUnitsSpeed.values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
-      _displayUnitsVario = DisplayUnitsVario.values[prefs.getInt("settings.displayUnitsVario") ?? 0];
-      _displayUnitsDist = DisplayUnitsDist.values[prefs.getInt("settings.displayUnitsDist") ?? 0];
-      _displayUnitsFuel = DisplayUnitsFuel.values[prefs.getInt("settings.displayUnitsFuel") ?? 0];
+      _displayUnitsSpeed = DisplayUnitsSpeed
+          .values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
+      _displayUnitsVario = DisplayUnitsVario
+          .values[prefs.getInt("settings.displayUnitsVario") ?? 0];
+      _displayUnitsDist = DisplayUnitsDist
+          .values[prefs.getInt("settings.displayUnitsDist") ?? 0];
+      _displayUnitsFuel = DisplayUnitsFuel
+          .values[prefs.getInt("settings.displayUnitsFuel") ?? 0];
 
       configUnits(
-          speed: displayUnitsSpeed, vario: _displayUnitsVario, dist: _displayUnitsDist, fuel: _displayUnitsFuel);
+          speed: displayUnitsSpeed,
+          vario: _displayUnitsVario,
+          dist: _displayUnitsDist,
+          fuel: _displayUnitsFuel);
 
-      _mapControlsRightSide = prefs.getBool("settings.mapControlsRightSide") ?? false;
+      _mapControlsRightSide =
+          prefs.getBool("settings.mapControlsRightSide") ?? false;
       _showPilotNames = prefs.getBool("settings.showPilotNames") ?? false;
 
       _groundMode = prefs.getBool("settings.groundMode") ?? false;
-      _groundModeTelemetry = prefs.getBool("settings.groundModeTelemetry") ?? false;
+      _groundModeTelemetry =
+          prefs.getBool("settings.groundModeTelemetry") ?? false;
 
-      _curMapTiles = prefs.getString("settings.curMapTiles") ?? mapTileThumbnails.keys.first;
+      _curMapTiles = prefs.getString("settings.curMapTiles") ??
+          mapTileThumbnails.keys.first;
       for (String name in _mapOpacity.keys) {
         _mapOpacity[name] = prefs.getDouble("settings.mapOpacity_$name") ?? 1.0;
       }
 
       // --- ADSB
-      selectProximityConfig(prefs.getString("settings.adsbProximityProfile") ?? "Medium");
+      selectProximityConfig(
+          prefs.getString("settings.adsbProximityProfile") ?? "Medium");
 
       // --- Patreon
       _patreonName = prefs.getString("settings.patreonName") ?? "";
@@ -303,7 +322,8 @@ class Settings with ChangeNotifier {
 
   // --- ADSB
   void selectProximityConfig(String name) {
-    proximityProfile = proximityProfileOptions[name] ?? proximityProfileOptions["Medium"]!;
+    proximityProfile =
+        proximityProfileOptions[name] ?? proximityProfileOptions["Medium"]!;
     proximityProfileName = name;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setString("settings.adsbProximityProfile", name);

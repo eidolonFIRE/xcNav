@@ -26,7 +26,8 @@ class ChatMessages with ChangeNotifier {
   }
 
   void processMessageFromServer(String pilotName, dynamic msg) {
-    Message newMsg = Message(DateTime.now().millisecondsSinceEpoch, msg["pilot_id"], msg["text"], msg["emergency"]);
+    Message newMsg = Message(DateTime.now().millisecondsSinceEpoch,
+        msg["pilot_id"], msg["text"], msg["emergency"]);
     messages.add(newMsg);
     numUnread++;
 
@@ -35,7 +36,8 @@ class ChatMessages with ChangeNotifier {
     notifyListeners();
   }
 
-  void processSentMessage(int timestamp, String pilotID, String text, bool isEmergency) {
+  void processSentMessage(
+      int timestamp, String pilotID, String text, bool isEmergency) {
     messages.add(Message(timestamp, pilotID, text, isEmergency));
     notifyListeners();
   }

@@ -74,7 +74,8 @@ enum FocusMode {
 
 TextStyle instrLower = const TextStyle(fontSize: 35);
 TextStyle instrUpper = const TextStyle(fontSize: 40);
-TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic);
+TextStyle instrLabel = TextStyle(
+    fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic);
 
 StreamController<LatLng> zoomMainMapToLatLng = StreamController<LatLng>();
 
@@ -100,7 +101,8 @@ class _MyHomePageState extends State<MyHomePage> {
   late PolyEditor polyEditor;
 
   List<Polyline> polyLines = [];
-  var editablePolyline = Polyline(color: Colors.amber, points: [], strokeWidth: 5);
+  var editablePolyline =
+      Polyline(color: Colors.amber, points: [], strokeWidth: 5);
 
   late final AudioCueService audioCueService;
 
@@ -145,7 +147,8 @@ class _MyHomePageState extends State<MyHomePage> {
         size: 20,
         color: Colors.black,
       ),
-      intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
+      intermediateIcon:
+          const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
       callbackRefresh: () => {setState(() {})},
     );
 
@@ -192,7 +195,10 @@ class _MyHomePageState extends State<MyHomePage> {
             final target = activePlan.selectedWp == null
                 ? null
                 : activePlan.selectedWp!.latlng.length > 1
-                    ? myTelemetry.geo.nearestPointOnPath(activePlan.selectedWp!.latlng, activePlan.isReversed).latlng
+                    ? myTelemetry.geo
+                        .nearestPointOnPath(activePlan.selectedWp!.latlng,
+                            activePlan.isReversed)
+                        .latlng
                     : activePlan.selectedWp!.latlng[0];
             handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target));
           });
@@ -218,7 +224,8 @@ class _MyHomePageState extends State<MyHomePage> {
     showFeatures();
 
     myTelemetry.addListener(() {
-      Provider.of<Wind>(context, listen: false).handleVector(Vector(myTelemetry.geo.hdg, myTelemetry.geo.spd));
+      Provider.of<Wind>(context, listen: false)
+          .handleVector(Vector(myTelemetry.geo.hdg, myTelemetry.geo.spd));
     });
 
     // --- Setup Audio Cue Service
@@ -233,13 +240,15 @@ class _MyHomePageState extends State<MyHomePage> {
         audioCueService.cueMyTelemetry(myTelemetry.geo);
         audioCueService.cueNextWaypoint(myTelemetry.geo);
         audioCueService.cueGroupAwareness(myTelemetry.geo);
-        audioCueService.cueFuel(myTelemetry.geo, myTelemetry.fuel, myTelemetry.fuelTimeRemaining);
+        audioCueService.cueFuel(
+            myTelemetry.geo, myTelemetry.fuel, myTelemetry.fuelTimeRemaining);
       }
     });
     final chatMessages = Provider.of<ChatMessages>(context, listen: false);
     chatMessages.addListener(() {
       if (chatMessages.messages.isNotEmpty &&
-          chatMessages.messages.last.pilotId != Provider.of<Profile>(context, listen: false).id) {
+          chatMessages.messages.last.pilotId !=
+              Provider.of<Profile>(context, listen: false).id) {
         audioCueService.cueChatMessage(chatMessages.messages.last);
       }
     });
@@ -262,7 +271,8 @@ class _MyHomePageState extends State<MyHomePage> {
     debugPrint("Toggle Location Service Stream");
     if (_serviceStatusStreamSubscription == null) {
       final serviceStatusStream = _geolocatorPlatform.getServiceStatusStream();
-      _serviceStatusStreamSubscription = serviceStatusStream.handleError((error) {
+      _serviceStatusStreamSubscription =
+          serviceStatusStream.handleError((error) {
         _serviceStatusStreamSubscription?.cancel();
         _serviceStatusStreamSubscription = null;
       }).listen((serviceStatus) {
@@ -270,7 +280,8 @@ class _MyHomePageState extends State<MyHomePage> {
           if (positionStreamStarted) {
             _toggleListening();
           }
-          if (defaultTargetPlatform == TargetPlatform.iOS && !positionStreamStarted) {
+          if (defaultTargetPlatform == TargetPlatform.iOS &&
+              !positionStreamStarted) {
             positionStreamStarted = true;
             _toggleListening();
           }
@@ -288,7 +299,8 @@ class _MyHomePageState extends State<MyHomePage> {
       });
 
       // Initial start of the position stream
-      if (!positionStreamStarted && defaultTargetPlatform == TargetPlatform.android) {
+      if (!positionStreamStarted &&
+          defaultTargetPlatform == TargetPlatform.android) {
         positionStreamStarted = true;
         _toggleListening();
       }
@@ -312,7 +324,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 notificationText: "Still sending your position to the group.",
                 notificationTitle: "xcNav",
                 enableWakeLock: true));
-      } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+      } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.best,
           // activityType: ActivityType.fitness,
@@ -328,7 +341,8 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       }
 
-      positionStream = _geolocatorPlatform.getPositionStream(locationSettings: locationSettings);
+      positionStream = _geolocatorPlatform.getPositionStream(
+          locationSettings: locationSettings);
     }
 
     setState(() {
@@ -357,7 +371,8 @@ class _MyHomePageState extends State<MyHomePage> {
       myTelemetry.updateGeo(position, bypassRecording: settings.groundMode);
 
       if (!settings.groundMode || settings.groundModeTelemetry) {
-        if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty || client.telemetrySkips > 20) {
+        if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty ||
+            client.telemetrySkips > 20) {
           client.sendTelemetry(myTelemetry.geo, myTelemetry.fuel);
           client.telemetrySkips = 0;
         } else {
@@ -387,22 +402,34 @@ class _MyHomePageState extends State<MyHomePage> {
     CenterZoom? centerZoom;
 
     // --- Orient to gps heading
-    if (!northLock && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
+    if (!northLock &&
+        (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
       mapController.rotate(-geo.hdg / pi * 180);
     }
     // --- Move to center
     if (focusMode == FocusMode.me) {
-      centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
+      centerZoom = CenterZoom(
+          center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
     } else if (focusMode == FocusMode.group) {
-      List<LatLng> points = Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latLng).toList();
+      List<LatLng> points = Provider.of<Group>(context, listen: false)
+          .activePilots
+          .map((e) => e.geo!.latLng)
+          .toList();
       points.add(LatLng(geo.lat, geo.lng));
       if (lastMapChange == null ||
-          (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
-        centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
-            options: const FitBoundsOptions(padding: EdgeInsets.all(100), maxZoom: 13, inside: false));
+          (lastMapChange != null &&
+              lastMapChange!
+                  .add(const Duration(seconds: 15))
+                  .isBefore(DateTime.now()))) {
+        centerZoom = mapController.centerZoomFitBounds(
+            LatLngBounds.fromPoints(points),
+            options: const FitBoundsOptions(
+                padding: EdgeInsets.all(100), maxZoom: 13, inside: false));
       } else {
         // Preserve zoom if it has been recently overriden
-        centerZoom = CenterZoom(center: LatLngBounds.fromPoints(points).center, zoom: mapController.zoom);
+        centerZoom = CenterZoom(
+            center: LatLngBounds.fromPoints(points).center,
+            zoom: mapController.zoom);
       }
     }
     if (centerZoom != null) {
@@ -414,15 +441,22 @@ class _MyHomePageState extends State<MyHomePage> {
   bool markerIsInView(LatLng point) {
     if (mapReady && mapController.bounds != null && mapAspectRatio != null) {
       // transform point into north-up reference frame
-      final vectorHdg = latlngCalc.bearing(mapController.center, point) + mapController.rotation;
+      final vectorHdg = latlngCalc.bearing(mapController.center, point) +
+          mapController.rotation;
       final vectorHypo = latlngCalc.distance(mapController.center, point);
-      final transformedPoint = latlngCalc.offset(mapController.center, vectorHypo, ((vectorHdg + 180) % 360) - 180);
+      final transformedPoint = latlngCalc.offset(
+          mapController.center, vectorHypo, ((vectorHdg + 180) % 360) - 180);
       final center = mapController.center;
-      final theta = (((mapController.rotation.abs() % 180) - 90).abs() - 90).abs() * pi / 180;
+      final theta =
+          (((mapController.rotation.abs() % 180) - 90).abs() - 90).abs() *
+              pi /
+              180;
 
       // super bounding box
-      final bw = (mapController.bounds!.west - mapController.bounds!.east).abs();
-      final bh = (mapController.bounds!.north - mapController.bounds!.south).abs();
+      final bw =
+          (mapController.bounds!.west - mapController.bounds!.east).abs();
+      final bh =
+          (mapController.bounds!.north - mapController.bounds!.south).abs();
 
       // solve for inscribed rectangle
       final a = mapAspectRatio!;
@@ -430,7 +464,8 @@ class _MyHomePageState extends State<MyHomePage> {
       final h = bh / (a * sin(theta) + cos(theta));
 
       // make bounding box and sample
-      final fakeBounds = LatLngBounds(LatLng(center.latitude - h / 2, center.longitude - w / 2),
+      final fakeBounds = LatLngBounds(
+          LatLng(center.latitude - h / 2, center.longitude - w / 2),
           LatLng(center.latitude + h / 2, center.longitude + w / 2));
       return fakeBounds.contains(transformedPoint);
     } else {
@@ -443,14 +478,17 @@ class _MyHomePageState extends State<MyHomePage> {
     if (focusMode == FocusMode.addWaypoint) {
       // --- Finish adding waypoint pin
       setFocusMode(prevFocusMode);
-      editWaypoint(context, Waypoint("", [latlng], false, null, null), isNew: true)?.then((newWaypoint) {
+      editWaypoint(context, Waypoint("", [latlng], false, null, null),
+              isNew: true)
+          ?.then((newWaypoint) {
         if (newWaypoint != null) {
           var plan = Provider.of<ActivePlan>(context, listen: false);
-          plan.insertWaypoint(
-              plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false, newWaypoint.icon, newWaypoint.color);
+          plan.insertWaypoint(plan.waypoints.length, newWaypoint.name,
+              newWaypoint.latlng, false, newWaypoint.icon, newWaypoint.color);
         }
       });
-    } else if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
+    } else if (focusMode == FocusMode.addPath ||
+        focusMode == FocusMode.editPath) {
       // --- Add waypoint in path
       polyEditor.add(editablePolyline.points, latlng);
     }
@@ -480,7 +518,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 debugPrint("Editing Index $index");
                 editingIndex = index;
                 editablePolyline.points.clear();
-                editablePolyline.points.addAll(Provider.of<ActivePlan>(context, listen: false).waypoints[index].latlng);
+                editablePolyline.points.addAll(
+                    Provider.of<ActivePlan>(context, listen: false)
+                        .waypoints[index]
+                        .latlng);
                 Navigator.popUntil(context, ModalRoute.withName("/home"));
                 setFocusMode(FocusMode.editPath);
               }),
@@ -529,21 +570,35 @@ class _MyHomePageState extends State<MyHomePage> {
           child: SizedBox(
             height: 64,
             child: Consumer2<MyTelemetry, Settings>(
-              builder: (context, myTelementy, settings, child) =>
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                // --- Speedometer
-                Text.rich(richValue(UnitType.speed, myTelementy.geo.spd,
-                    digits: 3, valueStyle: instrUpper, unitStyle: instrLabel)),
+              builder: (context, myTelementy, settings, child) => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // --- Speedometer
+                    Text.rich(richValue(UnitType.speed, myTelementy.geo.spd,
+                        digits: 3,
+                        valueStyle: instrUpper,
+                        unitStyle: instrLabel)),
 
-                const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
-                // --- Altimeter
-                Text.rich(richValue(UnitType.distFine, myTelementy.geo.alt,
-                    digits: 5, valueStyle: instrUpper, unitStyle: instrLabel)),
-                const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
-                // --- Vario
-                Text.rich(richValue(UnitType.vario, myTelementy.geo.vario,
-                    digits: 3, valueStyle: instrUpper.merge(const TextStyle(fontSize: 30)), unitStyle: instrLabel)),
-              ]),
+                    const SizedBox(
+                        height: 100,
+                        child:
+                            VerticalDivider(thickness: 2, color: Colors.black)),
+                    // --- Altimeter
+                    Text.rich(richValue(UnitType.distFine, myTelementy.geo.alt,
+                        digits: 5,
+                        valueStyle: instrUpper,
+                        unitStyle: instrLabel)),
+                    const SizedBox(
+                        height: 100,
+                        child:
+                            VerticalDivider(thickness: 2, color: Colors.black)),
+                    // --- Vario
+                    Text.rich(richValue(UnitType.vario, myTelementy.geo.vario,
+                        digits: 3,
+                        valueStyle:
+                            instrUpper.merge(const TextStyle(fontSize: 30)),
+                        unitStyle: instrLabel)),
+                  ]),
             ),
           ),
         ),
@@ -568,9 +623,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     const Text("Share Position"),
                     Switch(
-                        value: Provider.of<Settings>(context).groundModeTelemetry,
+                        value:
+                            Provider.of<Settings>(context).groundModeTelemetry,
                         onChanged: (value) =>
-                            Provider.of<Settings>(context, listen: false).groundModeTelemetry = value),
+                            Provider.of<Settings>(context, listen: false)
+                                .groundModeTelemetry = value),
                   ],
                 ),
               ))
@@ -602,7 +659,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   : DescribedFeatureOverlay(
                       featureId: "instruments",
                       title: const Text("Instruments"),
-                      description: const Text("Swipe down to show more instruments."),
+                      description:
+                          const Text("Swipe down to show more instruments."),
                       tapTarget: const Icon(
                         Icons.swipe_down,
                         color: Colors.black,
@@ -617,8 +675,10 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(
                 height: 110,
                 child: DrawerHeader(
-                    decoration:
-                        BoxDecoration(border: Border(bottom: BorderSide(width: 1, color: Colors.grey.shade700))),
+                    decoration: BoxDecoration(
+                        border: Border(
+                            bottom: BorderSide(
+                                width: 1, color: Colors.grey.shade700))),
                     padding: EdgeInsets.zero,
                     child: Stack(children: [
                       Positioned(
@@ -627,7 +687,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: AvatarRound(
                           Provider.of<Profile>(context).avatar,
                           40,
-                          tier: Provider.of<Profile>(context, listen: false).tier,
+                          tier:
+                              Provider.of<Profile>(context, listen: false).tier,
                         ),
                       ),
                       Positioned(
@@ -662,9 +723,14 @@ class _MyHomePageState extends State<MyHomePage> {
                               Navigator.pushNamed(context, "/profileEditor");
                             },
                           )),
-                      if (isTierRecognized(Provider.of<Profile>(context, listen: false).tier))
+                      if (isTierRecognized(
+                          Provider.of<Profile>(context, listen: false).tier))
                         Positioned(
-                            top: 10, right: 10, child: tierBadge(Provider.of<Profile>(context, listen: false).tier)),
+                            top: 10,
+                            right: 10,
+                            child: tierBadge(
+                                Provider.of<Profile>(context, listen: false)
+                                    .tier)),
                     ])),
               ),
 
@@ -677,22 +743,29 @@ class _MyHomePageState extends State<MyHomePage> {
                     Consumer<Settings>(
                         builder: (context, settings, _) => SizedBox(
                               child: ToggleButtons(
-                                  isSelected:
-                                      Settings.mapTileThumbnails.keys.map((e) => e == settings.curMapTiles).toList(),
-                                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                                  isSelected: Settings.mapTileThumbnails.keys
+                                      .map((e) => e == settings.curMapTiles)
+                                      .toList(),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10)),
                                   borderWidth: 4,
                                   borderColor: Colors.grey.shade900,
                                   selectedBorderColor: Colors.lightBlue,
                                   onPressed: (index) {
-                                    settings.curMapTiles = Settings.mapTileThumbnails.keys.toList()[index];
+                                    settings.curMapTiles = Settings
+                                        .mapTileThumbnails.keys
+                                        .toList()[index];
                                   },
                                   children: Settings.mapTileThumbnails.keys
                                       .map((e) => Opacity(
-                                            opacity: e == settings.curMapTiles ? 1.0 : 0.7,
+                                            opacity: e == settings.curMapTiles
+                                                ? 1.0
+                                                : 0.7,
                                             child: SizedBox(
                                               width: 80,
                                               height: 50,
-                                              child: Settings.mapTileThumbnails[e],
+                                              child:
+                                                  Settings.mapTileThumbnails[e],
                                             ),
                                           ))
                                       .toList()),
@@ -704,12 +777,14 @@ class _MyHomePageState extends State<MyHomePage> {
               // --- Map opacity slider
               if (Provider.of<Settings>(context).curMapTiles != "topo")
                 Builder(builder: (context) {
-                  final settings = Provider.of<Settings>(context, listen: false);
+                  final settings =
+                      Provider.of<Settings>(context, listen: false);
                   return Slider(
                       label: "Opacity",
                       activeColor: Colors.lightBlue,
                       value: settings.mapOpacity(settings.curMapTiles),
-                      onChanged: (value) => settings.setMapOpacity(settings.curMapTiles, value));
+                      onChanged: (value) =>
+                          settings.setMapOpacity(settings.curMapTiles, value));
                 }),
 
               // --- Toggle airspace overlay
@@ -732,14 +807,18 @@ class _MyHomePageState extends State<MyHomePage> {
               ListTile(
                   minVerticalPadding: 20,
                   leading: const Icon(Icons.radar, size: 30),
-                  title: Text("ADSB-in", style: Theme.of(context).textTheme.headline5),
+                  title: Text("ADSB-in",
+                      style: Theme.of(context).textTheme.headline5),
                   trailing: Switch(
                     activeColor: Colors.lightBlueAccent,
                     value: Provider.of<ADSB>(context).enabled,
-                    onChanged: (value) => {Provider.of<ADSB>(context, listen: false).enabled = value},
+                    onChanged: (value) => {
+                      Provider.of<ADSB>(context, listen: false).enabled = value
+                    },
                   ),
                   subtitle: Provider.of<ADSB>(context).enabled
-                      ? (Provider.of<ADSB>(context).lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 60)
+                      ? (Provider.of<ADSB>(context).lastHeartbeat >
+                              DateTime.now().millisecondsSinceEpoch - 1000 * 60)
                           ? const Text.rich(TextSpan(children: [
                               WidgetSpan(
                                   alignment: PlaceholderAlignment.middle,
@@ -762,8 +841,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 15),
                                     child: GestureDetector(
-                                        onTap: () => {Navigator.popAndPushNamed(context, "/adsbHelp")},
-                                        child: const Icon(Icons.help, size: 20, color: Colors.lightBlueAccent)),
+                                        onTap: () => {
+                                              Navigator.popAndPushNamed(
+                                                  context, "/adsbHelp")
+                                            },
+                                        child: const Icon(Icons.help,
+                                            size: 20,
+                                            color: Colors.lightBlueAccent)),
                                   )),
                             ]))
                       : null),
@@ -771,42 +855,54 @@ class _MyHomePageState extends State<MyHomePage> {
               // --- Audio Cues
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 6, 22, 6),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: SvgPicture.asset(
-                      "assets/external/text_to_speech.svg",
-                      color: Colors.white,
-                      width: 30,
-                    ),
-                  ),
-                  ToggleButtons(
-                    borderWidth: 2,
-                    selectedBorderColor: Colors.lightBlueAccent,
-                    selectedColor: Colors.lightBlueAccent,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 30),
-                    borderRadius: const BorderRadius.all(Radius.circular(10)),
-                    isSelected: AudioCueService.modeOptions.values.map((e) => e == audioCueService.mode).toList(),
-                    onPressed: (index) {
-                      setState(() {
-                        audioCueService.mode = AudioCueService.modeOptions.values.toList()[index];
-                      });
-                    },
-                    children: AudioCueService.modeOptions.keys.map((e) => Text(e)).toList(),
-                  ),
-                  IconButton(
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () {
-                        showAudioCueConfigDialog(context, audioCueService.config).then((value) {
-                          if (value != null) {
-                            audioCueService.config = value;
-                          }
-                        });
-                      },
-                      icon: const Icon(Icons.settings)),
-                ]),
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: SvgPicture.asset(
+                          "assets/external/text_to_speech.svg",
+                          color: Colors.white,
+                          width: 30,
+                        ),
+                      ),
+                      ToggleButtons(
+                        borderWidth: 2,
+                        selectedBorderColor: Colors.lightBlueAccent,
+                        selectedColor: Colors.lightBlueAccent,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        constraints:
+                            const BoxConstraints(minWidth: 40, minHeight: 30),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(10)),
+                        isSelected: AudioCueService.modeOptions.values
+                            .map((e) => e == audioCueService.mode)
+                            .toList(),
+                        onPressed: (index) {
+                          setState(() {
+                            audioCueService.mode = AudioCueService
+                                .modeOptions.values
+                                .toList()[index];
+                          });
+                        },
+                        children: AudioCueService.modeOptions.keys
+                            .map((e) => Text(e))
+                            .toList(),
+                      ),
+                      IconButton(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () {
+                            showAudioCueConfigDialog(
+                                    context, audioCueService.config)
+                                .then((value) {
+                              if (value != null) {
+                                audioCueService.config = value;
+                              }
+                            });
+                          },
+                          icon: const Icon(Icons.settings)),
+                    ]),
               ),
 
               Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
@@ -814,7 +910,8 @@ class _MyHomePageState extends State<MyHomePage> {
               /// Group
               ListTile(
                 minVerticalPadding: 20,
-                onTap: () => {Navigator.popAndPushNamed(context, "/groupDetails")},
+                onTap: () =>
+                    {Navigator.popAndPushNamed(context, "/groupDetails")},
                 leading: const Icon(
                   Icons.groups,
                   size: 30,
@@ -834,7 +931,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   child: IconButton(
                       iconSize: 30,
-                      onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
+                      onPressed: () =>
+                          {Navigator.popAndPushNamed(context, "/qrScanner")},
                       icon: const Icon(
                         Icons.qr_code_scanner,
                         color: Colors.lightBlue,
@@ -861,35 +959,41 @@ class _MyHomePageState extends State<MyHomePage> {
                   Icons.cloudy_snowing,
                   size: 30,
                 ),
-                title: Text("Weather", style: Theme.of(context).textTheme.headline5),
+                title: Text("Weather",
+                    style: Theme.of(context).textTheme.headline5),
                 onTap: () => {Navigator.popAndPushNamed(context, "/weather")},
               ),
 
               ListTile(
                   minVerticalPadding: 20,
-                  onTap: () => {Navigator.popAndPushNamed(context, "/flightLogs")},
+                  onTap: () =>
+                      {Navigator.popAndPushNamed(context, "/flightLogs")},
                   leading: const Icon(
                     Icons.menu_book,
                     size: 30,
                   ),
-                  title: Text("Log", style: Theme.of(context).textTheme.headline5)),
+                  title: Text("Log",
+                      style: Theme.of(context).textTheme.headline5)),
 
               Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 
               ListTile(
                   minVerticalPadding: 20,
-                  onTap: () => {Navigator.popAndPushNamed(context, "/settings")},
+                  onTap: () =>
+                      {Navigator.popAndPushNamed(context, "/settings")},
                   leading: const Icon(
                     Icons.settings,
                     size: 30,
                   ),
-                  title: Text("Settings", style: Theme.of(context).textTheme.headline5)),
+                  title: Text("Settings",
+                      style: Theme.of(context).textTheme.headline5)),
 
               ListTile(
                 minVerticalPadding: 20,
                 onTap: () => {Navigator.popAndPushNamed(context, "/about")},
                 leading: const Icon(Icons.info, size: 30),
-                title: Text("About", style: Theme.of(context).textTheme.headline5),
+                title:
+                    Text("About", style: Theme.of(context).textTheme.headline5),
               ),
 
               ListTile(
@@ -902,7 +1006,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   });
                 },
                 leading: const Icon(Icons.help, size: 30),
-                title: Text("Show Help", style: Theme.of(context).textTheme.headline5),
+                title: Text("Show Help",
+                    style: Theme.of(context).textTheme.headline5),
               )
             ],
           )),
@@ -913,19 +1018,26 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Center(
               child: Stack(alignment: Alignment.center, children: [
                 Consumer3<MyTelemetry, Settings, ActivePlan>(
-                    builder: (context, myTelemetry, settings, plan, child) => FlutterMap(
+                    builder: (context, myTelemetry, settings, plan, child) =>
+                        FlutterMap(
                           key: mapKey,
                           mapController: mapController,
                           options: MapOptions(
-                            interactiveFlags:
-                                InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
+                            interactiveFlags: InteractiveFlag.all &
+                                (northLock
+                                    ? ~InteractiveFlag.rotate
+                                    : InteractiveFlag.all),
                             center: myTelemetry.geo.latLng,
                             zoom: 12.0,
-                            onTap: (tapPosition, point) => onMapTap(context, point),
-                            onLongPress: (tapPosition, point) => onMapLongPress(context, point),
+                            onTap: (tapPosition, point) =>
+                                onMapTap(context, point),
+                            onLongPress: (tapPosition, point) =>
+                                onMapLongPress(context, point),
                             onPositionChanged: (mapPosition, hasGesture) {
                               // debugPrint("$mapPosition $hasGesture");
-                              if (hasGesture && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
+                              if (hasGesture &&
+                                  (focusMode == FocusMode.me ||
+                                      focusMode == FocusMode.group)) {
                                 // --- Unlock any focus lock
                                 setFocusMode(FocusMode.unlocked);
                               }
@@ -938,32 +1050,38 @@ class _MyHomePageState extends State<MyHomePage> {
                           layers: [
                             settings.getMapTileLayer(settings.curMapTiles),
 
-                            if (settings.showAirspace && settings.curMapTiles == "topo")
+                            if (settings.showAirspace &&
+                                settings.curMapTiles == "topo")
                               TileLayerOptions(
                                 urlTemplate:
                                     'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airports@EPSG%3A900913@png/{z}/{x}/{y}.png',
                                 maxZoom: 17,
                                 tms: true,
                                 subdomains: ['1', '2'],
-                                backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                                backgroundColor:
+                                    const Color.fromARGB(0, 255, 255, 255),
                               ),
-                            if (settings.showAirspace && settings.curMapTiles == "topo")
+                            if (settings.showAirspace &&
+                                settings.curMapTiles == "topo")
                               TileLayerOptions(
                                 urlTemplate:
                                     'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_geometries@EPSG%3A900913@png/{z}/{x}/{y}.png',
                                 maxZoom: 17,
                                 tms: true,
                                 subdomains: ['1', '2'],
-                                backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                                backgroundColor:
+                                    const Color.fromARGB(0, 255, 255, 255),
                               ),
-                            if (settings.showAirspace && settings.curMapTiles == "topo")
+                            if (settings.showAirspace &&
+                                settings.curMapTiles == "topo")
                               TileLayerOptions(
                                 urlTemplate:
                                     'https://{s}.tile.maps.openaip.net/geowebcache/service/tms/1.0.0/openaip_approved_airspaces_labels@EPSG%3A900913@png/{z}/{x}/{y}.png',
                                 maxZoom: 17,
                                 tms: true,
                                 subdomains: ['1', '2'],
-                                backgroundColor: const Color.fromARGB(0, 255, 255, 255),
+                                backgroundColor:
+                                    const Color.fromARGB(0, 255, 255, 255),
                               ),
 
                             // Other Pilot path trace
@@ -975,25 +1093,31 @@ class _MyHomePageState extends State<MyHomePage> {
                                     .toList()),
 
                             // Flight Log
-                            PolylineLayerOptions(polylines: [myTelemetry.buildFlightTrace()]),
+                            PolylineLayerOptions(
+                                polylines: [myTelemetry.buildFlightTrace()]),
 
                             // ADSB Proximity
-                            if (Provider.of<ADSB>(context, listen: false).enabled)
+                            if (Provider.of<ADSB>(context, listen: false)
+                                .enabled)
                               CircleLayerOptions(circles: [
                                 CircleMarker(
                                     point: myTelemetry.geo.latLng,
                                     color: Colors.transparent,
                                     borderStrokeWidth: 1,
                                     borderColor: Colors.black54,
-                                    radius: settings.proximityProfile.horizontalDist,
+                                    radius: settings
+                                        .proximityProfile.horizontalDist,
                                     useRadiusInMeter: true)
                               ]),
 
                             // Trip snake lines
-                            PolylineLayerOptions(polylines: plan.buildTripSnake()),
+                            PolylineLayerOptions(
+                                polylines: plan.buildTripSnake()),
 
                             PolylineLayerOptions(
-                              polylines: [plan.buildNextWpIndicator(myTelemetry.geo)],
+                              polylines: [
+                                plan.buildNextWpIndicator(myTelemetry.geo)
+                              ],
                             ),
 
                             // Flight plan paths
@@ -1001,7 +1125,10 @@ class _MyHomePageState extends State<MyHomePage> {
                               polylines: plan.waypoints
                                   .where((value) => value.latlng.length > 1)
                                   .mapIndexed((i, e) => Polyline(
-                                      points: e.latlng, strokeWidth: 6, color: e.getColor(), isDotted: e.isOptional))
+                                      points: e.latlng,
+                                      strokeWidth: 6,
+                                      color: e.getColor(),
+                                      isDotted: e.isOptional))
                                   .toList(),
                             ),
 
@@ -1011,8 +1138,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                     editingIndex != null
                                         ? (plan.waypoints.toList()
                                           ..removeAt(editingIndex!)
-                                          ..add(Waypoint(plan.waypoints[editingIndex!].name, editablePolyline.points,
-                                              false, null, plan.waypoints[editingIndex!].color)))
+                                          ..add(Waypoint(
+                                              plan.waypoints[editingIndex!]
+                                                  .name,
+                                              editablePolyline.points,
+                                              false,
+                                              null,
+                                              plan.waypoints[editingIndex!]
+                                                  .color)))
                                         : plan.waypoints,
                                     Provider.of<ActivePlan>(context).isReversed,
                                     45)),
@@ -1033,8 +1166,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                               },
                                           rotateMarker: true,
                                           builder: (context) => Container(
-                                              transformAlignment: const Alignment(0, 0),
-                                              transform: Matrix4.translationValues(0, -30 * 0.8, 0),
+                                              transformAlignment:
+                                                  const Alignment(0, 0),
+                                              transform:
+                                                  Matrix4.translationValues(
+                                                      0, -30 * 0.8, 0),
                                               child: MapMarker(e, 60 * 0.8)))
                                       : null)
                                   .whereNotNull()
@@ -1049,11 +1185,17 @@ class _MyHomePageState extends State<MyHomePage> {
                                     height: 60 * 0.6,
                                     point: myTelemetry.launchGeo!.latLng,
                                     builder: (ctx) => Container(
-                                          transformAlignment: const Alignment(0, 0),
-                                          transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                          transformAlignment:
+                                              const Alignment(0, 0),
+                                          transform: Matrix4.rotationZ(
+                                              -mapController.rotation *
+                                                  pi /
+                                                  180),
                                           child: Stack(children: [
                                             Container(
-                                              transform: Matrix4.translationValues(0, -60 * 0.6 / 2, 0),
+                                              transform:
+                                                  Matrix4.translationValues(
+                                                      0, -60 * 0.6 / 2, 0),
                                               child: SvgPicture.asset(
                                                 "assets/images/pin.svg",
                                                 color: Colors.lightGreen,
@@ -1061,7 +1203,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                             ),
                                             Center(
                                               child: Container(
-                                                transform: Matrix4.translationValues(0, -60 * 0.6 / 1.5, 0),
+                                                transform:
+                                                    Matrix4.translationValues(
+                                                        0, -60 * 0.6 / 1.5, 0),
                                                 child: const Icon(
                                                   Icons.flight_takeoff,
                                                   size: 60 * 0.6 / 2,
@@ -1073,9 +1217,11 @@ class _MyHomePageState extends State<MyHomePage> {
                               ]),
 
                             // GA planes (ADSB IN)
-                            if (Provider.of<ADSB>(context, listen: false).enabled)
+                            if (Provider.of<ADSB>(context, listen: false)
+                                .enabled)
                               MarkerLayerOptions(
-                                  markers: Provider.of<ADSB>(context, listen: false)
+                                  markers: Provider.of<ADSB>(context,
+                                          listen: false)
                                       .planes
                                       .values
                                       .map(
@@ -1084,46 +1230,82 @@ class _MyHomePageState extends State<MyHomePage> {
                                           height: 50.0,
                                           point: e.latlng,
                                           builder: (ctx) => Container(
-                                            transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                            transformAlignment:
+                                                const Alignment(0, 0),
+                                            transform: Matrix4.rotationZ(
+                                                -mapController.rotation *
+                                                    pi /
+                                                    180),
                                             child: Opacity(
-                                              opacity: getGAtransparency(e.alt - myTelemetry.geo.alt),
+                                              opacity: getGAtransparency(
+                                                  e.alt - myTelemetry.geo.alt),
                                               child: Stack(
                                                 children: [
                                                   /// --- GA icon
                                                   Container(
-                                                    transformAlignment: const Alignment(0, 0),
-                                                    transform:
-                                                        Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
-                                                    child: e.getIcon(myTelemetry.geo),
+                                                    transformAlignment:
+                                                        const Alignment(0, 0),
+                                                    transform: Matrix4.rotationZ(
+                                                        (mapController
+                                                                    .rotation +
+                                                                e.hdg) *
+                                                            pi /
+                                                            180),
+                                                    child: e.getIcon(
+                                                        myTelemetry.geo),
                                                   ),
 
                                                   /// --- Relative Altitude
                                                   Container(
-                                                      transform: Matrix4.translationValues(40, 0, 0),
-                                                      transformAlignment: const Alignment(0, 0),
+                                                      transform: Matrix4
+                                                          .translationValues(
+                                                              40, 0, 0),
+                                                      transformAlignment:
+                                                          const Alignment(0, 0),
                                                       child: Text.rich(
                                                         TextSpan(children: [
                                                           WidgetSpan(
                                                             child: Icon(
-                                                              (e.alt - myTelemetry.geo.alt) > 0
-                                                                  ? Icons.keyboard_arrow_up
-                                                                  : Icons.keyboard_arrow_down,
-                                                              color: Colors.black,
+                                                              (e.alt -
+                                                                          myTelemetry
+                                                                              .geo
+                                                                              .alt) >
+                                                                      0
+                                                                  ? Icons
+                                                                      .keyboard_arrow_up
+                                                                  : Icons
+                                                                      .keyboard_arrow_down,
+                                                              color:
+                                                                  Colors.black,
                                                               size: 21,
                                                             ),
                                                           ),
                                                           richValue(
-                                                              UnitType.distFine, (e.alt - myTelemetry.geo.alt).abs(),
+                                                              UnitType.distFine,
+                                                              (e
+                                                                          .alt -
+                                                                      myTelemetry
+                                                                          .geo
+                                                                          .alt)
+                                                                  .abs(),
                                                               digits: 5,
-                                                              valueStyle: const TextStyle(color: Colors.black),
-                                                              unitStyle:
-                                                                  TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                                                              valueStyle:
+                                                                  const TextStyle(
+                                                                      color: Colors
+                                                                          .black),
+                                                              unitStyle: TextStyle(
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade700,
+                                                                  fontSize:
+                                                                      12)),
                                                         ]),
-                                                        overflow: TextOverflow.visible,
+                                                        overflow: TextOverflow
+                                                            .visible,
                                                         softWrap: false,
                                                         maxLines: 1,
-                                                        style: const TextStyle(fontSize: 16),
+                                                        style: const TextStyle(
+                                                            fontSize: 16),
                                                       )),
                                                 ],
                                               ),
@@ -1143,13 +1325,21 @@ class _MyHomePageState extends State<MyHomePage> {
                                       width: 40,
                                       height: 40,
                                       builder: (ctx) => Container(
-                                          transformAlignment: const Alignment(0, 0),
-                                          transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                          transformAlignment:
+                                              const Alignment(0, 0),
+                                          transform: Matrix4.rotationZ(
+                                              -mapController.rotation *
+                                                  pi /
+                                                  180),
                                           child: PilotMarker(
                                             pilot,
                                             20,
-                                            hdg: pilot.geo!.hdg + mapController.rotation * pi / 180,
-                                            relAlt: pilot.geo!.alt - myTelemetry.geo.alt,
+                                            hdg: pilot.geo!.hdg +
+                                                mapController.rotation *
+                                                    pi /
+                                                    180,
+                                            relAlt: pilot.geo!.alt -
+                                                myTelemetry.geo.alt,
                                           ))))
                                   .toList(),
                             ),
@@ -1163,18 +1353,23 @@ class _MyHomePageState extends State<MyHomePage> {
                                   point: myTelemetry.geo.latLng,
                                   builder: (ctx) => Container(
                                     transformAlignment: const Alignment(0, 0),
-                                    transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
-                                    child: Image.asset("assets/images/red_arrow.png"),
+                                    transform:
+                                        Matrix4.rotationZ(myTelemetry.geo.hdg),
+                                    child: Image.asset(
+                                        "assets/images/red_arrow.png"),
                                   ),
                                 ),
                               ],
                             ),
 
                             // Draggable line editor
-                            if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                            if (focusMode == FocusMode.addPath ||
+                                focusMode == FocusMode.editPath)
                               PolylineLayerOptions(polylines: polyLines),
-                            if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                              DragMarkerPluginOptions(markers: polyEditor.edit()),
+                            if (focusMode == FocusMode.addPath ||
+                                focusMode == FocusMode.editPath)
+                              DragMarkerPluginOptions(
+                                  markers: polyEditor.edit()),
                           ],
                         )),
 
@@ -1188,13 +1383,20 @@ class _MyHomePageState extends State<MyHomePage> {
                                   .activePilots
                                   .where((e) => !markerIsInView(e.geo!.latLng))
                                   .map((e) => Builder(builder: (context) {
-                                        final theta = (latlngCalc.bearing(mapController.center, e.geo!.latLng) +
+                                        final theta = (latlngCalc.bearing(
+                                                    mapController.center,
+                                                    e.geo!.latLng) +
                                                 mapController.rotation -
                                                 90) *
                                             pi /
                                             180;
-                                        final hypo = MediaQuery.of(context).size.width * 0.8 - 40;
-                                        final dist = latlngCalc.distance(mapController.center, e.geo!.latLng);
+                                        final hypo =
+                                            MediaQuery.of(context).size.width *
+                                                    0.8 -
+                                                40;
+                                        final dist = latlngCalc.distance(
+                                            mapController.center,
+                                            e.geo!.latLng);
 
                                         return Opacity(
                                             opacity: 0.5,
@@ -1208,17 +1410,22 @@ class _MyHomePageState extends State<MyHomePage> {
                                               child: Stack(
                                                 children: [
                                                   Container(
-                                                      transformAlignment: const Alignment(0, 0),
-                                                      transform:
-                                                          Matrix4.translationValues(cos(theta) * 30, sin(theta) * 30, 0)
-                                                            ..rotateZ(theta),
+                                                      transformAlignment:
+                                                          const Alignment(0, 0),
+                                                      transform: Matrix4
+                                                          .translationValues(
+                                                              cos(theta) * 30,
+                                                              sin(theta) * 30,
+                                                              0)
+                                                        ..rotateZ(theta),
                                                       child: const Icon(
                                                         Icons.east,
                                                         color: Colors.black,
                                                         size: 40,
                                                       )),
                                                   Container(
-                                                    transformAlignment: const Alignment(0, 0),
+                                                    transformAlignment:
+                                                        const Alignment(0, 0),
                                                     child: PilotMarker(
                                                       e,
                                                       20,
@@ -1227,18 +1434,33 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   Container(
                                                       width: 40,
                                                       // transformAlignment: const Alignment(0, 0),
-                                                      transform: Matrix4.translationValues(0, 40, 0),
+                                                      transform: Matrix4
+                                                          .translationValues(
+                                                              0, 40, 0),
                                                       child: Text.rich(
-                                                        richValue(UnitType.distCoarse, dist,
+                                                        richValue(
+                                                            UnitType.distCoarse,
+                                                            dist,
                                                             digits: 4,
                                                             decimals: 1,
                                                             valueStyle:
-                                                                const TextStyle(color: Colors.black, fontSize: 18),
+                                                                const TextStyle(
+                                                                    color:
+                                                                        Colors
+                                                                            .black,
+                                                                    fontSize:
+                                                                        18),
                                                             unitStyle:
-                                                                const TextStyle(color: Colors.black87, fontSize: 14)),
+                                                                const TextStyle(
+                                                                    color: Colors
+                                                                        .black87,
+                                                                    fontSize:
+                                                                        14)),
                                                         softWrap: false,
-                                                        textAlign: TextAlign.center,
-                                                        overflow: TextOverflow.visible,
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        overflow: TextOverflow
+                                                            .visible,
                                                       ))
                                                 ],
                                               ),
@@ -1255,8 +1477,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     List<Message> bubbles = [];
                     for (int i = chat.messages.length - 1; i >= 0; i--) {
                       if (chat.messages[i].timestamp >
-                              max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
-                          chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
+                              max(
+                                  DateTime.now().millisecondsSinceEpoch -
+                                      1000 * numSeconds,
+                                  chat.chatLastOpened) &&
+                          chat.messages[i].pilotId !=
+                              Provider.of<Profile>(context, listen: false).id) {
                         bubbles.add(chat.messages[i]);
 
                         Timer(const Duration(seconds: numSeconds), () {
@@ -1268,7 +1494,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       }
                     }
                     return Positioned(
-                        right: Provider.of<Settings>(context).mapControlsRightSide ? 70 : 0,
+                        right:
+                            Provider.of<Settings>(context).mapControlsRightSide
+                                ? 70
+                                : 0,
                         bottom: 0,
                         // left: 100,
                         child: Column(
@@ -1281,8 +1510,15 @@ class _MyHomePageState extends State<MyHomePage> {
                                     false,
                                     e.text,
                                     AvatarRound(
-                                        Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20,
-                                        tier: Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.tier),
+                                        Provider.of<Group>(context,
+                                                listen: false)
+                                            .pilots[e.pilotId]
+                                            ?.avatar,
+                                        20,
+                                        tier: Provider.of<Group>(context,
+                                                listen: false)
+                                            .pilots[e.pilotId]
+                                            ?.tier),
                                     null,
                                     e.timestamp),
                               )
@@ -1309,17 +1545,25 @@ class _MyHomePageState extends State<MyHomePage> {
                             )),
                             TextSpan(text: "Tap to place waypoint")
                           ]),
-                          style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold),
                           // textAlign: TextAlign.justify,
                         ),
                       ),
                     ),
                   ),
-                if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                if (focusMode == FocusMode.addPath ||
+                    focusMode == FocusMode.editPath)
                   Positioned(
                     bottom: 10,
-                    right: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
-                    left: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
+                    right: Provider.of<Settings>(context).mapControlsRightSide
+                        ? null
+                        : 10,
+                    left: Provider.of<Settings>(context).mapControlsRightSide
+                        ? 10
+                        : null,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1337,7 +1581,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                 )),
                                 TextSpan(text: "Tap to add to path")
                               ]),
-                              style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold),
                               // textAlign: TextAlign.justify,
                             ),
                           ),
@@ -1379,17 +1626,31 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                             onPressed: () {
                               // --- finish editing path
-                              var plan = Provider.of<ActivePlan>(context, listen: false);
+                              var plan = Provider.of<ActivePlan>(context,
+                                  listen: false);
                               if (editingIndex == null) {
-                                var temp = Waypoint("", editablePolyline.points.toList(), false, null, null);
-                                editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath)?.then((newWaypoint) {
+                                var temp = Waypoint(
+                                    "",
+                                    editablePolyline.points.toList(),
+                                    false,
+                                    null,
+                                    null);
+                                editWaypoint(context, temp,
+                                        isNew: focusMode == FocusMode.addPath)
+                                    ?.then((newWaypoint) {
                                   if (newWaypoint != null) {
-                                    plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng,
-                                        false, newWaypoint.icon, newWaypoint.color);
+                                    plan.insertWaypoint(
+                                        plan.waypoints.length,
+                                        newWaypoint.name,
+                                        newWaypoint.latlng,
+                                        false,
+                                        newWaypoint.icon,
+                                        newWaypoint.color);
                                   }
                                 });
                               } else {
-                                plan.waypoints[editingIndex!].latlng = editablePolyline.points.toList();
+                                plan.waypoints[editingIndex!].latlng =
+                                    editablePolyline.points.toList();
                                 editingIndex = null;
                               }
                               setFocusMode(prevFocusMode);
@@ -1401,8 +1662,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
                 // --- Map View Buttons
                 Positioned(
-                  left: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
-                  right: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
+                  left: Provider.of<Settings>(context).mapControlsRightSide
+                      ? null
+                      : 10,
+                  right: Provider.of<Settings>(context).mapControlsRightSide
+                      ? 10
+                      : null,
                   top: 10,
                   bottom: 10,
                   child: Column(
@@ -1422,38 +1687,54 @@ class _MyHomePageState extends State<MyHomePage> {
                                   )
                                 },
                             selected: false,
-                            child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
-                              StreamBuilder(
-                                  stream: mapController.mapEventStream,
-                                  builder: (context, event) => Container(
-                                        transformAlignment: const Alignment(0, 0),
-                                        transform: mapReady
-                                            ? Matrix4.rotationZ(mapController.rotation * pi / 180)
-                                            : Matrix4.rotationZ(0),
-                                        child: northLock
-                                            ? SvgPicture.asset("assets/images/compass_north.svg", fit: BoxFit.none)
-                                            : SvgPicture.asset(
-                                                "assets/images/compass.svg",
-                                                fit: BoxFit.none,
-                                              ),
-                                      )),
-                            ])),
+                            child: Stack(
+                                fit: StackFit.expand,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  StreamBuilder(
+                                      stream: mapController.mapEventStream,
+                                      builder: (context, event) => Container(
+                                            transformAlignment:
+                                                const Alignment(0, 0),
+                                            transform: mapReady
+                                                ? Matrix4.rotationZ(
+                                                    mapController.rotation *
+                                                        pi /
+                                                        180)
+                                                : Matrix4.rotationZ(0),
+                                            child: northLock
+                                                ? SvgPicture.asset(
+                                                    "assets/images/compass_north.svg",
+                                                    fit: BoxFit.none)
+                                                : SvgPicture.asset(
+                                                    "assets/images/compass.svg",
+                                                    fit: BoxFit.none,
+                                                  ),
+                                          )),
+                                ])),
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             // --- Focus on Me
                             DescribedFeatureOverlay(
                               featureId: "focusOnMe",
-                              tapTarget: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                              tapTarget: SvgPicture.asset(
+                                  "assets/images/icon_controls_centermap_me.svg"),
                               title: const Text("Focus on Me"),
                               overflowMode: OverflowMode.extendBackground,
-                              description: const Text("Keep me in center of view."),
+                              description:
+                                  const Text("Keep me in center of view."),
                               child: MapButton(
                                 size: 60,
                                 selected: focusMode == FocusMode.me,
-                                child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                                child: SvgPicture.asset(
+                                    "assets/images/icon_controls_centermap_me.svg"),
                                 onPressed: () => setFocusMode(
-                                    FocusMode.me, Provider.of<MyTelemetry>(context, listen: false).geo.latLng),
+                                    FocusMode.me,
+                                    Provider.of<MyTelemetry>(context,
+                                            listen: false)
+                                        .geo
+                                        .latLng),
                               ),
                             ),
                             //
@@ -1466,7 +1747,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             // --- Focus on Group
                             DescribedFeatureOverlay(
                               featureId: "focusOnGroup",
-                              tapTarget: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                              tapTarget: SvgPicture.asset(
+                                  "assets/images/icon_controls_centermap_group.svg"),
                               title: const Text("Follow Group"),
                               overflowMode: OverflowMode.extendBackground,
                               description: const Text("Keep everyone in view."),
@@ -1474,7 +1756,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                 size: 60,
                                 selected: focusMode == FocusMode.group,
                                 onPressed: () => setFocusMode(FocusMode.group),
-                                child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                                child: SvgPicture.asset(
+                                    "assets/images/icon_controls_centermap_group.svg"),
                               ),
                             ),
                           ],
@@ -1485,11 +1768,13 @@ class _MyHomePageState extends State<MyHomePage> {
                             size: 60,
                             selected: false,
                             onPressed: () {
-                              mapController.move(mapController.center, mapController.zoom + 1);
+                              mapController.move(
+                                  mapController.center, mapController.zoom + 1);
                               debugPrint("Map Zoom: ${mapController.zoom}");
                               lastMapChange = DateTime.now();
                             },
-                            child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
+                            child: SvgPicture.asset(
+                                "assets/images/icon_controls_zoom_in.svg"),
                           ),
                           //
                           SizedBox(
@@ -1503,11 +1788,13 @@ class _MyHomePageState extends State<MyHomePage> {
                             size: 60,
                             selected: false,
                             onPressed: () {
-                              mapController.move(mapController.center, mapController.zoom - 1);
+                              mapController.move(
+                                  mapController.center, mapController.zoom - 1);
                               debugPrint("Map Zoom: ${mapController.zoom}");
                               lastMapChange = DateTime.now();
                             },
-                            child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
+                            child: SvgPicture.asset(
+                                "assets/images/icon_controls_zoom_out.svg"),
                           ),
                         ]),
                         // --- Chat button
@@ -1525,13 +1812,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                 color: Colors.black,
                               ),
                             ),
-                            if (Provider.of<ChatMessages>(context).numUnread > 0)
+                            if (Provider.of<ChatMessages>(context).numUnread >
+                                0)
                               Positioned(
                                   bottom: 0,
                                   right: 0,
                                   child: Container(
                                       decoration: const BoxDecoration(
-                                          color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(10))),
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(10))),
                                       child: Padding(
                                         padding: const EdgeInsets.all(4.0),
                                         child: Text(
@@ -1555,8 +1845,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           child: Container(
                             transformAlignment: const Alignment(0, 0),
                             transform: mapReady
-                                ? Matrix4.rotationZ(
-                                    mapController.rotation * pi / 180 + Provider.of<Wind>(context).result!.windHdg)
+                                ? Matrix4.rotationZ(mapController.rotation *
+                                        pi /
+                                        180 +
+                                    Provider.of<Wind>(context).result!.windHdg)
                                 : Matrix4.rotationZ(0),
                             child: SvgPicture.asset(
                               "assets/images/arrow.svg",
@@ -1574,7 +1866,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         padding: const EdgeInsets.all(42),
                         child: Text(
                           printDouble(
-                              value: unitConverters[UnitType.speed]!(Provider.of<Wind>(context).result!.windSpd),
+                              value: unitConverters[UnitType.speed]!(
+                                  Provider.of<Wind>(context).result!.windSpd),
                               digits: 2,
                               decimals: 0),
                           style: const TextStyle(color: Colors.black),
@@ -1582,7 +1875,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       )),
 
                 // --- Connection status banner (along top of map)
-                if (Provider.of<Client>(context).state == ClientState.disconnected)
+                if (Provider.of<Client>(context).state ==
+                    ClientState.disconnected)
                   const Positioned(
                       top: 5,
                       child: Card(
@@ -1597,7 +1891,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                   size: 20,
                                   color: Colors.black,
                                 )),
-                                TextSpan(text: "  connecting", style: TextStyle(color: Colors.black, fontSize: 20)),
+                                TextSpan(
+                                    text: "  connecting",
+                                    style: TextStyle(
+                                        color: Colors.black, fontSize: 20)),
                               ]),
                             ),
                           )))
@@ -1606,9 +1903,11 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
 
           // --- Bottom Instruments
-          bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
+          bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(
+              builder: (context, activePlan, myTelemetry, child) {
             ETA etaNext = activePlan.selectedIndex != null
-                ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
+                ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd,
+                    activePlan.selectedIndex!)
                 : ETA(0, const Duration());
 
             final curWp = activePlan.selectedWp;
@@ -1632,12 +1931,14 @@ class _MyHomePageState extends State<MyHomePage> {
                       // --- Previous Waypoint
                       IconButton(
                         onPressed: () {
-                          final wp =
-                              activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
+                          final wp = activePlan.isReversed
+                              ? activePlan.findNextWaypoint()
+                              : activePlan.findPrevWaypoint();
                           if (wp != null) activePlan.selectWaypoint(wp);
                         },
                         iconSize: 40,
-                        color: (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0)
+                        color: (activePlan.selectedIndex != null &&
+                                activePlan.selectedIndex! > 0)
                             ? Colors.white
                             : Colors.grey.shade700,
                         icon: SvgPicture.asset(
@@ -1657,7 +1958,9 @@ class _MyHomePageState extends State<MyHomePage> {
                           onPanDown: (details) {
                             // debugPrint("${MediaQuery.of(context).size.height - details.globalPosition.dy}");
                             // Limit the hitbox at the very bottom so it doesn't interfere with system bar
-                            if (MediaQuery.of(context).size.height - details.globalPosition.dy > 30) {
+                            if (MediaQuery.of(context).size.height -
+                                    details.globalPosition.dy >
+                                30) {
                               showFlightPlan();
                             }
                           },
@@ -1677,12 +1980,18 @@ class _MyHomePageState extends State<MyHomePage> {
                                           Text.rich(
                                             TextSpan(children: [
                                               WidgetSpan(
-                                                child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
+                                                child: SizedBox(
+                                                    width: 20,
+                                                    height: 30,
+                                                    child:
+                                                        MapMarker(curWp, 30)),
                                               ),
                                               const TextSpan(text: "  "),
                                               TextSpan(
                                                 text: curWp.name,
-                                                style: const TextStyle(color: Colors.white, fontSize: 30),
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 30),
                                               ),
                                             ]),
                                             maxLines: 2,
@@ -1690,7 +1999,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           SizedBox(
-                                            width: MediaQuery.of(context).size.width / 2,
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width /
+                                                2,
                                             child: Divider(
                                               thickness: 1,
                                               height: 8,
@@ -1700,12 +2012,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                           // --- ETA next
                                           Text.rich(
                                             TextSpan(children: [
-                                              richValue(UnitType.distCoarse, etaNext.distance,
+                                              richValue(UnitType.distCoarse,
+                                                  etaNext.distance,
                                                   digits: 4,
                                                   decimals: 1,
                                                   valueStyle: instrLower,
                                                   unitStyle: instrLabel),
-                                              if (myTelemetry.inFlight) TextSpan(text: "   ", style: instrLower),
+                                              if (myTelemetry.inFlight)
+                                                TextSpan(
+                                                    text: "   ",
+                                                    style: instrLower),
                                               if (myTelemetry.inFlight)
                                                 richHrMin(
                                                     duration: etaNext.time,
@@ -1714,10 +2030,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                               if (myTelemetry.inFlight &&
                                                   myTelemetry.fuel > 0 &&
                                                   etaNext.time != null &&
-                                                  myTelemetry.fuelTimeRemaining < etaNext.time!)
+                                                  myTelemetry
+                                                          .fuelTimeRemaining <
+                                                      etaNext.time!)
                                                 const WidgetSpan(
                                                     child: Padding(
-                                                  padding: EdgeInsets.only(left: 20),
+                                                  padding:
+                                                      EdgeInsets.only(left: 20),
                                                   child: FuelWarning(35),
                                                 )),
                                             ]),
@@ -1731,8 +2050,9 @@ class _MyHomePageState extends State<MyHomePage> {
                       // --- Next Waypoint
                       IconButton(
                           onPressed: () {
-                            final wp =
-                                !activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
+                            final wp = !activePlan.isReversed
+                                ? activePlan.findNextWaypoint()
+                                : activePlan.findPrevWaypoint();
                             if (wp != null) activePlan.selectWaypoint(wp);
                           },
                           iconSize: 40,

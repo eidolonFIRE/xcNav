@@ -41,7 +41,8 @@ late TtsService ttsService;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   runApp(
     MultiProvider(
@@ -92,7 +93,9 @@ void main() {
           )
         ],
         child: FocusDetector(
-            onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const MyApp())),
+            onFocusGained: () => {setFocus(true)},
+            onFocusLost: () => {setFocus(false)},
+            child: const MyApp())),
   );
 }
 
@@ -123,12 +126,16 @@ class MyApp extends StatelessWidget {
           // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
           // primaryColorLight: primaryDarkColor,
           backgroundColor: darkColor,
-          appBarTheme: const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40), backgroundColor: darkColor),
+          appBarTheme: const AppBarTheme(
+              toolbarTextStyle: TextStyle(fontSize: 40),
+              backgroundColor: darkColor),
           // primarySwatch: Colors.grey,
           // scaffoldBackgroundColor: Colors.blueGrey.shade900,
           brightness: Brightness.dark,
-          bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
-          bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
+          bottomSheetTheme:
+              const BottomSheetThemeData(backgroundColor: darkColor),
+          bottomNavigationBarTheme:
+              const BottomNavigationBarThemeData(backgroundColor: darkColor),
           textTheme: const TextTheme(
               headline4: TextStyle(color: Colors.white),
               button: TextStyle(
@@ -137,28 +144,35 @@ class MyApp extends StatelessWidget {
               )),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ButtonStyle(
-              side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.black)),
-              backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.black38),
-              minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
-              padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(12)),
+              side: MaterialStateProperty.resolveWith<BorderSide>(
+                  (states) => const BorderSide(color: Colors.black)),
+              backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                  (states) => Colors.black38),
+              minimumSize: MaterialStateProperty.resolveWith<Size>(
+                  (states) => const Size(30, 40)),
+              padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>(
+                  (states) => const EdgeInsets.all(12)),
               // shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
               //   return RoundedRectangleBorder(
               //       borderRadius: BorderRadius.circular(20));
               // }),
               textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                  (states) => const TextStyle(color: Colors.white, fontSize: 22)),
+                  (states) =>
+                      const TextStyle(color: Colors.white, fontSize: 22)),
             ),
 
             // child: ElevatedButton(onPressed: () {}, child: Text('label')),
           ),
 
-          popupMenuTheme: PopupMenuThemeData(textStyle: Theme.of(context).textTheme.bodyMedium),
+          popupMenuTheme: PopupMenuThemeData(
+              textStyle: Theme.of(context).textTheme.bodyMedium),
 
           textButtonTheme: TextButtonThemeData(
             style: ButtonStyle(
               foregroundColor: MaterialStateProperty.all(Colors.white),
               textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                  (states) => const TextStyle(color: Colors.white, fontSize: 24)),
+                  (states) =>
+                      const TextStyle(color: Colors.white, fontSize: 24)),
             ),
 
             // child: ElevatedButton(onPressed: () {}, child: Text('label')),

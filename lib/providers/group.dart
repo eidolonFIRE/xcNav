@@ -64,17 +64,23 @@ class Group with ChangeNotifier {
 
   Iterable<Pilot> get activePilots => pilots.values.where((each) =>
       each.geo != null &&
-      each.geo!.time > (DateTime.now().subtract(const Duration(minutes: 2)).millisecondsSinceEpoch));
+      each.geo!.time >
+          (DateTime.now()
+              .subtract(const Duration(minutes: 2))
+              .millisecondsSinceEpoch));
 
   void _appendToPastGroups() {
-    PastGroup pg = PastGroup(_currentGroupID!, DateTime.now(), pilots.values.toList());
-    debugPrint("Appended to past groups. (id: ${pg.id}, ${pg.pilots.length} pilots)");
+    PastGroup pg =
+        PastGroup(_currentGroupID!, DateTime.now(), pilots.values.toList());
+    debugPrint(
+        "Appended to past groups. (id: ${pg.id}, ${pg.pilots.length} pilots)");
     pastGroups[_currentGroupID!] = pg;
     _savePastGroups();
   }
 
   void _savePastGroups() {
-    prefs?.setStringList("me.pastGroups", pastGroups.values.map((e) => jsonEncode(e.toJson())).toList());
+    prefs?.setStringList("me.pastGroups",
+        pastGroups.values.map((e) => jsonEncode(e.toJson())).toList());
     // debugPrint("Save pastGroups: ${pastGroups.values.map((e) => jsonEncode(e.toJson())).toList().join(", ")}");
   }
 
@@ -91,7 +97,8 @@ class Group with ChangeNotifier {
             // parse each object
             .map((e) => PastGroup.fromJson(jsonDecode(e)))
             // remove any groups too old
-            .where((each) => each.timestamp.isAfter(DateTime.now().subtract(const Duration(hours: 72))))
+            .where((each) => each.timestamp
+                .isAfter(DateTime.now().subtract(const Duration(hours: 72))))
             .forEach((g) {
           pastGroups[g.id] = g;
         });
@@ -149,9 +156,11 @@ class Group with ChangeNotifier {
       if (p.selectedWaypoint != null) {
         if (p.selectedWaypoint == oldIndex) {
           p.selectedWaypoint = newIndex;
-        } else if (newIndex <= p.selectedWaypoint! && oldIndex > p.selectedWaypoint!) {
+        } else if (newIndex <= p.selectedWaypoint! &&
+            oldIndex > p.selectedWaypoint!) {
           p.selectedWaypoint = p.selectedWaypoint! + 1;
-        } else if (p.selectedWaypoint! <= newIndex && p.selectedWaypoint! > oldIndex) {
+        } else if (p.selectedWaypoint! <= newIndex &&
+            p.selectedWaypoint! > oldIndex) {
           p.selectedWaypoint = p.selectedWaypoint! - 1;
         }
       }

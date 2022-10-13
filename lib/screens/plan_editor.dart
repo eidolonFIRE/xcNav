@@ -62,7 +62,8 @@ class _PlanEditorState extends State<PlanEditor> {
         size: 22,
         color: Colors.black,
       ),
-      intermediateIcon: const Icon(Icons.circle_outlined, size: 12, color: Colors.black),
+      intermediateIcon:
+          const Icon(Icons.circle_outlined, size: 12, color: Colors.black),
       callbackRefresh: () => {setState(() {})},
     );
   }
@@ -107,14 +108,17 @@ class _PlanEditorState extends State<PlanEditor> {
     if (focusMode == FocusMode.addWaypoint) {
       // --- Finish adding waypoint pin
       setFocusMode(FocusMode.unlocked);
-      editWaypoint(context, Waypoint("", [latlng], false, null, null), isNew: true)?.then((newWaypoint) {
+      editWaypoint(context, Waypoint("", [latlng], false, null, null),
+              isNew: true)
+          ?.then((newWaypoint) {
         if (newWaypoint != null) {
           setState(() {
             plan!.waypoints.add(newWaypoint);
           });
         }
       });
-    } else if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
+    } else if (focusMode == FocusMode.addPath ||
+        focusMode == FocusMode.editPath) {
       // --- Add waypoint in path
       polyEditor.add(editablePolyline, latlng);
     }
@@ -127,7 +131,8 @@ class _PlanEditorState extends State<PlanEditor> {
       mapBounds = plan!.getBounds() ??
           (LatLngBounds.fromPoints([
             Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
-            Provider.of<MyTelemetry>(context, listen: false).geo.latLng..longitude += 0.05
+            Provider.of<MyTelemetry>(context, listen: false).geo.latLng
+              ..longitude += 0.05
           ])
             ..pad(2));
     }
@@ -148,7 +153,8 @@ class _PlanEditorState extends State<PlanEditor> {
                     key: const Key("planEditorMap"),
                     options: MapOptions(
                       controller: mapController,
-                      interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                      interactiveFlags:
+                          InteractiveFlag.all & ~InteractiveFlag.rotate,
                       // interactiveFlags: InteractiveFlag.none,
                       bounds: mapBounds,
                       allowPanningOnScrollingParent: false,
@@ -158,7 +164,8 @@ class _PlanEditorState extends State<PlanEditor> {
                       onTap: (tapPos, latlng) => onMapTap(context, latlng),
                     ),
                     layers: [
-                      Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName, opacity: 1.0),
+                      Provider.of<Settings>(context, listen: false)
+                          .getMapTileLayer(mapTileName, opacity: 1.0),
 
                       // Trip snake lines
                       PolylineLayerOptions(polylines: plan!.buildTripSnake()),
@@ -167,13 +174,14 @@ class _PlanEditorState extends State<PlanEditor> {
                       PolylineLayerOptions(
                         polylines: plan!.waypoints
                             // .where((value) => value.latlng.length > 1)
-                            .mapIndexed((i, e) => e.latlng.length > 1 && i != editingIndex
-                                ? Polyline(
-                                    points: e.latlng,
-                                    strokeWidth: i == selectedIndex ? 8 : 4,
-                                    color: e.getColor(),
-                                    isDotted: e.isOptional)
-                                : null)
+                            .mapIndexed((i, e) =>
+                                e.latlng.length > 1 && i != editingIndex
+                                    ? Polyline(
+                                        points: e.latlng,
+                                        strokeWidth: i == selectedIndex ? 8 : 4,
+                                        color: e.getColor(),
+                                        isDotted: e.isOptional)
+                                    : null)
                             .whereNotNull()
                             .toList(),
                       ),
@@ -184,7 +192,11 @@ class _PlanEditorState extends State<PlanEditor> {
                               editingIndex != null
                                   ? (plan!.waypoints.toList()
                                     ..removeAt(editingIndex!)
-                                    ..add(Waypoint(plan!.waypoints[editingIndex!].name, editablePolyline, false, null,
+                                    ..add(Waypoint(
+                                        plan!.waypoints[editingIndex!].name,
+                                        editablePolyline,
+                                        false,
+                                        null,
                                         plan!.waypoints[editingIndex!].color)))
                                   : plan!.waypoints,
                               false,
@@ -197,16 +209,27 @@ class _PlanEditorState extends State<PlanEditor> {
                                   ? DragMarker(
                                       useLongPress: true,
                                       point: e.latlng[0],
-                                      height: 60 * (i == selectedIndex ? 0.8 : 0.6),
-                                      width: 40 * (i == selectedIndex ? 0.8 : 0.6),
-                                      offset: Offset(0, -30 * (i == selectedIndex ? 0.8 : 0.6)),
-                                      feedbackOffset: Offset(0, -30 * (i == selectedIndex ? 0.8 : 0.6)),
+                                      height:
+                                          60 * (i == selectedIndex ? 0.8 : 0.6),
+                                      width:
+                                          40 * (i == selectedIndex ? 0.8 : 0.6),
+                                      offset: Offset(
+                                          0,
+                                          -30 *
+                                              (i == selectedIndex ? 0.8 : 0.6)),
+                                      feedbackOffset: Offset(
+                                          0,
+                                          -30 *
+                                              (i == selectedIndex ? 0.8 : 0.6)),
                                       onTap: (_) => {
                                             setState(() {
                                               selectedIndex = i;
-                                              scrollController.animateTo(60.0 * i,
-                                                  duration: const Duration(milliseconds: 100),
-                                                  curve: Curves.fastLinearToSlowEaseIn);
+                                              scrollController.animateTo(
+                                                  60.0 * i,
+                                                  duration: const Duration(
+                                                      milliseconds: 100),
+                                                  curve: Curves
+                                                      .fastLinearToSlowEaseIn);
                                             }),
                                           },
                                       onLongDragEnd: (p0, p1) {
@@ -215,7 +238,10 @@ class _PlanEditorState extends State<PlanEditor> {
                                           plan!.refreshLength();
                                         });
                                       },
-                                      builder: (context) => MapMarker(e, 60 * (i == selectedIndex ? 0.8 : 0.6)))
+                                      builder: (context) => MapMarker(
+                                          e,
+                                          60 *
+                                              (i == selectedIndex ? 0.8 : 0.6)))
                                   : null)
                               .whereNotNull()
                               .toList()),
@@ -228,7 +254,8 @@ class _PlanEditorState extends State<PlanEditor> {
                               points: editablePolyline,
                               strokeWidth: 5)
                         ]),
-                      if (editingIndex != null) DragMarkerPluginOptions(markers: polyEditor.edit()),
+                      if (editingIndex != null)
+                        DragMarkerPluginOptions(markers: polyEditor.edit()),
                     ]),
 
                 // --- Map overlay layers
@@ -249,7 +276,10 @@ class _PlanEditorState extends State<PlanEditor> {
                             )),
                             TextSpan(text: "Tap to place waypoint")
                           ]),
-                          style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold),
                           // textAlign: TextAlign.justify,
                         ),
                       ),
@@ -268,9 +298,14 @@ class _PlanEditorState extends State<PlanEditor> {
                           padding: const EdgeInsets.all(8.0),
                           child: Text.rich(
                             TextSpan(children: [
-                              const TextSpan(text: "Total Length: ", style: TextStyle(fontWeight: FontWeight.normal)),
+                              const TextSpan(
+                                  text: "Total Length: ",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.normal)),
                               richValue(UnitType.distCoarse, plan!.length,
-                                  decimals: 1, valueStyle: const TextStyle(fontWeight: FontWeight.bold)),
+                                  decimals: 1,
+                                  valueStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
                             ]),
                             style: const TextStyle(color: Colors.black),
                             textAlign: TextAlign.end,
@@ -288,19 +323,24 @@ class _PlanEditorState extends State<PlanEditor> {
                       child: SizedBox(
                         height: 40,
                         child: ToggleButtons(
-                          isSelected: Settings.mapTileThumbnails.keys.map((e) => e == mapTileName).toList(),
-                          borderRadius: const BorderRadius.all(Radius.circular(10)),
+                          isSelected: Settings.mapTileThumbnails.keys
+                              .map((e) => e == mapTileName)
+                              .toList(),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(10)),
                           borderWidth: 3,
                           borderColor: Colors.black,
                           selectedBorderColor: Colors.blue,
                           onPressed: (index) {
                             setState(() {
-                              mapTileName = Settings.mapTileThumbnails.keys.toList()[index];
+                              mapTileName = Settings.mapTileThumbnails.keys
+                                  .toList()[index];
                             });
                           },
                           children: Settings.mapTileThumbnails.values
                               .map((e) => SizedBox(
-                                    width: MediaQuery.of(context).size.width / 7,
+                                    width:
+                                        MediaQuery.of(context).size.width / 7,
                                     // height: 50,
                                     child: e,
                                   ))
@@ -309,7 +349,8 @@ class _PlanEditorState extends State<PlanEditor> {
                       ),
                     ))
               ] +
-              ((focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+              ((focusMode == FocusMode.addPath ||
+                      focusMode == FocusMode.editPath)
                   ? [
                       Align(
                           alignment: Alignment.bottomCenter,
@@ -329,7 +370,10 @@ class _PlanEditorState extends State<PlanEditor> {
                                         )),
                                         TextSpan(text: "Tap to add to path")
                                       ]),
-                                      style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold),
                                     ))),
                           )),
                       Align(
@@ -345,7 +389,9 @@ class _PlanEditorState extends State<PlanEditor> {
                               ),
                               onPressed: () {
                                 // --- Cancel editing of path (don't save changes)
-                                if (editingIndex != null && plan!.waypoints[editingIndex!].latlng.isEmpty) {
+                                if (editingIndex != null &&
+                                    plan!.waypoints[editingIndex!].latlng
+                                        .isEmpty) {
                                   plan!.waypoints.removeAt(editingIndex!);
                                 }
                                 beginEditingPolyline(null);
@@ -374,7 +420,10 @@ class _PlanEditorState extends State<PlanEditor> {
                               size: 35,
                             ),
                             label: const Text("Reverse",
-                                style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold)),
                             onPressed: () {
                               setState(() {
                                 var temp = editablePolyline.toList();
@@ -407,17 +456,22 @@ class _PlanEditorState extends State<PlanEditor> {
                   // --- Add New Waypoint
                   IconButton(
                       iconSize: 25,
-                      icon: const ImageIcon(AssetImage("assets/images/add_waypoint_pin.png"), color: Colors.lightGreen),
+                      icon: const ImageIcon(
+                          AssetImage("assets/images/add_waypoint_pin.png"),
+                          color: Colors.lightGreen),
                       onPressed: () {
                         setFocusMode(FocusMode.addWaypoint);
                       }),
                   // --- Add New Path
                   IconButton(
                       iconSize: 25,
-                      icon: const ImageIcon(AssetImage("assets/images/add_waypoint_path.png"), color: Colors.yellow),
+                      icon: const ImageIcon(
+                          AssetImage("assets/images/add_waypoint_path.png"),
+                          color: Colors.yellow),
                       onPressed: () {
                         var temp = Waypoint("", [], false, null, null);
-                        editWaypoint(context, temp, isNew: true, isPath: true)?.then((newWaypoint) {
+                        editWaypoint(context, temp, isNew: true, isPath: true)
+                            ?.then((newWaypoint) {
                           if (newWaypoint != null) {
                             plan!.waypoints.add(newWaypoint);
                             beginEditingPolyline(plan!.waypoints.length - 1);
@@ -431,19 +485,26 @@ class _PlanEditorState extends State<PlanEditor> {
                       onPressed: () {
                         editLatLng(context).then((value) {
                           if (value != null) {
-                            editWaypoint(context, Waypoint("", [value], false, null, null), isNew: true, isPath: false)
+                            editWaypoint(context,
+                                    Waypoint("", [value], false, null, null),
+                                    isNew: true, isPath: false)
                                 ?.then((newWaypoint) {
                               if (newWaypoint != null) {
                                 setState(() {
-                                  plan!.waypoints.add(Waypoint(newWaypoint.name, newWaypoint.latlng, false,
-                                      newWaypoint.icon, newWaypoint.color));
+                                  plan!.waypoints.add(Waypoint(
+                                      newWaypoint.name,
+                                      newWaypoint.latlng,
+                                      false,
+                                      newWaypoint.icon,
+                                      newWaypoint.color));
                                 });
                               }
                             });
                           }
                         });
                       },
-                      icon: const ImageIcon(AssetImage("assets/images/crosshair.png"))),
+                      icon: const ImageIcon(
+                          AssetImage("assets/images/crosshair.png"))),
                 ],
               ),
               Divider(
@@ -466,18 +527,21 @@ class _PlanEditorState extends State<PlanEditor> {
                           itemBuilder: (context, i) => Slidable(
                             dragStartBehavior: DragStartBehavior.start,
                             key: ValueKey(plan!.waypoints[i]),
-                            startActionPane: ActionPane(extentRatio: 0.14, motion: const ScrollMotion(), children: [
-                              SlidableAction(
-                                onPressed: (e) {
-                                  setState(() {
-                                    plan!.waypoints.removeAt(i);
-                                  });
-                                },
-                                icon: Icons.delete,
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white,
-                              ),
-                            ]),
+                            startActionPane: ActionPane(
+                                extentRatio: 0.14,
+                                motion: const ScrollMotion(),
+                                children: [
+                                  SlidableAction(
+                                    onPressed: (e) {
+                                      setState(() {
+                                        plan!.waypoints.removeAt(i);
+                                      });
+                                    },
+                                    icon: Icons.delete,
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ]),
                             endActionPane: ActionPane(
                               extentRatio: 0.15,
                               motion: const ScrollMotion(),
@@ -489,7 +553,8 @@ class _PlanEditorState extends State<PlanEditor> {
                                       plan!.waypoints[i],
                                     )?.then((newWaypoint) {
                                       if (newWaypoint != null) {
-                                        debugPrint("Finished Editing Waypoint $i");
+                                        debugPrint(
+                                            "Finished Editing Waypoint $i");
                                         setState(() {
                                           plan!.waypoints[i] = newWaypoint;
                                         });
@@ -534,7 +599,8 @@ class _PlanEditorState extends State<PlanEditor> {
                               },
                               onToggleOptional: () {
                                 setState(() {
-                                  plan!.waypoints[i].isOptional = !plan!.waypoints[i].isOptional;
+                                  plan!.waypoints[i].isOptional =
+                                      !plan!.waypoints[i].isOptional;
                                   plan!.refreshLength();
                                 });
                               },

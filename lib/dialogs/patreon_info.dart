@@ -19,17 +19,27 @@ void showPatreonInfoDialog(BuildContext context) {
                       style: ButtonStyle(
                         side: MaterialStateProperty.resolveWith<BorderSide>(
                             (states) => const BorderSide(color: Colors.white)),
-                        backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.white),
+                        backgroundColor:
+                            MaterialStateProperty.resolveWith<Color>(
+                                (states) => Colors.white),
                         // minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
-                        padding:
-                            MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(20)),
-                        shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
-                          return RoundedRectangleBorder(borderRadius: BorderRadius.circular(2));
+                        padding: MaterialStateProperty.resolveWith<
+                                EdgeInsetsGeometry>(
+                            (states) => const EdgeInsets.all(20)),
+                        shape:
+                            MaterialStateProperty.resolveWith<OutlinedBorder>(
+                                (_) {
+                          return RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(2));
                         }),
                         textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                            (states) => const TextStyle(color: Colors.white, fontSize: 22)),
+                            (states) => const TextStyle(
+                                color: Colors.white, fontSize: 22)),
                       ),
-                      onPressed: () => {launchUrl(Uri.parse("https://www.patreon.com/xcnav"))},
+                      onPressed: () => {
+                            launchUrl(
+                                Uri.parse("https://www.patreon.com/xcnav"))
+                          },
                       child: Image.asset(
                         "assets/external/Digital-Patreon-Logo_FieryCoral.png",
                         width: MediaQuery.of(context).size.width / 10,

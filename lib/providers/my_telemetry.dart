@@ -81,17 +81,18 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Future saveFlight() async {
     lastSavedLog = DateTime.now();
     Directory tempDir = await getApplicationDocumentsDirectory();
-    File logFile = File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
+    File logFile =
+        File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
     debugPrint("Writing ${logFile.uri} with ${recordGeo.length} samples");
     // TODO: save out the current flight plan as well!
-    await logFile
-        .create(recursive: true)
-        .then((value) => logFile.writeAsString(jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
+    await logFile.create(recursive: true).then((value) => logFile.writeAsString(
+        jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
   }
 
   void fetchAmbPressure() {
     http
-        .get(Uri.parse("https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
+        .get(Uri.parse(
+            "https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
         .then((responseXY) {
       // nearest stations
       var msgXY = jsonDecode(responseXY.body);
@@ -99,7 +100,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       var y = msgXY["properties"]["gridY"];
       var gridId = msgXY["properties"]["gridId"];
 
-      http.get(Uri.parse("https://api.weather.gov/gridpoints/$gridId/$x,$y/stations")).then((responsePoint) async {
+      http
+          .get(Uri.parse(
+              "https://api.weather.gov/gridpoints/$gridId/$x,$y/stations"))
+          .then((responsePoint) async {
         var msgPoint = jsonDecode(responsePoint.body);
         // check each for pressure
         stationFound = false;
@@ -108,12 +112,19 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           List<dynamic> stationList = msgPoint["observationStations"];
           for (String each in stationList) {
             if (stationFound) break;
-            await http.get(Uri.parse("$each/observations/latest")).then((responseStation) {
+            await http
+                .get(Uri.parse("$each/observations/latest"))
+                .then((responseStation) {
               try {
                 var msgStation = jsonDecode(responseStation.body);
-                if (msgStation["properties"] != null && msgStation["properties"]["seaLevelPressure"]["value"] != null) {
-                  double pressure = msgStation["properties"]["barometricPressure"]["value"] / 100;
-                  debugPrint("Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
+                if (msgStation["properties"] != null &&
+                    msgStation["properties"]["seaLevelPressure"]["value"] !=
+                        null) {
+                  double pressure = msgStation["properties"]
+                          ["barometricPressure"]["value"] /
+                      100;
+                  debugPrint(
+                      "Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
                   baroAmbient = BarometerValue(pressure);
                   baroAmbientRequested = false;
                   stationFound = true;
@@ -161,11 +172,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       triggerHyst = 0;
       if (inFlight) {
         // TODO: Use real timestamp search here (it's hardcoded to 5seconds)
-        final launchIndex = max(0, recordGeo.length - (triggerDuration.inSeconds ~/ 5) - 5);
+        final launchIndex =
+            max(0, recordGeo.length - (triggerDuration.inSeconds ~/ 5) - 5);
         launchGeo = recordGeo[launchIndex];
 
         takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
-        debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
+        debugPrint(
+            "In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
 
         // clear the log
         recordGeo.removeRange(0, launchIndex);
@@ -181,10 +194,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     if (inFlight) {
       // --- burn fuel
-      fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev.time) / 3600000.0);
+      fuel =
+          max(0, fuel - fuelBurnRate * (geo.time - geoPrev.time) / 3600000.0);
 
       // --- Record path
-      if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo.latLng) > 50)) {
+      if (flightTrace.isEmpty ||
+          (flightTrace.isNotEmpty &&
+              latlngCalc.distance(flightTrace.last, geo.latLng) > 50)) {
         flightTrace.add(geo.latLng);
         // --- keep list from bloating
         if (flightTrace.length > 10000) {
@@ -194,7 +210,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
       // --- Periodically save log
       if (!bypassRecording && lastSavedLog == null ||
-          lastSavedLog!.add(const Duration(minutes: 2)).isBefore(DateTime.now())) {
+          lastSavedLog!
+              .add(const Duration(minutes: 2))
+              .isBefore(DateTime.now())) {
         saveFlight();
       }
     }
@@ -218,7 +236,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Color fuelIndicatorColor(ETA next, ETA trip) {
     double fuelTime = fuel / fuelBurnRate;
     if (fuelTime > 0.0001 && inFlight && next.time != null) {
-      if (fuelTime < 0.25 || (fuelTime < next.time!.inMilliseconds.toDouble() / 3600000)) {
+      if (fuelTime < 0.25 ||
+          (fuelTime < next.time!.inMilliseconds.toDouble() / 3600000)) {
         // Red at 15minutes of fuel left or can't make selected waypoint
         return Colors.red.shade900;
       } else if (fuelTime < trip.time!.inMilliseconds.toDouble() / 3600000) {
@@ -229,9 +248,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     return Colors.grey.shade900;
   }
 
-  Duration get fuelTimeRemaining => Duration(milliseconds: ((fuel / fuelBurnRate) * 3600000).ceil());
+  Duration get fuelTimeRemaining =>
+      Duration(milliseconds: ((fuel / fuelBurnRate) * 3600000).ceil());
 
   Polyline buildFlightTrace() {
-    return Polyline(points: flightTrace, strokeWidth: 4, color: const Color.fromARGB(150, 255, 50, 50), isDotted: true);
+    return Polyline(
+        points: flightTrace,
+        strokeWidth: 4,
+        color: const Color.fromARGB(150, 255, 50, 50),
+        isDotted: true);
   }
 }

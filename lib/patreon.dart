@@ -24,7 +24,8 @@ Widget tierBadge(String? tier) {
         ),
         Padding(
           padding: const EdgeInsets.only(left: 4, right: 4),
-          child: Text(tier ?? "Supporter", style: const TextStyle(color: Colors.amber, fontSize: 12)),
+          child: Text(tier ?? "Supporter",
+              style: const TextStyle(color: Colors.amber, fontSize: 12)),
         ),
       ],
     ),

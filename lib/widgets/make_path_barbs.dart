@@ -19,7 +19,8 @@ Marker makeBarb(Waypoint waypoint, Barb barb, double size, bool reversed) {
           )));
 }
 
-List<Marker> makePathBarbs(List<Waypoint> waypoints, bool isReversed, double size) {
+List<Marker> makePathBarbs(
+    List<Waypoint> waypoints, bool isReversed, double size) {
   List<Marker> markers = [];
 
   for (final waypoint in waypoints) {

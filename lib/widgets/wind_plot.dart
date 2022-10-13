@@ -26,8 +26,8 @@ class WindPlotPainter extends CustomPainter {
 
   late final bool isActive;
 
-  WindPlotPainter(
-      double width, this.dataX, this.dataY, this.maxValue, this.circleCenter, this.circleRadius, this.isActive) {
+  WindPlotPainter(double width, this.dataX, this.dataY, this.maxValue,
+      this.circleCenter, this.circleRadius, this.isActive) {
     _paint = Paint()..color = Colors.red;
     _paint.style = PaintingStyle.fill;
 
@@ -53,7 +53,8 @@ class WindPlotPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     if (_arrow == null) {
-      loadUiImage("./assets/images/red_arrow.png").then((value) => _arrow = value);
+      loadUiImage("./assets/images/red_arrow.png")
+          .then((value) => _arrow = value);
     }
   }
 
@@ -73,10 +74,10 @@ class WindPlotPainter extends CustomPainter {
 
     // Paint grid
     const pad = 0.9;
-    canvas.drawLine(
-        Offset(size.width * (1 - pad), size.height / 2), Offset(size.width * pad, size.height / 2), _paintGrid);
-    canvas.drawLine(
-        Offset(size.width / 2, size.height * (1 - pad)), Offset(size.width / 2, size.height * pad), _paintGrid);
+    canvas.drawLine(Offset(size.width * (1 - pad), size.height / 2),
+        Offset(size.width * pad, size.height / 2), _paintGrid);
+    canvas.drawLine(Offset(size.width / 2, size.height * (1 - pad)),
+        Offset(size.width / 2, size.height * pad), _paintGrid);
 
     // Paint Wind fit
     final cCenter = circleCenter * maxSize / maxValue + center;
@@ -84,7 +85,8 @@ class WindPlotPainter extends CustomPainter {
 
     // Paint samples
     for (int i = 0; i < dataX.length; i++) {
-      canvas.drawCircle(Offset(dataX[i], dataY[i]) * maxSize / maxValue + center, 3, _paint);
+      canvas.drawCircle(
+          Offset(dataX[i], dataY[i]) * maxSize / maxValue + center, 3, _paint);
     }
 
     // Wind barb
@@ -93,14 +95,16 @@ class WindPlotPainter extends CustomPainter {
         PointMode.polygon,
         [
           cCenter +
-              Offset(cos(circleCenter.direction - pi / 1.2), sin(circleCenter.direction - pi / 1.2)) *
+              Offset(cos(circleCenter.direction - pi / 1.2),
+                      sin(circleCenter.direction - pi / 1.2)) *
                   circleCenter.distance *
                   maxSize /
                   maxValue /
                   3,
           cCenter,
           cCenter +
-              Offset(cos(circleCenter.direction + pi / 1.2), sin(circleCenter.direction + pi / 1.2)) *
+              Offset(cos(circleCenter.direction + pi / 1.2),
+                      sin(circleCenter.direction + pi / 1.2)) *
                   circleCenter.distance *
                   maxSize /
                   maxValue /
@@ -116,8 +120,14 @@ class WindPlotPainter extends CustomPainter {
       if (_arrow != null) {
         canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
         canvas.rotate(lastPoint.direction + pi / 2);
-        canvas.drawImageRect(_arrow!, const Rect.fromLTWH(0, 0, 128, 130),
-            Rect.fromCenter(center: const Offset(0, 0), width: maxSize / 3, height: maxSize / 3), Paint());
+        canvas.drawImageRect(
+            _arrow!,
+            const Rect.fromLTWH(0, 0, 128, 130),
+            Rect.fromCenter(
+                center: const Offset(0, 0),
+                width: maxSize / 3,
+                height: maxSize / 3),
+            Paint());
       }
     }
   }

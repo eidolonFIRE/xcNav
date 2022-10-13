@@ -120,7 +120,11 @@ var _unitDist = DisplayUnitsDist.values.first;
 var _unitFuel = DisplayUnitsFuel.values.first;
 
 /// Reconfigure the unit converter functions for different destination types
-void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUnitsDist? dist, DisplayUnitsFuel? fuel}) {
+void configUnits(
+    {DisplayUnitsSpeed? speed,
+    DisplayUnitsVario? vario,
+    DisplayUnitsDist? dist,
+    DisplayUnitsFuel? fuel}) {
   // Remember the unit types selected
   _unitSpeed = speed ?? _unitSpeed;
   _unitVario = vario ?? _unitVario;
@@ -131,7 +135,8 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
   if (speed != null) {
     switch (speed) {
       case DisplayUnitsSpeed.mph:
-        unitConverters[UnitType.speed] = (double value) => value * 3.6 * km2Miles;
+        unitConverters[UnitType.speed] =
+            (double value) => value * 3.6 * km2Miles;
         break;
       case DisplayUnitsSpeed.kph:
         unitConverters[UnitType.speed] = (double value) => value * 3.6;
@@ -152,7 +157,8 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
   if (vario != null) {
     switch (vario) {
       case DisplayUnitsVario.fpm:
-        unitConverters[UnitType.vario] = (double value) => value * 60 * meters2Feet;
+        unitConverters[UnitType.vario] =
+            (double value) => value * 60 * meters2Feet;
         break;
       case DisplayUnitsVario.mps:
         unitConverters[UnitType.vario] = (double value) => value;
@@ -167,8 +173,10 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
   if (dist != null) {
     switch (dist) {
       case DisplayUnitsDist.imperial:
-        unitConverters[UnitType.distFine] = (double value) => value * meters2Feet;
-        unitConverters[UnitType.distCoarse] = (double value) => value * meters2Miles;
+        unitConverters[UnitType.distFine] =
+            (double value) => value * meters2Feet;
+        unitConverters[UnitType.distCoarse] =
+            (double value) => value * meters2Miles;
         break;
       case DisplayUnitsDist.metric:
         unitConverters[UnitType.distFine] = (double value) => value;
@@ -208,7 +216,10 @@ String printHrMinLexical(Duration duration) {
 }
 
 TextSpan richHrMin(
-    {required Duration? duration, required TextStyle valueStyle, TextStyle? unitStyle, bool longUnits = false}) {
+    {required Duration? duration,
+    required TextStyle valueStyle,
+    TextStyle? unitStyle,
+    bool longUnits = false}) {
   if (duration == null) {
     return TextSpan(text: "∞", style: valueStyle);
   } else {
@@ -218,7 +229,8 @@ TextSpan richHrMin(
     if (hr > 0) {
       return TextSpan(children: [
         TextSpan(text: hr.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "hr " : "h ", style: unitStyle ?? valueStyle),
+        TextSpan(
+            text: longUnits ? "hr " : "h ", style: unitStyle ?? valueStyle),
         TextSpan(text: min.toString(), style: valueStyle),
         TextSpan(text: longUnits ? "min" : "m", style: unitStyle ?? valueStyle),
       ]);
@@ -231,17 +243,25 @@ TextSpan richHrMin(
   }
 }
 
-String printDouble({required double value, required int digits, required int decimals, double? autoDecimalThresh}) {
+String printDouble(
+    {required double value,
+    required int digits,
+    required int decimals,
+    double? autoDecimalThresh}) {
   if (value.isInfinite) return "∞";
   if (!value.isFinite) return "?";
   if (autoDecimalThresh != null && value.abs() < autoDecimalThresh) decimals++;
   final int mag = (pow(10, digits + decimals) - 1).round();
   final double decPwr = pow(10, decimals).toDouble();
-  return ((min(mag, max(-mag, value * decPwr))).round() / decPwr).toStringAsFixed(decimals);
+  return ((min(mag, max(-mag, value * decPwr))).round() / decPwr)
+      .toStringAsFixed(decimals);
 }
 
 String printDoubleLexical(
-    {required double value, double halfThreshold = 10, double quarterThreshold = 2, double eighthThreshold = 1}) {
+    {required double value,
+    double halfThreshold = 10,
+    double quarterThreshold = 2,
+    double eighthThreshold = 1}) {
   if (!value.isFinite) return "";
 
   if (value < eighthThreshold) {
@@ -267,17 +287,27 @@ String printDoubleLexical(
 }
 
 TextSpan richValue(UnitType type, double value,
-    {int digits = 4, int decimals = 0, TextStyle? valueStyle, TextStyle? unitStyle, bool autoDecimal = true}) {
+    {int digits = 4,
+    int decimals = 0,
+    TextStyle? valueStyle,
+    TextStyle? unitStyle,
+    bool autoDecimal = true}) {
   // Cases for increasing decimals
   if (autoDecimal) {
-    if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps) decimals++;
-    if (type == UnitType.speed && _unitSpeed == DisplayUnitsVario.mps) decimals++;
+    if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps)
+      decimals++;
+    if (type == UnitType.speed && _unitSpeed == DisplayUnitsVario.mps)
+      decimals++;
   }
 
   // Make the textspan
   return TextSpan(children: [
     TextSpan(
-        text: printDouble(value: unitConverters[type]!(value), digits: digits, decimals: decimals), style: valueStyle),
+        text: printDouble(
+            value: unitConverters[type]!(value),
+            digits: digits,
+            decimals: decimals),
+        style: valueStyle),
     TextSpan(text: getUnitStr(type), style: unitStyle),
   ]);
 }

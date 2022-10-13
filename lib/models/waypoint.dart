@@ -19,10 +19,15 @@ String hashFlightPlanData(List<Waypoint> waypoints) {
 
   for (int i = 0; i < waypoints.length; i++) {
     Waypoint wp = waypoints[i];
-    str += i.toString() + wp.name + (wp.icon ?? "") + (wp.color?.toString() ?? "") + (wp.isOptional ? "O" : "X");
+    str += i.toString() +
+        wp.name +
+        (wp.icon ?? "") +
+        (wp.color?.toString() ?? "") +
+        (wp.isOptional ? "O" : "X");
     for (LatLng g in wp.latlng) {
       // large tolerance for floats
-      str += "${g.latitude.toStringAsFixed(5)}${g.longitude.toStringAsFixed(5)}";
+      str +=
+          "${g.latitude.toStringAsFixed(5)}${g.longitude.toStringAsFixed(5)}";
     }
   }
 
@@ -63,7 +68,8 @@ class Waypoint {
     _latlng = [];
     List<dynamic> rawList = json["latlng"];
     for (List<dynamic> e in rawList) {
-      _latlng.add(LatLng(e[0] is int ? (e[0] as int).toDouble() : e[0] as double,
+      _latlng.add(LatLng(
+          e[0] is int ? (e[0] as int).toDouble() : e[0] as double,
           e[1] is int ? (e[1] as int).toDouble() : e[1] as double));
     }
   }
@@ -98,7 +104,9 @@ class Waypoint {
   double lengthBetweenIndexs(int start, int end) {
     // TODO: cache distances between all the points (vs recalculating every time)
     double dist = 0;
-    for (int t = max(0, min(start, end)); t < min(latlng.length - 1, max(start, end)); t++) {
+    for (int t = max(0, min(start, end));
+        t < min(latlng.length - 1, max(start, end));
+        t++) {
       dist += latlngCalc.distance(latlng[t], latlng[t + 1]);
     }
     return dist;
@@ -110,14 +118,17 @@ class Waypoint {
     List<Barb> barbs = [];
 
     // Add head and tail
-    barbs.add(Barb(latlng.first, latlngCalc.bearing(latlng.first, latlng[1]) * pi / 180));
-    barbs.add(Barb(latlng.last, latlngCalc.bearing(latlng[latlng.length - 2], latlng.last) * pi / 180));
+    barbs.add(Barb(
+        latlng.first, latlngCalc.bearing(latlng.first, latlng[1]) * pi / 180));
+    barbs.add(Barb(latlng.last,
+        latlngCalc.bearing(latlng[latlng.length - 2], latlng.last) * pi / 180));
 
     // Add intermediary points
     for (int i = 0; i < latlng.length - 1; i++) {
       final brg = latlngCalc.bearing(latlng[i], latlng[i + 1]);
       final dist = latlngCalc.distance(latlng[i], latlng[i + 1]);
-      barbs.add(Barb(latlngCalc.offset(latlng[i], dist / 2, brg), brg * pi / 180));
+      barbs.add(
+          Barb(latlngCalc.offset(latlng[i], dist / 2, brg), brg * pi / 180));
     }
     return barbs;
   }

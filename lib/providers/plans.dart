@@ -27,19 +27,24 @@ class Plans with ChangeNotifier {
   void refreshPlansFromDirectory() async {
     debugPrint("Refreshing Plans From Directory");
     final Directory appDocDir = await getApplicationDocumentsDirectory();
-    final Directory appDocDirFolder = Directory("${appDocDir.path}/flight_plans/");
+    final Directory appDocDirFolder =
+        Directory("${appDocDir.path}/flight_plans/");
     if (await appDocDirFolder.exists()) {
       _loadedPlans.clear();
       // Async load in all the files
 
-      var files = await appDocDirFolder.list(recursive: false, followLinks: false).toList();
+      var files = await appDocDirFolder
+          .list(recursive: false, followLinks: false)
+          .toList();
       // debugPrint("${files.length} log files found.");
       List<Completer> completers = [];
       for (var each in files) {
         var completer = Completer();
         completers.add(completer);
         File.fromUri(each.uri).readAsString().then((value) {
-          var plan = FlightPlan.fromJson(each.uri.pathSegments.last.replaceAll(".json", ""), jsonDecode(value));
+          var plan = FlightPlan.fromJson(
+              each.uri.pathSegments.last.replaceAll(".json", ""),
+              jsonDecode(value));
           if (plan.waypoints.isNotEmpty) {
             _loadedPlans[plan.name] = plan;
           } else {
@@ -112,7 +117,10 @@ class Plans with ChangeNotifier {
         File file = File(filename);
 
         file.create(recursive: true).then((value) => file
-            .writeAsString(jsonEncode({"title": name, "waypoints": plan.waypoints.map((e) => e.toJson()).toList()}))
+            .writeAsString(jsonEncode({
+              "title": name,
+              "waypoints": plan.waypoints.map((e) => e.toJson()).toList()
+            }))
             .then((_) => completer.complete()));
       });
       return completer.future;

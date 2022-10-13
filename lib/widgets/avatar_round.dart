@@ -6,7 +6,8 @@ class AvatarRound extends StatelessWidget {
   final double radius;
   final String? tier;
 
-  const AvatarRound(this.avatar, this.radius, {Key? key, this.tier}) : super(key: key);
+  const AvatarRound(this.avatar, this.radius, {Key? key, this.tier})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +20,10 @@ class AvatarRound extends StatelessWidget {
           child: SizedBox(
               width: radius * 2,
               height: radius * 2,
-              child: FittedBox(fit: BoxFit.fill, child: avatar ?? Image.asset("assets/images/default_avatar.png"))),
+              child: FittedBox(
+                  fit: BoxFit.fill,
+                  child: avatar ??
+                      Image.asset("assets/images/default_avatar.png"))),
         ),
       ),
     );

@@ -68,19 +68,26 @@ class SoundingPlotThermPainter extends CustomPainter {
 
     /// Top of the graph in meters
     const ceil = 6000;
-    final double maxTmp = sounding.data.reduce((a, b) => (a.tmp ?? 0) > (b.tmp ?? 0) ? a : b).tmp!;
-    final double minTmp = sounding.data.reduce((a, b) => (a.tmp ?? 0) < (b.tmp ?? 0) ? a : b).tmp!;
+    final double maxTmp = sounding.data
+        .reduce((a, b) => (a.tmp ?? 0) > (b.tmp ?? 0) ? a : b)
+        .tmp!;
+    final double minTmp = sounding.data
+        .reduce((a, b) => (a.tmp ?? 0) < (b.tmp ?? 0) ? a : b)
+        .tmp!;
     final thermCeil = max(20, ((maxTmp + 10) / 20).ceil() * 20);
     final thermFloor = min(0, (minTmp / 20).floor() * 20);
     // final thermFloor = minTmp;
 
-    double toX(double temp) => (temp - thermFloor) / (thermCeil - thermFloor) * size.width;
+    double toX(double temp) =>
+        (temp - thermFloor) / (thermCeil - thermFloor) * size.width;
 
     // --- Isotherms
     const numThermLines = 8;
     for (int t = 0; t < numThermLines; t++) {
-      canvas.drawLine(Offset(size.width * t / numThermLines, size.height),
-          Offset(size.width * t / numThermLines + skew * size.height, 0), _paintThermLines);
+      canvas.drawLine(
+          Offset(size.width * t / numThermLines, size.height),
+          Offset(size.width * t / numThermLines + skew * size.height, 0),
+          _paintThermLines);
     }
 
     // --- Dry Adiabats
@@ -88,8 +95,8 @@ class SoundingPlotThermPainter extends CustomPainter {
       List<Offset> points = [];
       for (double elev = 0; elev <= ceil; elev += ceil / 10) {
         final y = elev / ceil * size.height;
-        final temp = dryLapse(
-            pressureFromElevation(elev, 1013.25), thermFloor + (thermCeil - thermFloor) / numThermLines * t, 1013.25);
+        final temp = dryLapse(pressureFromElevation(elev, 1013.25),
+            thermFloor + (thermCeil - thermFloor) / numThermLines * t, 1013.25);
         final x = toX(temp);
         points.add(Offset(x + skew * y, size.height - y));
       }
@@ -99,7 +106,9 @@ class SoundingPlotThermPainter extends CustomPainter {
     // --- Wet Adiabats
     for (int t = 1; t <= numThermLines; t++) {
       List<Offset> points = [];
-      double prevTemp = thermFloor + (thermCeil - thermFloor) / numThermLines * t + celsiusToK;
+      double prevTemp = thermFloor +
+          (thermCeil - thermFloor) / numThermLines * t +
+          celsiusToK;
       double prevP = 1013.25;
       for (double elev = 0; elev <= ceil; elev += ceil / 10) {
         final y = elev / ceil * size.height;
@@ -121,7 +130,8 @@ class SoundingPlotThermPainter extends CustomPainter {
         sounding.data.where((element) => element.tmp != null).map((e) {
           final altMeters = getElevation(e.baroAlt, 1013.25);
           final y = altMeters * size.height / ceil;
-          final x = (e.tmp! - thermFloor) / (thermCeil - thermFloor) * size.width;
+          final x =
+              (e.tmp! - thermFloor) / (thermCeil - thermFloor) * size.width;
 
           return Offset(x + skew * y, size.height - y);
         }).toList(),
@@ -146,17 +156,28 @@ class SoundingPlotThermPainter extends CustomPainter {
     // --- Selected Isobar
     if (selectedY != null) {
       selectedY = max(0, min(size.height, selectedY!));
-      canvas.drawLine(Offset(4, selectedY!), Offset(size.width - 4, selectedY!), _paintGrid);
+      canvas.drawLine(Offset(4, selectedY!), Offset(size.width - 4, selectedY!),
+          _paintGrid);
     }
 
-    final myBaroY =
-        max(0, min(size.height, size.height - getElevation(myBaro, 1013.25) * size.height / ceil)).toDouble();
-    canvas.drawLine(Offset(4, myBaroY), Offset(size.width - 4, myBaroY), _paintGrid..strokeWidth = 2);
+    final myBaroY = max(
+            0,
+            min(
+                size.height,
+                size.height -
+                    getElevation(myBaro, 1013.25) * size.height / ceil))
+        .toDouble();
+    canvas.drawLine(Offset(4, myBaroY), Offset(size.width - 4, myBaroY),
+        _paintGrid..strokeWidth = 2);
     var path = Path();
-    path.addPolygon([Offset(2, myBaroY + 5), Offset(10, myBaroY), Offset(2, myBaroY - 5)], true);
     path.addPolygon(
-        [Offset(size.width - 2, myBaroY + 5), Offset(size.width - 10, myBaroY), Offset(size.width - 2, myBaroY - 5)],
+        [Offset(2, myBaroY + 5), Offset(10, myBaroY), Offset(2, myBaroY - 5)],
         true);
+    path.addPolygon([
+      Offset(size.width - 2, myBaroY + 5),
+      Offset(size.width - 10, myBaroY),
+      Offset(size.width - 2, myBaroY - 5)
+    ], true);
     canvas.drawPath(path, _paintBarb);
   }
 

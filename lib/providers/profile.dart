@@ -44,7 +44,8 @@ class Profile with ChangeNotifier {
     }
     updateAvatarHash();
 
-    debugPrint("Loaded Profile: $name, $id, $secretID, avatar: ${_avatarRaw?.length ?? 0}");
+    debugPrint(
+        "Loaded Profile: $name, $id, $secretID, avatar: ${_avatarRaw?.length ?? 0}");
 
     hash = _hash();
   }
@@ -107,9 +108,12 @@ class Profile with ChangeNotifier {
 
   Future pushAvatar() async {
     return http
-        .post(Uri.parse("https://gx49w49rb4.execute-api.us-west-1.amazonaws.com/xcnav_avatar_service"),
+        .post(
+            Uri.parse(
+                "https://gx49w49rb4.execute-api.us-west-1.amazonaws.com/xcnav_avatar_service"),
             headers: {"Content-Type": "application/json"},
-            body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
+            body: jsonEncode(
+                {"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
         .then((http.Response response) {
       final int statusCode = response.statusCode;
 

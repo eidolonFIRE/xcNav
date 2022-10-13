@@ -134,20 +134,23 @@ class FlightPlan {
     }
   }
 
-  FlightPlan.fromKml(this.name, XmlElement document, List<XmlElement> folders, {bool setAllOptional = false}) {
+  FlightPlan.fromKml(this.name, XmlElement document, List<XmlElement> folders,
+      {bool setAllOptional = false}) {
     waypoints = [];
 
     void scanElement(XmlElement element) {
       element.findAllElements("Placemark").forEach((element) {
         String name = element.getElement("name")?.text.trim() ?? "untitled";
-        if (element.getElement("Point") != null || element.getElement("LineString") != null) {
-          final List<LatLng> points = (element.getElement("Point") ?? element.getElement("LineString"))!
-              .getElement("coordinates")!
-              .text
-              .trim()
-              .split(RegExp(r'[\n ]'))
-              .where((element) => element.isNotEmpty)
-              .map((e) {
+        if (element.getElement("Point") != null ||
+            element.getElement("LineString") != null) {
+          final List<LatLng> points =
+              (element.getElement("Point") ?? element.getElement("LineString"))!
+                  .getElement("coordinates")!
+                  .text
+                  .trim()
+                  .split(RegExp(r'[\n ]'))
+                  .where((element) => element.isNotEmpty)
+                  .map((e) {
             final raw = e.split(",");
             return LatLng(double.parse(raw[1]), double.parse(raw[0]));
           }).toList();
@@ -158,14 +161,14 @@ class FlightPlan {
           int? color;
 
           // First try old style
-          final styleElement = document
-              .findAllElements("Style")
-              .where((e) => e.getAttribute("id") != null && e.getAttribute("id")!.startsWith(styleUrl));
+          final styleElement = document.findAllElements("Style").where((e) =>
+              e.getAttribute("id") != null &&
+              e.getAttribute("id")!.startsWith(styleUrl));
           if (styleElement.isNotEmpty) {
-            String? colorText =
-                (styleElement.first.getElement("IconStyle") ?? styleElement.first.getElement("LineStyle"))
-                    ?.getElement("color")
-                    ?.text;
+            String? colorText = (styleElement.first.getElement("IconStyle") ??
+                    styleElement.first.getElement("LineStyle"))
+                ?.getElement("color")
+                ?.text;
             if (colorText != null) {
               colorText = colorText.substring(0, 2) +
                   colorText.substring(6, 8) +
@@ -177,7 +180,10 @@ class FlightPlan {
             // Try the new goggle style format
 
             // first styleMap and the destination url
-            final styleMap = document.findAllElements("StyleMap").where((e) => e.getAttribute("id")! == styleUrl).first;
+            final styleMap = document
+                .findAllElements("StyleMap")
+                .where((e) => e.getAttribute("id")! == styleUrl)
+                .first;
             final finalStyleUrl = styleMap
                 .findAllElements("Pair")
                 .where((e) => e.getElement("key")!.text == "normal")
@@ -192,8 +198,11 @@ class FlightPlan {
                 .first;
             if (points.length > 1) {
               // LineStyle
-              final finalColorString =
-                  finalStyleElement.getElement("Style")!.getElement("LineStyle")!.getElement("color")!.text;
+              final finalColorString = finalStyleElement
+                  .getElement("Style")!
+                  .getElement("LineStyle")!
+                  .getElement("color")!
+                  .text;
               color = int.parse((finalColorString), radix: 16) | 0xff000000;
             } else {
               // IconStyle
@@ -203,7 +212,10 @@ class FlightPlan {
                   .getElement("Icon")!
                   .getElement("href")!
                   .text;
-              String? finalColorString = RegExp(r'color=([a-f0-9]{6})').firstMatch(href)?.group(1).toString();
+              String? finalColorString = RegExp(r'color=([a-f0-9]{6})')
+                  .firstMatch(href)
+                  ?.group(1)
+                  .toString();
               if (finalColorString != null) {
                 color = int.parse((finalColorString), radix: 16) | 0xff000000;
               }
@@ -214,7 +226,9 @@ class FlightPlan {
             if (points.length > 1) {
               // Trim length strings from title
               debugPrint("path ${name}");
-              final match = RegExp(r'(.*)[\s]+(?:[-])[\s]*([0-9\.]+)[\s]*(miles|mi|km|Miles|Mi|Km)$').firstMatch(name);
+              final match = RegExp(
+                      r'(.*)[\s]+(?:[-])[\s]*([0-9\.]+)[\s]*(miles|mi|km|Miles|Mi|Km)$')
+                  .firstMatch(name);
               name = match?.group(1) ?? name;
             }
             waypoints.add(Waypoint(name, points, setAllOptional, null, color));

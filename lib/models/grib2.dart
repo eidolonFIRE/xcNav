@@ -45,7 +45,8 @@ const Map<String, String> lutProduct = {
   "2,3": "VGRD", // Wind "V" velocity
 };
 
-int _int32(int i, Uint8List d) => (d[i] << 24) + (d[i + 1] << 16) + (d[i + 2] << 8) + (d[i + 3]);
+int _int32(int i, Uint8List d) =>
+    (d[i] << 24) + (d[i + 1] << 16) + (d[i + 2] << 8) + (d[i + 3]);
 
 List<Section> parseRawFile(Uint8List data) {
   List<Section> sections = [];
@@ -54,8 +55,11 @@ List<Section> parseRawFile(Uint8List data) {
   int sectionStart = 0;
   int sectionEnd = 0;
   for (int i = 0; i < data.length; i++) {
-    if (String.fromCharCodes(data.sublist(i, min(i + 4, data.length - 1))) == "GRIB") sectionStart = i;
-    if (i == data.length - 1 || String.fromCharCodes(data.sublist(i, min(i + 8, data.length - 1))) == "7777GRIB") {
+    if (String.fromCharCodes(data.sublist(i, min(i + 4, data.length - 1))) ==
+        "GRIB") sectionStart = i;
+    if (i == data.length - 1 ||
+        String.fromCharCodes(data.sublist(i, min(i + 8, data.length - 1))) ==
+            "7777GRIB") {
       sectionEnd = i;
       sections.add(Section(sectionStart, sectionEnd));
       // debugPrint("Section: $_sectionStart - $_sectionEnd");
@@ -107,7 +111,14 @@ List<Section> parseRawFile(Uint8List data) {
     // debugPrint("Meridian 1: ${_int32(65, d) * 10e-7}");
     // debugPrint("Meridian 2: ${_int32(65, d) * 10e-7}");
 
-    s.gridConfig = GridConfig(numX: numX, numY: numY, la1: la1, lo1: lo1, dX: dX, dY: dY, latRef: latRef);
+    s.gridConfig = GridConfig(
+        numX: numX,
+        numY: numY,
+        la1: la1,
+        lo1: lo1,
+        dX: dX,
+        dY: dY,
+        latRef: latRef);
 
     d = d.sublist(_int32(0, d));
 
@@ -121,7 +132,9 @@ List<Section> parseRawFile(Uint8List data) {
     }
     final prodCat = d[9];
     final prodParam = d[10];
-    final prodName = lutProduct["${prodCat.toString()},${prodParam.toString()}"] ?? "Unknown";
+    final prodName =
+        lutProduct["${prodCat.toString()},${prodParam.toString()}"] ??
+            "Unknown";
     final surfaceType = d[22];
     // debugPrint("Surface Type: ${lutSurfaceType[d[22]] ?? "Unknown"}");
 
@@ -197,7 +210,8 @@ List<Section> parseRawFile(Uint8List data) {
             bitOffset += bitsToConsume;
           }
 
-          double fv = ((v + refValue) / pow(10.0, decScale) * pow(2.0, binScale));
+          double fv =
+              ((v + refValue) / pow(10.0, decScale) * pow(2.0, binScale));
 
           // K to F: (K - 273.15) × 9/5 + 32
           // K to C: K - 273.15

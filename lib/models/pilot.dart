@@ -66,7 +66,8 @@ class Pilot {
             latitude: gps["lat"] as double,
             timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp),
             accuracy: 1,
-            altitude: gps["alt"] is int ? (gps["alt"] as int).toDouble() : gps["alt"],
+            altitude:
+                gps["alt"] is int ? (gps["alt"] as int).toDouble() : gps["alt"],
             heading: 0,
             speed: 0,
             speedAccuracy: 1,
@@ -101,7 +102,8 @@ class Pilot {
         }
       }
 
-      color = Color.fromRGBO(redBucket ~/ pixelCount, greenBucket ~/ pixelCount, blueBucket ~/ pixelCount, 1);
+      color = Color.fromRGBO(redBucket ~/ pixelCount, greenBucket ~/ pixelCount,
+          blueBucket ~/ pixelCount, 1);
     }
   }
 
@@ -155,8 +157,8 @@ class Pilot {
   }
 
   Future _fetchS3asset(String pilotID) async {
-    Uri uri =
-        Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com", "/xcnav_avatar_service", {"pilot_id": pilotID});
+    Uri uri = Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com",
+        "/xcnav_avatar_service", {"pilot_id": pilotID});
     return http
         .get(
       uri,
@@ -173,7 +175,10 @@ class Pilot {
 
   Polyline buildFlightTrace() {
     return Polyline(
-        points: flightTrace.map((e) => e.latLng).toList().sublist(max(0, flightTrace.length - 60)),
+        points: flightTrace
+            .map((e) => e.latLng)
+            .toList()
+            .sublist(max(0, flightTrace.length - 60)),
         strokeWidth: 4,
         color: color.withAlpha(150),
         isDotted: true);

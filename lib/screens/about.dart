@@ -18,15 +18,18 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
   final paleColor = const Color.fromARGB(20, 255, 255, 255);
 
   final ButtonStyle externalBtn = ButtonStyle(
-    side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.white)),
-    backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.white),
+    side: MaterialStateProperty.resolveWith<BorderSide>(
+        (states) => const BorderSide(color: Colors.white)),
+    backgroundColor:
+        MaterialStateProperty.resolveWith<Color>((states) => Colors.white),
     // minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
-    padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(20)),
+    padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>(
+        (states) => const EdgeInsets.all(20)),
     shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
       return RoundedRectangleBorder(borderRadius: BorderRadius.circular(4));
     }),
-    textStyle:
-        MaterialStateProperty.resolveWith<TextStyle>((states) => const TextStyle(color: Colors.white, fontSize: 22)),
+    textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+        (states) => const TextStyle(color: Colors.white, fontSize: 22)),
   );
 
   @override
@@ -51,19 +54,24 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
         body: Container(
           width: MediaQuery.of(context).size.width,
           decoration: const BoxDecoration(
-              gradient: LinearGradient(colors: [
-            Color.fromARGB(255, 0xC9, 0xFF, 0xFF),
-            Color.fromARGB(255, 0x52, 0x9E, 0x9E),
-            Color.fromARGB(255, 0x1E, 0x3E, 0x4F),
-            Color.fromARGB(255, 0x16, 0x16, 0x2E),
-            Color.fromARGB(255, 0x0A, 0x0A, 0x14),
-          ], stops: [
-            0,
-            0.27,
-            0.58,
-            0.83,
-            1
-          ], begin: Alignment.topLeft, end: Alignment.bottomRight, transform: GradientRotation(0))),
+              gradient: LinearGradient(
+                  colors: [
+                Color.fromARGB(255, 0xC9, 0xFF, 0xFF),
+                Color.fromARGB(255, 0x52, 0x9E, 0x9E),
+                Color.fromARGB(255, 0x1E, 0x3E, 0x4F),
+                Color.fromARGB(255, 0x16, 0x16, 0x2E),
+                Color.fromARGB(255, 0x0A, 0x0A, 0x14),
+              ],
+                  stops: [
+                0,
+                0.27,
+                0.58,
+                0.83,
+                1
+              ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  transform: GradientRotation(0))),
           child: Padding(
             padding: const EdgeInsets.only(top: 50, bottom: 50),
             child: Column(
@@ -107,7 +115,10 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                           height: MediaQuery.of(context).size.width / 5,
                           child: ElevatedButton(
                               style: externalBtn,
-                              onPressed: () => {launchUrl(Uri.parse("https://www.patreon.com/xcnav"))},
+                              onPressed: () => {
+                                    launchUrl(Uri.parse(
+                                        "https://www.patreon.com/xcnav"))
+                                  },
                               child: Image.asset(
                                 "assets/external/Digital-Patreon-Logo_FieryCoral.png",
                                 width: MediaQuery.of(context).size.width / 10,
@@ -118,16 +129,24 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                           height: MediaQuery.of(context).size.width / 5,
                           child: ElevatedButton(
                               style: externalBtn,
-                              onPressed: () => {launchUrl(Uri.parse("https://github.com/eidolonFIRE/xcNav"))},
-                              child: Image.asset("assets/external/GitHub-Mark-120px-plus.png",
-                                  width: MediaQuery.of(context).size.width / 10)),
+                              onPressed: () => {
+                                    launchUrl(Uri.parse(
+                                        "https://github.com/eidolonFIRE/xcNav"))
+                                  },
+                              child: Image.asset(
+                                  "assets/external/GitHub-Mark-120px-plus.png",
+                                  width:
+                                      MediaQuery.of(context).size.width / 10)),
                         ),
                         SizedBox(
                           width: MediaQuery.of(context).size.width / 5,
                           height: MediaQuery.of(context).size.width / 5,
                           child: ElevatedButton(
                               style: externalBtn,
-                              onPressed: () => {launchUrl(Uri.parse("https://discord.gg/Fwv8Sz4HJN"))},
+                              onPressed: () => {
+                                    launchUrl(Uri.parse(
+                                        "https://discord.gg/Fwv8Sz4HJN"))
+                                  },
                               child: SvgPicture.asset(
                                 "assets/external/icon_clyde_white_RGB.svg",
                               )),

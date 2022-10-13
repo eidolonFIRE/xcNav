@@ -43,7 +43,8 @@ class FlightLog {
       title = DateFormat("MMM d - yyyy").format(date);
 
       // --- Calculate Stuff
-      durationTime = Duration(milliseconds: samples.last.time - samples.first.time);
+      durationTime =
+          Duration(milliseconds: samples.last.time - samples.first.time);
 
       durationDist = 0;
       for (int i = 0; i < samples.length - 1; i++) {
@@ -60,7 +61,8 @@ class FlightLog {
       while (left < samples.length) {
         // grow window
         while (right < samples.length &&
-            Duration(milliseconds: samples[right].time - samples[left].time) < const Duration(seconds: 60)) {
+            Duration(milliseconds: samples[right].time - samples[left].time) <
+                const Duration(seconds: 60)) {
           right++;
         }
 
@@ -69,7 +71,9 @@ class FlightLog {
         }
 
         // check max
-        double newClimb = (samples[right].alt - samples[left].alt) / (samples[right].time - samples[left].time) * 1000;
+        double newClimb = (samples[right].alt - samples[left].alt) /
+            (samples[right].time - samples[left].time) *
+            1000;
         if (newClimb > (bestClimb ?? 0)) {
           bestClimb = newClimb;
         }
@@ -118,7 +122,8 @@ class FlightLog {
     const numStyles = 1;
     List<String> styles = [];
     for (int i = 0; i < numStyles; i++) {
-      final String lineColor = "ff${colorWheel(-i / (max(1, numStyles - 1)) * 2 / 3 + 1 / 3)}";
+      final String lineColor =
+          "ff${colorWheel(-i / (max(1, numStyles - 1)) * 2 / 3 + 1 / 3)}";
 
       styles.add("""<Style id="style$i">
     <LineStyle>
@@ -135,7 +140,8 @@ class FlightLog {
     List<String> linestrings = [];
 
     // assemble kml point list
-    List<String> points = samples.map((p) => "${p.lng},${p.lat},${p.alt}").toList();
+    List<String> points =
+        samples.map((p) => "${p.lng},${p.lat},${p.alt}").toList();
     final pointsString = points.join("\n");
 
     // select line style (color) based on the segment's average speed
@@ -172,9 +178,14 @@ class FlightLog {
 
         builder.element("trkseg", nest: () {
           for (final geo in samples) {
-            builder.element("trkpt", attributes: {"lat": geo.lat.toString(), "lon": geo.lng.toString()}, nest: () {
+            builder.element("trkpt", attributes: {
+              "lat": geo.lat.toString(),
+              "lon": geo.lng.toString()
+            }, nest: () {
               builder.element("ele", nest: geo.alt.toString());
-              builder.element("time", nest: DateTime.fromMillisecondsSinceEpoch(geo.time).toIso8601String());
+              builder.element("time",
+                  nest: DateTime.fromMillisecondsSinceEpoch(geo.time)
+                      .toIso8601String());
             });
           }
         });

@@ -14,8 +14,8 @@ class WindSolveResult {
   late final DateTime timestamp;
   List<double> samplesX;
   List<double> samplesY;
-  WindSolveResult(this.airspeed, this.windSpd, this.windHdg, this.circleCenter, this.maxSpd, this.samplesX,
-      this.samplesY, this.timestamp);
+  WindSolveResult(this.airspeed, this.windSpd, this.windHdg, this.circleCenter,
+      this.maxSpd, this.samplesX, this.samplesY, this.timestamp);
 }
 
 class Wind with ChangeNotifier {
@@ -91,7 +91,8 @@ class Wind with ChangeNotifier {
         final fov = right - left;
         // debugPrint("FOV: $fov  (${samples.length} samples)");
 
-        if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
+        if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2)
+          solve(samples);
       }
     }
   }
@@ -110,7 +111,8 @@ class Wind with ChangeNotifier {
     // Transform to cartesian
     final samplesX = samples.map((e) => cos(e.hdg - pi / 2) * e.value).toList();
     final samplesY = samples.map((e) => sin(e.hdg - pi / 2) * e.value).toList();
-    final maxSpd = samples.reduce((a, b) => a.value > b.value ? a : b).value * 1.1;
+    final maxSpd =
+        samples.reduce((a, b) => a.value > b.value ? a : b).value * 1.1;
 
     // Remove DC offset (translate to cener over origin)
     final xMean = samplesX.reduce((a, b) => a + b) / samplesX.length;
@@ -138,8 +140,13 @@ class Wind with ChangeNotifier {
     final double covXY = mXX * mYY - mXY * mXY;
     final double a3 = 4 * mZ;
     final double a2 = -3 * mZ * mZ - mZZ;
-    final double a1 = mZZ * mZ + 4 * covXY * mZ - mXZ * mXZ - mYZ * mYZ - mZ * mZ * mZ;
-    final double a0 = mXZ * mXZ * mYY + mYZ * mYZ * mXX - mZZ * covXY - 2 * mXZ * mYZ * mXY + mZ * mZ * covXY;
+    final double a1 =
+        mZZ * mZ + 4 * covXY * mZ - mXZ * mXZ - mYZ * mYZ - mZ * mZ * mZ;
+    final double a0 = mXZ * mXZ * mYY +
+        mYZ * mYZ * mXX -
+        mZZ * covXY -
+        2 * mXZ * mYZ * mXY +
+        mZ * mZ * covXY;
     final double a22 = a2 + a2;
     final double a33 = a3 + a3 + a3;
 
@@ -183,8 +190,8 @@ class Wind with ChangeNotifier {
 
     // More conditions for good result
     if (windSpd < 90 && radius < 40) {
-      _result = WindSolveResult(
-          radius, windSpd, windHdg, Offset(xCenter, yCenter), maxSpd, samplesX, samplesY, DateTime.now());
+      _result = WindSolveResult(radius, windSpd, windHdg,
+          Offset(xCenter, yCenter), maxSpd, samplesX, samplesY, DateTime.now());
       notifyListeners();
 
       if (_triggerStop) stop();

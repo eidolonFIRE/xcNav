@@ -44,7 +44,8 @@ class _PlanCardState extends State<PlanCard> {
               // The "Yes" button
               TextButton.icon(
                   onPressed: () {
-                    Provider.of<Plans>(context, listen: false).deletePlan(widget.plan.name);
+                    Provider.of<Plans>(context, listen: false)
+                        .deletePlan(widget.plan.name);
                     Navigator.popUntil(context, ModalRoute.withName("/plans"));
                   },
                   icon: const Icon(
@@ -95,7 +96,8 @@ class _PlanCardState extends State<PlanCard> {
         builder: (ctx) {
           return AlertDialog(
             title: const Text('Please Confirm'),
-            content: const Text('This will replace the plan for everyone in the group.'),
+            content: const Text(
+                'This will replace the plan for everyone in the group.'),
             actions: [
               // The "Yes" button
               ElevatedButton.icon(
@@ -133,10 +135,11 @@ class _PlanCardState extends State<PlanCard> {
                   padding: const EdgeInsets.only(left: 4),
                   child: Text(
                     widget.plan.goodFile ? widget.plan.name : "Broken File",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6!
-                        .merge(TextStyle(color: widget.plan.goodFile ? Colors.white : Colors.red)),
+                    style: Theme.of(context).textTheme.headline6!.merge(
+                        TextStyle(
+                            color: widget.plan.goodFile
+                                ? Colors.white
+                                : Colors.red)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -146,13 +149,17 @@ class _PlanCardState extends State<PlanCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                      onPressed: () => {setState(() => isExpanded = !isExpanded)},
-                      icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more)),
+                      onPressed: () =>
+                          {setState(() => isExpanded = !isExpanded)},
+                      icon: Icon(
+                          isExpanded ? Icons.expand_less : Icons.expand_more)),
                   PopupMenuButton<String>(
                     onSelected: ((value) {
                       switch (value) {
                         case "replace":
-                          if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
+                          if (Provider.of<Group>(context, listen: false)
+                              .pilots
+                              .isNotEmpty) {
                             replacePlanDialog(context).then((value) {
                               if (value ?? false) _replacePlanDialog(context);
                             });
@@ -161,23 +168,30 @@ class _PlanCardState extends State<PlanCard> {
                           }
                           break;
                         case "edit":
-                          Navigator.pushNamed(context, "/planEditor", arguments: widget.plan);
+                          Navigator.pushNamed(context, "/planEditor",
+                              arguments: widget.plan);
                           break;
                         case "rename":
-                          editPlanName(context, widget.plan.name).then((newName) {
+                          editPlanName(context, widget.plan.name)
+                              .then((newName) {
                             if (newName != null && newName.isNotEmpty) {
                               final oldName = widget.plan.name;
-                              Navigator.popUntil(context, ModalRoute.withName("/plans"));
-                              Provider.of<Plans>(context, listen: false).renamePlan(oldName, newName);
+                              Navigator.popUntil(
+                                  context, ModalRoute.withName("/plans"));
+                              Provider.of<Plans>(context, listen: false)
+                                  .renamePlan(oldName, newName);
                             }
                           });
                           break;
                         case "duplicate":
-                          editPlanName(context, widget.plan.name).then((newName) {
+                          editPlanName(context, widget.plan.name)
+                              .then((newName) {
                             if (newName != null && newName.isNotEmpty) {
                               final oldName = widget.plan.name;
-                              Navigator.popUntil(context, ModalRoute.withName("/plans"));
-                              Provider.of<Plans>(context, listen: false).duplicatePlan(oldName, newName);
+                              Navigator.popUntil(
+                                  context, ModalRoute.withName("/plans"));
+                              Provider.of<Plans>(context, listen: false)
+                                  .duplicatePlan(oldName, newName);
                             }
                           });
                           break;
@@ -216,7 +230,8 @@ class _PlanCardState extends State<PlanCard> {
                           child: ListTile(
                               title: Text(
                                 "Use as Active Plan",
-                                style: TextStyle(color: Colors.amber, fontSize: 20),
+                                style: TextStyle(
+                                    color: Colors.amber, fontSize: 20),
                               ),
                               leading: Icon(
                                 Icons.playlist_remove,
@@ -230,7 +245,8 @@ class _PlanCardState extends State<PlanCard> {
                       PopupMenuItem(
                           value: "edit",
                           child: ListTile(
-                              title: Text("Edit", style: TextStyle(fontSize: 20)),
+                              title:
+                                  Text("Edit", style: TextStyle(fontSize: 20)),
                               leading: Icon(
                                 Icons.pin_drop,
                                 size: 28,
@@ -240,14 +256,16 @@ class _PlanCardState extends State<PlanCard> {
                       PopupMenuItem(
                           value: "rename",
                           child: ListTile(
-                            title: Text("Rename", style: TextStyle(fontSize: 20)),
+                            title:
+                                Text("Rename", style: TextStyle(fontSize: 20)),
                             leading: Icon(Icons.edit, size: 30),
                           )),
                       // --- Option: Duplicate
                       PopupMenuItem(
                           value: "duplicate",
                           child: ListTile(
-                            title: Text("Duplicate", style: TextStyle(fontSize: 20)),
+                            title: Text("Duplicate",
+                                style: TextStyle(fontSize: 20)),
                             leading: Icon(
                               Icons.copy_all,
                               size: 28,
@@ -262,7 +280,8 @@ class _PlanCardState extends State<PlanCard> {
                           child: ListTile(
                               title: Text(
                                 "Delete",
-                                style: TextStyle(color: Colors.red, fontSize: 20),
+                                style:
+                                    TextStyle(color: Colors.red, fontSize: 20),
                               ),
                               leading: Icon(
                                 Icons.delete,
@@ -287,7 +306,8 @@ class _PlanCardState extends State<PlanCard> {
               child: FlutterMap(
                   options: MapOptions(
                     bounds: widget.plan.getBounds(),
-                    interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    interactiveFlags:
+                        InteractiveFlag.all & ~InteractiveFlag.rotate,
                     // allowPanningOnScrollingParent: false
                   ),
                   layers: [
@@ -302,7 +322,8 @@ class _PlanCardState extends State<PlanCard> {
                     // Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
 
                     // Trip snake lines
-                    PolylineLayerOptions(polylines: widget.plan.buildTripSnake()),
+                    PolylineLayerOptions(
+                        polylines: widget.plan.buildTripSnake()),
 
                     // Flight plan markers
                     PolylineLayerOptions(
@@ -311,7 +332,8 @@ class _PlanCardState extends State<PlanCard> {
                           .mapIndexed((i, e) => e.latlng.length > 1
                               ? Polyline(
                                   points: e.latlng,
-                                  strokeWidth: checkedElements.contains(i) ? 8 : 3,
+                                  strokeWidth:
+                                      checkedElements.contains(i) ? 8 : 3,
                                   color: e.getColor(),
                                   isDotted: e.isOptional)
                               : null)
@@ -320,23 +342,29 @@ class _PlanCardState extends State<PlanCard> {
                     ),
 
                     // Flight plan paths - directional barbs
-                    MarkerLayerOptions(markers: makePathBarbs(widget.plan.waypoints, false, 30)),
+                    MarkerLayerOptions(
+                        markers:
+                            makePathBarbs(widget.plan.waypoints, false, 30)),
 
                     // Waypoint Markers
                     MarkerLayerOptions(
                       markers: widget.plan.waypoints
                           .mapIndexed((i, e) {
                             if (e.latlng.length == 1) {
-                              final bool isChecked = checkedElements.contains(i);
+                              final bool isChecked =
+                                  checkedElements.contains(i);
                               return Marker(
                                   point: e.latlng[0],
                                   height: isChecked ? 40 : 30,
                                   width: (isChecked ? 40 : 30) * 2 / 3,
                                   builder: (context) => Container(
-                                      transform: Matrix4.translationValues(0, isChecked ? (-15 * 4 / 3) : -15, 0),
+                                      transform: Matrix4.translationValues(0,
+                                          isChecked ? (-15 * 4 / 3) : -15, 0),
                                       child: GestureDetector(
-                                          onTap: () => setState(() => toggleItem(i)),
-                                          child: MapMarker(e, isChecked ? 40 : 30))));
+                                          onTap: () =>
+                                              setState(() => toggleItem(i)),
+                                          child: MapMarker(
+                                              e, isChecked ? 40 : 30))));
                             } else {
                               return null;
                             }
@@ -373,10 +401,15 @@ class _PlanCardState extends State<PlanCard> {
               padding: const EdgeInsets.only(top: 8),
               child: ElevatedButton.icon(
                   onPressed: () {
-                    Provider.of<ActivePlan>(context, listen: false).waypoints.addAll(checkedElements.isEmpty
-                        ? widget.plan.waypoints
-                        : checkedElements.map((e) => widget.plan.waypoints[e]).toList());
-                    Provider.of<Client>(context, listen: false).pushFlightPlan();
+                    Provider.of<ActivePlan>(context, listen: false)
+                        .waypoints
+                        .addAll(checkedElements.isEmpty
+                            ? widget.plan.waypoints
+                            : checkedElements
+                                .map((e) => widget.plan.waypoints[e])
+                                .toList());
+                    Provider.of<Client>(context, listen: false)
+                        .pushFlightPlan();
                     Navigator.popUntil(context, ModalRoute.withName("/home"));
                   },
                   icon: const Icon(

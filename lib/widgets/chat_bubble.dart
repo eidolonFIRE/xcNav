@@ -9,33 +9,46 @@ class ChatBubble extends StatelessWidget {
   final Widget user;
   final int? timestamp;
 
-  const ChatBubble(this.isMe, this.text, this.user, this.pilotName, this.timestamp, {Key? key}) : super(key: key);
+  const ChatBubble(
+      this.isMe, this.text, this.user, this.pilotName, this.timestamp,
+      {Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(4.0),
       child: GestureDetector(
-        onTap: () => Provider.of<ChatMessages>(context, listen: false).markAllRead(true),
+        onTap: () =>
+            Provider.of<ChatMessages>(context, listen: false).markAllRead(true),
         child: Column(
           children: [
             Row(
-                mainAxisAlignment: isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
+                mainAxisAlignment:
+                    isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisSize: MainAxisSize.max,
                 children: [
                   ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: 20, maxWidth: MediaQuery.of(context).size.width - 120),
+                    constraints: BoxConstraints(
+                        minWidth: 20,
+                        maxWidth: MediaQuery.of(context).size.width - 120),
                     child: Card(
                       color: text.toLowerCase().startsWith("emergency:")
                           ? Colors.red
-                          : (isMe ? Colors.blue.shade300 : const Color.fromARGB(255, 230, 230, 230)),
+                          : (isMe
+                              ? Colors.blue.shade300
+                              : const Color.fromARGB(255, 230, 230, 230)),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
                               topLeft: const Radius.circular(10),
-                              bottomLeft: isMe ? const Radius.circular(1) : const Radius.circular(10),
+                              bottomLeft: isMe
+                                  ? const Radius.circular(1)
+                                  : const Radius.circular(10),
                               topRight: const Radius.circular(10),
-                              bottomRight: isMe ? const Radius.circular(10) : const Radius.circular(1))),
+                              bottomRight: isMe
+                                  ? const Radius.circular(10)
+                                  : const Radius.circular(1))),
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Text(
@@ -43,7 +56,8 @@ class ChatBubble extends StatelessWidget {
                           maxLines: 15,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.start,
-                          style: const TextStyle(fontSize: 22, color: Colors.black),
+                          style: const TextStyle(
+                              fontSize: 22, color: Colors.black),
                         ),
                       ),
                     ),
@@ -55,7 +69,8 @@ class ChatBubble extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 50, right: 50),
               child: Row(
-                mainAxisAlignment: isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
+                mainAxisAlignment:
+                    isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
                 children: [
                   if (pilotName != null)
                     Text(
