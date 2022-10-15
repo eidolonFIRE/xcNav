@@ -1675,7 +1675,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
 
-          // --- Bottom Instruments
+          // --- Bottom Navigation Bar
           bottomNavigationBar: NavigationBar(
             destinations: [
               IconButton(
