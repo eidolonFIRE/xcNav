@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:xcnav/dem_service.dart';
 
 import 'package:xcnav/dialogs/fuel_adjustment.dart';
 import 'package:xcnav/models/geo.dart';
@@ -11,6 +13,7 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/widgets/wind_plot.dart';
 
 Widget moreInstrumentsDrawer() {
@@ -24,9 +27,92 @@ Widget moreInstrumentsDrawer() {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // --- Elevation(s)
+              // Row(
+              //   mainAxisSize: MainAxisSize.max,
+              //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              //   crossAxisAlignment: CrossAxisAlignment.center,
+              //   children: [
+
+              Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 4),
+                child: ToggleButtons(
+                  isSelected: [true, false, false],
+                  selectedColor: Colors.white,
+                  selectedBorderColor: Colors.lightBlueAccent,
+                  // color: Colors.grey.shade700,
+                  // fillColor: Colors.blue,
+                  // constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width / 5, minHeight: 40),
+                  borderRadius: const BorderRadius.all(Radius.circular(6)),
+                  onPressed: ((index) => {}),
+                  children: [
+                    // (MSL)
+
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width / 3.5,
+                      height: 45,
+                      child: Center(
+                        child: Altimeter(
+                          myTelemetry.geo.alt,
+                          valueStyle: instrUpper,
+                          unitStyle: instrLabel,
+                          unitTag: "MSL",
+                        ),
+                      ),
+                    ),
+
+                    // const SizedBox(height: 60, child: VerticalDivider(thickness: 2)),
+
+                    // (AGL)
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width / 3.5,
+                      height: 45,
+                      child: Center(
+                        child: FutureBuilder<double?>(
+                          future: sampleDem(myTelemetry.geo.latLng, offset: -myTelemetry.geo.alt),
+                          builder: ((context, snapshot) => snapshot.hasData && snapshot.data != null
+                              ? Altimeter(
+                                  -snapshot.data!,
+                                  valueStyle: instrUpper,
+                                  unitStyle: instrLabel,
+                                  unitTag: "AGL",
+                                )
+                              : CircularProgressIndicator()),
+                        ),
+                      ),
+                    ),
+
+                    // const SizedBox(height: 60, child: VerticalDivider(thickness: 2)),
+
+                    // (Density)
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width / 3.5,
+                      height: 45,
+                      child: FutureBuilder<double?>(
+                        future: sampleDem(myTelemetry.geo.latLng, offset: -myTelemetry.geo.alt),
+                        builder: ((context, snapshot) => Center(
+                            child: snapshot.hasData && snapshot.data != null
+                                ? Altimeter(
+                                    1000,
+                                    valueStyle: instrUpper,
+                                    unitStyle: instrLabel,
+                                    unitTag: "Den",
+                                  )
+                                : CircularProgressIndicator())),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // const Divider(
+              //   thickness: 2,
+              //   height: 2,
+              // ),
+
               // --- Flight Timer
               ListTile(
-                leading: const Icon(Icons.flight_takeoff),
+                leading: const Icon(Icons.timer_outlined),
                 title: myTelemetry.takeOff != null
                     ? Builder(builder: (context) {
                         int remMin =
@@ -225,59 +311,59 @@ Widget moreInstrumentsDrawer() {
                 ),
               ),
 
-              const Divider(thickness: 2),
+              // const Divider(thickness: 2),
 
-              // --- Altitude Chart
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  constraints: const BoxConstraints(maxHeight: 200),
-                  child: charts.TimeSeriesChart(
-                    [
-                      charts.Series<Geo, DateTime>(
-                        id: "Altitude",
-                        data: myTelemetry.recordGeo,
-                        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
-                        domainFn: (value, _) => DateTime.fromMillisecondsSinceEpoch(value.time),
-                        measureFn: (value, _) => unitConverters[UnitType.distFine]!(value.alt),
-                      )
-                    ],
-                    defaultRenderer: charts.LineRendererConfig(includeArea: true, stacked: true),
-                    animate: false,
+              // // --- Altitude Chart
+              // Padding(
+              //   padding: const EdgeInsets.only(bottom: 8),
+              //   child: Container(
+              //     constraints: const BoxConstraints(maxHeight: 200),
+              //     child: charts.TimeSeriesChart(
+              //       [
+              //         charts.Series<Geo, DateTime>(
+              //           id: "Altitude",
+              //           data: myTelemetry.recordGeo,
+              //           colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+              //           domainFn: (value, _) => DateTime.fromMillisecondsSinceEpoch(value.time),
+              //           measureFn: (value, _) => unitConverters[UnitType.distFine]!(value.alt),
+              //         )
+              //       ],
+              //       defaultRenderer: charts.LineRendererConfig(includeArea: true, stacked: true),
+              //       animate: false,
 
-                    behaviors: [
-                      charts.ChartTitle("Altitude   (${getUnitStr(UnitType.distFine)})",
-                          behaviorPosition: charts.BehaviorPosition.start,
-                          titleOutsideJustification: charts.OutsideJustification.middleDrawArea,
-                          titleStyleSpec: const charts.TextStyleSpec(color: charts.MaterialPalette.white)),
-                    ],
+              //       behaviors: [
+              //         charts.ChartTitle("Altitude   (${getUnitStr(UnitType.distFine)})",
+              //             behaviorPosition: charts.BehaviorPosition.start,
+              //             titleOutsideJustification: charts.OutsideJustification.middleDrawArea,
+              //             titleStyleSpec: const charts.TextStyleSpec(color: charts.MaterialPalette.white)),
+              //       ],
 
-                    domainAxis: const charts.DateTimeAxisSpec(
-                        renderSpec: charts.SmallTickRendererSpec(
+              //       domainAxis: const charts.DateTimeAxisSpec(
+              //           renderSpec: charts.SmallTickRendererSpec(
 
-                            // Tick and Label styling here.
-                            labelStyle: charts.TextStyleSpec(
-                                fontSize: 14, // size in Pts.
-                                color: charts.MaterialPalette.white),
+              //               // Tick and Label styling here.
+              //               labelStyle: charts.TextStyleSpec(
+              //                   fontSize: 14, // size in Pts.
+              //                   color: charts.MaterialPalette.white),
 
-                            // Change the line colors to match text color.
-                            lineStyle: charts.LineStyleSpec(color: charts.MaterialPalette.white))),
+              //               // Change the line colors to match text color.
+              //               lineStyle: charts.LineStyleSpec(color: charts.MaterialPalette.white))),
 
-                    /// Assign a custom style for the measure axis.
-                    primaryMeasureAxis: const charts.NumericAxisSpec(
-                        tickProviderSpec: charts.BasicNumericTickProviderSpec(desiredMinTickCount: 4),
-                        renderSpec: charts.GridlineRendererSpec(
+              //       /// Assign a custom style for the measure axis.
+              //       primaryMeasureAxis: const charts.NumericAxisSpec(
+              //           tickProviderSpec: charts.BasicNumericTickProviderSpec(desiredMinTickCount: 4),
+              //           renderSpec: charts.GridlineRendererSpec(
 
-                            // Tick and Label styling here.
-                            labelStyle: charts.TextStyleSpec(
-                                fontSize: 14, // size in Pts.
-                                color: charts.MaterialPalette.white),
+              //               // Tick and Label styling here.
+              //               labelStyle: charts.TextStyleSpec(
+              //                   fontSize: 14, // size in Pts.
+              //                   color: charts.MaterialPalette.white),
 
-                            // Change the line colors to match text color.
-                            lineStyle: charts.LineStyleSpec(color: charts.MaterialPalette.white))),
-                  ),
-                ),
-              ),
+              //               // Change the line colors to match text color.
+              //               lineStyle: charts.LineStyleSpec(color: charts.MaterialPalette.white))),
+              //     ),
+              //   ),
+              // ),
             ],
           )),
     ),

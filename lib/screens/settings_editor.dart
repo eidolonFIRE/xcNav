@@ -244,18 +244,18 @@ class _SettingsEditorState extends State<SettingsEditor> {
                       ),
                       onToggle: (value) => {settings.spoofLocation = value},
                     ),
-                    // --- Clear path
-                    SettingsTile.navigation(
-                      title: const Text("Clear Current Flight"),
-                      leading: const Icon(
-                        Icons.delete_sweep,
-                        color: Colors.red,
-                      ),
-                      onPressed: (_) {
-                        Provider.of<MyTelemetry>(context, listen: false).recordGeo.clear();
-                        Provider.of<MyTelemetry>(context, listen: false).flightTrace.clear();
-                      },
-                    ),
+                    // // --- Clear path
+                    // SettingsTile.navigation(
+                    //   title: const Text("Clear Current Flight"),
+                    //   leading: const Icon(
+                    //     Icons.delete_sweep,
+                    //     color: Colors.red,
+                    //   ),
+                    //   onPressed: (_) {
+                    //     Provider.of<MyTelemetry>(context, listen: false).recordGeo.clear();
+                    //     Provider.of<MyTelemetry>(context, listen: false).flightTrace.clear();
+                    //   },
+                    // ),
                     // --- Erase Identity
                     SettingsTile.navigation(
                       title: const Text("Clear Identity"),

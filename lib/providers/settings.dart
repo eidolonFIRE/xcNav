@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:xcnav/dem_service.dart';
 
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/units.dart';
@@ -105,6 +106,7 @@ class Settings with ChangeNotifier {
 
   // --- Misc
   bool _chatTts = false;
+  String _demInstr = "MSL";
 
   Settings() {
     selectProximityConfig("Medium");
@@ -114,6 +116,7 @@ class Settings with ChangeNotifier {
 
   void initMapCache() async {
     FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
+    initDemCache();
 
     for (final mapName in mapTileThumbnails.keys) {
       final StoreDirectory store = FMTC.instance(mapName);
@@ -141,11 +144,17 @@ class Settings with ChangeNotifier {
   }
 
   Future<String> getMapTileCacheSize() async {
+    // Add together the cache size for all base map layers
     double sum = 0;
     for (final mapName in mapTileThumbnails.keys) {
       final StoreDirectory store = FMTC.instance(mapName);
       sum += (await store.stats.noCache.storeSizeAsync) * 1024;
     }
+
+    // Also add the elevation map
+    final StoreDirectory demStore = FMTC.instance("dem");
+    sum += (await demStore.stats.noCache.storeSizeAsync) * 1024;
+
     return asReadableSize(sum);
   }
 
@@ -170,6 +179,12 @@ class Settings with ChangeNotifier {
   }
 
   void emptyMapTileCache() {
+    // Empty elevation map cache
+    final StoreDirectory demStore = FMTC.instance("dem");
+    debugPrint("Clear Map Cache: dem");
+    demStore.manage.reset();
+
+    // Empty standard map caches
     for (final mapName in mapTileThumbnails.keys) {
       final StoreDirectory store = FMTC.instance(mapName);
       debugPrint("Clear Map Cache: $mapName");
@@ -207,6 +222,7 @@ class Settings with ChangeNotifier {
 
       // --- Misc
       _chatTts = prefs.getBool("settings.chatTts") ?? false;
+      _demInstr = prefs.getString("settings.demInstr") ?? "MSL";
     });
   }
 
@@ -354,6 +370,15 @@ class Settings with ChangeNotifier {
     _chatTts = value;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setBool("settings.chatTts", _chatTts);
+    });
+    notifyListeners();
+  }
+
+  String get demInstr => _demInstr;
+  set demInstr(String value) {
+    _demInstr = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString("settings.demInstr", value);
     });
     notifyListeners();
   }

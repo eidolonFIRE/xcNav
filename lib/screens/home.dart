@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
+// ignore: depend_on_referenced_packages
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:flutter_svg/svg.dart';
@@ -15,6 +16,7 @@ import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
 import 'package:xcnav/main.dart';
 import 'package:xcnav/util.dart';
@@ -31,6 +33,7 @@ import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/widgets/altimeter.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -508,7 +511,6 @@ class _MyHomePageState extends State<MyHomePage> {
           child: moreInstrumentsDrawer(),
         );
       },
-      // TODO: this could use some tuning
       transitionBuilder: (ctx, animation, _, child) {
         return FractionalTranslation(
           translation: Offset(0, animation.value - 1),
@@ -520,29 +522,113 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget topInstruments(BuildContext context) {
     return GestureDetector(
-      onPanDown: (event) => showMoreInstruments(context),
+      // onPanDown: (event) => showMoreInstruments(context),
+
       // onTap: () => showMoreInstruments(context),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
         child: Container(
           color: Theme.of(context).backgroundColor,
           child: SizedBox(
-            height: 64,
+            // height: 64,
+            // height: 80,
             child: Consumer2<MyTelemetry, Settings>(
-              builder: (context, myTelementy, settings, child) =>
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              builder: (context, myTelemetry, settings, child) =>
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
                 // --- Speedometer
-                Text.rich(richValue(UnitType.speed, myTelementy.geo.spd,
+                Text.rich(richValue(UnitType.speed, myTelemetry.geo.spd,
                     digits: 3, valueStyle: instrUpper, unitStyle: instrLabel)),
 
-                const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Altimeter(
+                      myTelemetry.geo.alt,
+                      valueStyle: instrUpper,
+                      unitStyle: instrLabel,
+                      unitTag: "MSL",
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4, bottom: 2),
+                          child: FutureBuilder<double?>(
+                            future: sampleDem(myTelemetry.geo.latLng, offset: -myTelemetry.geo.alt),
+                            builder: ((context, snapshot) => snapshot.hasData && snapshot.data != null
+                                ? Text(
+                                    printDouble(
+                                        value: unitConverters[UnitType.distFine]!(-snapshot.data!),
+                                        digits: 5,
+                                        decimals: 0),
+                                    style: instrUpper.merge(TextStyle(fontSize: 16)))
+                                : CircularProgressIndicator()),
+                          ),
+                        ),
+                        AltimeterBadge("AGL")
+                      ],
+                    ),
+                  ],
+                ),
+
                 // --- Altimeter
-                Text.rich(richValue(UnitType.distFine, myTelementy.geo.alt,
-                    digits: 5, valueStyle: instrUpper, unitStyle: instrLabel)),
-                const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
+                // DropdownButtonHideUnderline(
+                //   child: DropdownButton<String>(
+                //       alignment: Alignment.centerRight,
+                //       value: Provider.of<Settings>(context).demInstr,
+                //       iconSize: 0,
+                //       onChanged: ((value) => Provider.of<Settings>(context, listen: false).demInstr = value ?? "MSL"),
+                //       items: [
+                //         DropdownMenuItem(
+                //           value: "MSL",
+                //           alignment: Alignment.centerRight,
+                //           child: Altimeter(
+                //             myTelemetry.geo.alt,
+                //             valueStyle: instrUpper,
+                //             unitStyle: instrLabel,
+                //             unitTag: "MSL",
+                //           ),
+                //         ),
+                //         DropdownMenuItem(
+                //           value: "AGL",
+                //           alignment: Alignment.centerRight,
+                //           child: FutureBuilder<double?>(
+                //             future: sampleDem(myTelemetry.geo.latLng, offset: -myTelemetry.geo.alt),
+                //             builder: ((context, snapshot) => snapshot.hasData && snapshot.data != null
+                //                 ? Altimeter(
+                //                     -snapshot.data!,
+                //                     valueStyle: instrUpper,
+                //                     unitStyle: instrLabel,
+                //                     unitTag: "AGL",
+                //                   )
+                //                 : const CircularProgressIndicator()),
+                //           ),
+                //         ),
+                //         DropdownMenuItem(
+                //           value: "Den",
+                //           alignment: Alignment.centerRight,
+                //           child: FutureBuilder<double?>(
+                //             future: sampleDem(myTelemetry.geo.latLng, offset: -myTelemetry.geo.alt),
+                //             builder: ((context, snapshot) => snapshot.hasData && snapshot.data != null
+                //                 ? Altimeter(
+                //                     1000,
+                //                     valueStyle: instrUpper,
+                //                     unitStyle: instrLabel,
+                //                     unitTag: "Den",
+                //                   )
+                //                 : const CircularProgressIndicator()),
+                //           ),
+                //         )
+                //       ]),
+                // ),
+
+                // const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
+
                 // --- Vario
-                Text.rich(richValue(UnitType.vario, myTelementy.geo.vario,
-                    digits: 3, valueStyle: instrUpper.merge(const TextStyle(fontSize: 30)), unitStyle: instrLabel)),
+                // Text.rich(richValue(UnitType.vario, myTelemetry.geo.vario,
+                //     digits: 3, valueStyle: instrUpper.merge(const TextStyle(fontSize: 30)), unitStyle: instrLabel)),
               ]),
             ),
           ),
@@ -594,21 +680,23 @@ class _MyHomePageState extends State<MyHomePage> {
       onWillPop: () async => false,
       child: Scaffold(
           appBar: AppBar(
-              automaticallyImplyLeading: true,
-              leadingWidth: 35,
-              toolbarHeight: 64,
-              title: Provider.of<Settings>(context).groundMode
-                  ? groundControlBar(context)
-                  : DescribedFeatureOverlay(
-                      featureId: "instruments",
-                      title: const Text("Instruments"),
-                      description: const Text("Swipe down to show more instruments."),
-                      tapTarget: const Icon(
-                        Icons.swipe_down,
-                        color: Colors.black,
-                        size: 40,
-                      ),
-                      child: topInstruments(context))),
+            automaticallyImplyLeading: true,
+            leadingWidth: 35,
+            toolbarHeight: 70,
+            title: Provider.of<Settings>(context).groundMode
+                ? groundControlBar(context)
+                : DescribedFeatureOverlay(
+                    featureId: "instruments",
+                    title: const Text("Instruments"),
+                    description: const Text("Swipe down to show more instruments."),
+                    tapTarget: const Icon(
+                      Icons.swipe_down,
+                      color: Colors.black,
+                      size: 40,
+                    ),
+                    child: topInstruments(context)),
+            // actions: [IconButton(onPressed: () {}, icon: Icon(Icons.timer_outlined))],
+          ),
           // --- Main Menu
           drawer: Drawer(
               child: ListView(
@@ -1510,36 +1598,18 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
                           ),
                         ]),
-                        // --- Chat button
-                        Stack(
-                          children: [
-                            MapButton(
-                              size: 60,
-                              selected: false,
-                              onPressed: () {
-                                Navigator.pushNamed(context, "/chat");
-                              },
-                              child: const Icon(
-                                Icons.chat,
-                                size: 30,
-                                color: Colors.black,
-                              ),
-                            ),
-                            if (Provider.of<ChatMessages>(context).numUnread > 0)
-                              Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                      decoration: const BoxDecoration(
-                                          color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(10))),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(4.0),
-                                        child: Text(
-                                          "${Provider.of<ChatMessages>(context).numUnread}",
-                                          style: const TextStyle(fontSize: 20),
-                                        ),
-                                      ))),
-                          ],
+                        // --- Measure button
+                        MapButton(
+                          size: 60,
+                          selected: false,
+                          onPressed: () {
+                            // TODO: implement map measurements
+                          },
+                          child: const Icon(
+                            Icons.straighten,
+                            size: 30,
+                            color: Colors.black,
+                          ),
                         )
                       ]),
                 ),
@@ -1606,152 +1676,60 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
 
           // --- Bottom Instruments
-          bottomNavigationBar: Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
-            ETA etaNext = activePlan.selectedIndex != null
-                ? activePlan.etaToWaypoint(myTelemetry.geo, myTelemetry.geo.spd, activePlan.selectedIndex!)
-                : ETA(0, const Duration());
-
-            final curWp = activePlan.selectedWp;
-
-            return DescribedFeatureOverlay(
-              featureId: "flightPlan",
-              title: const Text("Flight Plan"),
-              description: const Text("Swipe up to see flight plan."),
-              tapTarget: const Icon(
-                Icons.swipe_up,
-                color: Colors.black,
-                size: 40,
-              ),
-              child: Container(
-                color: Theme.of(context).backgroundColor,
-                child: SafeArea(
-                  minimum: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // --- Previous Waypoint
-                      IconButton(
-                        onPressed: () {
-                          final wp =
-                              activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
-                          if (wp != null) activePlan.selectWaypoint(wp);
-                        },
-                        iconSize: 40,
-                        color: (activePlan.selectedIndex != null && activePlan.selectedIndex! > 0)
-                            ? Colors.white
-                            : Colors.grey.shade700,
-                        icon: SvgPicture.asset(
-                          "assets/images/reverse_back.svg",
-                          color: ((activePlan.isReversed
-                                      ? activePlan.findNextWaypoint()
-                                      : activePlan.findPrevWaypoint()) !=
-                                  null)
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                        ),
-                      ),
-
-                      // --- Next Waypoint Info
-                      Expanded(
-                        child: GestureDetector(
-                          onPanDown: (details) {
-                            // debugPrint("${MediaQuery.of(context).size.height - details.globalPosition.dy}");
-                            // Limit the hitbox at the very bottom so it doesn't interfere with system bar
-                            if (MediaQuery.of(context).size.height - details.globalPosition.dy > 30) {
-                              showFlightPlan();
-                            }
-                          },
-                          // onTap: showFlightPlan,
-                          child: Container(
-                            constraints: const BoxConstraints(minHeight: 60),
-                            color: Theme.of(context).backgroundColor,
-                            child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: (curWp != null)
-                                      ? [
-                                          // --- Current Waypoint Label
-                                          // RichText(
-                                          Text.rich(
-                                            TextSpan(children: [
-                                              WidgetSpan(
-                                                child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
-                                              ),
-                                              const TextSpan(text: "  "),
-                                              TextSpan(
-                                                text: curWp.name,
-                                                style: const TextStyle(color: Colors.white, fontSize: 30),
-                                              ),
-                                            ]),
-                                            maxLines: 2,
-                                            textAlign: TextAlign.center,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          SizedBox(
-                                            width: MediaQuery.of(context).size.width / 2,
-                                            child: Divider(
-                                              thickness: 1,
-                                              height: 8,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                          ),
-                                          // --- ETA next
-                                          Text.rich(
-                                            TextSpan(children: [
-                                              richValue(UnitType.distCoarse, etaNext.distance,
-                                                  digits: 4,
-                                                  decimals: 1,
-                                                  valueStyle: instrLower,
-                                                  unitStyle: instrLabel),
-                                              if (myTelemetry.inFlight) TextSpan(text: "   ", style: instrLower),
-                                              if (myTelemetry.inFlight)
-                                                richHrMin(
-                                                    duration: etaNext.time,
-                                                    valueStyle: instrLower,
-                                                    unitStyle: instrLabel),
-                                              if (myTelemetry.inFlight &&
-                                                  myTelemetry.fuel > 0 &&
-                                                  etaNext.time != null &&
-                                                  myTelemetry.fuelTimeRemaining < etaNext.time!)
-                                                const WidgetSpan(
-                                                    child: Padding(
-                                                  padding: EdgeInsets.only(left: 20),
-                                                  child: FuelWarning(35),
-                                                )),
-                                            ]),
-                                          ),
-                                        ]
-                                      : const [Text("Select Waypoint")],
-                                )),
-                          ),
-                        ),
-                      ),
-                      // --- Next Waypoint
-                      IconButton(
-                          onPressed: () {
-                            final wp =
-                                !activePlan.isReversed ? activePlan.findNextWaypoint() : activePlan.findPrevWaypoint();
-                            if (wp != null) activePlan.selectWaypoint(wp);
-                          },
-                          iconSize: 40,
-                          color: (activePlan.selectedIndex != null &&
-                                  (!activePlan.isReversed
-                                          ? activePlan.findNextWaypoint()
-                                          : activePlan.findPrevWaypoint()) !=
-                                      null)
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                          icon: const Icon(
-                            Icons.arrow_forward,
-                          )),
-                    ],
-                  ),
+          bottomNavigationBar: NavigationBar(
+            destinations: [
+              IconButton(
+                onPressed: () => {},
+                tooltip: "Map",
+                icon: const Icon(
+                  Icons.map,
+                  size: 30,
                 ),
               ),
-            );
-          })),
+              IconButton(
+                onPressed: () => {},
+                tooltip: "Glide",
+                icon: const Icon(
+                  Icons.area_chart,
+                  size: 30,
+                ),
+              ),
+              IconButton(
+                onPressed: () => {showFlightPlan()},
+                tooltip: "Plan",
+                icon: const Icon(
+                  Icons.pin_drop,
+                  size: 30,
+                ),
+              ),
+              IconButton(
+                onPressed: () => {Navigator.pushNamed(context, "/chat")},
+                tooltip: "Chat",
+                icon: Stack(
+                  children: [
+                    const Icon(
+                      Icons.chat,
+                      size: 30,
+                    ),
+                    if (Provider.of<ChatMessages>(context).numUnread > 0)
+                      Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                              decoration: const BoxDecoration(
+                                  color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(10))),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Text(
+                                  "${Provider.of<ChatMessages>(context).numUnread}",
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                              ))),
+                  ],
+                ),
+              )
+            ],
+          )),
     );
   }
 }

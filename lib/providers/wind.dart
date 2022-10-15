@@ -53,10 +53,6 @@ class Wind with ChangeNotifier {
   }
 
   void stop({bool waitTillSolution = false}) {
-    for (final each in samples) {
-      debugPrint("wind.handleVector(Vector(${each.hdg}, ${each.value}));");
-    }
-
     if (waitTillSolution && _result == null) {
       _triggerStop = true;
     } else {

@@ -78,6 +78,7 @@ dependencies:
   feature_discovery: ^0.14.1
   flutter_map_tile_caching: ^5.0.0-dev.6
   open_filex: ^3.4.0
+  dart_numerics: ^0.0.6
 
 
 dev_dependencies:
