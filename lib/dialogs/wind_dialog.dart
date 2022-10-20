@@ -1,10 +1,7 @@
-import 'dart:math';
-
-import 'package:dart_numerics/dart_numerics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
+
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/units.dart';

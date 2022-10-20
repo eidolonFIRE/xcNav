@@ -10,9 +10,9 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 
 Widget topInstruments(BuildContext context) {
-  TextStyle upperStyle = const TextStyle(fontSize: 45);
-  TextStyle lowerStyle = const TextStyle(fontSize: 16);
-  TextStyle unitStyle = TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic);
+  const upperStyle = TextStyle(fontSize: 45);
+  const lowerStyle = TextStyle(fontSize: 16);
+  final TextStyle unitStyle = TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic);
 
   return Padding(
     padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
@@ -36,46 +36,53 @@ Widget topInstruments(BuildContext context) {
           ),
 
           // --- Windicator
-          GestureDetector(
-            onTap: () {
-              showWindDialog(context);
-            },
-            child: SizedBox(
-              width: 90,
-              height: 90,
-              child: Card(
-                  child: Stack(
-                children: [
-                  /// Wind direction indicator
-                  if (Provider.of<Wind>(context).result != null)
-                    Align(
-                        alignment: Alignment.topCenter,
-                        child: Container(
-                          transformAlignment: const Alignment(0, 0),
-                          transform: Matrix4.rotationZ(Provider.of<Wind>(context).result!.windHdg +
-                              (settings.northlockWind ? 0 : -myTelemetry.geo.hdg)),
-                          child: SvgPicture.asset(
-                            "assets/images/arrow.svg",
-                            width: 80,
-                            height: 80,
-                            // color: Colors.blue,
-                          ),
-                        )),
+          Consumer<Wind>(
+              builder: (context, wind, _) => GestureDetector(
+                  onTap: () {
+                    showWindDialog(context);
+                  },
+                  child: SizedBox(
+                    width: 90,
+                    height: 90,
+                    child: Card(
+                      child: wind.result != null
+                          ? Stack(
+                              children: [
+                                /// Wind direction indicator
 
-                  if (Provider.of<Wind>(context).result != null)
-                    Align(
-                        alignment: Alignment.center,
-                        child: Text(
-                          printDouble(
-                              value: unitConverters[UnitType.speed]!(Provider.of<Wind>(context).result!.windSpd),
-                              digits: 2,
-                              decimals: 0),
-                          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
-                        )),
-                ],
-              )),
-            ),
-          ),
+                                Align(
+                                    alignment: Alignment.topCenter,
+                                    child: Container(
+                                      transformAlignment: const Alignment(0, 0),
+                                      transform: Matrix4.rotationZ(
+                                          wind.result!.windHdg + (settings.northlockWind ? 0 : -myTelemetry.geo.hdg)),
+                                      child: SvgPicture.asset(
+                                        "assets/images/arrow.svg",
+                                        width: 80,
+                                        height: 80,
+                                        // color: Colors.blue,
+                                      ),
+                                    )),
+
+                                Align(
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      printDouble(
+                                          value: unitConverters[UnitType.speed]!(wind.result!.windSpd),
+                                          digits: 2,
+                                          decimals: 0),
+                                      style: const TextStyle(
+                                          color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                                    )),
+                              ],
+                            )
+                          : const Center(
+                              child: Text(
+                              "?",
+                              style: lowerStyle,
+                            )),
+                    ),
+                  ))),
 
           Padding(
             padding: const EdgeInsets.only(right: 10),

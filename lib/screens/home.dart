@@ -75,37 +75,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  // void showFlightPlan() {
-  //   showModalBottomSheet(
-  //       context: context,
-  //       elevation: 0,
-  //       // constraints: const BoxConstraints(maxHeight: 500),
-  //       builder: (BuildContext context) {
-  //         return SafeArea(
-  //           child: Dismissible(
-  //             key: const Key("flightPlanDrawer"),
-  //             direction: DismissDirection.down,
-  //             resizeDuration: const Duration(milliseconds: 10),
-  //             onDismissed: (event) => Navigator.pop(context),
-  //             child: flightPlanDrawer(setFocusMode, () {
-  //               // onNewPath
-  //               editablePolyline.points.clear();
-  //               Navigator.popUntil(context, ModalRoute.withName("/home"));
-  //               setFocusMode(FocusMode.addPath);
-  //             }, (int index) {
-  //               // onEditPointsCallback
-  //               debugPrint("Editing Index $index");
-  //               editingIndex = index;
-  //               editablePolyline.points.clear();
-  //               editablePolyline.points.addAll(Provider.of<ActivePlan>(context, listen: false).waypoints[index].latlng);
-  //               Navigator.popUntil(context, ModalRoute.withName("/home"));
-  //               setFocusMode(FocusMode.editPath);
-  //             }),
-  //           ),
-  //         );
-  //       });
-  // }
-
   /// Top Bar in ground support mode
   Widget groundControlBar(BuildContext context) {
     return SizedBox(
