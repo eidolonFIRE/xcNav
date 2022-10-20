@@ -66,6 +66,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   StreamSubscription<ServiceStatus>? _serviceStatusStreamSubscription;
   bool positionStreamStarted = false;
 
+  FakeFlight fakeFlight = FakeFlight();
+  Timer? timer;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached && inFlight) saveFlight();
@@ -89,8 +92,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     debugPrint("Build /MyTelemetry PROVIDER");
 
     // --- Location Spoofer for debugging
-    FakeFlight fakeFlight = FakeFlight();
-    Timer? timer;
 
     final client = Provider.of<Client>(context, listen: false);
     final settings = Provider.of<Settings>(context, listen: false);

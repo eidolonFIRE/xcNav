@@ -21,10 +21,13 @@ class WindPlotPainter extends CustomPainter {
   late final double circleRadius;
   late final Paint circlePaint;
 
+  late final bool northlock;
+
   late final Paint _barbPaint;
   late final Paint _mePaint;
 
-  WindPlotPainter(double width, this.dataX, this.dataY, this.maxValue, this.circleCenter, this.circleRadius) {
+  WindPlotPainter(
+      double width, this.dataX, this.dataY, this.maxValue, this.circleCenter, this.circleRadius, this.northlock) {
     _paint = Paint()..color = Colors.red;
     _paint.style = PaintingStyle.fill;
 
@@ -67,6 +70,12 @@ class WindPlotPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final maxSize = min(size.width, size.height) / 2;
     final Offset center = Offset(size.width / 2, size.height / 2);
+
+    if (!northlock) {
+      canvas.translate(size.width / 2, size.height / 2);
+      canvas.rotate(-atan2(dataY.last, dataX.last) - pi / 2);
+      canvas.translate(-size.width / 2, -size.height / 2);
+    }
 
     // Paint grid
     const pad = 0.9;

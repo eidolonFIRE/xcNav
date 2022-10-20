@@ -35,6 +35,7 @@ Widget topInstruments(BuildContext context) {
             ),
           ),
 
+          // --- Windicator
           GestureDetector(
             onTap: () {
               showWindDialog(context);
@@ -51,8 +52,8 @@ Widget topInstruments(BuildContext context) {
                         alignment: Alignment.topCenter,
                         child: Container(
                           transformAlignment: const Alignment(0, 0),
-                          transform:
-                              Matrix4.rotationZ(myTelemetry.geo.hdg + Provider.of<Wind>(context).result!.windHdg),
+                          transform: Matrix4.rotationZ(Provider.of<Wind>(context).result!.windHdg +
+                              (settings.northlockWind ? 0 : -myTelemetry.geo.hdg)),
                           child: SvgPicture.asset(
                             "assets/images/arrow.svg",
                             width: 80,

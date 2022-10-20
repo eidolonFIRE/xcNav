@@ -80,6 +80,8 @@ Future<double?> sampleDem(LatLng latlng, {double offset = 0}) {
           // debugPrint("rgba : $r $g $b $a");
           final elev = ((r * 256 + g + b.toDouble() / 256) - 32768);
           // debugPrint("Elevation: ${elev} meters");
+
+          // TODO: do more testing with lagging elevation data
           // Timer(Duration(seconds: 10), () => {completer.complete(elev + offset)});
           completer.complete(elev + offset);
         } else {

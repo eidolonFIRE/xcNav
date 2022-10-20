@@ -1,7 +1,14 @@
+import 'dart:math';
+
+import 'package:dart_numerics/dart_numerics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/wind_plot.dart';
 
 void showWindDialog(BuildContext context) {
@@ -10,8 +17,8 @@ void showWindDialog(BuildContext context) {
 
   showDialog(
     context: context,
-    builder: (context) => Consumer<Wind>(
-      builder: (context, wind, child) => Dialog(
+    builder: (context) => Consumer2<Wind, Settings>(
+      builder: (context, wind, settings, child) => Dialog(
         insetPadding: const EdgeInsets.only(top: 100, left: 10, right: 10),
         alignment: Alignment.topCenter,
         child: IntrinsicHeight(
@@ -91,14 +98,67 @@ void showWindDialog(BuildContext context) {
                               ))
                             : ClipRect(
                                 child: CustomPaint(
-                                  painter: WindPlotPainter(3, wind.result!.samplesX, wind.result!.samplesY,
-                                      wind.result!.maxSpd * 1.1, wind.result!.circleCenter, wind.result!.airspeed),
+                                  painter: WindPlotPainter(
+                                      3,
+                                      wind.result!.samplesX,
+                                      wind.result!.samplesY,
+                                      wind.result!.maxSpd * 1.1,
+                                      wind.result!.circleCenter,
+                                      wind.result!.airspeed,
+                                      settings.northlockWind),
                                 ),
                               ),
-                        const Align(alignment: Alignment.topCenter, child: Text("N")),
-                        const Align(alignment: Alignment.bottomCenter, child: Text("S")),
-                        const Align(alignment: Alignment.centerLeft, child: Text("W")),
-                        const Align(alignment: Alignment.centerRight, child: Text("E")),
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: MapButton(
+                              size: 40,
+                              // padding: const EdgeInsets.all(4.0),
+                              onPressed: () => {settings.northlockWind = !settings.northlockWind},
+                              selected: false,
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                transformAlignment: const Alignment(0, 0),
+                                transform: Matrix4.rotationZ(
+                                    settings.northlockWind ? 0 : (wind.samples.isEmpty ? 0 : wind.samples.last.hdg)),
+                                child: settings.northlockWind
+                                    ? Transform.scale(
+                                        scale: 1.6,
+                                        child: SvgPicture.asset(
+                                          "assets/images/compass_north.svg",
+                                          // fit: BoxFit.none,
+                                        ),
+                                      )
+                                    : Transform.scale(
+                                        scale: 1.4,
+                                        child: SvgPicture.asset(
+                                          "assets/images/compass.svg",
+                                          // fit: BoxFit.none,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: MapButton(
+                              size: 40,
+                              onPressed: () {
+                                if (wind.samples.length > 10) {
+                                  wind.samples.removeRange(0, wind.samples.length - 10);
+                                  wind.clearResult();
+                                }
+                              },
+                              selected: false,
+                              child: const Icon(Icons.refresh),
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   ),

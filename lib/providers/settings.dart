@@ -79,9 +79,10 @@ class Settings with ChangeNotifier {
   };
 
   // --- UI
-  bool _showAirspace = false;
   bool _mapControlsRightSide = false;
   bool _showPilotNames = false;
+  bool _northlockMap = false;
+  bool _northlockWind = false;
 
   // --- Units
   var _displayUnitsSpeed = DisplayUnitsSpeed.mph;
@@ -194,6 +195,7 @@ class Settings with ChangeNotifier {
 
   _loadSettings() {
     SharedPreferences.getInstance().then((prefs) {
+      // --- Units
       _displayUnitsSpeed = DisplayUnitsSpeed.values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
       _displayUnitsVario = DisplayUnitsVario.values[prefs.getInt("settings.displayUnitsVario") ?? 0];
       _displayUnitsDist = DisplayUnitsDist.values[prefs.getInt("settings.displayUnitsDist") ?? 0];
@@ -202,6 +204,9 @@ class Settings with ChangeNotifier {
       configUnits(
           speed: displayUnitsSpeed, vario: _displayUnitsVario, dist: _displayUnitsDist, fuel: _displayUnitsFuel);
 
+      // --- UI
+      _northlockMap = prefs.getBool("settings.northlockMap") ?? false;
+      _northlockWind = prefs.getBool("settings.northlockWind") ?? false;
       _mapControlsRightSide = prefs.getBool("settings.mapControlsRightSide") ?? false;
       _showPilotNames = prefs.getBool("settings.showPilotNames") ?? false;
 
@@ -224,6 +229,25 @@ class Settings with ChangeNotifier {
       _chatTts = prefs.getBool("settings.chatTts") ?? false;
       _altInstr = prefs.getString("settings.altInstr") ?? "MSL";
     });
+  }
+
+  // --- UI
+  bool get northlockMap => _northlockMap;
+  set northlockMap(bool value) {
+    _northlockMap = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.northlockMap", _northlockMap);
+    });
+    notifyListeners();
+  }
+
+  bool get northlockWind => _northlockWind;
+  set northlockWind(bool value) {
+    _northlockWind = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.northlockWind", _northlockWind);
+    });
+    notifyListeners();
   }
 
   // --- mapControlsRightSide
@@ -290,12 +314,6 @@ class Settings with ChangeNotifier {
   bool get spoofLocation => _spoofLocation;
   set spoofLocation(bool value) {
     _spoofLocation = value;
-    notifyListeners();
-  }
-
-  bool get showAirspace => _showAirspace;
-  set showAirspace(bool value) {
-    _showAirspace = value;
     notifyListeners();
   }
 
