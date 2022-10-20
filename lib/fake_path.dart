@@ -69,7 +69,7 @@ class FakeFlight {
     debugPrint("Fake Wind: $windSpd, $windHdg");
   }
 
-  Position genFakeLocationFlight(LatLng? target) {
+  Position genFakeLocationFlight(LatLng? target, Geo prevGeo) {
     if (target != null) {
       final delta = ((latlngCalc.bearing(latlng, target)) - hdg + 180) % (360) - 180;
       // debugPrint("Delta Degrees to Target $delta");
@@ -83,7 +83,7 @@ class FakeFlight {
 
     vario = min(5, max(-5, vario + randomCentered() / 2)) * 0.99;
     if (alt < 1) vario = randomCentered() + 1;
-    alt = max(0, alt * 0.999 + vario);
+    alt = max(prevGeo.ground ?? 0, alt * 0.99999 + vario) + randomCentered() * 2;
 
     return fakeGeoToLoc(FakeGeo(latlng.longitude, latlng.latitude, alt));
   }

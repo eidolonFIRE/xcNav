@@ -130,9 +130,6 @@ class Profile with ChangeNotifier {
     prefs.setString("profile.secretID", newSecretID);
 
     hash = _hash();
-
-    // TODO: does this actually need to happen here?
-    // notifyListeners();
   }
 
   String _hash() {

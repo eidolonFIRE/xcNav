@@ -1,19 +1,31 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/dem_service.dart';
+import 'package:xcnav/fake_path.dart';
 
 // --- Models
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/providers/client.dart';
+import 'package:xcnav/providers/group.dart';
+import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/providers/wind.dart';
 
 class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo geo = Geo();
@@ -46,6 +58,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   bool baroAmbientRequested = false;
   bool stationFound = false;
 
+  StreamSubscription<BarometerValue>? listenBaro;
+
+  final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
+  Stream<Position>? positionStream;
+  StreamSubscription<Position>? _positionStreamSubscription;
+  StreamSubscription<ServiceStatus>? _serviceStatusStreamSubscription;
+  bool positionStreamStarted = false;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached && inFlight) saveFlight();
@@ -61,6 +81,203 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   MyTelemetry() {
     _load();
     WidgetsBinding.instance.addObserver(this);
+
+    _startBaroService();
+  }
+
+  void init(BuildContext context) {
+    debugPrint("Build /MyTelemetry PROVIDER");
+
+    // --- Location Spoofer for debugging
+    FakeFlight fakeFlight = FakeFlight();
+    Timer? timer;
+
+    final client = Provider.of<Client>(context, listen: false);
+    final settings = Provider.of<Settings>(context, listen: false);
+    final activePlan = Provider.of<ActivePlan>(context, listen: false);
+
+    addListener((() {
+      if (!settings.groundMode || settings.groundModeTelemetry) {
+        if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty || client.telemetrySkips > 20) {
+          client.sendTelemetry(geo, fuel);
+          client.telemetrySkips = 0;
+        } else {
+          client.telemetrySkips++;
+        }
+      }
+
+      // Update ADSB
+      Provider.of<ADSB>(context, listen: false).refresh(geo);
+
+      audioCueService.cueMyTelemetry(geo);
+      audioCueService.cueNextWaypoint(geo);
+      audioCueService.cueGroupAwareness(geo);
+      // audioCueService.cueFuel(geo, fuel, fuelTimeRemaining);
+    }));
+
+    _setupServiceStatusStream(context);
+    settings.addListener(() {
+      if (settings.spoofLocation) {
+        if (timer == null) {
+          // --- Spoof Location / Disable Baro
+          listenBaro?.cancel();
+          if (positionStreamStarted) {
+            positionStreamStarted = !positionStreamStarted;
+            _toggleListening(context);
+          }
+          debugPrint("--- Starting Location Spoofer ---");
+          baro = null;
+
+          // if a waypoint is selected, teleport to there first (useful for doing testing)
+          if (activePlan.selectedWp != null) {
+            updateGeo(
+                Position(
+                  latitude: activePlan.selectedWp!.latlng[0].latitude,
+                  longitude: activePlan.selectedWp!.latlng[0].longitude,
+                  altitude: geo.alt,
+                  speed: 0,
+                  timestamp: DateTime.now(),
+                  heading: 0,
+                  accuracy: 0,
+                  speedAccuracy: 0,
+                ),
+                bypassRecording: true);
+          }
+
+          fakeFlight.initFakeFlight(geo);
+          timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+            final target = activePlan.selectedWp == null
+                ? null
+                : activePlan.selectedWp!.latlng.length > 1
+                    ? geo.nearestPointOnPath(activePlan.selectedWp!.latlng, activePlan.isReversed).latlng
+                    : activePlan.selectedWp!.latlng[0];
+            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target, geoPrev));
+          });
+        }
+      } else {
+        if (timer != null) {
+          // --- Real Location / Baro
+
+          _startBaroService();
+
+          if (!positionStreamStarted) {
+            positionStreamStarted = !positionStreamStarted;
+            _toggleListening(context);
+          }
+          _serviceStatusStreamSubscription!.resume();
+          debugPrint("--- Stopping Location Spoofer ---");
+          timer?.cancel();
+          timer = null;
+        }
+      }
+    });
+
+    addListener(() {
+      if (inFlight && geo.spd > 1) {
+        Provider.of<Wind>(context, listen: false).handleVector(Vector(geo.hdg, geo.spd));
+      }
+    });
+  }
+
+  void _startBaroService() {
+    listenBaro = FlutterBarometer.currentPressureEvent.listen((event) {
+      baro = event;
+    });
+  }
+
+  void _setupServiceStatusStream(BuildContext context) {
+    debugPrint("Toggle Location Service Stream");
+    if (_serviceStatusStreamSubscription == null) {
+      final serviceStatusStream = _geolocatorPlatform.getServiceStatusStream();
+      _serviceStatusStreamSubscription = serviceStatusStream.handleError((error) {
+        _serviceStatusStreamSubscription?.cancel();
+        _serviceStatusStreamSubscription = null;
+      }).listen((serviceStatus) {
+        if (serviceStatus == ServiceStatus.enabled) {
+          if (positionStreamStarted) {
+            _toggleListening(context);
+          }
+          if (defaultTargetPlatform == TargetPlatform.iOS && !positionStreamStarted) {
+            positionStreamStarted = true;
+            _toggleListening(context);
+          }
+          debugPrint("Location Service Enabled");
+        } else {
+          if (_positionStreamSubscription != null) {
+            _positionStreamSubscription?.cancel();
+            _positionStreamSubscription = null;
+            debugPrint('Position Stream has been canceled');
+          }
+          debugPrint("Location Service Disabled");
+        }
+      });
+
+      // Initial start of the position stream
+      if (!positionStreamStarted && defaultTargetPlatform == TargetPlatform.android) {
+        positionStreamStarted = true;
+        _toggleListening(context);
+      }
+    }
+  }
+
+  void _toggleListening(BuildContext context) {
+    debugPrint("Toggle Location Listening");
+    if (_positionStreamSubscription == null) {
+      late LocationSettings locationSettings;
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        locationSettings = AndroidSettings(
+            accuracy: LocationAccuracy.best,
+            distanceFilter: 0,
+            forceLocationManager: false,
+            intervalDuration: const Duration(seconds: 3),
+            //(Optional) Set foreground notification config to keep the app alive
+            //when going to the background
+            foregroundNotificationConfig: const ForegroundNotificationConfig(
+                notificationText: "Still sending your position to the group.",
+                notificationTitle: "xcNav",
+                enableWakeLock: true));
+      } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+        locationSettings = AppleSettings(
+          accuracy: LocationAccuracy.best,
+          // activityType: ActivityType.fitness,
+          distanceFilter: 0,
+          pauseLocationUpdatesAutomatically: false,
+          // Only set to true if our app will be started up in the background.
+          showBackgroundLocationIndicator: true,
+        );
+      } else {
+        locationSettings = const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 0,
+        );
+      }
+
+      positionStream = _geolocatorPlatform.getPositionStream(locationSettings: locationSettings);
+    }
+
+    if (_positionStreamSubscription == null) {
+      _positionStreamSubscription = positionStream!.handleError((error) {
+        _positionStreamSubscription?.cancel();
+        _positionStreamSubscription = null;
+      }).listen((position) => {handleGeomUpdate(context, position)});
+
+      debugPrint('Listening for position updates RESUMED');
+    } else {
+      _positionStreamSubscription?.cancel();
+      _positionStreamSubscription = null;
+      debugPrint('Listening for position updates PAUSED');
+    }
+  }
+
+  /// Do all the things with a GPS update
+  void handleGeomUpdate(BuildContext context, Position position) {
+    final settings = Provider.of<Settings>(context, listen: false);
+    final client = Provider.of<Client>(context, listen: false);
+
+    if (position.latitude != 0.0 || position.longitude != 0.0) {
+      updateGeo(position, bypassRecording: settings.groundMode);
+    }
   }
 
   void _load() async {
@@ -133,10 +350,19 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     });
   }
 
-  void updateGeo(Position position, {bool bypassRecording = false}) {
+  void updateGeo(Position position, {bool bypassRecording = false}) async {
     // debugPrint("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
+    geo.prevGnd = geoPrev.ground;
+    await sampleDem(geo.latLng).then((value) {
+      if (value != null) {
+        geo.ground = value;
+      }
+    }).timeout(const Duration(milliseconds: 500), onTimeout: () {
+      debugPrint("DEM SERVICE TIMEOUT!");
+    });
+
     recordGeo.add(geo);
 
     // fetch ambient baro from weather service

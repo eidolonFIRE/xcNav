@@ -40,8 +40,7 @@ class _PlansViewerState extends State<PlansViewer> {
 
         final selectedFolderOptions = await selectKmlFolders(context, folderNames);
         final selectedFolders = folderNames.isNotEmpty ? selectedFolderOptions?.folders : null;
-        var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? [],
-            setAllOptional: selectedFolderOptions?.allOptional ?? false);
+        var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
         // TODO: notify if broken file
         if (newPlan.goodFile) {
           Provider.of<Plans>(context, listen: false).setPlan(newPlan);
@@ -59,7 +58,7 @@ class _PlansViewerState extends State<PlansViewer> {
       keys.sort((a, b) => a.compareTo(b));
       return Scaffold(
         appBar: AppBar(
-          title: const Text("Waypoints"),
+          title: const Text("Library"),
           actions: [
             IconButton(
                 iconSize: 30,
@@ -72,7 +71,6 @@ class _PlansViewerState extends State<PlansViewer> {
                   });
                 },
                 icon: const Icon(Icons.add)),
-            IconButton(iconSize: 30, onPressed: () => {savePlan(context)}, icon: const Icon(Icons.save_as)),
             IconButton(
                 iconSize: 30, onPressed: () => {selectKmlImport(context)}, icon: const Icon(Icons.file_upload_outlined))
           ],

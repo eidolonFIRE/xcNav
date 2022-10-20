@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tile_caching/fmtc_advanced.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dart_numerics/dart_numerics.dart' as math;
 
-late TileLayerOptions _demTileLayer;
+TileLayerOptions? _demTileLayer;
 
 const demZoomLevel = 12;
 
@@ -52,10 +51,15 @@ Coords _unproject(LatLng latlng, int zoom) {
 /// Sample the DEM layer. (digital elevation map)
 /// Returns elevation in Meters
 Future<double?> sampleDem(LatLng latlng, {double offset = 0}) {
+  // early out
+  if (_demTileLayer == null) {
+    return Future.value(null);
+  }
+
   Completer<double?> completer = Completer();
   final point = _unproject(latlng, demZoomLevel);
   final pointInt = Coords(point.x.toInt(), point.y.toInt())..z = point.z.toInt();
-  final img = _demTileLayer.tileProvider.getImage(pointInt, _demTileLayer);
+  final img = _demTileLayer!.tileProvider.getImage(pointInt, _demTileLayer!);
 
   final imgStream = img.resolve(ImageConfiguration.empty);
   imgStream.addListener(ImageStreamListener((imgInfo, state) {
@@ -76,6 +80,7 @@ Future<double?> sampleDem(LatLng latlng, {double offset = 0}) {
           // debugPrint("rgba : $r $g $b $a");
           final elev = ((r * 256 + g + b.toDouble() / 256) - 32768);
           // debugPrint("Elevation: ${elev} meters");
+          // Timer(Duration(seconds: 10), () => {completer.complete(elev + offset)});
           completer.complete(elev + offset);
         } else {
           completer.complete(null);

@@ -46,6 +46,15 @@ class Geo {
   /// Meters
   double alt = 0;
 
+  /// Ground Elevation
+  double? _gnd;
+  double? prevGnd;
+  set ground(double? value) {
+    _gnd = value;
+  }
+
+  double? get ground => _gnd ?? prevGnd;
+
   /// milliseconds since epoch
   int time = 0;
 

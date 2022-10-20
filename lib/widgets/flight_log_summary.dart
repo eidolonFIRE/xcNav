@@ -202,7 +202,6 @@ class FlightLogSummary extends StatelessWidget {
                             color: Colors.red,
                             isDotted: false)
                       ]),
-                      // TODO: show other things like take-off, landing, and flight plan
                     ]),
               ),
 

@@ -9,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/eta.dart';
-import 'package:xcnav/providers/wind.dart';
 
 class ActivePlan with ChangeNotifier {
   List<Waypoint> waypoints = [];
@@ -91,30 +90,6 @@ class ActivePlan with ChangeNotifier {
     notifyListeners();
   }
 
-  int? findNextWaypoint() {
-    if (selectedIndex != null && selectedIndex! < waypoints.length - 1) {
-      // (Skip optional waypoints)
-      for (int i = selectedIndex! + 1; i < waypoints.length; i++) {
-        if (!waypoints[i].isOptional) {
-          return i;
-        }
-      }
-    }
-    return null;
-  }
-
-  int? findPrevWaypoint() {
-    if (selectedIndex != null && selectedIndex! > 0) {
-      // (Skip optional waypoints)
-      for (int i = selectedIndex! - 1; i >= 0; i--) {
-        if (!waypoints[i].isOptional) {
-          return i;
-        }
-      }
-    }
-    return null;
-  }
-
   void parseFlightPlanSync(List<dynamic> planData) {
     waypoints.clear();
     // add back each waypoint
@@ -144,7 +119,7 @@ class ActivePlan with ChangeNotifier {
 
   // Called from UI
   void insertWaypoint(int? index, String name, List<LatLng> latlngs, bool? isOptional, String? icon, int? color) {
-    Waypoint newWaypoint = Waypoint(name, latlngs.toList(), isOptional ?? false, icon, color);
+    Waypoint newWaypoint = Waypoint(name, latlngs.toList(), icon, color);
     int resolvedIndex = _resolveNewWaypointIndex(index);
     waypoints.insert(resolvedIndex, newWaypoint);
 
@@ -184,17 +159,6 @@ class ActivePlan with ChangeNotifier {
     if (onWaypointAction != null) {
       onWaypointAction!(WaypointAction.delete, index, null, null);
     }
-  }
-
-  void toggleOptional(int index) {
-    waypoints[index].isOptional = !waypoints[index].isOptional;
-
-    // callback
-    if (onWaypointAction != null) {
-      onWaypointAction!(WaypointAction.modify, index, null, waypoints[index]);
-    }
-    isSaved = false;
-    notifyListeners();
   }
 
   void moveWaypoint(int? index, List<LatLng> latlngs) {
@@ -272,37 +236,6 @@ class ActivePlan with ChangeNotifier {
     }
   }
 
-  Polyline _buildTripSnakeSegment(List<LatLng> points) {
-    return Polyline(
-      points: points,
-      color: Colors.black,
-      strokeWidth: 3,
-    );
-  }
-
-  List<Polyline> buildTripSnake() {
-    List<Polyline> retval = [];
-
-    List<LatLng> points = [];
-    for (Waypoint wp in waypoints) {
-      // skip optional waypoints
-      if (wp.isOptional) continue;
-
-      if (wp.latlng.isNotEmpty) {
-        points.add(wp.latlng[0]);
-      }
-      if (wp.latlng.length > 1) {
-        // pinch off trip snake
-        retval.add(_buildTripSnakeSegment(points));
-        // start again at last point
-        points = [wp.latlng[wp.latlng.length - 1]];
-      }
-    }
-
-    if (points.length > 1) retval.add(_buildTripSnakeSegment(points));
-    return retval;
-  }
-
   Polyline buildNextWpIndicator(Geo geo) {
     List<LatLng> points = [geo.latLng];
 
@@ -344,63 +277,63 @@ class ActivePlan with ChangeNotifier {
     return ETA(0, const Duration());
   }
 
-  /// ETA from a waypoint to the end of the trip
-  ETA etaToTripEnd(double speed, int waypointIndex, Wind wind) {
-    // sum up the route
-    var retval = ETA(0, const Duration());
-    if (waypointIndex < waypoints.length) {
-      int? prevIndex;
-      for (int i = waypointIndex; isReversed ? (i >= 0) : (i < waypoints.length); i += isReversed ? -1 : 1) {
-        // skip optional waypoints
-        Waypoint wpIndex = waypoints[i];
-        if (wpIndex.isOptional) continue;
+  // /// ETA from a waypoint to the end of the trip
+  // ETA etaToTripEnd(double speed, int waypointIndex, Wind wind) {
+  //   // sum up the route
+  //   var retval = ETA(0, const Duration());
+  //   if (waypointIndex < waypoints.length) {
+  //     int? prevIndex;
+  //     for (int i = waypointIndex; isReversed ? (i >= 0) : (i < waypoints.length); i += isReversed ? -1 : 1) {
+  //       // skip optional waypoints
+  //       Waypoint wpIndex = waypoints[i];
+  //       if (wpIndex.isOptional) continue;
 
-        if (prevIndex != null && wpIndex.latlng.isNotEmpty && waypoints[prevIndex].latlng.isNotEmpty) {
-          // Will take the last point of the current waypoint, first point of the next
-          final prevLatlng = isReversed ? waypoints[prevIndex].latlng.first : waypoints[prevIndex].latlng.last;
-          final nextLatlng = isReversed ? wpIndex.latlng.first : wpIndex.latlng.last;
+  //       if (prevIndex != null && wpIndex.latlng.isNotEmpty && waypoints[prevIndex].latlng.isNotEmpty) {
+  //         // Will take the last point of the current waypoint, first point of the next
+  //         final prevLatlng = isReversed ? waypoints[prevIndex].latlng.first : waypoints[prevIndex].latlng.last;
+  //         final nextLatlng = isReversed ? wpIndex.latlng.first : wpIndex.latlng.last;
 
-          if (wind.result != null && useWind) {
-            if (wind.result!.windSpd >= wind.result!.airspeed) {
-              // NO SOLUTION!
-              debugPrint("No solution!");
-              retval += ETA(latlngCalc.distance(nextLatlng, prevLatlng) + wpIndex.length, null);
-            } else {
-              /// This works by first canceling lateral speed loss by rotating our vector to compensate.
-              /// Then, account for forward loss of speed.
+  //         if (wind.result != null && useWind) {
+  //           if (wind.result!.windSpd >= wind.result!.airspeed) {
+  //             // NO SOLUTION!
+  //             debugPrint("No solution!");
+  //             retval += ETA(latlngCalc.distance(nextLatlng, prevLatlng) + wpIndex.length, null);
+  //           } else {
+  //             /// This works by first canceling lateral speed loss by rotating our vector to compensate.
+  //             /// Then, account for forward loss of speed.
 
-              double relativeHdg =
-                  wind.result!.windHdg - latlngCalc.bearing(prevLatlng, nextLatlng) * pi / 180 + (isReversed ? 0 : pi);
+  //             double relativeHdg =
+  //                 wind.result!.windHdg - latlngCalc.bearing(prevLatlng, nextLatlng) * pi / 180 + (isReversed ? 0 : pi);
 
-              // debugPrint("Relative headings: ${relativeHdg % (2 * pi)}");
+  //             // debugPrint("Relative headings: ${relativeHdg % (2 * pi)}");
 
-              retval += ETA.fromSpeed(latlngCalc.distance(nextLatlng, prevLatlng),
-                  Wind.remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
-            }
-          } else {
-            // use your current speed
-            retval += ETA.fromSpeed(latlngCalc.distance(nextLatlng, prevLatlng), speed);
-          }
-        }
+  //             retval += ETA.fromSpeed(latlngCalc.distance(nextLatlng, prevLatlng),
+  //                 Wind.remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
+  //           }
+  //         } else {
+  //           // use your current speed
+  //           retval += ETA.fromSpeed(latlngCalc.distance(nextLatlng, prevLatlng), speed);
+  //         }
+  //       }
 
-        // Account for path lenths
-        if (wpIndex.length > 0 && i != waypointIndex) {
-          if (wind.result != null && useWind) {
-            double relativeHdg = wind.result!.windHdg -
-                latlngCalc.bearing(wpIndex.latlng.first, wpIndex.latlng.last) * pi / 180 +
-                (isReversed ? 0 : pi);
+  //       // Account for path lenths
+  //       if (wpIndex.length > 0 && i != waypointIndex) {
+  //         if (wind.result != null && useWind) {
+  //           double relativeHdg = wind.result!.windHdg -
+  //               latlngCalc.bearing(wpIndex.latlng.first, wpIndex.latlng.last) * pi / 180 +
+  //               (isReversed ? 0 : pi);
 
-            retval += ETA.fromSpeed(
-                wpIndex.length, Wind.remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
-          } else {
-            retval += ETA.fromSpeed(wpIndex.length, speed);
-          }
-        }
+  //           retval += ETA.fromSpeed(
+  //               wpIndex.length, Wind.remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
+  //         } else {
+  //           retval += ETA.fromSpeed(wpIndex.length, speed);
+  //         }
+  //       }
 
-        prevIndex = i;
-      }
-      return retval;
-    }
-    return ETA(0, const Duration());
-  }
+  //       prevIndex = i;
+  //     }
+  //     return retval;
+  //   }
+  //   return ETA(0, const Duration());
+  // }
 }

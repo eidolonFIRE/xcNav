@@ -78,7 +78,8 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                         flex: 3,
                                         child: Text.rich(
                                           TextSpan(children: [
-                                            richValue(UnitType.distFine, getElevation(sample.baroAlt, 1013.25)),
+                                            richValue(UnitType.distFine, getElevation(sample.baroAlt, 1013.25),
+                                                digits: 5),
                                             const TextSpan(text: ",  "),
                                             TextSpan(
                                                 style: const TextStyle(color: Colors.blue),

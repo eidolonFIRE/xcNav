@@ -14,7 +14,6 @@ import 'package:xcnav/providers/adsb.dart';
 //
 import 'package:xcnav/units.dart';
 import 'package:xcnav/dialogs/patreon_info.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 
 class SettingsEditor extends StatefulWidget {
   const SettingsEditor({Key? key}) : super(key: key);

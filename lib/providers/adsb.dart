@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:usb_serial/transaction.dart';
 import 'package:usb_serial/usb_serial.dart';
-import 'package:xcnav/main.dart';
 
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/geo.dart';
@@ -227,7 +226,6 @@ class ADSB with ChangeNotifier {
       final double tangentOffset = sin(delta * pi / 180) * dist;
       final double altOffset = each.alt - observer.alt;
 
-      // TODO: deduce speed if not provided?
       final double? eta =
           (each.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist) ? dist / each.spd : null;
 

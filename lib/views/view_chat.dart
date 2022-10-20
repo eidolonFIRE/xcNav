@@ -10,12 +10,10 @@ import 'package:xcnav/providers/profile.dart';
 // Models
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
-import 'package:xcnav/providers/settings.dart';
 
 // Widgets
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
-import 'package:xcnav/widgets/icon_image.dart';
 
 const List<String> quickchat = [
   "Waiting here... ⏱️",
@@ -33,14 +31,14 @@ const List<String> quickchat = [
   // "Emergency: Landing immediately!",
 ];
 
-class Chat extends StatefulWidget {
-  const Chat({Key? key}) : super(key: key);
+class ViewChat extends StatefulWidget {
+  const ViewChat({Key? key}) : super(key: key);
 
   @override
-  State<Chat> createState() => _ChatState();
+  State<ViewChat> createState() => ViewChatState();
 }
 
-class _ChatState extends State<Chat> {
+class ViewChatState extends State<ViewChat> {
   final TextEditingController chatInput = TextEditingController();
 
   FocusNode? inputFieldNode;
@@ -67,40 +65,56 @@ class _ChatState extends State<Chat> {
     }
   }
 
+  void showQuickMessageMenu(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+            alignment: Alignment.topCenter,
+            children: quickchat
+                .map((msg) => (msg == "")
+                    ? const Divider(
+                        thickness: 2,
+                        height: 10,
+                      )
+                    : SimpleDialogOption(
+                        child: Text(
+                          msg.startsWith("Emergency:") ? msg.substring(11) : msg,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline6!
+                              .merge(TextStyle(color: msg.startsWith("Emergency:") ? Colors.red : Colors.white)),
+                        ),
+                        onPressed: () => Navigator.pop(context, msg),
+                      ))
+                .toList());
+      },
+    ).then((value) => {if (value != null) sendChatMessage(value)});
+  }
+
+  // AUDIO SWITCH
+  // Consumer<Settings>(
+  //               builder: (context, settings, child) => Padding(
+  //                     padding: const EdgeInsets.all(8.0),
+  //                     child: Transform.scale(
+  //                       scale: 1.5,
+  //                       child: Switch(
+  //                         activeThumbImage: IconImageProvider(Icons.volume_up, color: Colors.black),
+  //                         inactiveThumbImage: IconImageProvider(Icons.volume_off, color: Colors.black),
+  //                         value: settings.chatTts,
+  //                         onChanged: (value) => settings.chatTts = value,
+  //                       ),
+  //                     ),
+  //                   ))
+
   @override
   Widget build(BuildContext context) {
     Provider.of<ChatMessages>(context, listen: false).markAllRead(false);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Provider.of<ChatMessages>(context, listen: false).markAllRead(true);
-              Navigator.of(context).pop();
-            },
-          ),
-          title: const Text("Group Chat"),
-          actions: [
-            Consumer<Settings>(
-                builder: (context, settings, child) => Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Transform.scale(
-                        scale: 1.5,
-                        child: Switch(
-                          activeThumbImage: IconImageProvider(Icons.volume_up, color: Colors.black),
-                          inactiveThumbImage: IconImageProvider(Icons.volume_off, color: Colors.black),
-                          value: settings.chatTts,
-                          onChanged: (value) => settings.chatTts = value,
-                        ),
-                      ),
-                    ))
-          ],
-        ),
+      child: Column(children: [
         // --- Chat Bubble List
-        body: Center(
+        Expanded(
           child: Consumer<ChatMessages>(builder: (context, chat, child) {
             return ListView.builder(
                 itemCount: chat.messages.length,
@@ -120,46 +134,24 @@ class _ChatState extends State<Chat> {
           }),
         ),
         // --- Text Input
-        bottomNavigationBar: Row(
+        Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             /// Quick messages
-            IconButton(
-                icon: const Icon(Icons.bolt),
-                onPressed: () => {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return SimpleDialog(
-                              alignment: Alignment.topCenter,
-                              children: quickchat
-                                  .map((msg) => (msg == "")
-                                      ? const Divider(
-                                          thickness: 2,
-                                          height: 10,
-                                        )
-                                      : SimpleDialogOption(
-                                          child: Text(
-                                            msg.startsWith("Emergency:") ? msg.substring(11) : msg,
-                                            style: Theme.of(context).textTheme.headline6!.merge(TextStyle(
-                                                color: msg.startsWith("Emergency:") ? Colors.red : Colors.white)),
-                                          ),
-                                          onPressed: () => Navigator.pop(context, msg),
-                                        ))
-                                  .toList());
-                        },
-                      ).then((value) => {if (value != null) sendChatMessage(value)})
-                    }),
+            IconButton(icon: const Icon(Icons.bolt), onPressed: () => {showQuickMessageMenu(context)}),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: TextField(
+                  style: const TextStyle(fontSize: 20),
                   textInputAction: TextInputAction.send,
                   controller: chatInput,
                   autofocus: true,
                   focusNode: inputFieldNode,
-                  decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.all(10)),
+                  decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                      contentPadding: const EdgeInsets.all(8)),
                   onSubmitted: (value) {
                     sendChatMessage(value);
                     if (inputFieldNode != null) {
@@ -178,7 +170,7 @@ class _ChatState extends State<Chat> {
                 child: const Icon(Icons.send)),
           ],
         ),
-      ),
+      ]),
     );
   }
 }

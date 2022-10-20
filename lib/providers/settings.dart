@@ -106,7 +106,7 @@ class Settings with ChangeNotifier {
 
   // --- Misc
   bool _chatTts = false;
-  String _demInstr = "MSL";
+  String _altInstr = "MSL";
 
   Settings() {
     selectProximityConfig("Medium");
@@ -222,7 +222,7 @@ class Settings with ChangeNotifier {
 
       // --- Misc
       _chatTts = prefs.getBool("settings.chatTts") ?? false;
-      _demInstr = prefs.getString("settings.demInstr") ?? "MSL";
+      _altInstr = prefs.getString("settings.altInstr") ?? "MSL";
     });
   }
 
@@ -374,11 +374,11 @@ class Settings with ChangeNotifier {
     notifyListeners();
   }
 
-  String get demInstr => _demInstr;
-  set demInstr(String value) {
-    _demInstr = value;
+  String get altInstr => _altInstr;
+  set altInstr(String value) {
+    _altInstr = value;
     SharedPreferences.getInstance().then((prefs) {
-      prefs.setString("settings.demInstr", value);
+      prefs.setString("settings.altInstr", value);
     });
     notifyListeners();
   }

@@ -301,9 +301,6 @@ class _PlanCardState extends State<PlanCard> {
                     ),
                     // Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
 
-                    // Trip snake lines
-                    PolylineLayerOptions(polylines: widget.plan.buildTripSnake()),
-
                     // Flight plan markers
                     PolylineLayerOptions(
                       polylines: widget.plan.waypoints
@@ -312,8 +309,7 @@ class _PlanCardState extends State<PlanCard> {
                               ? Polyline(
                                   points: e.latlng,
                                   strokeWidth: checkedElements.contains(i) ? 8 : 3,
-                                  color: e.getColor(),
-                                  isDotted: e.isOptional)
+                                  color: e.getColor())
                               : null)
                           .whereNotNull()
                           .toList(),
@@ -363,7 +359,6 @@ class _PlanCardState extends State<PlanCard> {
                             },
                           );
                         },
-                        onToggleOptional: () {},
                         isSelected: checkedElements.contains(index),
                         showPilots: false,
                       )),

@@ -22,6 +22,8 @@ class LastReport<T> {
   }
 }
 
+late AudioCueService audioCueService;
+
 class AudioCueService {
   late final TtsService ttsService;
   late final Settings settings;

@@ -19,7 +19,8 @@ String hashFlightPlanData(List<Waypoint> waypoints) {
 
   for (int i = 0; i < waypoints.length; i++) {
     Waypoint wp = waypoints[i];
-    str += i.toString() + wp.name + (wp.icon ?? "") + (wp.color?.toString() ?? "") + (wp.isOptional ? "O" : "X");
+    // TODO: need to remove "X" but in-step with server
+    str += i.toString() + wp.name + (wp.icon ?? "") + (wp.color?.toString() ?? "") + "X";
     for (LatLng g in wp.latlng) {
       // large tolerance for floats
       str += "${g.latitude.toStringAsFixed(5)}${g.longitude.toStringAsFixed(5)}";
@@ -46,18 +47,18 @@ class Barb {
 class Waypoint {
   late String name;
   late List<LatLng> _latlng;
-  late bool isOptional;
   late String? icon;
   late int? color;
 
   double? _length;
   List<Barb>? _barbs;
 
-  Waypoint(this.name, this._latlng, this.isOptional, this.icon, this.color);
+  bool get isPath => _latlng.length > 1;
+
+  Waypoint(this.name, this._latlng, this.icon, this.color);
 
   Waypoint.fromJson(json) {
     name = json["name"];
-    isOptional = json["optional"];
     icon = json["icon"];
     color = json["color"];
     _latlng = [];
@@ -132,7 +133,8 @@ class Waypoint {
                 ((e.longitude * 100000).round()) / 100000
               ])
           .toList(),
-      "optional": isOptional,
+      // TODO: remove this in step with backend
+      "optional": false,
       "icon": icon,
       "color": color,
     };

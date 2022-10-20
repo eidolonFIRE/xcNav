@@ -17,7 +17,6 @@ class WaypointCard extends StatefulWidget {
     required this.waypoint,
     required this.index,
     required this.onSelect,
-    required this.onToggleOptional,
     required this.isSelected,
     this.onDoubleTap,
     this.showPilots = true,
@@ -30,7 +29,6 @@ class WaypointCard extends StatefulWidget {
 
   // callbacks
   final VoidCallback onSelect;
-  final VoidCallback onToggleOptional;
   final VoidCallback? onDoubleTap;
 
   @override
@@ -42,8 +40,7 @@ class _WaypointCardState extends State<WaypointCard> {
 
   @override
   Widget build(BuildContext context) {
-    final textColor =
-        widget.isSelected ? Colors.black : (widget.waypoint.isOptional ? Colors.grey.shade600 : Colors.white);
+    final textColor = widget.isSelected ? Colors.black : Colors.white;
     return Container(
       color: widget.isSelected ? Colors.grey.shade200 : Colors.grey.shade900,
       key: ValueKey(widget.waypoint),
@@ -51,39 +48,39 @@ class _WaypointCardState extends State<WaypointCard> {
       constraints: const BoxConstraints(maxHeight: 100),
       child: IntrinsicHeight(
         child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Column(
-            children: [
-              Expanded(
-                child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
-              ),
-              GestureDetector(
-                onTap: widget.onToggleOptional,
-                child: SizedBox(
-                  width: 40,
-                  child: Stack(
-                    alignment: AlignmentDirectional.center,
-                    clipBehavior: Clip.none,
-                    children: [
-                      SvgPicture.asset(
-                        "assets/images/wp${widget.waypoint.latlng.length > 1 ? "_path" : ""}${widget.waypoint.isOptional ? "_optional" : ""}.svg",
-                        height: 56,
-                        color: widget.waypoint.getColor(),
-                      ),
-                      // if (waypoint.isOptional)
-                      //   SvgPicture.asset(
-                      //     "assets/images/wp_strike.svg",
-                      //     height: 56,
-                      //     color: Colors.red.withAlpha(140),
-                      //   )
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
-              ),
-            ],
-          ),
+          // Column(
+          //   children: [
+          //     Expanded(
+          //       child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
+          //     ),
+          //     GestureDetector(
+          //       onTap: widget.onToggleOptional,
+          //       child: SizedBox(
+          //         width: 40,
+          //         child: Stack(
+          //           alignment: AlignmentDirectional.center,
+          //           clipBehavior: Clip.none,
+          //           children: [
+          //             SvgPicture.asset(
+          //               "assets/images/wp${widget.waypoint.latlng.length > 1 ? "_path" : ""}${widget.waypoint.isOptional ? "_optional" : ""}.svg",
+          //               height: 56,
+          //               color: widget.waypoint.getColor(),
+          //             ),
+          //             // if (waypoint.isOptional)
+          //             //   SvgPicture.asset(
+          //             //     "assets/images/wp_strike.svg",
+          //             //     height: 56,
+          //             //     color: Colors.red.withAlpha(140),
+          //             //   )
+          //           ],
+          //         ),
+          //       ),
+          //     ),
+          //     Expanded(
+          //       child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
+          //     ),
+          //   ],
+          // ),
           Expanded(
             child: Flex(
               direction: Axis.horizontal,
@@ -105,14 +102,20 @@ class _WaypointCardState extends State<WaypointCard> {
                       child: Text.rich(
                         TextSpan(children: [
                           // --- Icon
-                          if (widget.waypoint.icon != null)
+                          if (widget.waypoint.icon != null || widget.waypoint.isPath)
                             WidgetSpan(
                               alignment: PlaceholderAlignment.middle,
-                              child: getWpIcon(
-                                widget.waypoint.icon,
-                                24,
-                                textColor,
-                              ),
+                              child: widget.waypoint.isPath
+                                  ? SvgPicture.asset(
+                                      "assets/images/path.svg",
+                                      color: widget.waypoint.getColor(),
+                                      width: 30,
+                                    )
+                                  : getWpIcon(
+                                      widget.waypoint.icon,
+                                      24,
+                                      widget.waypoint.getColor(),
+                                    ),
                             ),
                           if (widget.waypoint.icon != null) const TextSpan(text: " "),
                           // --- Name

@@ -2,32 +2,30 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-
 import 'package:latlong2/latlong.dart';
 import 'package:collection/collection.dart';
+// ignore: depend_on_referenced_packages
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:provider/provider.dart';
-import 'package:xcnav/dialogs/edit_latlng.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/plans.dart';
-
-// --- Misc
-import 'package:xcnav/screens/home.dart';
-import 'package:xcnav/units.dart';
-import 'package:xcnav/dialogs/edit_waypoint.dart';
 
 // --- Providers
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/providers/plans.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
 import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
+
+// --- Misc
+import 'package:xcnav/dialogs/edit_waypoint.dart';
+import 'package:xcnav/views/view_map.dart';
 
 class PlanEditor extends StatefulWidget {
   const PlanEditor({Key? key}) : super(key: key);
@@ -91,7 +89,6 @@ class _PlanEditorState extends State<PlanEditor> {
     setState(() {
       if (editingIndex != null && editablePolyline.isNotEmpty) {
         plan!.waypoints[editingIndex!].latlng = editablePolyline.toList();
-        plan!.refreshLength();
       } else {
         plan!.waypoints.removeAt(editingIndex!);
       }
@@ -107,7 +104,7 @@ class _PlanEditorState extends State<PlanEditor> {
     if (focusMode == FocusMode.addWaypoint) {
       // --- Finish adding waypoint pin
       setFocusMode(FocusMode.unlocked);
-      editWaypoint(context, Waypoint("", [latlng], false, null, null), isNew: true)?.then((newWaypoint) {
+      editWaypoint(context, Waypoint("", [latlng], null, null), isNew: true)?.then((newWaypoint) {
         if (newWaypoint != null) {
           setState(() {
             plan!.waypoints.add(newWaypoint);
@@ -160,19 +157,13 @@ class _PlanEditorState extends State<PlanEditor> {
                     layers: [
                       Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName, opacity: 1.0),
 
-                      // Trip snake lines
-                      PolylineLayerOptions(polylines: plan!.buildTripSnake()),
-
                       // Flight plan markers
                       PolylineLayerOptions(
                         polylines: plan!.waypoints
                             // .where((value) => value.latlng.length > 1)
                             .mapIndexed((i, e) => e.latlng.length > 1 && i != editingIndex
                                 ? Polyline(
-                                    points: e.latlng,
-                                    strokeWidth: i == selectedIndex ? 8 : 4,
-                                    color: e.getColor(),
-                                    isDotted: e.isOptional)
+                                    points: e.latlng, strokeWidth: i == selectedIndex ? 8 : 4, color: e.getColor())
                                 : null)
                             .whereNotNull()
                             .toList(),
@@ -184,7 +175,7 @@ class _PlanEditorState extends State<PlanEditor> {
                               editingIndex != null
                                   ? (plan!.waypoints.toList()
                                     ..removeAt(editingIndex!)
-                                    ..add(Waypoint(plan!.waypoints[editingIndex!].name, editablePolyline, false, null,
+                                    ..add(Waypoint(plan!.waypoints[editingIndex!].name, editablePolyline, null,
                                         plan!.waypoints[editingIndex!].color)))
                                   : plan!.waypoints,
                               false,
@@ -212,7 +203,6 @@ class _PlanEditorState extends State<PlanEditor> {
                                       onLongDragEnd: (p0, p1) {
                                         setState(() {
                                           plan!.waypoints[i].latlng = [p1];
-                                          plan!.refreshLength();
                                         });
                                       },
                                       builder: (context) => MapMarker(e, 60 * (i == selectedIndex ? 0.8 : 0.6)))
@@ -255,31 +245,6 @@ class _PlanEditorState extends State<PlanEditor> {
                       ),
                     ),
                   ),
-
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Card(
-                        color: Colors.white54,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text.rich(
-                            TextSpan(children: [
-                              const TextSpan(text: "Total Length: ", style: TextStyle(fontWeight: FontWeight.normal)),
-                              richValue(UnitType.distCoarse, plan!.length,
-                                  decimals: 1, valueStyle: const TextStyle(fontWeight: FontWeight.bold)),
-                            ]),
-                            style: const TextStyle(color: Colors.black),
-                            textAlign: TextAlign.end,
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
 
                 Align(
                     alignment: Alignment.topRight,
@@ -416,7 +381,7 @@ class _PlanEditorState extends State<PlanEditor> {
                       iconSize: 25,
                       icon: const ImageIcon(AssetImage("assets/images/add_waypoint_path.png"), color: Colors.yellow),
                       onPressed: () {
-                        var temp = Waypoint("", [], false, null, null);
+                        var temp = Waypoint("", [], null, null);
                         editWaypoint(context, temp, isNew: true, isPath: true)?.then((newWaypoint) {
                           if (newWaypoint != null) {
                             plan!.waypoints.add(newWaypoint);
@@ -425,25 +390,6 @@ class _PlanEditorState extends State<PlanEditor> {
                           }
                         });
                       }),
-                  // --- New from Lat Lng
-                  IconButton(
-                      iconSize: 25,
-                      onPressed: () {
-                        editLatLng(context).then((value) {
-                          if (value != null) {
-                            editWaypoint(context, Waypoint("", [value], false, null, null), isNew: true, isPath: false)
-                                ?.then((newWaypoint) {
-                              if (newWaypoint != null) {
-                                setState(() {
-                                  plan!.waypoints.add(Waypoint(newWaypoint.name, newWaypoint.latlng, false,
-                                      newWaypoint.icon, newWaypoint.color));
-                                });
-                              }
-                            });
-                          }
-                        });
-                      },
-                      icon: const ImageIcon(AssetImage("assets/images/crosshair.png"))),
                 ],
               ),
               Divider(
@@ -532,12 +478,6 @@ class _PlanEditorState extends State<PlanEditor> {
                                   beginEditingPolyline(null);
                                 }
                               },
-                              onToggleOptional: () {
-                                setState(() {
-                                  plan!.waypoints[i].isOptional = !plan!.waypoints[i].isOptional;
-                                  plan!.refreshLength();
-                                });
-                              },
                               isSelected: i == selectedIndex,
                             ),
                           ),
@@ -547,7 +487,6 @@ class _PlanEditorState extends State<PlanEditor> {
                               debugPrint("WP order: $oldIndex --> $newIndex");
                               selectedIndex = null;
                               plan!.sortWaypoint(oldIndex, newIndex);
-                              plan!.refreshLength();
                             });
                           },
                         )),
