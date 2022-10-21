@@ -122,16 +122,17 @@ class _WaypointCardState extends State<WaypointCard> {
                           TextSpan(text: widget.waypoint.name, style: TextStyle(color: textColor, fontSize: 24)),
                           // --- Length
                           if (widget.waypoint.latlng.length > 1)
-                            TextSpan(text: " (", style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
+                            TextSpan(text: " (", style: TextStyle(color: textColor.withAlpha(100), fontSize: 18)),
                           if (widget.waypoint.latlng.length > 1)
                             richValue(UnitType.distCoarse, widget.waypoint.length,
                                 digits: 3,
                                 decimals: 1,
-                                valueStyle: TextStyle(color: textColor.withAlpha(150), fontSize: 18),
-                                unitStyle: TextStyle(color: textColor.withAlpha(150), fontSize: 12)),
+                                valueStyle: TextStyle(color: textColor.withAlpha(100), fontSize: 18),
+                                unitStyle: TextStyle(
+                                    color: textColor.withAlpha(100), fontSize: 12, fontStyle: FontStyle.italic)),
 
                           if (widget.waypoint.latlng.length > 1)
-                            TextSpan(text: ")", style: TextStyle(color: textColor.withAlpha(150), fontSize: 18)),
+                            TextSpan(text: ")", style: TextStyle(color: textColor.withAlpha(100), fontSize: 18)),
                         ]),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,

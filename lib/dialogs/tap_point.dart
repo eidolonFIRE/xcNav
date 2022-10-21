@@ -5,7 +5,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/notifications.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/views/view_map.dart';
@@ -69,10 +68,10 @@ void tapPointDialog(BuildContext context, LatLng latlng, Function setFocusMode) 
           ElevatedButton.icon(
               label: const Text("Waypoint"),
               onPressed: () {
+                var plan = Provider.of<ActivePlan>(context, listen: false);
                 Navigator.pop(context);
                 editWaypoint(context, Waypoint("", [latlng], null, null), isNew: true)?.then((newWaypoint) {
                   if (newWaypoint != null) {
-                    var plan = Provider.of<ActivePlan>(context, listen: false);
                     plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false,
                         newWaypoint.icon, newWaypoint.color);
                   }
