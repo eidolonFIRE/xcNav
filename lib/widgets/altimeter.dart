@@ -28,7 +28,7 @@ class Altimeter extends StatelessWidget {
   final double? value;
   final int digits;
   final int decimals;
-  final TextStyle? valueStyle;
+  final TextStyle valueStyle;
   final TextStyle? unitStyle;
   final String? unitTag;
   final bool isPrimary;
@@ -36,7 +36,7 @@ class Altimeter extends StatelessWidget {
   const Altimeter(this.value,
       {this.digits = 5,
       this.decimals = 0,
-      this.valueStyle,
+      required this.valueStyle,
       this.unitStyle,
       this.unitTag,
       this.isPrimary = true,
@@ -59,8 +59,8 @@ class Altimeter extends StatelessWidget {
                     : Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: SizedBox(
-                            width: valueStyle?.fontSize != null ? valueStyle!.fontSize! - 8 : null,
-                            height: valueStyle?.fontSize != null ? valueStyle!.fontSize! - 8 : null,
+                            width: valueStyle.fontSize != null ? valueStyle.fontSize! / 2 : null,
+                            height: valueStyle.fontSize != null ? valueStyle.fontSize! / 2 : null,
                             child: const CircularProgressIndicator()),
                       ),
                 Column(
@@ -69,7 +69,12 @@ class Altimeter extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(getUnitStr(UnitType.distFine), style: unitStyle),
-                      unitTag == null ? Container() : AltimeterBadge(unitTag!),
+                      unitTag == null
+                          ? Container()
+                          : Padding(
+                              padding: EdgeInsets.only(bottom: valueStyle.fontSize! - 42),
+                              child: AltimeterBadge(unitTag!),
+                            ),
                     ])
               ])
         : Row(
@@ -83,9 +88,11 @@ class Altimeter extends StatelessWidget {
                       : Padding(
                           padding: const EdgeInsets.all(2.0),
                           child: SizedBox(
-                              width: valueStyle?.fontSize != null ? valueStyle!.fontSize! - 2 : null,
-                              height: valueStyle?.fontSize != null ? valueStyle!.fontSize! - 2 : null,
-                              child: const CircularProgressIndicator()),
+                              width: valueStyle.fontSize != null ? valueStyle.fontSize! - 2 : null,
+                              height: valueStyle.fontSize != null ? valueStyle.fontSize! - 2 : null,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                              )),
                         )),
               unitTag == null ? Container() : AltimeterBadge(unitTag!)
             ],

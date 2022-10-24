@@ -76,6 +76,43 @@ class ViewWaypointsState extends State<ViewWaypoints> {
     return retval;
   }
 
+  Future<String?>? showIconPicker(BuildContext context) {
+    return showDialog<String?>(
+        context: context,
+        builder: (context) => Builder(builder: (context) {
+              // --- Build icon selection buttons
+              List<Widget> iconWidgets = [];
+
+              for (final name in (iconOptions.keys.toList() + ["PATH"])) {
+                iconWidgets.add(IconButton(
+                  onPressed: () => {Navigator.pop(context, name)},
+                  padding: const EdgeInsets.all(0),
+                  iconSize: 50,
+                  color: Colors.white,
+                  icon: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: getWpIcon(name, 30, Colors.white),
+                  ),
+                ));
+              }
+
+              return AlertDialog(
+                  content: SizedBox(
+                width: MediaQuery.of(context).size.width - 100,
+                height: MediaQuery.of(context).size.height / 3,
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  color: Theme.of(context).backgroundColor,
+                  child: GridView.count(
+                    crossAxisCount: 5,
+                    shrinkWrap: true,
+                    children: iconWidgets,
+                  ),
+                ),
+              ));
+            }));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ActivePlan>(builder: (context, activePlan, child) {
@@ -127,30 +164,15 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                 ),
 
                 // --- Filter Icon
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<String?>(
-                      value: filterIcon,
-                      items: [
-                        DropdownMenuItem<String?>(
-                            value: "PATH",
-                            child: SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: SvgPicture.asset(
-                                  "assets/images/path.svg",
-                                  color: Colors.white,
-                                ))),
-                        const DropdownMenuItem<String?>(value: null, child: Icon(Icons.circle_outlined)),
-                        ...iconOptions.keys
-                            .where((element) => element != null)
-                            .map((e) => DropdownMenuItem<String?>(value: e, child: getWpIcon(e, 25, Colors.white)))
-                      ],
-                      onChanged: ((value) {
+                IconButton(
+                    onPressed: () {
+                      showIconPicker(context)?.then((value) {
                         setState(() {
                           filterIcon = value;
                         });
-                      })),
-                ),
+                      });
+                    },
+                    icon: getWpIcon(filterIcon, 25, Colors.white)),
 
                 // --- Filter Text
                 Expanded(
@@ -161,10 +183,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                       textAlignVertical: TextAlignVertical.bottom,
                       controller: filterText,
                       decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-                          // border: InputBorder.none,
-                          // contentPadding: const EdgeInsets.all(8)),
-                          hintText: "text"),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)), hintText: "text"),
                       onChanged: (value) {
                         setState(() {
                           debugPrint("FilterText ${filterText.text}");

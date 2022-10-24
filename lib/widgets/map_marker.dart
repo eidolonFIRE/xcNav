@@ -24,6 +24,17 @@ final iconOptions = {
 
 Widget getWpIcon(String? name, double size, Color? color) {
   final icon = iconOptions[name];
+
+  if (name == "PATH") {
+    return SizedBox(
+        width: size,
+        height: size,
+        child: SvgPicture.asset(
+          "assets/images/path.svg",
+          color: Colors.white,
+        ));
+  }
+
   if (icon is IconData || icon == null) {
     return Icon(
       iconOptions.keys.contains(name) ? iconOptions[name] as IconData : null,
