@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'dart:async';
@@ -96,7 +95,7 @@ class WindPlotPainter extends CustomPainter {
     // Wind barb
     canvas.drawLine(center, cCenter, _barbPaint);
     canvas.drawPoints(
-        PointMode.polygon,
+        ui.PointMode.polygon,
         [
           cCenter +
               Offset(cos(circleCenter.direction - pi / 1.2), sin(circleCenter.direction - pi / 1.2)) *
@@ -122,7 +121,7 @@ class WindPlotPainter extends CustomPainter {
     if (_arrow != null) {
       canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
       canvas.rotate(lastPoint.direction + pi / 2);
-      canvas.drawImageRect(_arrow!, const Rect.fromLTWH(0, 0, 128, 130),
+      canvas.drawImageRect(_arrow!, const Rect.fromLTWH(0, 0, 113, 130),
           Rect.fromCenter(center: const Offset(0, 0), width: maxSize / 3, height: maxSize / 3), Paint());
     }
   }

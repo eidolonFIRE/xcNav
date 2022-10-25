@@ -39,7 +39,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
               final plan = Provider.of<ActivePlan>(context, listen: false);
 
               final etaWp = pilot.selectedWaypoint != null
-                  ? plan.etaToWaypoint(pilot.geo!, pilot.geo!.spd, pilot.selectedWaypoint!)
+                  ? plan.waypoints[pilot.selectedWaypoint!].eta(pilot.geo!, pilot.geo!.spd)
                   : null;
 
               final relAlt = pilot.geo!.alt - myTelemetry.geo.alt;

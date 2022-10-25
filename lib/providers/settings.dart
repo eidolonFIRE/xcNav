@@ -54,6 +54,7 @@ class Settings with ChangeNotifier {
       default:
         return TileLayerOptions(
           urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+          // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
           tileProvider: makeTileProvider(name),
           opacity: opacity ?? 1.0,
         );

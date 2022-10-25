@@ -51,7 +51,7 @@ void tapPointDialog(BuildContext context, LatLng latlng, Function setFocusMode) 
             padding: const EdgeInsets.only(top: 14),
             child: FutureBuilder<double?>(
               initialData: 0,
-              future: sampleDem(latlng),
+              future: sampleDem(latlng, true),
               builder: (context, snapshot) {
                 return Text.rich(TextSpan(children: [
                   const TextSpan(text: "Ground Height:     ", style: unitStyle),

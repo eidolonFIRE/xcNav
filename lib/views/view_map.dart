@@ -13,7 +13,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
-import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
 
 // providers

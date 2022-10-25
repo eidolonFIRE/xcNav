@@ -65,7 +65,13 @@ class Geo {
   double spd = 0;
 
   /// meters/sec
+  double spdSmooth = 0;
+
+  /// meters/sec
   double vario = 0;
+
+  /// meters/sec
+  double varioSmooth = 0;
 
   LatLng get latLng => LatLng(lat, lng);
   Offset get latLngOffset => Offset(lng, lat);
@@ -105,9 +111,11 @@ class Geo {
       vario = (alt - prev.alt) / (time - prev.time) * 1000;
       if (vario.isNaN) vario = 0;
       // Blend vario with previous vario reading to offer some mild smoothing
-      if (prev.vario.isFinite) vario = (vario + prev.vario) / 2;
+      if (prev.varioSmooth.isFinite && vario.abs() < 99) varioSmooth = vario * 0.1 + prev.varioSmooth * 0.9;
+      spdSmooth = spd * 0.1 + prev.spdSmooth * 0.9;
     } else {
       vario = 0;
+      spdSmooth = spd;
     }
   }
 

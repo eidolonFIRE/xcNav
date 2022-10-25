@@ -1,13 +1,20 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-
-import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+
+import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/elevation_plot.dart';
+import 'package:xcnav/widgets/map_marker.dart';
 
 class ViewElevation extends StatefulWidget {
   const ViewElevation({Key? key}) : super(key: key);
@@ -17,14 +24,78 @@ class ViewElevation extends StatefulWidget {
 }
 
 class ViewElevationState extends State<ViewElevation> {
+  List<ElevSample> elevSamples = [];
+
+  dynamic lookAhead = Duration(minutes: 10);
+  Duration? lookBehind = Duration(minutes: 10);
+  Duration? waypointETA;
+
+  List<Duration?> lookBehindOptions = [
+    null,
+    const Duration(minutes: 60),
+    const Duration(minutes: 30),
+    const Duration(minutes: 10),
+  ];
+
+  Future<List<ElevSample?>> doSamples(Geo anchor, Waypoint? waypoint) async {
+    waypointETA = waypoint?.eta(anchor, anchor.spdSmooth).time;
+    // TODO: this doesn't support first intersect from path correctly
+    Duration forecastDuration = lookAhead.runtimeType == Duration
+        ? lookAhead
+        : (waypointETA != null
+            ? Duration(milliseconds: (waypointETA!.inMilliseconds * 1.2).ceil())
+            : const Duration(minutes: 10));
+    final sampleInterval = Duration(milliseconds: (forecastDuration.inMilliseconds / 30).ceil());
+
+    Completer<List<ElevSample?>> samplesCompleter = Completer();
+
+    List<Completer<ElevSample?>> completers = [];
+
+    /// Degrees
+    double bearing = anchor.hdg / pi * 180;
+    if (waypoint != null) {
+      bearing = latlngCalc.bearing(anchor.latLng, waypoint.latlng.first);
+    }
+
+    // Build up a list of individual tasks that need to complete
+    for (int t = 0; t <= forecastDuration.inMilliseconds; t += sampleInterval.inMilliseconds) {
+      // TODO: use averages so it's not "twitchy"
+      final Completer<ElevSample?> newCompleter = Completer();
+      final sampleLatlng = latlngCalc.offset(anchor.latLng, anchor.spdSmooth * t / 1000, bearing);
+      sampleDem(sampleLatlng, false).then((value) {
+        if (value != null) {
+          newCompleter.complete(ElevSample(sampleLatlng, value, t));
+        } else {
+          newCompleter.complete(null);
+        }
+      });
+
+      completers.add(newCompleter);
+    }
+
+    // Wait for all the samples to complete
+    Future.wait(completers.map((e) => e.future).toList()).then((value) => samplesCompleter.complete(value));
+    return samplesCompleter.future;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          // --- Flight Timer
-          ListTile(
+    final activePlan = Provider.of<ActivePlan>(context, listen: false);
+
+    // --- Build view options
+    List<dynamic> lookAheadOptions = [
+      const Duration(minutes: 10),
+      const Duration(minutes: 30),
+      const Duration(minutes: 60),
+    ];
+    if (activePlan.selectedWp != null) lookAheadOptions.add(activePlan.selectedWp);
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        // --- Flight Timer
+        Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
+          return ListTile(
             leading: const Icon(Icons.timer_outlined),
             title: myTelemetry.takeOff != null
                 ? Builder(builder: (context) {
@@ -48,64 +119,88 @@ class ViewElevationState extends State<ViewElevation> {
                     "On the ground...",
                     style: TextStyle(fontStyle: FontStyle.italic),
                   ),
+          );
+        }),
+
+        Container(
+          height: 40,
+        ),
+
+        // --- Elevation Plot
+        Expanded(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width,
+            // constraints: const BoxConstraints(maxHeight: 400),
+            child: ClipRect(
+                child: FutureBuilder<List<ElevSample?>>(
+                    future: doSamples(Provider.of<MyTelemetry>(context).geo, activePlan.selectedWp),
+                    builder: (context, groundSamples) {
+                      final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+                      final oldestTimestamp = lookBehind != null
+                          ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.geo.time).subtract(lookBehind!)
+                          : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time);
+                      return CustomPaint(
+                        painter: ElevationPlotPainter(
+                            myTelemetry.getHistory(oldestTimestamp, interval: Duration(seconds: 30)),
+                            groundSamples.data ?? [],
+                            Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
+                                ? 100
+                                : 152.4,
+                            waypoint: activePlan.selectedWp,
+                            waypointETA: waypointETA?.inMilliseconds),
+                      );
+                    })),
           ),
-          Container(
-            constraints: const BoxConstraints(maxHeight: 300),
-            child: charts.TimeSeriesChart(
-              [
-                charts.Series<Geo, DateTime>(
-                  id: "Ground",
-                  data: myTelemetry.recordGeo.sublist(max(0, myTelemetry.recordGeo.length - 200)),
-                  colorFn: (_, __) => charts.MaterialPalette.deepOrange.shadeDefault,
-                  areaColorFn: (_, __) => const charts.Color(r: 125, g: 85, b: 72, a: 200),
-                  domainFn: (value, _) => DateTime.fromMillisecondsSinceEpoch(value.time),
-                  measureFn: (value, _) => unitConverters[UnitType.distFine]!(value.ground ?? 0),
-                ),
-                charts.Series<Geo, DateTime>(
-                  id: "Altitude",
-                  data: myTelemetry.recordGeo.sublist(max(0, myTelemetry.recordGeo.length - 200)),
-                  colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
-                  domainFn: (value, _) => DateTime.fromMillisecondsSinceEpoch(value.time),
-                  measureFn: (value, _) => unitConverters[UnitType.distFine]!(value.alt - (value.ground ?? 0)),
-                ),
-              ],
-              defaultRenderer: charts.LineRendererConfig(includeArea: true, stacked: true),
-              animate: false,
+        ),
 
-              behaviors: [
-                charts.ChartTitle("Altitude   (${getUnitStr(UnitType.distFine)})",
-                    behaviorPosition: charts.BehaviorPosition.top,
-                    titleOutsideJustification: charts.OutsideJustification.middleDrawArea,
-                    titleStyleSpec: const charts.TextStyleSpec(color: charts.MaterialPalette.white)),
-              ],
+        // --- View Controls
+        Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ToggleButtons(
+                  borderRadius: BorderRadius.circular(20),
+                  constraints: BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
+                  onPressed: (index) => setState(() {
+                        lookBehind = lookBehindOptions[index];
+                      }),
+                  isSelected: lookBehindOptions.map((e) => e == lookBehind).toList(),
+                  children: lookBehindOptions.map((e) => Text(e != null ? "${e.inMinutes}" : "All")).toList()),
+              const Expanded(
+                  child: Divider(
+                thickness: 2,
+              )),
+              ToggleButtons(
+                  borderRadius: BorderRadius.circular(20),
+                  constraints: BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
+                  onPressed: (index) => setState(() {
+                        lookAhead = lookAheadOptions[index];
+                      }),
+                  isSelected: lookAheadOptions.map((e) => e == lookAhead).toList(),
+                  children: lookAheadOptions.map((e) {
+                    switch (e.runtimeType) {
+                      case Duration:
+                        return Text("${e.inMinutes}");
 
-              domainAxis: const charts.DateTimeAxisSpec(
-                  renderSpec: charts.SmallTickRendererSpec(
-
-                      // Tick and Label styling here.
-                      labelStyle: charts.TextStyleSpec(
-                          fontSize: 14, // size in Pts.
-                          color: charts.MaterialPalette.white),
-
-                      // Change the line colors to match text color.
-                      lineStyle: charts.LineStyleSpec(color: charts.MaterialPalette.white))),
-
-              /// Assign a custom style for the measure axis.
-              primaryMeasureAxis: const charts.NumericAxisSpec(
-                  tickProviderSpec: charts.BasicNumericTickProviderSpec(desiredMinTickCount: 6),
-                  renderSpec: charts.GridlineRendererSpec(
-
-                      // Tick and Label styling here.
-                      labelStyle: charts.TextStyleSpec(
-                          fontSize: 14, // size in Pts.
-                          color: charts.MaterialPalette.white),
-
-                      // Change the line colors to match text color.
-                      lineStyle: charts.LineStyleSpec(color: charts.MaterialPalette.white))),
-            ),
+                      case Waypoint:
+                        return SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: MapMarker(activePlan.selectedWp!, 30),
+                        );
+                      default:
+                        return Container();
+                    }
+                  }).toList()),
+            ],
           ),
-        ],
-      );
-    });
+        ),
+
+        Container(
+          height: 20,
+        )
+      ],
+    );
   }
 }

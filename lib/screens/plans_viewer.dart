@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/edit_plan_name.dart';
 
 // --- Dialogs
-import 'package:xcnav/dialogs/save_plan.dart';
 import 'package:xcnav/dialogs/select_kml_folders.dart';
 
 // --- Models

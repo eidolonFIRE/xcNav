@@ -80,6 +80,7 @@ dependencies:
   open_filex: ^3.4.0
   dart_numerics: ^0.0.6
   fuzzywuzzy: ^0.2.0
+  bisection: ^0.4.3+1
 
 
 dev_dependencies:

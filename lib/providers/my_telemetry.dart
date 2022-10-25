@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:bisection/bisect.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -356,7 +357,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
     geo.prevGnd = geoPrev.ground;
-    await sampleDem(geo.latLng).then((value) {
+    await sampleDem(geo.latLng, true).then((value) {
       if (value != null) {
         geo.ground = value;
       }
@@ -460,5 +461,28 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   Polyline buildFlightTrace() {
     return Polyline(points: flightTrace, strokeWidth: 4, color: const Color.fromARGB(150, 255, 50, 50), isDotted: true);
+  }
+
+  List<Geo> getHistory(DateTime oldest, {Duration? interval}) {
+    final bisectIndex = bisect<Geo>(
+      recordGeo,
+      Geo.fromValues(0, 0, 0, oldest.millisecondsSinceEpoch, 0, 0, 0),
+      compare: (a, b) => a.time - b.time,
+    );
+
+    if (interval == null) {
+      return recordGeo.sublist(bisectIndex);
+    } else {
+      final int desiredCardinality = ((geo.time - oldest.millisecondsSinceEpoch) / interval.inMilliseconds).ceil();
+      final startingCard = recordGeo.length - bisectIndex;
+      debugPrint("recordGeo sample ratio: 1:${(startingCard / desiredCardinality).round()}");
+      List<Geo> retval = [];
+      for (int index = bisectIndex; index < recordGeo.length; index += (startingCard / desiredCardinality).round()) {
+        retval.add(recordGeo[index]);
+      }
+      // Add end-cap if missing
+      if (retval.last.time != recordGeo.last.time) retval.add(recordGeo.last);
+      return retval;
+    }
   }
 }

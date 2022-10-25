@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/dem_service.dart';
+import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 
 enum WaypointAction {
@@ -53,6 +55,8 @@ class Waypoint {
   double? _length;
   List<Barb>? _barbs;
 
+  double? _elevation;
+
   bool get isPath => _latlng.length > 1;
 
   Waypoint(this.name, this._latlng, this.icon, this.color);
@@ -92,8 +96,37 @@ class Waypoint {
     return _barbs ??= makeBarbs();
   }
 
+  double get elevation {
+    if (_elevation != null) {
+      return _elevation!;
+    } else {
+      sampleDem(latlng[0], true).then((value) => _elevation = value);
+      return 0;
+    }
+  }
+
   Color getColor() {
     return Color(color ?? Colors.black.value);
+  }
+
+  /// ETA from a location to a waypoint
+  /// If target is a path, result is dist to nearest intercept + remaining path
+  ETA eta(Geo geo, double speed, {bool isReversed = false}) {
+    if (latlng.length > 1) {
+      // --- to path
+      final intercept = geo.nearestPointOnPath(latlng, isReversed);
+      double dist = geo.distanceToLatlng(intercept.latlng) +
+          lengthBetweenIndexs(intercept.index, isReversed ? 0 : latlng.length - 1);
+      return ETA.fromSpeed(dist, speed);
+    } else {
+      // --- to point
+      if (latlng.isNotEmpty) {
+        double dist = geo.distanceToLatlng(latlng[0]);
+        return ETA.fromSpeed(dist, speed);
+      } else {
+        return ETA.fromSpeed(0, speed);
+      }
+    }
   }
 
   double lengthBetweenIndexs(int start, int end) {

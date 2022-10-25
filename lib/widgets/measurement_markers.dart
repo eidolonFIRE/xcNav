@@ -28,7 +28,7 @@ List<Marker> buildMeasurementMarkers(List<LatLng> points) {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
                   // --- Elevation
                   FutureBuilder<double?>(
-                      future: sampleDem(e),
+                      future: sampleDem(e, false),
                       builder: (context, snapshot) => Text.rich(
                             snapshot.data != null
                                 ? richValue(UnitType.distFine, snapshot.data!,

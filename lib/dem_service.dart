@@ -8,7 +8,7 @@ import 'package:dart_numerics/dart_numerics.dart' as math;
 
 TileLayerOptions? _demTileLayer;
 
-const demZoomLevel = 12;
+// const demZoomLevel = 12;
 
 // Digital Elevation Map - service
 
@@ -36,8 +36,8 @@ void initDemCache() async {
             cachedValidDuration: const Duration(days: 14),
           ),
         ),
-    maxNativeZoom: demZoomLevel.toDouble(),
-    minNativeZoom: demZoomLevel.toDouble(),
+    // maxNativeZoom: demZoomLevel.toDouble(),
+    // minNativeZoom: demZoomLevel.toDouble(),
   );
 }
 
@@ -50,14 +50,14 @@ Coords _unproject(LatLng latlng, int zoom) {
 
 /// Sample the DEM layer. (digital elevation map)
 /// Returns elevation in Meters
-Future<double?> sampleDem(LatLng latlng, {double offset = 0}) {
+Future<double?> sampleDem(LatLng latlng, bool highRes, {double offset = 0}) {
   // early out
   if (_demTileLayer == null) {
     return Future.value(null);
   }
 
   Completer<double?> completer = Completer();
-  final point = _unproject(latlng, demZoomLevel);
+  final point = _unproject(latlng, highRes ? 12 : 10);
   final pointInt = Coords(point.x.toInt(), point.y.toInt())..z = point.z.toInt();
   final img = _demTileLayer!.tileProvider.getImage(pointInt, _demTileLayer!);
 
