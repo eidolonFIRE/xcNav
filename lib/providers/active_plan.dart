@@ -209,33 +209,6 @@ class ActivePlan with ChangeNotifier {
     }
   }
 
-  void backendSortWaypoint(int oldIndex, int newIndex) {
-    Waypoint temp = waypoints[oldIndex];
-    waypoints.removeAt(oldIndex);
-    waypoints.insert(newIndex, temp);
-
-    if (selectedIndex != null) {
-      if (selectedIndex == oldIndex) {
-        selectWaypoint(newIndex);
-      } else if (newIndex <= selectedIndex! && oldIndex > selectedIndex!) {
-        selectWaypoint(selectedIndex! + 1);
-      } else if (selectedIndex! <= newIndex && selectedIndex! > oldIndex) {
-        selectWaypoint(selectedIndex! - 1);
-      }
-    }
-    isSaved = false;
-    notifyListeners();
-  }
-
-  void sortWaypoint(int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) newIndex--;
-    backendSortWaypoint(oldIndex, newIndex);
-    // callback
-    if (onWaypointAction != null) {
-      onWaypointAction!(WaypointAction.sort, oldIndex, newIndex, null);
-    }
-  }
-
   Polyline buildNextWpIndicator(Geo geo) {
     List<LatLng> points = [geo.latLng];
 

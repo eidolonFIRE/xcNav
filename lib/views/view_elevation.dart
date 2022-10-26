@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import 'package:xcnav/dem_service.dart';
+import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
@@ -23,12 +25,15 @@ class ViewElevation extends StatefulWidget {
   State<ViewElevation> createState() => ViewElevationState();
 }
 
-class ViewElevationState extends State<ViewElevation> {
+class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveClientMixin<ViewElevation> {
+  // ignore: annotate_overrides
+  bool get wantKeepAlive => true;
+
   List<ElevSample> elevSamples = [];
 
   dynamic lookAhead = Duration(minutes: 10);
   Duration? lookBehind = Duration(minutes: 10);
-  Duration? waypointETA;
+  ETA? waypointETA;
 
   List<Duration?> lookBehindOptions = [
     null,
@@ -37,31 +42,36 @@ class ViewElevationState extends State<ViewElevation> {
     const Duration(minutes: 10),
   ];
 
-  Future<List<ElevSample?>> doSamples(Geo anchor, Waypoint? waypoint) async {
-    waypointETA = waypoint?.eta(anchor, anchor.spdSmooth).time;
+  Future<List<ElevSample?>> doSamples(Geo geo, Waypoint? waypoint) async {
+    waypointETA = waypoint?.eta(geo, geo.spdSmooth);
     // TODO: this doesn't support first intersect from path correctly
     Duration forecastDuration = lookAhead.runtimeType == Duration
         ? lookAhead
-        : (waypointETA != null
-            ? Duration(milliseconds: (waypointETA!.inMilliseconds * 1.2).ceil())
+        : ((waypointETA != null && waypointETA?.time != null)
+            ? Duration(milliseconds: (waypointETA!.time!.inMilliseconds * 1.2).ceil())
             : const Duration(minutes: 10));
     final sampleInterval = Duration(milliseconds: (forecastDuration.inMilliseconds / 30).ceil());
 
     Completer<List<ElevSample?>> samplesCompleter = Completer();
-
     List<Completer<ElevSample?>> completers = [];
 
     /// Degrees
-    double bearing = anchor.hdg / pi * 180;
+    double bearing = geo.hdg / pi * 180;
     if (waypoint != null) {
-      bearing = latlngCalc.bearing(anchor.latLng, waypoint.latlng.first);
+      bearing = latlngCalc.bearing(geo.latLng, waypoint.latlng.first);
     }
 
     // Build up a list of individual tasks that need to complete
     for (int t = 0; t <= forecastDuration.inMilliseconds; t += sampleInterval.inMilliseconds) {
-      // TODO: use averages so it's not "twitchy"
       final Completer<ElevSample?> newCompleter = Completer();
-      final sampleLatlng = latlngCalc.offset(anchor.latLng, anchor.spdSmooth * t / 1000, bearing);
+      final sampleLatlng = waypoint?.isPath == true
+          ? waypoint!
+              .interpolate(
+                  waypointETA!.distance * t / waypointETA!.time!.inMilliseconds, waypointETA!.pathIntercept!.index,
+                  initialLatlng: geo.latLng)
+              .latlng
+          : latlngCalc.offset(geo.latLng, geo.spdSmooth * t / 1000, bearing);
+      // debugPrint("${sampleLatlng}");
       sampleDem(sampleLatlng, false).then((value) {
         if (value != null) {
           newCompleter.complete(ElevSample(sampleLatlng, value, t));
@@ -69,7 +79,6 @@ class ViewElevationState extends State<ViewElevation> {
           newCompleter.complete(null);
         }
       });
-
       completers.add(newCompleter);
     }
 
@@ -147,7 +156,7 @@ class ViewElevationState extends State<ViewElevation> {
                                 ? 100
                                 : 152.4,
                             waypoint: activePlan.selectedWp,
-                            waypointETA: waypointETA?.inMilliseconds),
+                            waypointETA: waypointETA),
                       );
                     })),
           ),
@@ -187,7 +196,9 @@ class ViewElevationState extends State<ViewElevation> {
                         return SizedBox(
                           width: 30,
                           height: 30,
-                          child: MapMarker(activePlan.selectedWp!, 30),
+                          child: activePlan.selectedWp!.isPath
+                              ? SvgPicture.asset("assets/images/path.svg", color: activePlan.selectedWp!.getColor())
+                              : MapMarker(activePlan.selectedWp!, 30),
                         );
                       default:
                         return Container();

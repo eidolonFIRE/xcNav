@@ -13,7 +13,7 @@ Marker makeBarb(Waypoint waypoint, Barb barb, double size, bool reversed) {
           transformAlignment: const Alignment(0, 0),
           transform: Matrix4.rotationZ(barb.hdg + (reversed ? pi : 0)),
           child: Icon(
-            Icons.arrow_drop_up,
+            Icons.expand_less,
             size: size,
             color: waypoint.getColor(),
           )));

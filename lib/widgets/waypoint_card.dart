@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
+import 'package:xcnav/models/geo.dart';
 
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/models/waypoint.dart';
@@ -18,6 +20,7 @@ class WaypointCard extends StatefulWidget {
     required this.index,
     required this.onSelect,
     required this.isSelected,
+    this.refLatlng,
     this.onDoubleTap,
     this.showPilots = true,
   }) : super(key: key);
@@ -26,6 +29,8 @@ class WaypointCard extends StatefulWidget {
   final int index;
   final bool isSelected;
   final bool showPilots;
+
+  final LatLng? refLatlng;
 
   // callbacks
   final VoidCallback onSelect;
@@ -81,6 +86,30 @@ class _WaypointCardState extends State<WaypointCard> {
           //     ),
           //   ],
           // ),
+          if (widget.refLatlng != null)
+            Container(
+              constraints: const BoxConstraints(minWidth: 40),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Text.rich(
+                      // TODO: support nearest point distance for paths
+                      richValue(UnitType.distCoarse, latlngCalc(widget.waypoint.latlng[0], widget.refLatlng!),
+                          valueStyle: const TextStyle(fontSize: 18),
+                          unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12)),
+                      textAlign: TextAlign.end,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const VerticalDivider(
+            width: 4,
+            thickness: 2,
+          ),
           Expanded(
             child: Flex(
               direction: Axis.horizontal,

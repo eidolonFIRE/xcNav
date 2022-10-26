@@ -464,7 +464,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   List<Geo> getHistory(DateTime oldest, {Duration? interval}) {
-    final bisectIndex = bisect<Geo>(
+    final bisectIndex = bisect_left<Geo>(
       recordGeo,
       Geo.fromValues(0, 0, 0, oldest.millisecondsSinceEpoch, 0, 0, 0),
       compare: (a, b) => a.time - b.time,
@@ -473,9 +473,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (interval == null) {
       return recordGeo.sublist(bisectIndex);
     } else {
-      final int desiredCardinality = ((geo.time - oldest.millisecondsSinceEpoch) / interval.inMilliseconds).ceil();
+      final int desiredCardinality =
+          ((recordGeo.last.time - max(recordGeo.first.time, oldest.millisecondsSinceEpoch)) / interval.inMilliseconds)
+              .ceil();
       final startingCard = recordGeo.length - bisectIndex;
-      debugPrint("recordGeo sample ratio: 1:${(startingCard / desiredCardinality).round()}");
+      // debugPrint("recordGeo sample ratio: 1:${(startingCard / desiredCardinality).round()} (desired $desiredCardinality)");
       List<Geo> retval = [];
       for (int index = bisectIndex; index < recordGeo.length; index += (startingCard / desiredCardinality).round()) {
         retval.add(recordGeo[index]);

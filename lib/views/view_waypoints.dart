@@ -355,63 +355,21 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                         backgroundColor: Colors.grey.shade400,
                         foregroundColor: Colors.black,
                       )
-                      // ReorderableDragStartListener(
-                      //   index: i,
-                      //   child: Container(
-                      //     color: Colors.grey.shade400,
-                      //     child: const Padding(
-                      //       padding: EdgeInsets.all(16.0),
-                      //       child: Icon(
-                      //         Icons.drag_handle,
-                      //         size: 24,
-                      //         color: Colors.black,
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
-                  child: Row(
-                    children: [
-                      // TODO: use nearest point (better for paths)
-                      Container(
-                        constraints: const BoxConstraints(minWidth: 40),
-                        child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: Text.rich(
-                            richValue(
-                                UnitType.distCoarse,
-                                latlngCalc(
-                                    items[i].latlng[0], Provider.of<MyTelemetry>(context, listen: false).geo.latLng),
-                                valueStyle: const TextStyle(fontSize: 18),
-                                unitStyle:
-                                    const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12)),
-                            textAlign: TextAlign.end,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: WaypointCard(
-                          waypoint: items[i],
-                          index: i,
-                          onSelect: () {
-                            debugPrint("Selected $i");
-                            activePlan.selectWaypoint(i);
-                          },
-                          // onDoubleTap: () {
-                          //   zoomMainMapToLatLng.sink.add(items[i].latlng[0]);
-                          // },
-                          isSelected: i == activePlan.selectedIndex,
-                        ),
-                      ),
-                    ],
+                  child: Expanded(
+                    child: WaypointCard(
+                      waypoint: items[i],
+                      index: i,
+                      refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
+                      onSelect: () {
+                        debugPrint("Selected $i");
+                        activePlan.selectWaypoint(i);
+                      },
+                      isSelected: i == activePlan.selectedIndex,
+                    ),
                   ),
                 ),
-                // onReorder: (oldIndex, newIndex) {
-                //   debugPrint("WP order: $oldIndex --> $newIndex");
-                //   activePlan.sortWaypoint(oldIndex, newIndex);
-                //   Provider.of<Group>(context, listen: false).fixPilotSelectionsOnSort(oldIndex, newIndex);
-                // },
               );
             }),
           ),

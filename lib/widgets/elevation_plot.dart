@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart' as Latlng;
+import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/units.dart';
@@ -30,6 +31,7 @@ class ElevationPlotPainter extends CustomPainter {
   late final Paint _paintElev;
   late final Paint _paintGrid;
   late final Paint _paintVarioTrend;
+  late final Paint _paintPath;
 
   final List<Geo> geoData;
   final List<ElevSample?> groundData;
@@ -37,7 +39,7 @@ class ElevationPlotPainter extends CustomPainter {
   final double vertGridRes;
 
   final Waypoint? waypoint;
-  final int? waypointETA;
+  final ETA? waypointETA;
 
   late final DrawableRoot? svgPin;
 
@@ -68,6 +70,12 @@ class ElevationPlotPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 2;
+
+    _paintPath = Paint()
+      ..style = ui.PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 8;
 
     if (waypoint != null) {
       void setSvgPin() {
@@ -119,9 +127,6 @@ class ElevationPlotPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     debugPrint("PAINT ELEVATION PLOT");
     // --- Common misc.
-    // final maxSize = min(size.width, size.height);
-    // final Offset center = Offset(size.width / 2, size.height / 2);
-
     final double maxElev = ((max(
                         geoData.map((e) => e.alt).reduce((a, b) => a > b ? a : b),
                         groundData
@@ -213,11 +218,6 @@ class ElevationPlotPainter extends CustomPainter {
         t += const Duration(minutes: 5).inMilliseconds) {
       canvas.drawLine(Offset(scaleX(t), 0), Offset(scaleX(t), 20), _paintGrid);
       canvas.drawLine(Offset(scaleX(t), size.height), Offset(scaleX(t), size.height - 20), _paintGrid);
-      // TextSpan span = TextSpan(
-      //     style: const TextStyle(color: Colors.white), text: unitConverters[UnitType.distFine]!(t).toStringAsFixed(0));
-      // TextPainter tp = TextPainter(text: span, textAlign: TextAlign.left, textDirection: TextDirection.ltr);
-      // tp.layout();
-      // tp.paint(canvas, Offset(4, scaleY(t)));
     }
 
     // --- Draw Vario Trendline
@@ -228,30 +228,43 @@ class ElevationPlotPainter extends CustomPainter {
     }
 
     // --- Draw Waypoint
-    if (waypoint != null && svgPin != null && !waypoint!.isPath) {
-      final dx = scaleX((waypointETA! + geoData.last.time).round()) - 20;
-      final dy = scaleY(waypoint!.elevation) - 60;
-      canvas.translate(dx, dy);
-      svgPin!.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 100, height: 100));
-
-      dynamic icon = iconOptions[waypoint?.icon];
-      if (waypoint?.icon != null && icon != null) {
-        if (icon.runtimeType == IconData) {
-          // Render standard icon
-          TextPainter textPainter = TextPainter(textDirection: TextDirection.rtl);
-          textPainter.text = TextSpan(
-              text: String.fromCharCode(icon.codePoint), style: TextStyle(fontSize: 30.0, fontFamily: icon.fontFamily));
-          textPainter.layout();
-          textPainter.paint(canvas, const Offset(5.0, 5.0));
-        } else if (icon.runtimeType == String) {
-          // Render svg
-          canvas.translate(3, 1);
-          getLoadedSvg(icon)?.scaleCanvasToViewBox(canvas, const Size(32, 32));
-          getLoadedSvg(icon)?.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 32, height: 32));
-          canvas.translate(-3, -1);
+    if (waypoint != null && svgPin != null && waypointETA?.time != null) {
+      if (waypoint!.isPath) {
+        final List<Offset> points = [];
+        // Start from the end and go backwards so we can subtract from the known full eta
+        for (int index = waypoint!.latlng.length - 1; index >= (waypointETA?.pathIntercept?.index ?? 0); index--) {
+          final int pointEta = waypointETA!.time!.inMilliseconds -
+              (waypoint!.lengthBetweenIndexs(index, waypoint!.latlng.length - 1) / geoData.last.spdSmooth * 1000)
+                  .round();
+          points.add(Offset(scaleX(geoData.last.time + pointEta), scaleY(waypoint!.elevation[index])));
         }
+        canvas.drawPoints(ui.PointMode.polygon, points, _paintPath..color = waypoint!.getColor());
+      } else {
+        final dx = scaleX((waypointETA!.time!.inMilliseconds + geoData.last.time).round()) - 20;
+        final dy = scaleY(waypoint!.elevation[0]) - 60;
+        canvas.translate(dx, dy);
+        svgPin!.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 100, height: 100));
+
+        dynamic icon = iconOptions[waypoint?.icon];
+        if (waypoint?.icon != null && icon != null) {
+          if (icon.runtimeType == IconData) {
+            // Render standard icon
+            TextPainter textPainter = TextPainter(textDirection: TextDirection.rtl);
+            textPainter.text = TextSpan(
+                text: String.fromCharCode(icon.codePoint),
+                style: TextStyle(fontSize: 30.0, fontFamily: icon.fontFamily));
+            textPainter.layout();
+            textPainter.paint(canvas, const Offset(5.0, 5.0));
+          } else if (icon.runtimeType == String) {
+            // Render svg
+            canvas.translate(3, 1);
+            getLoadedSvg(icon)?.scaleCanvasToViewBox(canvas, const Size(32, 32));
+            getLoadedSvg(icon)?.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 32, height: 32));
+            canvas.translate(-3, -1);
+          }
+        }
+        canvas.translate(-dx, -dy);
       }
-      canvas.translate(-dx, -dy);
     }
 
     // --- Draw Pilot Icon

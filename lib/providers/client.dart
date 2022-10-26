@@ -334,9 +334,9 @@ class Client with ChangeNotifier {
       // insert a new waypoint
       Provider.of<ActivePlan>(context, listen: false)
           .backendInsertWaypoint(msg["index"], Waypoint.fromJson(msg["data"]));
-    } else if (msg["action"] == WaypointAction.sort.index) {
-      // Reorder a waypoint
-      Provider.of<ActivePlan>(context, listen: false).backendSortWaypoint(msg["index"], msg["new_index"]);
+      // } else if (msg["action"] == WaypointAction.sort.index) {
+      //   // Reorder a waypoint
+      //   Provider.of<ActivePlan>(context, listen: false).backendSortWaypoint(msg["index"], msg["new_index"]);
     } else if (msg["action"] == WaypointAction.modify.index) {
       // Make updates to a waypoint
       if (msg["data"] != null) {

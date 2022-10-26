@@ -55,7 +55,10 @@ class Waypoint {
   double? _length;
   List<Barb>? _barbs;
 
-  double? _elevation;
+  List<double>? _elevation;
+
+  /// Cached distances between latlng points
+  List<double>? _segments;
 
   bool get isPath => _latlng.length > 1;
 
@@ -83,6 +86,8 @@ class Waypoint {
     _latlng = newLatlngs;
     _length = null;
     _barbs = null;
+    _segments = null;
+    _elevation = null;
   }
 
   /// Get full waypoint length.
@@ -93,16 +98,34 @@ class Waypoint {
   }
 
   List<Barb> get barbs {
-    return _barbs ??= makeBarbs();
+    return _barbs ??= _makeBarbs();
   }
 
-  double get elevation {
+  /// Elevation per latlng point. (will be lazy loaded so it may return [0, ...] at first)
+  List<double> get elevation {
     if (_elevation != null) {
       return _elevation!;
     } else {
-      sampleDem(latlng[0], true).then((value) => _elevation = value);
-      return 0;
+      final futures = latlng.map((e) => sampleDem(e, true)).toList();
+      Future.wait(futures).then((values) {
+        _elevation = values.map((e) => e ?? 0).toList();
+      });
+
+      // Return a dummy list for now
+      return List.filled(latlng.length, 0);
     }
+  }
+
+  /// Segment distances between latlng points
+  List<double> get segments {
+    if (_segments == null) {
+      // Bake the list
+      _segments = [];
+      for (int t = 0; t < latlng.length - 1; t++) {
+        _segments!.add(latlngCalc.distance(latlng[t], latlng[t + 1]));
+      }
+    }
+    return _segments!;
   }
 
   Color getColor() {
@@ -117,7 +140,7 @@ class Waypoint {
       final intercept = geo.nearestPointOnPath(latlng, isReversed);
       double dist = geo.distanceToLatlng(intercept.latlng) +
           lengthBetweenIndexs(intercept.index, isReversed ? 0 : latlng.length - 1);
-      return ETA.fromSpeed(dist, speed);
+      return ETA.fromSpeed(dist, speed, pathIntercept: intercept);
     } else {
       // --- to point
       if (latlng.isNotEmpty) {
@@ -129,30 +152,69 @@ class Waypoint {
     }
   }
 
-  double lengthBetweenIndexs(int start, int end) {
-    // TODO: cache distances between all the points (vs recalculating every time)
-    double dist = 0;
-    for (int t = max(0, min(start, end)); t < min(latlng.length - 1, max(start, end)); t++) {
-      dist += latlngCalc.distance(latlng[t], latlng[t + 1]);
+  /// Linear interpolate down the path by some distance.
+  /// If `initialLatlng` is given, that point will precede the selected path points.
+  Barb interpolate(double distance, int startIndex, {int? endIndex, LatLng? initialLatlng}) {
+    if (!isPath) return Barb(latlng[0], 0);
+
+    List<LatLng> points = latlng.sublist(startIndex, endIndex);
+    List<double> segs = segments.sublist(startIndex, endIndex == null ? null : (endIndex - 1));
+
+    if (points.length == 1) return Barb(points.first, 0);
+    if (points.isEmpty) return Barb(latlng[0], 0);
+
+    if (initialLatlng != null) {
+      points.insert(0, initialLatlng);
+      segs.insert(0, latlngCalc.distance(initialLatlng, latlng[0]));
     }
-    return dist;
+
+    // Check for overflow
+    // if (distance >= segs.reduce((a, b) => a + b)) {
+    //   return Barb(points.last, latlngCalc.bearing(points[points.length - 2], points.last) * pi / 180);
+    // }
+
+    // Iter through segs until we find the segment we are in the middle of
+    int segIndex = 0;
+    double distTicker = 0;
+    // debugPrint("${segs}");
+    while (segs[segIndex] + distTicker < distance && segIndex < segs.length - 1) {
+      // we can still jump to the next segment
+      distTicker += segs[segIndex];
+      segIndex++;
+    }
+    // debugPrint("seg: $segIndex, dist: $distTicker / $distance");
+
+    final brg = latlngCalc.bearing(points[segIndex], points[segIndex + 1]);
+    return Barb(latlngCalc.offset(points[segIndex], distance - distTicker, brg), brg * pi / 180);
   }
 
-  List<Barb> makeBarbs() {
+  /// Cumulative segment distances between path vertices
+  double lengthBetweenIndexs(int start, int end) {
+    if (start >= end) return 0;
+    return segments.sublist(start, end).reduce((a, b) => a + b);
+  }
+
+  List<Barb> _makeBarbs() {
     if (latlng.length < 2) return [];
 
     List<Barb> barbs = [];
 
-    // Add head and tail
-    barbs.add(Barb(latlng.first, latlngCalc.bearing(latlng.first, latlng[1]) * pi / 180));
+    // // Add head and tail
+    // barbs.add(Barb(latlng.first, latlngCalc.bearing(latlng.first, latlng[1]) * pi / 180));
+
+    // // Add intermediary points
+    // for (int i = 0; i < latlng.length - 1; i++) {
+    //   final brg = latlngCalc.bearing(latlng[i], latlng[i + 1]);
+    //   final dist = latlngCalc.distance(latlng[i], latlng[i + 1]);
+    //   barbs.add(Barb(latlngCalc.offset(latlng[i], dist / 2, brg), brg * pi / 180));
+    // }
+    // TODO: support metric barbs
+    for (double dist = 0; dist <= length; dist += 1609.344) {
+      barbs.add(interpolate(dist, 0));
+    }
+
     barbs.add(Barb(latlng.last, latlngCalc.bearing(latlng[latlng.length - 2], latlng.last) * pi / 180));
 
-    // Add intermediary points
-    for (int i = 0; i < latlng.length - 1; i++) {
-      final brg = latlngCalc.bearing(latlng[i], latlng[i + 1]);
-      final dist = latlngCalc.distance(latlng[i], latlng[i + 1]);
-      barbs.add(Barb(latlngCalc.offset(latlng[i], dist / 2, brg), brg * pi / 180));
-    }
     return barbs;
   }
 
