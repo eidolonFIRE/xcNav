@@ -74,7 +74,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   FocusMode prevFocusMode = FocusMode.me;
   bool northLock = true;
 
-  int? editingIndex;
+  WaypointID? editingWp;
   late PolyEditor polyEditor;
 
   List<Polyline> polyLines = [];
@@ -136,7 +136,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     setState(() {
       prevFocusMode = focusMode;
       focusMode = mode;
-      if (mode != FocusMode.editPath) editingIndex = null;
+      if (mode != FocusMode.editPath) editingWp = null;
       if (mode == FocusMode.group) lastMapChange = null;
       debugPrint("FocusMode = $mode");
     });
@@ -220,6 +220,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Container(
       color: Colors.white,
       child: Center(
@@ -279,7 +280,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                       // Flight plan paths
                       PolylineLayerOptions(
-                        polylines: plan.waypoints
+                        polylines: plan.waypoints.values
                             .where((value) => value.latlng.length > 1)
                             .mapIndexed((i, e) => Polyline(points: e.latlng, strokeWidth: 6, color: e.getColor()))
                             .toList(),
@@ -288,28 +289,30 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       // Polyline Directional Barbs
                       MarkerLayerOptions(
                           markers: makePathBarbs(
-                              editingIndex != null
-                                  ? (plan.waypoints.toList()
-                                    ..removeAt(editingIndex!)
-                                    ..add(Waypoint(plan.waypoints[editingIndex!].name, editablePolyline.points, null,
-                                        plan.waypoints[editingIndex!].color)))
-                                  : plan.waypoints,
-                              Provider.of<ActivePlan>(context).isReversed,
-                              45)),
+                              editingWp != null
+                                  ? plan.waypoints.values.whereNot((element) => element.id == editingWp)
+                                  // TODO: revisit
+                                  // ...add(Waypoint(plan.waypoints[editingWp!].name, editablePolyline.points, null,
+                                  //     plan.waypoints[editingWp!].color)))
+                                  : plan.waypoints.values,
+                              45,
+                              Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
+                                  ? 1000
+                                  : 1609.344)),
 
                       // Flight plan markers
                       DragMarkerPluginOptions(
-                        markers: plan.waypoints
-                            .mapIndexed((i, e) => e.latlng.length == 1
+                        markers: plan.waypoints.values
+                            .map((e) => e.latlng.length == 1
                                 ? DragMarker(
                                     point: e.latlng[0],
                                     height: 60 * 0.8,
                                     width: 40 * 0.8,
                                     updateMapNearEdge: true,
                                     useLongPress: true,
-                                    onTap: (_) => plan.selectWaypoint(i),
+                                    onTap: (_) => plan.selectedWp = e,
                                     onLongDragEnd: (p0, p1) => {
-                                          plan.moveWaypoint(i, [p1])
+                                          plan.moveWaypoint(e.id, [p1])
                                         },
                                     rotateMarker: true,
                                     builder: (context) => Container(
@@ -669,18 +672,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       onPressed: () {
                         // --- finish editing path
                         var plan = Provider.of<ActivePlan>(context, listen: false);
-                        if (editingIndex == null) {
-                          var temp = Waypoint("", editablePolyline.points.toList(), null, null);
+                        if (editingWp == null) {
+                          var temp = Waypoint(name: "", latlngs: editablePolyline.points.toList());
                           editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
                               ?.then((newWaypoint) {
                             if (newWaypoint != null) {
-                              plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false,
-                                  newWaypoint.icon, newWaypoint.color);
+                              plan.updateWaypoint(newWaypoint);
                             }
                           });
                         } else {
-                          plan.waypoints[editingIndex!].latlng = editablePolyline.points.toList();
-                          editingIndex = null;
+                          plan.moveWaypoint(editingWp!, editablePolyline.points.toList());
+                          editingWp = null;
                         }
                         setFocusMode(prevFocusMode);
                       },

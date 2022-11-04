@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,23 +7,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/models/eta.dart';
 
 class ActivePlan with ChangeNotifier {
-  List<Waypoint> waypoints = [];
-  bool _isReversed = false;
-  bool _includeReturnTrip = false;
-  bool _useWind = false;
+  final Map<WaypointID, Waypoint> waypoints = {};
   bool isSaved = false;
 
   void Function(
     WaypointAction action,
-    int index,
-    int? newIndex,
-    Waypoint? data,
+    Waypoint waypoint,
   )? onWaypointAction;
 
-  void Function(int index)? onSelectWaypoint;
+  void Function(WaypointID waypointID)? onSelectWaypoint;
 
   @override
   ActivePlan() {
@@ -43,27 +36,15 @@ class ActivePlan with ChangeNotifier {
     super.notifyListeners();
   }
 
-  int? selectedIndex;
-  Waypoint? get selectedWp =>
-      (selectedIndex != null && selectedIndex! < waypoints.length) ? waypoints[selectedIndex!] : null;
-
-  bool get includeReturnTrip => _includeReturnTrip;
-  set includeReturnTrip(bool value) {
-    _includeReturnTrip = value;
-    notifyListeners();
-  }
-
-  bool get isReversed => _isReversed;
-  set isReversed(bool value) {
-    _isReversed = value;
-    notifyListeners();
-  }
-
-  bool get useWind => _useWind;
-  set useWind(bool value) {
-    _useWind = value;
-    debugPrint("Used wind: $value");
-    notifyListeners();
+  Waypoint? _selectedWp;
+  Waypoint? get selectedWp => _selectedWp;
+  set selectedWp(Waypoint? waypoint) {
+    // check this waypoint is in our list
+    if (waypoint != null && waypoints.containsKey(waypoint.id)) {
+      _selectedWp = waypoint;
+      if (onSelectWaypoint != null) onSelectWaypoint!(waypoint.id);
+      notifyListeners();
+    }
   }
 
   void load() async {
@@ -72,141 +53,70 @@ class ActivePlan with ChangeNotifier {
     final List<String>? items = prefs.getStringList("flightPlan.waypoints");
     if (items != null) {
       for (String wpUnparsed in items) {
-        Map wp = jsonDecode(wpUnparsed);
-        waypoints.add(Waypoint.fromJson(wp));
+        final wp = Waypoint.fromJson(jsonDecode(wpUnparsed));
+        waypoints[wp.id] = wp;
       }
     }
   }
 
   void save() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList("flightPlan.waypoints", waypoints.map((e) => e.toString()).toList());
+    await prefs.setStringList("flightPlan.waypoints", waypoints.values.map((e) => e.toString()).toList());
   }
 
-  void selectWaypoint(int index) {
-    selectedIndex = index;
-    // callback
-    if (onSelectWaypoint != null) onSelectWaypoint!(index);
-    notifyListeners();
-  }
-
-  void parseFlightPlanSync(List<dynamic> planData) {
+  void parseWaypointsSync(List<dynamic> planData) {
     waypoints.clear();
     // add back each waypoint
     for (dynamic each in planData) {
-      waypoints.add(Waypoint.fromJson(each));
+      final wp = Waypoint.fromJson(each);
+      waypoints[wp.id] = wp;
     }
     notifyListeners();
-  }
-
-  int _resolveNewWaypointIndex(int? index) {
-    if (index != null) {
-      return max(0, min(waypoints.length, index));
-    } else {
-      if (selectedIndex != null) {
-        return max(0, min(selectedIndex! + (isReversed ? -1 : 1), waypoints.length));
-      } else {
-        return 0;
-      }
-    }
   }
 
   // Called from client
-  void backendInsertWaypoint(int index, Waypoint newPoint) {
-    waypoints.insert(_resolveNewWaypointIndex(index), newPoint);
+  void backendInsertWaypoint(Waypoint waypoint) {
+    waypoints[waypoint.id] = waypoint;
     notifyListeners();
   }
 
-  // Called from UI
-  void insertWaypoint(int? index, String name, List<LatLng> latlngs, bool? isOptional, String? icon, int? color) {
-    Waypoint newWaypoint = Waypoint(name, latlngs.toList(), icon, color);
-    int resolvedIndex = _resolveNewWaypointIndex(index);
-    waypoints.insert(resolvedIndex, newWaypoint);
+  void backendRemoveWaypoint(WaypointID id) {
+    if (id == selectedWp?.id) selectedWp = null;
+    waypoints.remove(id);
+    isSaved = false;
+    notifyListeners();
+  }
+
+  void removeWaypoint(WaypointID waypointID) {
+    backendRemoveWaypoint(waypointID);
+    // callback
+    if (onWaypointAction != null && waypoints.containsKey(waypointID)) {
+      onWaypointAction!(WaypointAction.delete, waypoints[waypointID]!);
+    }
+  }
+
+  void moveWaypoint(WaypointID id, List<LatLng> latlngs) {
+    if (waypoints.containsKey(id)) {
+      waypoints[id]?.latlng = latlngs;
+      // callback
+      if (onWaypointAction != null && waypoints.containsKey(id)) {
+        onWaypointAction!(WaypointAction.update, waypoints[id]!);
+      }
+      isSaved = false;
+      notifyListeners();
+    }
+  }
+
+  void updateWaypoint(Waypoint waypoint) {
+    waypoints[waypoint.id] = waypoint;
 
     // callback
     if (onWaypointAction != null) {
-      onWaypointAction!(WaypointAction.add, resolvedIndex, null, newWaypoint);
+      onWaypointAction!(WaypointAction.update, waypoint);
     }
+
     isSaved = false;
     notifyListeners();
-  }
-
-  void backendReplaceWaypoint(int index, Waypoint replacement) {
-    waypoints[index] = replacement;
-    isSaved = false;
-    notifyListeners();
-  }
-
-  void removeSelectedWaypoint() {
-    if (selectedIndex != null) removeWaypoint(selectedIndex!);
-  }
-
-  void backendRemoveWaypoint(int index) {
-    waypoints.removeAt(index);
-    if (waypoints.isEmpty) {
-      selectedIndex = null;
-    }
-    if (selectedIndex != null && selectedIndex! >= waypoints.length) {
-      selectWaypoint(waypoints.length - 1);
-    }
-    isSaved = false;
-    notifyListeners();
-  }
-
-  void removeWaypoint(int index) {
-    backendRemoveWaypoint(index);
-    // callback
-    if (onWaypointAction != null) {
-      onWaypointAction!(WaypointAction.delete, index, null, null);
-    }
-  }
-
-  void moveWaypoint(int? index, List<LatLng> latlngs) {
-    if (index != null || selectedIndex != null) {
-      int i = index ?? selectedIndex!;
-      waypoints[i].latlng = latlngs;
-      // callback
-      if (onWaypointAction != null) {
-        onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
-      }
-      isSaved = false;
-      notifyListeners();
-    }
-  }
-
-  void editWaypoint(int? index, String name, String? icon, int? color) {
-    if (index != null || selectedIndex != null) {
-      int i = index ?? selectedIndex!;
-
-      waypoints[i].name = name;
-      waypoints[i].color = color;
-      waypoints[i].icon = icon;
-
-      // callback
-      if (onWaypointAction != null) {
-        onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
-      }
-      isSaved = false;
-      notifyListeners();
-    }
-  }
-
-  void updateWaypoint(int? index, String name, String? icon, int? color, List<LatLng> latlngs) {
-    if (index != null || selectedIndex != null) {
-      int i = index ?? selectedIndex!;
-
-      waypoints[i].name = name;
-      waypoints[i].color = color;
-      waypoints[i].icon = icon;
-      waypoints[i].latlng = latlngs;
-
-      // callback
-      if (onWaypointAction != null) {
-        onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
-      }
-      isSaved = false;
-      notifyListeners();
-    }
   }
 
   Polyline buildNextWpIndicator(Geo geo) {
@@ -216,7 +126,7 @@ class ActivePlan with ChangeNotifier {
       // update wp guide
       LatLng? target;
       if (selectedWp!.latlng.length > 1) {
-        target = geo.nearestPointOnPath(selectedWp!.latlng, isReversed).latlng;
+        target = geo.nearestPointOnPath(selectedWp!.latlng, false).latlng;
       } else if (selectedWp!.latlng.isNotEmpty) {
         target = selectedWp!.latlng[0];
       }

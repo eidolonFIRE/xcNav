@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/dem_service.dart';
@@ -8,22 +7,18 @@ import 'package:xcnav/models/geo.dart';
 
 enum WaypointAction {
   none,
-  add,
-  modify,
+  update,
   delete,
-  sort,
 }
 
 // Custom high-speed dirty hash for checking flightplan changes
-String hashFlightPlanData(List<Waypoint> waypoints) {
+String hashWaypointsData(Map<WaypointID, Waypoint> waypoints) {
   // build long string
   String str = "Plan";
 
-  for (int i = 0; i < waypoints.length; i++) {
-    Waypoint wp = waypoints[i];
-    // TODO: need to remove "X" but in-step with server
-    str += i.toString() + wp.name + (wp.icon ?? "") + (wp.color?.toString() ?? "") + "X";
-    for (LatLng g in wp.latlng) {
+  for (final each in waypoints.entries) {
+    str += each.key + each.value.id + (each.value.icon ?? "") + (each.value.color?.toString() ?? "");
+    for (LatLng g in each.value.latlng) {
       // large tolerance for floats
       str += "${g.latitude.toStringAsFixed(5)}${g.longitude.toStringAsFixed(5)}";
     }
@@ -46,11 +41,14 @@ class Barb {
   Barb(this.latlng, this.hdg);
 }
 
+typedef WaypointID = String;
+
 class Waypoint {
   late String name;
   late List<LatLng> _latlng;
   late String? icon;
   late int? color;
+  late final WaypointID id;
 
   double? _length;
   List<Barb>? _barbs;
@@ -62,9 +60,17 @@ class Waypoint {
 
   bool get isPath => _latlng.length > 1;
 
-  Waypoint(this.name, this._latlng, this.icon, this.color);
+  Waypoint({required this.name, required List<LatLng> latlngs, this.icon, this.color, this.id = ""}) {
+    latlng = latlngs;
+    if (id == "") id = makeId();
+  }
+
+  @override
+  // ignore: hash_and_equals
+  bool operator ==(other) => other is Waypoint && other.id == id;
 
   Waypoint.fromJson(json) {
+    id = json["id"] ?? makeId();
     name = json["name"];
     icon = json["icon"];
     color = json["color"];
@@ -74,6 +80,11 @@ class Waypoint {
       _latlng.add(LatLng(e[0] is int ? (e[0] as int).toDouble() : e[0] as double,
           e[1] is int ? (e[1] as int).toDouble() : e[1] as double));
     }
+  }
+
+  static WaypointID makeId() {
+    // TODO: this could be better
+    return DateTime.now().millisecondsSinceEpoch.toString();
   }
 
   @override
@@ -97,8 +108,8 @@ class Waypoint {
     return _length ??= lengthBetweenIndexs(0, latlng.length - 1);
   }
 
-  List<Barb> get barbs {
-    return _barbs ??= _makeBarbs();
+  List<Barb> getBarbs(interval) {
+    return _barbs ??= _makeBarbs(interval);
   }
 
   /// Elevation per latlng point. (will be lazy loaded so it may return [0, ...] at first)
@@ -194,7 +205,7 @@ class Waypoint {
     return segments.sublist(start, end).reduce((a, b) => a + b);
   }
 
-  List<Barb> _makeBarbs() {
+  List<Barb> _makeBarbs(double interval) {
     if (latlng.length < 2) return [];
 
     List<Barb> barbs = [];
@@ -209,7 +220,7 @@ class Waypoint {
     //   barbs.add(Barb(latlngCalc.offset(latlng[i], dist / 2, brg), brg * pi / 180));
     // }
     // TODO: support metric barbs
-    for (double dist = 0; dist <= length; dist += 1609.344) {
+    for (double dist = 0; dist <= length; dist += interval) {
       barbs.add(interpolate(dist, 0));
     }
 
@@ -220,6 +231,7 @@ class Waypoint {
 
   dynamic toJson() {
     return {
+      "id": id,
       "name": name,
       "latlng": latlng
           .map((e) => [
@@ -228,8 +240,6 @@ class Waypoint {
                 ((e.longitude * 100000).round()) / 100000
               ])
           .toList(),
-      // TODO: remove this in step with backend
-      "optional": false,
       "icon": icon,
       "color": color,
     };

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/pilot.dart';
+import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -36,11 +37,8 @@ void showPilotInfo(BuildContext context, String pilotId) {
 
               final etaIntercept = ETA.fromSpeed(dist, closingSpd);
 
-              final plan = Provider.of<ActivePlan>(context, listen: false);
-
-              final etaWp = pilot.selectedWaypoint != null
-                  ? plan.waypoints[pilot.selectedWaypoint!].eta(pilot.geo!, pilot.geo!.spd)
-                  : null;
+              Waypoint? selectedWp = Provider.of<ActivePlan>(context, listen: false).waypoints[pilot.selectedWp];
+              final ETA? etaWp = selectedWp?.eta(pilot.geo!, pilot.geo!.spd);
 
               final relAlt = pilot.geo!.alt - myTelemetry.geo.alt;
 
@@ -193,14 +191,12 @@ void showPilotInfo(BuildContext context, String pilotId) {
                                           child: Container(
                                             transform: Matrix4.translationValues(0, 2, 0),
                                             child: SizedBox(
-                                                width: 26 * 2 / 3,
-                                                height: 26,
-                                                child: MapMarker(plan.waypoints[pilot.selectedWaypoint!], 24)),
+                                                width: 26 * 2 / 3, height: 26, child: MapMarker(selectedWp!, 24)),
                                           ),
                                         ),
                                         const TextSpan(text: "  "),
                                         TextSpan(
-                                          text: plan.waypoints[pilot.selectedWaypoint!].name,
+                                          text: selectedWp.name,
                                           style: valueStyle,
                                         ),
                                       ]),

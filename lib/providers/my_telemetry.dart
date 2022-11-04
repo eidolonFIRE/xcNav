@@ -151,7 +151,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             final target = activePlan.selectedWp == null
                 ? null
                 : activePlan.selectedWp!.latlng.length > 1
-                    ? geo.nearestPointOnPath(activePlan.selectedWp!.latlng, activePlan.isReversed).latlng
+                    ? geo.nearestPointOnPath(activePlan.selectedWp!.latlng, false).latlng
                     : activePlan.selectedWp!.latlng[0];
             handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target, geoPrev));
           });
@@ -275,7 +275,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Do all the things with a GPS update
   void handleGeomUpdate(BuildContext context, Position position) {
     final settings = Provider.of<Settings>(context, listen: false);
-    final client = Provider.of<Client>(context, listen: false);
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
       updateGeo(position, bypassRecording: settings.groundMode);

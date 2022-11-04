@@ -19,12 +19,12 @@ Marker makeBarb(Waypoint waypoint, Barb barb, double size, bool reversed) {
           )));
 }
 
-List<Marker> makePathBarbs(List<Waypoint> waypoints, bool isReversed, double size) {
+List<Marker> makePathBarbs(Iterable<Waypoint> waypoints, double size, double interval, {bool isReversed = false}) {
   List<Marker> markers = [];
 
   for (final waypoint in waypoints) {
     if (waypoint.latlng.length < 2) continue;
-    for (final barb in waypoint.barbs) {
+    for (final barb in waypoint.getBarbs(interval)) {
       markers.add(makeBarb(waypoint, barb, size, isReversed));
     }
   }

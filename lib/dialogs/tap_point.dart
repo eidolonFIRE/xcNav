@@ -70,10 +70,9 @@ void tapPointDialog(BuildContext context, LatLng latlng, Function setFocusMode) 
               onPressed: () {
                 var plan = Provider.of<ActivePlan>(context, listen: false);
                 Navigator.pop(context);
-                editWaypoint(context, Waypoint("", [latlng], null, null), isNew: true)?.then((newWaypoint) {
+                editWaypoint(context, Waypoint(name: "", latlngs: [latlng]), isNew: true)?.then((newWaypoint) {
                   if (newWaypoint != null) {
-                    plan.insertWaypoint(plan.waypoints.length, newWaypoint.name, newWaypoint.latlng, false,
-                        newWaypoint.icon, newWaypoint.color);
+                    plan.updateWaypoint(newWaypoint);
                   }
                 });
               },

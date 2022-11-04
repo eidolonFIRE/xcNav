@@ -18,6 +18,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/secrets.dart';
 
 enum ClientState {
   disconnected,
@@ -25,13 +26,14 @@ enum ClientState {
   authenticated,
 }
 
-const double apiVersion = 5.2;
+const double apiVersion = 6.0;
 
 class Client with ChangeNotifier {
   WebSocket? socket;
   ClientState _state = ClientState.disconnected;
 
   int telemetrySkips = 0;
+  int reconnectionWait = 0;
 
   final BuildContext context;
 
@@ -54,17 +56,25 @@ class Client with ChangeNotifier {
       debugPrint("Reconnecting!");
       if (socket != null) {
         socket!.close().then((value) {
-          Timer(const Duration(seconds: 10), (() => connect()));
+          Timer(Duration(seconds: reconnectionWait), (() => connect()));
         });
       } else {
-        connect();
+        Timer(Duration(seconds: reconnectionWait), (() => connect()));
       }
     }
     notifyListeners();
   }
 
   void connect() async {
-    WebSocket.connect("wss://cilme82sm3.execute-api.us-west-1.amazonaws.com/production").then((newSocket) {
+    reconnectionWait += 1;
+
+    final countryCode = WidgetsBinding.instance.window.locale.countryCode;
+    debugPrint("Country Code: $countryCode");
+
+    WebSocket.connect(endpoints[countryCode]?.url ?? "",
+        headers: {"authorizationToken": endpoints[countryCode]?.token ?? ""}).then((newSocket) {
+      reconnectionWait = 0;
+
       socket = newSocket;
       state = ClientState.connected;
       debugPrint("Connected!");
@@ -91,8 +101,8 @@ class Client with ChangeNotifier {
         }
       });
 
-      // Register Callbacks to flightPlan
-      Provider.of<ActivePlan>(context, listen: false).onWaypointAction = flightPlanUpdate;
+      // Register Callbacks to waypoints
+      Provider.of<ActivePlan>(context, listen: false).onWaypointAction = waypointsUpdate;
       Provider.of<ActivePlan>(context, listen: false).onSelectWaypoint = selectWaypoint;
     }).onError((error, stackTrace) {
       debugPrint("Failed to connect! $error");
@@ -136,11 +146,11 @@ class Client with ChangeNotifier {
         case "pilotLeftGroup":
           handlePilotLeftGroup(payload);
           break;
-        case "flightPlanSync":
-          handleFlightPlanSync(payload);
+        case "waypointsSync":
+          handleWaypointsSync(payload);
           break;
-        case "flightPlanUpdate":
-          handleflightPlanUpdate(payload);
+        case "waypointsUpdate":
+          handleWaypointsUpdate(payload);
           break;
         case "pilotSelectedWaypoint":
           handlePilotSelectedWaypoint(payload);
@@ -168,6 +178,7 @@ class Client with ChangeNotifier {
         "pilot": {"id": profile.id, "name": profile.name, "avatar_hash": profile.avatarHash},
         "group": Provider.of<Group>(context, listen: false).loadGroup(),
         "tier_hash": crypto.sha256.convert((settings.patreonEmail + settings.patreonName).codeUnits).toString(),
+        "api_version": apiVersion,
       });
     } else {
       debugPrint("... we are already authenticated.");
@@ -235,31 +246,28 @@ class Client with ChangeNotifier {
     sendToAWS("joinGroupRequest", {"prompt_split": promptSplit});
   }
 
-  void flightPlanUpdate(
+  void waypointsUpdate(
     WaypointAction action,
-    int index,
-    int? newIndex,
-    Waypoint? data,
+    Waypoint waypoint,
   ) {
-    sendToAWS("flightPlanUpdate", {
+    sendToAWS("waypointsUpdate", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
-      "hash": hashFlightPlanData(Provider.of<ActivePlan>(context, listen: false).waypoints),
-      "index": index,
+      "hash": hashWaypointsData(Provider.of<ActivePlan>(context, listen: false).waypoints),
       "action": action.index,
-      "data": data?.toJson(),
-      "new_index": newIndex,
+      "waypoint": waypoint.toJson(),
     });
   }
 
-  void pushFlightPlan() {
-    sendToAWS("flightPlanSync", {
+  void pushWaypoints() {
+    sendToAWS("waypointsSync", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
-      "flight_plan": Provider.of<ActivePlan>(context, listen: false).waypoints.map((e) => e.toJson()).toList()
+      "waypoints": Map.fromEntries(
+          Provider.of<ActivePlan>(context, listen: false).waypoints.values.map((e) => MapEntry(e.id, e.toJson())))
     });
   }
 
-  void selectWaypoint(int index) {
-    sendToAWS("pilotSelectedWaypoint", {"pilot_id": Provider.of<Profile>(context, listen: false).id, "index": index});
+  void selectWaypoint(WaypointID waypointID) {
+    sendToAWS("pilotSelectedWaypoint", {"pilot_id": Provider.of<Profile>(context, listen: false).id, "id": waypointID});
   }
 
   // ############################################################################
@@ -316,43 +324,33 @@ class Client with ChangeNotifier {
     }
   }
 
-  // --- Full flight plan sync
-  void handleFlightPlanSync(Map<String, dynamic> msg) {
+  // --- Full waypoints sync
+  void handleWaypointsSync(Map<String, dynamic> msg) {
     ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
-    plan.parseFlightPlanSync(msg["flight_plan"]);
+    plan.parseWaypointsSync(msg["waypoints"]);
   }
 
-  // --- Process an update to group flight plan
-  void handleflightPlanUpdate(Map<String, dynamic> msg) {
-    // make backup copy of the plan
-
+  // --- Process an update to group waypoints
+  void handleWaypointsUpdate(Map<String, dynamic> msg) {
     // update the plan
     if (msg["action"] == WaypointAction.delete.index) {
       // Delete a waypoint
-      Provider.of<ActivePlan>(context, listen: false).backendRemoveWaypoint(msg["index"]);
-    } else if (msg["action"] == WaypointAction.add.index) {
-      // insert a new waypoint
-      Provider.of<ActivePlan>(context, listen: false)
-          .backendInsertWaypoint(msg["index"], Waypoint.fromJson(msg["data"]));
-      // } else if (msg["action"] == WaypointAction.sort.index) {
-      //   // Reorder a waypoint
-      //   Provider.of<ActivePlan>(context, listen: false).backendSortWaypoint(msg["index"], msg["new_index"]);
-    } else if (msg["action"] == WaypointAction.modify.index) {
+      Provider.of<ActivePlan>(context, listen: false).backendRemoveWaypoint(msg["waypoint"]["id"]);
+    } else if (msg["action"] == WaypointAction.update.index) {
       // Make updates to a waypoint
-      if (msg["data"] != null) {
-        Provider.of<ActivePlan>(context, listen: false)
-            .backendReplaceWaypoint(msg["index"], Waypoint.fromJson(msg["data"]));
+      if (msg["waypoint"] != null) {
+        Provider.of<ActivePlan>(context, listen: false).updateWaypoint(Waypoint.fromJson(msg["waypoint"]));
       }
     } else {
       // no-op
       return;
     }
 
-    String hash = hashFlightPlanData(Provider.of<ActivePlan>(context, listen: false).waypoints);
+    String hash = hashWaypointsData(Provider.of<ActivePlan>(context, listen: false).waypoints);
     if (hash != msg["hash"]) {
       // DE-SYNC ERROR
       // restore backup
-      debugPrint("Group Flightplan Desync!  $hash  ${msg['hash']}");
+      debugPrint("Group Waypoints Desync!  $hash  ${msg['hash']}");
 
       // we are out of sync!
       requestGroupInfo(Provider.of<Group>(context, listen: false).currentGroupID);
@@ -363,9 +361,9 @@ class Client with ChangeNotifier {
   void handlePilotSelectedWaypoint(Map<String, dynamic> msg) {
     Group group = Provider.of<Group>(context, listen: false);
 
-    debugPrint("${msg["pilot_id"]} selected wp: ${msg["index"]}");
+    debugPrint("${msg["pilot_id"]} selected wp: ${msg["waypoint_id"]}");
     if (group.hasPilot(msg["pilot_id"])) {
-      group.pilotSelectedWaypoint(msg["pilot_id"], msg["index"]);
+      group.pilotSelectedWaypoint(msg["pilot_id"], msg["waypoint_id"]);
     } else {
       // we don't have this pilot?
       requestGroupInfo(group.currentGroupID);
@@ -429,14 +427,24 @@ class Client with ChangeNotifier {
         }
       });
 
-      // Clear out waypoints
+      // refresh waypoints
       ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
-      if (msg["flight_plan"] != null && msg["flight_plan"].isNotEmpty) {
-        plan.parseFlightPlanSync(msg["flight_plan"]);
+      if (msg["waypoints"] != null && msg["waypoints"].isNotEmpty) {
+        plan.parseWaypointsSync(msg["waypoints"]);
       } else if (plan.waypoints.isNotEmpty) {
-        // Push our flightplan
+        // Push our waypoints
         debugPrint("Pushing our plan!");
-        pushFlightPlan();
+        pushWaypoints();
+      }
+
+      // handle selections
+      if (msg["selections"] != null) {
+        final Map<String, WaypointID> selections = msg["selections"];
+        for (final each in selections.entries) {
+          if (group.hasPilot(each.key)) {
+            group.pilotSelectedWaypoint(each.key, each.value);
+          }
+        }
       }
     }
   }

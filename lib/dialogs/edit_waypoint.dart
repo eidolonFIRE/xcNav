@@ -166,8 +166,11 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                 if (!showIconOptions && editPointsCallback != null)
                   TextButton.icon(
                       onPressed: () {
-                        var newWaypoint =
-                            Waypoint(newWaypointName.text, waypoint.latlng, selectedIcon, selectedColor.value);
+                        var newWaypoint = Waypoint(
+                            name: newWaypointName.text,
+                            latlngs: waypoint.latlng,
+                            icon: selectedIcon,
+                            color: selectedColor.value);
                         Navigator.pop(context, newWaypoint);
                         editPointsCallback();
                       },
@@ -198,14 +201,14 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                       final latLngValues = reMatch.allMatches(latlngText.text);
 
                       var newWaypoint = Waypoint(
-                          newWaypointName.text,
-                          latLngValues.isEmpty
+                          name: newWaypointName.text,
+                          latlngs: latLngValues.isEmpty
                               ? waypoint.latlng
                               : latLngValues
                                   .map((e) => LatLng(double.parse(e.group(1)!), double.parse(e.group(2)!)))
                                   .toList(),
-                          selectedIcon,
-                          selectedColor.value);
+                          icon: selectedIcon,
+                          color: selectedColor.value);
 
                       Navigator.pop(context, newWaypoint);
                     }

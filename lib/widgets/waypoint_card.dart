@@ -53,39 +53,6 @@ class _WaypointCardState extends State<WaypointCard> {
       constraints: const BoxConstraints(maxHeight: 100),
       child: IntrinsicHeight(
         child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          // Column(
-          //   children: [
-          //     Expanded(
-          //       child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
-          //     ),
-          //     GestureDetector(
-          //       onTap: widget.onToggleOptional,
-          //       child: SizedBox(
-          //         width: 40,
-          //         child: Stack(
-          //           alignment: AlignmentDirectional.center,
-          //           clipBehavior: Clip.none,
-          //           children: [
-          //             SvgPicture.asset(
-          //               "assets/images/wp${widget.waypoint.latlng.length > 1 ? "_path" : ""}${widget.waypoint.isOptional ? "_optional" : ""}.svg",
-          //               height: 56,
-          //               color: widget.waypoint.getColor(),
-          //             ),
-          //             // if (waypoint.isOptional)
-          //             //   SvgPicture.asset(
-          //             //     "assets/images/wp_strike.svg",
-          //             //     height: 56,
-          //             //     color: Colors.red.withAlpha(140),
-          //             //   )
-          //           ],
-          //         ),
-          //       ),
-          //     ),
-          //     Expanded(
-          //       child: SizedBox(width: 4, child: Container(color: widget.waypoint.getColor())),
-          //     ),
-          //   ],
-          // ),
           if (widget.refLatlng != null)
             Container(
               constraints: const BoxConstraints(minWidth: 40),
@@ -174,7 +141,7 @@ class _WaypointCardState extends State<WaypointCard> {
                 /// Pilot Avatars
                 if (widget.showPilots)
                   Consumer<Group>(builder: (context, group, child) {
-                    var pilots = group.pilots.values.where((element) => element.selectedWaypoint == widget.index);
+                    var pilots = group.pilots.values.where((element) => element.selectedWp == widget.waypoint.id);
 
                     if (pilots.isEmpty) return Container();
 

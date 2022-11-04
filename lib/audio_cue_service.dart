@@ -30,9 +30,6 @@ class AudioCueService {
   late final Group group;
   late final ActivePlan activePlan;
 
-  /// Current global multiplier
-  int? _mode = 0;
-
   late final SharedPreferences _prefs;
 
   Map<String, bool> _config = {
@@ -137,6 +134,7 @@ class AudioCueService {
     _prefs.setString("audio_cues_config", jsonEncode(config));
   }
 
+  int? _mode;
   int? get mode => _mode;
   set mode(int? newmode) {
     _mode = newmode;
@@ -196,7 +194,7 @@ class AudioCueService {
       final hdgPrecision = precisionLUT["hdg"][mode];
 
       final target = activePlan.selectedWp!.latlng.length > 1
-          ? myGeo.nearestPointOnPath(activePlan.selectedWp!.latlng, activePlan.isReversed).latlng
+          ? myGeo.nearestPointOnPath(activePlan.selectedWp!.latlng, false).latlng
           : activePlan.selectedWp!.latlng[0];
 
       final relativeHdg = myGeo.relativeHdgLatlng(target);

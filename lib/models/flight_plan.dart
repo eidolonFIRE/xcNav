@@ -14,7 +14,7 @@ import 'package:xcnav/providers/active_plan.dart';
 class FlightPlan {
   String name;
   late bool goodFile;
-  late final List<Waypoint> waypoints;
+  late final Map<WaypointID, Waypoint> waypoints = {};
 
   /// Path and filename
   Future<String> getFilename() {
@@ -28,7 +28,7 @@ class FlightPlan {
   LatLngBounds? getBounds() {
     if (waypoints.isEmpty) return null;
     List<LatLng> points = [];
-    for (final wp in waypoints) {
+    for (final wp in waypoints.values) {
       points.addAll(wp.latlng);
     }
     // max zoom value
@@ -39,26 +39,22 @@ class FlightPlan {
     return LatLngBounds.fromPoints(points)..pad(0.2);
   }
 
-  void sortWaypoint(int oldIndex, int newIndex) {
-    Waypoint temp = waypoints[oldIndex];
-    waypoints.removeAt(oldIndex);
-    waypoints.insert(newIndex, temp);
-  }
-
   FlightPlan(this.name) {
-    waypoints = [];
     goodFile = true;
   }
 
   FlightPlan.fromActivePlan(this.name, ActivePlan activePlan) {
-    waypoints = activePlan.waypoints.toList();
+    waypoints.addAll(activePlan.waypoints);
     goodFile = true;
   }
 
   FlightPlan.fromJson(this.name, dynamic data) {
     try {
-      List<dynamic> dataSamples = data["waypoints"];
-      waypoints = dataSamples.map((e) => Waypoint.fromJson(e)).toList();
+      List<dynamic> dataList = data["waypoints"];
+      final waypointList = dataList.map((e) => Waypoint.fromJson(e)).toList();
+      for (final each in waypointList) {
+        waypoints[each.id] = each;
+      }
 
       goodFile = true;
     } catch (e) {
@@ -67,8 +63,6 @@ class FlightPlan {
   }
 
   FlightPlan.fromKml(this.name, XmlElement document, List<XmlElement> folders) {
-    waypoints = [];
-
     void scanElement(XmlElement element) {
       element.findAllElements("Placemark").forEach((element) {
         String name = element.getElement("name")?.text.trim() ?? "untitled";
@@ -149,7 +143,8 @@ class FlightPlan {
               final match = RegExp(r'(.*)[\s]+(?:[-])[\s]*([0-9\.]+)[\s]*(miles|mi|km|Miles|Mi|Km)$').firstMatch(name);
               name = match?.group(1) ?? name;
             }
-            waypoints.add(Waypoint(name, points, null, color));
+            final waypoint = Waypoint(name: name, latlngs: points, color: color);
+            waypoints[waypoint.id] = waypoint;
           } else {
             debugPrint("Dropping $name with no points.");
           }

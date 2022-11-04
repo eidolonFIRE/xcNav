@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/waypoint.dart';
 
 class Pilot {
   // basic info
@@ -30,8 +31,7 @@ class Pilot {
   Color color = Colors.grey.shade800;
   String? tier;
 
-  // Flightplan
-  int? selectedWaypoint;
+  WaypointID? selectedWp;
 
   Pilot(this.id, this.name, this.avatarHash, this.geo, this.tier) {
     // Load Avatar

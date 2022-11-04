@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 // --- Dialogs
 import 'package:xcnav/dialogs/edit_plan_name.dart';
 import 'package:xcnav/dialogs/save_plan.dart';
+import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
@@ -15,6 +16,8 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/plans.dart';
 
 import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -31,7 +34,7 @@ class PlanCard extends StatefulWidget {
 class _PlanCardState extends State<PlanCard> {
   var formKey = GlobalKey<FormState>();
   bool isExpanded = false;
-  Set<int> checkedElements = {};
+  Set<WaypointID> checkedElements = {};
 
   void deletePlan(BuildContext context) {
     showDialog(
@@ -67,7 +70,7 @@ class _PlanCardState extends State<PlanCard> {
     final activePlan = Provider.of<ActivePlan>(context, listen: false);
     activePlan.waypoints.clear();
     activePlan.waypoints.addAll(widget.plan.waypoints);
-    Provider.of<Client>(context, listen: false).pushFlightPlan();
+    Provider.of<Client>(context, listen: false).pushWaypoints();
     activePlan.isSaved = true;
   }
 
@@ -81,7 +84,7 @@ class _PlanCardState extends State<PlanCard> {
     }
   }
 
-  void toggleItem(int index) {
+  void toggleItem(WaypointID index) {
     if (checkedElements.contains(index)) {
       checkedElements.remove(index);
     } else {
@@ -303,12 +306,12 @@ class _PlanCardState extends State<PlanCard> {
 
                     // Flight plan markers
                     PolylineLayerOptions(
-                      polylines: widget.plan.waypoints
+                      polylines: widget.plan.waypoints.values
                           // .where((value) => value.latlng.length > 1)
-                          .mapIndexed((i, e) => e.latlng.length > 1
+                          .map((e) => e.latlng.length > 1
                               ? Polyline(
                                   points: e.latlng,
-                                  strokeWidth: checkedElements.contains(i) ? 8 : 3,
+                                  strokeWidth: checkedElements.contains(e.id) ? 8 : 3,
                                   color: e.getColor())
                               : null)
                           .whereNotNull()
@@ -316,14 +319,20 @@ class _PlanCardState extends State<PlanCard> {
                     ),
 
                     // Flight plan paths - directional barbs
-                    MarkerLayerOptions(markers: makePathBarbs(widget.plan.waypoints, false, 30)),
+                    MarkerLayerOptions(
+                        markers: makePathBarbs(
+                            widget.plan.waypoints.values,
+                            30,
+                            Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
+                                ? 1000
+                                : 1609.344)),
 
                     // Waypoint Markers
                     MarkerLayerOptions(
-                      markers: widget.plan.waypoints
-                          .mapIndexed((i, e) {
+                      markers: widget.plan.waypoints.values
+                          .map((e) {
                             if (e.latlng.length == 1) {
-                              final bool isChecked = checkedElements.contains(i);
+                              final bool isChecked = checkedElements.contains(e.id);
                               return Marker(
                                   point: e.latlng[0],
                                   height: isChecked ? 40 : 30,
@@ -331,7 +340,7 @@ class _PlanCardState extends State<PlanCard> {
                                   builder: (context) => Container(
                                       transform: Matrix4.translationValues(0, isChecked ? (-15 * 4 / 3) : -15, 0),
                                       child: GestureDetector(
-                                          onTap: () => setState(() => toggleItem(i)),
+                                          onTap: () => setState(() => toggleItem(e.id)),
                                           child: MapMarker(e, isChecked ? 40 : 30))));
                             } else {
                               return null;
@@ -351,15 +360,15 @@ class _PlanCardState extends State<PlanCard> {
                   itemCount: widget.plan.waypoints.length,
                   itemBuilder: (context, index) => WaypointCard(
                         index: index,
-                        waypoint: widget.plan.waypoints[index],
+                        waypoint: widget.plan.waypoints.values.toList()[index],
                         onSelect: () {
                           setState(
                             () {
-                              toggleItem(index);
+                              toggleItem(widget.plan.waypoints.values.toList()[index].id);
                             },
                           );
                         },
-                        isSelected: checkedElements.contains(index),
+                        isSelected: checkedElements.contains(widget.plan.waypoints.values.toList()[index].id),
                         showPilots: false,
                       )),
             ),
@@ -370,8 +379,9 @@ class _PlanCardState extends State<PlanCard> {
                   onPressed: () {
                     Provider.of<ActivePlan>(context, listen: false).waypoints.addAll(checkedElements.isEmpty
                         ? widget.plan.waypoints
-                        : checkedElements.map((e) => widget.plan.waypoints[e]).toList());
-                    Provider.of<Client>(context, listen: false).pushFlightPlan();
+                        : Map<WaypointID, Waypoint>.fromEntries(
+                            widget.plan.waypoints.entries.where((element) => checkedElements.contains(element.key))));
+                    Provider.of<Client>(context, listen: false).pushWaypoints();
                     Navigator.popUntil(context, ModalRoute.withName("/home"));
                   },
                   icon: const Icon(

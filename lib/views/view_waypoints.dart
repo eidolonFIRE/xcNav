@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -12,10 +11,8 @@ import 'package:xcnav/models/geo.dart';
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/client.dart';
-import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/icon_image.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
@@ -256,7 +253,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                               }).then((value) {
                             if (value) {
                               activePlan.waypoints.clear();
-                              Provider.of<Client>(context, listen: false).pushFlightPlan();
+                              Provider.of<Client>(context, listen: false).pushWaypoints();
                             }
                           });
                           break;
@@ -291,7 +288,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
           // --- Waypoint list
           Expanded(
             child: Builder(builder: (context) {
-              final items = activePlan.waypoints.toList();
+              final items = activePlan.waypoints.values.toList();
               items.sort(compareWaypoints);
               return ListView.builder(
                 // shrinkWrap: true,
@@ -302,7 +299,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                   dragStartBehavior: DragStartBehavior.start,
                   startActionPane: ActionPane(extentRatio: 0.15, motion: const ScrollMotion(), children: [
                     SlidableAction(
-                      onPressed: (e) => {activePlan.removeWaypoint(i)},
+                      onPressed: (e) => {activePlan.removeWaypoint(items[i].id)},
                       icon: Icons.delete,
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
@@ -322,8 +319,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                           )?.then((newWaypoint) {
                             if (newWaypoint != null) {
                               // --- Update selected waypoint
-                              Provider.of<ActivePlan>(context, listen: false).updateWaypoint(
-                                  i, newWaypoint.name, newWaypoint.icon, newWaypoint.color, newWaypoint.latlng);
+                              Provider.of<ActivePlan>(context, listen: false).updateWaypoint(newWaypoint);
                             }
                           });
                         },
@@ -347,7 +343,8 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                                         .toList(),
                                   )).then((value) {
                             if (value != null) {
-                              Provider.of<Plans>(context, listen: false).loadedPlans[value]?.waypoints.add(items[i]);
+                              Provider.of<Plans>(context, listen: false).loadedPlans[value]?.waypoints[items[i].id] =
+                                  items[i];
                             }
                           });
                         },
@@ -364,9 +361,9 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                       refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
                       onSelect: () {
                         debugPrint("Selected $i");
-                        activePlan.selectWaypoint(i);
+                        activePlan.selectedWp = items[i];
                       },
-                      isSelected: i == activePlan.selectedIndex,
+                      isSelected: items[i].id == activePlan.selectedWp?.id,
                     ),
                   ),
                 ),

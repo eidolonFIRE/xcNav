@@ -5,7 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:latlong2/latlong.dart' as Latlng;
+import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
@@ -14,7 +14,7 @@ import 'package:xcnav/widgets/map_marker.dart';
 
 /// Elevation Sample for a given LatLng coordinate
 class ElevSample {
-  final Latlng.LatLng latlng;
+  final LatLng latlng;
   final double value;
   final int time;
 
@@ -172,7 +172,7 @@ class ElevationPlotPainter extends CustomPainter {
 
     // --- Draw Past Ground Level
     {
-      final groundPath = Path();
+      final groundPath = ui.Path();
       groundPath.addPolygon(
           geoData
                   .where((element) => element.ground != null)
@@ -185,7 +185,7 @@ class ElevationPlotPainter extends CustomPainter {
 
     // --- Draw Future Ground Level
     {
-      final groundPath = Path();
+      final groundPath = ui.Path();
       groundPath.addPolygon(
           groundData
                   .where((element) => element != null)

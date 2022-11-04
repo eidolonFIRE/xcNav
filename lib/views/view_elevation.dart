@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -31,8 +30,8 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
 
   List<ElevSample> elevSamples = [];
 
-  dynamic lookAhead = Duration(minutes: 10);
-  Duration? lookBehind = Duration(minutes: 10);
+  dynamic lookAhead = const Duration(minutes: 10);
+  Duration? lookBehind = const Duration(minutes: 10);
   ETA? waypointETA;
 
   List<Duration?> lookBehindOptions = [
@@ -89,6 +88,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final activePlan = Provider.of<ActivePlan>(context, listen: false);
 
     // --- Build view options
@@ -150,7 +150,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                           : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time);
                       return CustomPaint(
                         painter: ElevationPlotPainter(
-                            myTelemetry.getHistory(oldestTimestamp, interval: Duration(seconds: 30)),
+                            myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30)),
                             groundSamples.data ?? [],
                             Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
                                 ? 100
