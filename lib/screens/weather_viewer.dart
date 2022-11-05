@@ -125,7 +125,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                                           decimals: 0)
                                                       : "",
                                                   style:
-                                                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                                      const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                                                 ),
                                               ),
                                             ),

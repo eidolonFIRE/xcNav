@@ -81,10 +81,11 @@ class _WaypointCardState extends State<WaypointCard> {
                 ],
               ),
             ),
-          const VerticalDivider(
-            width: 4,
-            thickness: 2,
-          ),
+          if (widget.refLatlng != null)
+            const VerticalDivider(
+              width: 4,
+              thickness: 2,
+            ),
           Expanded(
             child: Flex(
               direction: Axis.horizontal,

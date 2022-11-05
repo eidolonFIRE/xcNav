@@ -221,16 +221,6 @@ class Waypoint {
 
     List<Barb> barbs = [];
 
-    // // Add head and tail
-    // barbs.add(Barb(latlng.first, latlngCalc.bearing(latlng.first, latlng[1]) * pi / 180));
-
-    // // Add intermediary points
-    // for (int i = 0; i < latlng.length - 1; i++) {
-    //   final brg = latlngCalc.bearing(latlng[i], latlng[i + 1]);
-    //   final dist = latlngCalc.distance(latlng[i], latlng[i + 1]);
-    //   barbs.add(Barb(latlngCalc.offset(latlng[i], dist / 2, brg), brg * pi / 180));
-    // }
-    // TODO: support metric barbs
     for (double dist = 0; dist <= length; dist += interval) {
       barbs.add(interpolate(dist, 0));
     }

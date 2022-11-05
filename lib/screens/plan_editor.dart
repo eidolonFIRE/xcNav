@@ -8,6 +8,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/dialogs/tap_point.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
@@ -17,6 +18,7 @@ import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
+import 'package:xcnav/tappablePolyline.dart';
 import 'package:xcnav/units.dart';
 
 // --- Widgets
@@ -38,24 +40,31 @@ class PlanEditor extends StatefulWidget {
 class _PlanEditorState extends State<PlanEditor> {
   LatLngBounds? mapBounds;
   FlightPlan? plan;
-  MapController mapController = MapController();
-  WaypointID? editingWp;
   WaypointID? selectedWp;
-  late PolyEditor polyEditor;
-  final List<LatLng> editablePolyline = [];
   ScrollController scrollController = ScrollController();
+
+  WaypointID? editingWp;
+  late final PolyEditor polyEditor;
+
+  final List<Polyline> polyLines = [];
+  final List<LatLng> editablePoints = [];
 
   FocusMode focusMode = FocusMode.unlocked;
 
   String mapTileName = "topo";
 
+  bool mapReady = false;
+  MapController mapController = MapController();
+
   @override
   void initState() {
     super.initState();
 
+    mapController.onReady.then((value) => mapReady = true);
+
     polyEditor = PolyEditor(
       addClosePathMarker: false,
-      points: editablePolyline,
+      points: editablePoints,
       pointIcon: const Icon(
         Icons.crop_square,
         size: 22,
@@ -66,6 +75,15 @@ class _PlanEditorState extends State<PlanEditor> {
     );
   }
 
+  void beginEditingLine(Waypoint waypoint) {
+    polyLines.clear();
+    polyLines.add(Polyline(color: waypoint.getColor(), points: editablePoints, strokeWidth: 5));
+    editablePoints.clear();
+    editablePoints.addAll(waypoint.latlng.toList());
+    editingWp = waypoint.id;
+    setFocusMode(FocusMode.editPath);
+  }
+
   void setFocusMode(FocusMode mode) {
     setState(() {
       focusMode = mode;
@@ -73,32 +91,37 @@ class _PlanEditorState extends State<PlanEditor> {
     });
   }
 
-  void beginEditingPolyline(WaypointID? waypointID) {
-    setState(() {
-      editingWp = waypointID;
-      editablePolyline.clear();
-      if (plan?.waypoints.containsKey(waypointID) == true) {
-        focusMode = FocusMode.editPath;
-        editablePolyline.addAll(plan!.waypoints[waypointID]!.latlng.toList());
-      } else {
-        focusMode = FocusMode.unlocked;
-      }
-    });
-  }
-
   void finishEditingPolyline() {
     setState(() {
-      if (editingWp != null && plan?.waypoints.containsKey(editingWp) == true) {
-        if (editablePolyline.isNotEmpty) {
-          plan!.waypoints[editingWp!]!.latlng = editablePolyline.toList();
+      // if (editingWp != null && plan?.waypoints.containsKey(editingWp) == true) {
+      //   if (editablePolyline.isNotEmpty) {
+      //     plan!.waypoints[editingWp!]!.latlng = editablePolyline.toList();
+      //   } else {
+      //     plan!.waypoints.remove(editingWp!);
+      //   }
+      // }
+      // editingWp = null;
+      // editablePolyline.clear();
+      // focusMode = FocusMode.unlocked;
+      // selectedWp = null;
+
+      // --- finish editing path
+      if (editablePoints.isNotEmpty) {
+        if (editingWp == null) {
+          var temp = Waypoint(name: "", latlngs: editablePoints.toList());
+          editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)?.then((newWaypoint) {
+            if (newWaypoint != null) {
+              plan!.waypoints[newWaypoint.id] = newWaypoint;
+            }
+          });
         } else {
-          plan!.waypoints.remove(editingWp!);
+          plan!.waypoints[editingWp]!.latlng = editablePoints.toList();
+          editingWp = null;
         }
+      } else {
+        plan!.waypoints.remove(editingWp);
       }
-      editingWp = null;
-      editablePolyline.clear();
-      focusMode = FocusMode.unlocked;
-      selectedWp = null;
+      setFocusMode(FocusMode.unlocked);
     });
   }
 
@@ -116,8 +139,21 @@ class _PlanEditorState extends State<PlanEditor> {
       });
     } else if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
       // --- Add waypoint in path
-      polyEditor.add(editablePolyline, latlng);
+      polyEditor.add(editablePoints, latlng);
     }
+  }
+
+  void onMapLongPress(BuildContext context, LatLng latlng) {
+    // Prime the editor incase we decide to make a path
+    polyLines.clear();
+    polyLines.add(Polyline(color: Colors.amber, points: editablePoints, strokeWidth: 5));
+    editablePoints.clear();
+    editablePoints.add(latlng);
+    tapPointDialog(context, latlng, setFocusMode, (Waypoint newWaypoint) {
+      if (plan != null) {
+        plan!.waypoints[newWaypoint.id] = newWaypoint;
+      }
+    });
   }
 
   @override
@@ -140,51 +176,77 @@ class _PlanEditorState extends State<PlanEditor> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text("Edit: ${plan!.name}"),
+          title: Text("Editing:  ${plan!.name}"),
         ),
         body: Stack(
           children: [
                 FlutterMap(
                     key: const Key("planEditorMap"),
+                    mapController: mapController,
                     options: MapOptions(
                       controller: mapController,
                       interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                       // interactiveFlags: InteractiveFlag.none,
                       bounds: mapBounds,
                       allowPanningOnScrollingParent: false,
-                      plugins: [
-                        DragMarkerPlugin(),
-                      ],
+                      plugins: [DragMarkerPlugin(), TappablePolylineMapPlugin()],
                       onTap: (tapPos, latlng) => onMapTap(context, latlng),
+                      onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                     ),
                     layers: [
                       Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName, opacity: 1.0),
 
-                      // Flight plan markers
-                      PolylineLayerOptions(
-                        polylines: plan!.waypoints.values
-                            // .where((value) => value.latlng.length > 1)
-                            .map((e) => e.latlng.length > 1 && e.id != editingWp
-                                ? Polyline(
-                                    points: e.latlng, strokeWidth: e.id == selectedWp ? 8 : 4, color: e.getColor())
-                                : null)
-                            .whereNotNull()
-                            .toList(),
-                      ),
-
-                      // Flight plan paths - directional barbs
+                      // Polyline Directional Barbs
                       MarkerLayerOptions(
                           markers: makePathBarbs(
                               editingWp != null
-                                  ? plan!.waypoints.values.whereNot((e) => e.id == editingWp)
-                                  // TODO: revisit
-                                  // ..add(Waypoint(name: plan!.waypoints[editingWp!].name, latlngs: editablePolyline
-                                  //     color: plan!.waypoints[editingWp!].color)))
+                                  ? plan!.waypoints.values.whereNot((element) => element.id == editingWp)
                                   : plan!.waypoints.values,
-                              40,
-                              Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
-                                  ? 1000
-                                  : 1609.344)),
+                              45,
+                              ((mapReady && mapController.zoom < 11) ? 10 : 1) *
+                                  (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
+                                          DisplayUnitsDist.metric
+                                      ? 1000
+                                      : 1609.344))),
+
+                      // Polyline Directional Barbs for live edit
+                      if (editablePoints.isNotEmpty && editingWp != null)
+                        MarkerLayerOptions(
+                            markers: makePathBarbs(
+                                [
+                              Waypoint(
+                                  name: plan!.waypoints[editingWp!]?.name ?? "",
+                                  latlngs: editablePoints,
+                                  color: plan!.waypoints[editingWp!]?.color)
+                            ],
+                                45,
+                                ((mapReady && mapController.zoom < 11) ? 10 : 1) *
+                                    (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
+                                            DisplayUnitsDist.metric
+                                        ? 1000
+                                        : 1609.344))),
+
+                      // Flight plan markers
+                      TappablePolylineLayerOptions(
+                          polylines: plan!.waypoints.values
+                              .where((value) => value.isPath)
+                              .whereNot((element) => element.id == editingWp)
+                              .map((e) => TaggedPolyline(
+                                  tag: e.id,
+                                  points: e.latlng,
+                                  strokeWidth: e.id == selectedWp ? 6.0 : 4.0,
+                                  color: e.getColor()))
+                              .toList(),
+                          onTap: (p0, tapPosition) {
+                            setState(() {
+                              selectedWp = p0.tag;
+                            });
+                          },
+                          onLongPress: (p0, tapPosition) {
+                            if (plan!.waypoints.containsKey(p0.tag)) {
+                              beginEditingLine(plan!.waypoints[p0.tag]!);
+                            }
+                          }),
 
                       // Flight plan markers
                       DragMarkerPluginOptions(
@@ -197,15 +259,11 @@ class _PlanEditorState extends State<PlanEditor> {
                                       width: 40 * (e.id == selectedWp ? 0.8 : 0.6),
                                       offset: Offset(0, -30 * (e.id == selectedWp ? 0.8 : 0.6)),
                                       feedbackOffset: Offset(0, -30 * (e.id == selectedWp ? 0.8 : 0.6)),
-                                      onTap: (_) => {
-                                            setState(() {
-                                              selectedWp = e.id;
-                                              // TODO: revisit
-                                              // scrollController.animateTo(60.0 * ,
-                                              //     duration: const Duration(milliseconds: 100),
-                                              //     curve: Curves.fastLinearToSlowEaseIn);
-                                            }),
-                                          },
+                                      onTap: (_) {
+                                        setState(() {
+                                          selectedWp = e.id;
+                                        });
+                                      },
                                       onLongDragEnd: (p0, p1) {
                                         setState(() {
                                           plan!.waypoints[e.id]?.latlng = [p1];
@@ -217,14 +275,10 @@ class _PlanEditorState extends State<PlanEditor> {
                               .toList()),
 
                       // Draggable line editor
-                      if (editingWp != null)
-                        PolylineLayerOptions(polylines: [
-                          Polyline(
-                              color: plan!.waypoints[editingWp!]?.getColor() ?? Colors.black,
-                              points: editablePolyline,
-                              strokeWidth: 5)
-                        ]),
-                      if (editingWp != null) DragMarkerPluginOptions(markers: polyEditor.edit()),
+                      if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                        PolylineLayerOptions(polylines: polyLines),
+                      if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                        DragMarkerPluginOptions(markers: polyEditor.edit()),
                     ]),
 
                 // --- Map overlay layers
@@ -315,14 +369,17 @@ class _PlanEditorState extends State<PlanEditor> {
                                 color: Colors.red,
                               ),
                               onPressed: () {
-                                // --- Cancel editing of path (don't save changes)
-                                if (editingWp != null && plan!.waypoints[editingWp!]!.latlng.isEmpty) {
-                                  plan!.waypoints.remove(editingWp!);
-                                }
-                                beginEditingPolyline(null);
+                                setState(() {
+                                  // --- Cancel editing of path (don't save changes)
+                                  if (editingWp != null && plan!.waypoints[editingWp!]!.latlng.isEmpty) {
+                                    plan!.waypoints.remove(editingWp!);
+                                  }
+                                  editingWp = null;
+                                  setFocusMode(FocusMode.unlocked);
+                                });
                               },
                             ),
-                            if (editablePolyline.length > 1)
+                            if (editablePoints.length > 1)
                               IconButton(
                                   padding: EdgeInsets.zero,
                                   iconSize: 35,
@@ -348,9 +405,9 @@ class _PlanEditorState extends State<PlanEditor> {
                                 style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
                             onPressed: () {
                               setState(() {
-                                var temp = editablePolyline.toList();
-                                editablePolyline.clear();
-                                editablePolyline.addAll(temp.reversed);
+                                var temp = editablePoints.toList();
+                                editablePoints.clear();
+                                editablePoints.addAll(temp.reversed);
                               });
                             },
                           )),
@@ -367,44 +424,13 @@ class _PlanEditorState extends State<PlanEditor> {
         ///
         ///
         ///
-        bottomNavigationBar: Container(
-          constraints: const BoxConstraints(maxHeight: 360),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // --- Add New Waypoint
-                  IconButton(
-                      iconSize: 25,
-                      icon: const ImageIcon(AssetImage("assets/images/add_waypoint_pin.png"), color: Colors.lightGreen),
-                      onPressed: () {
-                        setFocusMode(FocusMode.addWaypoint);
-                      }),
-                  // --- Add New Path
-                  IconButton(
-                      iconSize: 25,
-                      icon: const ImageIcon(AssetImage("assets/images/add_waypoint_path.png"), color: Colors.yellow),
-                      onPressed: () {
-                        var temp = Waypoint(name: "", latlngs: []);
-                        editWaypoint(context, temp, isNew: true, isPath: true)?.then((newWaypoint) {
-                          if (newWaypoint != null) {
-                            plan!.waypoints[newWaypoint.id] = newWaypoint;
-                            beginEditingPolyline(newWaypoint.id);
-                            setFocusMode(FocusMode.addPath);
-                          }
-                        });
-                      }),
-                ],
-              ),
-              Divider(
-                thickness: 2,
-                height: 0,
-                color: Theme.of(context).backgroundColor,
-              ),
-              Expanded(
-                  child: (plan == null)
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 360, minHeight: 100),
+              child: plan!.waypoints.isNotEmpty
+                  ? (plan == null)
                       ? const Center(
                           child: Text("Oops, something went wrong!"),
                         )
@@ -412,7 +438,7 @@ class _PlanEditorState extends State<PlanEditor> {
                       // --- List of waypoints
                       ListView.builder(
                           shrinkWrap: true,
-                          primary: false,
+                          primary: true,
                           itemCount: plan!.waypoints.length,
                           itemBuilder: (context, i) {
                             List<Waypoint> items = plan!.waypoints.values.toList();
@@ -424,7 +450,7 @@ class _PlanEditorState extends State<PlanEditor> {
                                 SlidableAction(
                                   onPressed: (e) {
                                     setState(() {
-                                      plan!.waypoints.remove(i);
+                                      plan!.waypoints.remove(items[i].id);
                                     });
                                   },
                                   icon: Icons.delete,
@@ -445,7 +471,7 @@ class _PlanEditorState extends State<PlanEditor> {
                                         if (newWaypoint != null) {
                                           debugPrint("Finished Editing Waypoint $i");
                                           setState(() {
-                                            items[i] = newWaypoint;
+                                            plan!.waypoints[newWaypoint.id] = newWaypoint;
                                           });
                                         }
                                       });
@@ -460,33 +486,28 @@ class _PlanEditorState extends State<PlanEditor> {
                                 waypoint: items[i],
                                 index: i,
                                 onSelect: () {
-                                  debugPrint("Selected $i");
+                                  setState(() {
+                                    if (editingWp != null) {
+                                      finishEditingPolyline();
+                                    }
 
-                                  if (editingWp != null) {
-                                    finishEditingPolyline();
-                                  }
-                                  selectedWp = items[i].id;
-                                  if (items[i].latlng.length > 1) {
-                                    beginEditingPolyline(items[i].id);
-                                  } else {
-                                    beginEditingPolyline(null);
-                                  }
+                                    selectedWp = items[i].id;
+                                  });
                                 },
                                 isSelected: items[i].id == selectedWp,
                               ),
                             );
                           },
-                        )),
-              // This shows when flight plan is empty
-              if (plan!.waypoints.isEmpty)
-                const Center(
-                  child: Text(
-                    "Flightplan is Empty",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                  ),
-                ),
-            ],
+                        )
+                  // This shows when flight plan is empty
+                  : const Center(
+                      child: Text(
+                        "Flightplan is Empty",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+            ),
           ),
         ),
       ),

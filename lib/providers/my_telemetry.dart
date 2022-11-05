@@ -387,8 +387,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       inFlight = !inFlight;
       triggerHyst = 0;
       if (inFlight) {
-        // TODO: Use real timestamp search here (it's hardcoded to 5seconds)
-        final launchIndex = max(0, recordGeo.length - (triggerDuration.inSeconds ~/ 5) - 5);
+        // TODO: Use real timestamp search here (it's hardcoded to 3seconds)
+        final launchIndex = max(0, recordGeo.length - (triggerDuration.inSeconds ~/ 3) - 3);
         launchGeo = recordGeo[launchIndex];
 
         takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);

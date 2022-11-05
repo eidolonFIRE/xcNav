@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/views/view_map.dart';
 
-void tapPointDialog(BuildContext context, LatLng latlng, Function setFocusMode) {
+void tapPointDialog(
+    BuildContext context, LatLng latlng, Function setFocusMode, void Function(Waypoint newWaypoint) onAddWaypoint) {
   const unitStyle = TextStyle(fontSize: 20, color: Colors.grey);
   final latlngString = "${latlng.latitude.toStringAsFixed(5)}, ${latlng.longitude.toStringAsFixed(5)}";
   showDialog(
@@ -68,11 +67,10 @@ void tapPointDialog(BuildContext context, LatLng latlng, Function setFocusMode) 
           ElevatedButton.icon(
               label: const Text("Waypoint"),
               onPressed: () {
-                var plan = Provider.of<ActivePlan>(context, listen: false);
                 Navigator.pop(context);
                 editWaypoint(context, Waypoint(name: "", latlngs: [latlng]), isNew: true)?.then((newWaypoint) {
                   if (newWaypoint != null) {
-                    plan.updateWaypoint(newWaypoint);
+                    onAddWaypoint(newWaypoint);
                   }
                 });
               },

@@ -231,7 +231,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                               builder: (BuildContext ctx) {
                                 return AlertDialog(
                                   title: const Text('Are you sure?'),
-                                  content: const Text('This will clear the flight plan for everyone in the group!'),
+                                  content: const Text('This will clear all waypoints for everyone in the group!'),
                                   actions: [
                                     TextButton.icon(
                                         onPressed: () {
@@ -266,7 +266,10 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                           PopupMenuItem(
                             value: "save",
                             child: ListTile(
-                              leading: Icon(Icons.save_as),
+                              leading: Icon(
+                                Icons.save_as,
+                                color: Colors.green,
+                              ),
                               title: Text("Save Plan"),
                             ),
                           ),
@@ -286,92 +289,93 @@ class ViewWaypointsState extends State<ViewWaypoints> {
           ),
 
           // --- Waypoint list
-          Expanded(
-            child: Builder(builder: (context) {
-              final items = activePlan.waypoints.values.toList();
-              items.sort(compareWaypoints);
-              return ListView.builder(
-                // shrinkWrap: true,
-                // primary: true,
-                itemCount: items.length,
-                itemBuilder: (context, i) => Slidable(
-                  key: ValueKey(items[i]),
-                  dragStartBehavior: DragStartBehavior.start,
-                  startActionPane: ActionPane(extentRatio: 0.15, motion: const ScrollMotion(), children: [
-                    SlidableAction(
-                      onPressed: (e) => {activePlan.removeWaypoint(items[i].id)},
-                      icon: Icons.delete,
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                    ),
-                  ]),
-                  endActionPane: ActionPane(
-                    extentRatio: 0.3,
-                    motion: const ScrollMotion(),
-                    children: [
+          if (activePlan.waypoints.isNotEmpty)
+            Expanded(
+              child: Builder(builder: (context) {
+                final items = activePlan.waypoints.values.toList();
+                items.sort(compareWaypoints);
+                return ListView.builder(
+                  // shrinkWrap: true,
+                  // primary: true,
+                  itemCount: items.length,
+                  itemBuilder: (context, i) => Slidable(
+                    key: ValueKey(items[i]),
+                    dragStartBehavior: DragStartBehavior.start,
+                    startActionPane: ActionPane(extentRatio: 0.15, motion: const ScrollMotion(), children: [
                       SlidableAction(
-                        onPressed: (e) {
-                          editWaypoint(
-                            context,
-                            items[i],
-                          )?.then((newWaypoint) {
-                            if (newWaypoint != null) {
-                              // --- Update selected waypoint
-                              Provider.of<ActivePlan>(context, listen: false).updateWaypoint(newWaypoint);
-                            }
-                          });
-                        },
-                        icon: Icons.edit,
-                        backgroundColor: Colors.grey.shade400,
-                        foregroundColor: Colors.black,
+                        onPressed: (e) => {activePlan.removeWaypoint(items[i].id)},
+                        icon: Icons.delete,
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
                       ),
-                      SlidableAction(
-                        onPressed: (e) {
-                          showDialog<String>(
-                              context: context,
-                              builder: (context) => SimpleDialog(
-                                    title: Text(Provider.of<Plans>(context, listen: false).loadedPlans.isEmpty
-                                        ? "Oops, make a plan / collection in Waypoints menu first!"
-                                        : "Save waypoint into:"),
-                                    children: Provider.of<Plans>(context, listen: false)
-                                        .loadedPlans
-                                        .keys
-                                        .map((name) => SimpleDialogOption(
-                                            onPressed: () => Navigator.pop(context, name), child: Text(name)))
-                                        .toList(),
-                                  )).then((value) {
-                            if (value != null) {
-                              Provider.of<Plans>(context, listen: false).loadedPlans[value]?.waypoints[items[i].id] =
-                                  items[i];
-                            }
-                          });
-                        },
-                        icon: Icons.playlist_add,
-                        backgroundColor: Colors.grey.shade400,
-                        foregroundColor: Colors.black,
-                      )
-                    ],
+                    ]),
+                    endActionPane: ActionPane(
+                      extentRatio: 0.3,
+                      motion: const ScrollMotion(),
+                      children: [
+                        SlidableAction(
+                          onPressed: (e) {
+                            editWaypoint(
+                              context,
+                              items[i],
+                            )?.then((newWaypoint) {
+                              if (newWaypoint != null) {
+                                // --- Update selected waypoint
+                                Provider.of<ActivePlan>(context, listen: false).updateWaypoint(newWaypoint);
+                              }
+                            });
+                          },
+                          icon: Icons.edit,
+                          backgroundColor: Colors.grey.shade400,
+                          foregroundColor: Colors.black,
+                        ),
+                        SlidableAction(
+                          onPressed: (e) {
+                            showDialog<String>(
+                                context: context,
+                                builder: (context) => SimpleDialog(
+                                      title: Text(Provider.of<Plans>(context, listen: false).loadedPlans.isEmpty
+                                          ? "Oops, make a plan / collection in Waypoints menu first!"
+                                          : "Save waypoint into:"),
+                                      children: Provider.of<Plans>(context, listen: false)
+                                          .loadedPlans
+                                          .keys
+                                          .map((name) => SimpleDialogOption(
+                                              onPressed: () => Navigator.pop(context, name), child: Text(name)))
+                                          .toList(),
+                                    )).then((value) {
+                              if (value != null) {
+                                Provider.of<Plans>(context, listen: false).loadedPlans[value]?.waypoints[items[i].id] =
+                                    items[i];
+                              }
+                            });
+                          },
+                          icon: Icons.playlist_add,
+                          backgroundColor: Colors.grey.shade400,
+                          foregroundColor: Colors.black,
+                        )
+                      ],
+                    ),
+                    child: WaypointCard(
+                      waypoint: items[i],
+                      index: i,
+                      refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
+                      onSelect: () {
+                        debugPrint("Selected ${items[i].id}");
+                        activePlan.selectedWp = items[i];
+                      },
+                      isSelected: items[i].id == activePlan.selectedWp?.id,
+                    ),
                   ),
-                  child: WaypointCard(
-                    waypoint: items[i],
-                    index: i,
-                    refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
-                    onSelect: () {
-                      debugPrint("Selected ${items[i].id}");
-                      activePlan.selectedWp = items[i];
-                    },
-                    isSelected: items[i].id == activePlan.selectedWp?.id,
-                  ),
-                ),
-              );
-            }),
-          ),
+                );
+              }),
+            ),
           // This shows when flight plan is empty
           if (activePlan.waypoints.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 50, bottom: 50),
               child: Text(
-                "No waypoints added yet...",
+                "No waypoints added yet... \n\nLong-press on the map to begin.",
                 textAlign: TextAlign.center,
                 style: instrLabel,
               ),

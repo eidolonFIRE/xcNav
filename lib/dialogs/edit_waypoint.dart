@@ -183,6 +183,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                       final latLngValues = reMatch.allMatches(latlngText.text);
 
                       var newWaypoint = Waypoint(
+                          newId: waypoint.id,
                           name: newWaypointName.text,
                           latlngs: latLngValues.isEmpty
                               ? waypoint.latlng

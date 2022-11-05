@@ -88,6 +88,9 @@ class ActivePlan with ChangeNotifier {
   }
 
   void removeWaypoint(WaypointID waypointID) {
+    if (selectedWp?.id == waypointID) {
+      selectedWp = null;
+    }
     backendRemoveWaypoint(waypointID);
     // callback
     if (onWaypointAction != null && waypoints.containsKey(waypointID)) {

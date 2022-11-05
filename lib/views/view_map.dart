@@ -78,7 +78,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   WaypointID? editingWp;
   late PolyEditor polyEditor;
 
-  List<Polyline> polyLines = [];
+  final List<Polyline> polyLines = [];
   final List<LatLng> editablePoints = [];
 
   // ignore: annotate_overrides
@@ -135,7 +135,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     polyLines.clear();
     polyLines.add(Polyline(color: waypoint.getColor(), points: editablePoints, strokeWidth: 5));
     editablePoints.clear();
-    editablePoints.addAll(waypoint.latlng);
+    editablePoints.addAll(waypoint.latlng.toList());
     editingWp = waypoint.id;
     setFocusMode(FocusMode.editPath);
   }
@@ -225,7 +225,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     polyLines.add(Polyline(color: Colors.amber, points: editablePoints, strokeWidth: 5));
     editablePoints.clear();
     editablePoints.add(latlng);
-    tapPointDialog(context, latlng, setFocusMode);
+    tapPointDialog(context, latlng, setFocusMode, (Waypoint newWaypoint) {
+      Provider.of<ActivePlan>(context, listen: false).updateWaypoint(newWaypoint);
+    });
   }
 
   @override

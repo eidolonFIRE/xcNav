@@ -1,31 +1,30 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_svg/svg.dart';
+
 import 'package:xcnav/models/waypoint.dart';
 
-Marker makeBarb(Waypoint waypoint, Barb barb, double size, bool reversed) {
+Marker _makeBarb(Color color, Barb barb, double size) {
   return Marker(
       point: barb.latlng,
       width: size,
       height: size,
       builder: (ctx) => Container(
           transformAlignment: const Alignment(0, 0),
-          transform: Matrix4.rotationZ(barb.hdg + (reversed ? pi : 0)),
-          child: Icon(
-            Icons.expand_less,
-            size: size,
-            color: waypoint.getColor(),
+          transform: Matrix4.rotationZ(barb.hdg)..scale(0.45),
+          child: SvgPicture.asset(
+            "assets/images/chevron.svg",
+            color: color,
           )));
 }
 
-List<Marker> makePathBarbs(Iterable<Waypoint> waypoints, double size, double interval, {bool isReversed = false}) {
+List<Marker> makePathBarbs(Iterable<Waypoint> waypoints, double size, double interval) {
   List<Marker> markers = [];
 
   for (final waypoint in waypoints) {
     if (waypoint.latlng.length < 2) continue;
     for (final barb in waypoint.getBarbs(interval)) {
-      markers.add(makeBarb(waypoint, barb, size, isReversed));
+      markers.add(_makeBarb(waypoint.getColor(), barb, size));
     }
   }
 
