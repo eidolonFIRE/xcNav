@@ -877,7 +877,7 @@ packages:
     source: hosted
     version: "1.0.1"
   positioned_tap_detector_2:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: positioned_tap_detector_2
       url: "https://pub.dartlang.org"

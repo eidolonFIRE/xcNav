@@ -10,10 +10,12 @@ import 'package:xcnav/providers/profile.dart';
 // Models
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
+import 'package:xcnav/providers/settings.dart';
 
 // Widgets
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
+import 'package:xcnav/widgets/icon_image.dart';
 
 const List<String> quickchat = [
   "Waiting here... ⏱️",
@@ -92,46 +94,51 @@ class ViewChatState extends State<ViewChat> {
     ).then((value) => {if (value != null) sendChatMessage(value)});
   }
 
-  // AUDIO SWITCH
-  // Consumer<Settings>(
-  //               builder: (context, settings, child) => Padding(
-  //                     padding: const EdgeInsets.all(8.0),
-  //                     child: Transform.scale(
-  //                       scale: 1.5,
-  //                       child: Switch(
-  //                         activeThumbImage: IconImageProvider(Icons.volume_up, color: Colors.black),
-  //                         inactiveThumbImage: IconImageProvider(Icons.volume_off, color: Colors.black),
-  //                         value: settings.chatTts,
-  //                         onChanged: (value) => settings.chatTts = value,
-  //                       ),
-  //                     ),
-  //                   ))
-
   @override
   Widget build(BuildContext context) {
-    Provider.of<ChatMessages>(context, listen: false).markAllRead(false);
+    debugPrint("Build /home/view_chat");
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Column(children: [
         // --- Chat Bubble List
         Expanded(
-          child: Consumer<ChatMessages>(builder: (context, chat, child) {
-            return ListView.builder(
-                itemCount: chat.messages.length,
-                reverse: true,
-                itemBuilder: (context, i) {
-                  final reversedIndex = chat.messages.length - 1 - i;
-                  Message msg = chat.messages[reversedIndex];
-                  Pilot? pilot = Provider.of<Group>(context, listen: false).pilots[msg.pilotId];
-                  return ChatBubble(
-                    msg.pilotId == Provider.of<Profile>(context, listen: false).id,
-                    msg.text,
-                    AvatarRound(pilot?.avatar ?? Image.asset("assets/images/default_avatar.png"), 20),
-                    Provider.of<Group>(context, listen: false).pilots[msg.pilotId]?.name,
-                    msg.timestamp,
-                  );
-                });
-          }),
+          child: Stack(
+            children: [
+              Consumer<ChatMessages>(builder: (context, chat, child) {
+                Provider.of<ChatMessages>(context, listen: false).markAllRead(false);
+                return ListView.builder(
+                    itemCount: chat.messages.length,
+                    reverse: true,
+                    itemBuilder: (context, i) {
+                      final reversedIndex = chat.messages.length - 1 - i;
+                      Message msg = chat.messages[reversedIndex];
+                      Pilot? pilot = Provider.of<Group>(context, listen: false).pilots[msg.pilotId];
+                      return ChatBubble(
+                        msg.pilotId == Provider.of<Profile>(context, listen: false).id,
+                        msg.text,
+                        AvatarRound(pilot?.avatar ?? Image.asset("assets/images/default_avatar.png"), 20),
+                        Provider.of<Group>(context, listen: false).pilots[msg.pilotId]?.name,
+                        msg.timestamp,
+                      );
+                    });
+              }),
+
+              // AUDIO SWITCH
+              Consumer<Settings>(
+                  builder: (context, settings, child) => Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: FloatingActionButton(
+                          backgroundColor: settings.chatTts ? Colors.greenAccent : Colors.grey,
+                          child: Icon(
+                            settings.chatTts ? Icons.volume_up : Icons.volume_off,
+                            color: Colors.black,
+                            size: 30,
+                          ),
+                          onPressed: () => settings.chatTts = !settings.chatTts,
+                        ),
+                      ))
+            ],
+          ),
         ),
         // --- Text Input
         Row(

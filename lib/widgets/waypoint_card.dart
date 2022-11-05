@@ -60,16 +60,24 @@ class _WaypointCardState extends State<WaypointCard> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Text.rich(
-                      // TODO: support nearest point distance for paths
-                      richValue(UnitType.distCoarse, latlngCalc(widget.waypoint.latlng[0], widget.refLatlng!),
-                          valueStyle: const TextStyle(fontSize: 18),
-                          unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12)),
-                      textAlign: TextAlign.end,
+                  if (widget.refLatlng != null)
+                    Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Text.rich(
+                        richValue(
+                            UnitType.distCoarse,
+                            widget.waypoint
+                                .eta(
+                                    Geo.fromValues(
+                                        widget.refLatlng!.latitude, widget.refLatlng!.longitude, 0, 0, 0, 1, 0),
+                                    1)
+                                .distance,
+                            digits: 1,
+                            valueStyle: TextStyle(color: widget.isSelected ? Colors.black : Colors.white, fontSize: 18),
+                            unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12)),
+                        textAlign: TextAlign.end,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

@@ -64,10 +64,10 @@ class ActivePlan with ChangeNotifier {
     await prefs.setStringList("flightPlan.waypoints", waypoints.values.map((e) => e.toString()).toList());
   }
 
-  void parseWaypointsSync(List<dynamic> planData) {
+  void parseWaypointsSync(Map<String, dynamic> planData) {
     waypoints.clear();
     // add back each waypoint
-    for (dynamic each in planData) {
+    for (dynamic each in planData.values) {
       final wp = Waypoint.fromJson(each);
       waypoints[wp.id] = wp;
     }

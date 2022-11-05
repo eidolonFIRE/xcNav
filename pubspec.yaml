@@ -81,6 +81,7 @@ dependencies:
   dart_numerics: ^0.0.6
   fuzzywuzzy: ^0.2.0
   bisection: ^0.4.3+1
+  positioned_tap_detector_2: ^1.0.4
 
 
 dev_dependencies:

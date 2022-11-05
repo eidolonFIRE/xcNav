@@ -31,7 +31,7 @@ Widget getWpIcon(String? name, double size, Color? color) {
         height: size,
         child: SvgPicture.asset(
           "assets/images/path.svg",
-          color: Colors.white,
+          color: color ?? Colors.white,
         ));
   }
 

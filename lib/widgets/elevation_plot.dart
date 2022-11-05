@@ -41,7 +41,7 @@ class ElevationPlotPainter extends CustomPainter {
   final Waypoint? waypoint;
   final ETA? waypointETA;
 
-  late final DrawableRoot? svgPin;
+  DrawableRoot? svgPin;
 
   ElevationPlotPainter(this.geoData, this.groundData, this.vertGridRes, {this.waypoint, this.waypointETA}) {
     _paintGround = Paint()
@@ -258,8 +258,10 @@ class ElevationPlotPainter extends CustomPainter {
           } else if (icon.runtimeType == String) {
             // Render svg
             canvas.translate(3, 1);
-            getLoadedSvg(icon)?.scaleCanvasToViewBox(canvas, const Size(32, 32));
+            // getLoadedSvg(icon)?.scaleCanvasToViewBox(canvas, const Size(32, 32));
+            canvas.scale(2.5, 2.5);
             getLoadedSvg(icon)?.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 32, height: 32));
+            canvas.scale(1 / 2.5, 1 / 2.5);
             canvas.translate(-3, -1);
           }
         }

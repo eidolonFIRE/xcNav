@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -43,12 +44,14 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
 
   Future<List<ElevSample?>> doSamples(Geo geo, Waypoint? waypoint) async {
     waypointETA = waypoint?.eta(geo, geo.spdSmooth);
-    // TODO: this doesn't support first intersect from path correctly
     Duration forecastDuration = lookAhead.runtimeType == Duration
         ? lookAhead
         : ((waypointETA != null && waypointETA?.time != null)
             ? Duration(milliseconds: (waypointETA!.time!.inMilliseconds * 1.2).ceil())
             : const Duration(minutes: 10));
+    // Set some limits
+    forecastDuration =
+        Duration(milliseconds: min(forecastDuration.inMilliseconds, const Duration(hours: 10).inMilliseconds));
     final sampleInterval = Duration(milliseconds: (forecastDuration.inMilliseconds / 30).ceil());
 
     Completer<List<ElevSample?>> samplesCompleter = Completer();

@@ -34,7 +34,7 @@ class WaypointNavBar extends StatelessWidget {
                   Text.rich(
                     TextSpan(children: [
                       WidgetSpan(
-                        child: SizedBox(width: 20, height: 30, child: MapMarker(curWp, 30)),
+                        child: getWpIcon(curWp.icon, 25, curWp.getColor()),
                       ),
                       const TextSpan(text: "  "),
                       TextSpan(

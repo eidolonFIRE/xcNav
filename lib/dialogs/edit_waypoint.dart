@@ -12,7 +12,7 @@ import 'package:xcnav/widgets/map_marker.dart';
 final TextEditingController newWaypointName = TextEditingController();
 
 Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
-    {VoidCallback? editPointsCallback, bool isPath = false, bool isNew = false}) {
+    {bool isPath = false, bool isNew = false}) {
   newWaypointName.value = TextEditingValue(text: waypoint.name);
   var formKey = GlobalKey<FormState>();
   var formKeyLatlng = GlobalKey<FormState>();
@@ -142,8 +142,10 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                     child: Form(
                       key: formKeyLatlng,
                       child: TextFormField(
+                        maxLines: 1,
+
                         controller: latlngText,
-                        autofocus: true,
+                        // autofocus: true,
                         validator: (value) {
                           if (value != null) {
                             if (value.trim().isEmpty) return "Must not be empty";
@@ -153,7 +155,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                         },
                         decoration: const InputDecoration(
                           hintText: "Lat, Long  (or google-maps url)",
-                          border: OutlineInputBorder(),
+                          // border: OutlineInputBorder(),
                         ),
                         textAlign: TextAlign.center,
                         textAlignVertical: TextAlignVertical.bottom,
@@ -162,26 +164,6 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                     ),
                   ),
                 ),
-
-                if (!showIconOptions && editPointsCallback != null)
-                  TextButton.icon(
-                      onPressed: () {
-                        var newWaypoint = Waypoint(
-                            name: newWaypointName.text,
-                            latlngs: waypoint.latlng,
-                            icon: selectedIcon,
-                            color: selectedColor.value);
-                        Navigator.pop(context, newWaypoint);
-                        editPointsCallback();
-                      },
-                      icon: const Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                      ),
-                      label: Text(
-                        "Edit Path Points",
-                        style: Theme.of(context).textTheme.button!.merge(const TextStyle(fontSize: 20)),
-                      ))
               ],
             ),
             actions: [

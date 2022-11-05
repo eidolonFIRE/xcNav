@@ -24,6 +24,7 @@ import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/tappablePolyline.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -78,7 +79,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   late PolyEditor polyEditor;
 
   List<Polyline> polyLines = [];
-  final editablePolyline = Polyline(color: Colors.amber, points: [], strokeWidth: 5);
+  final List<LatLng> editablePoints = [];
 
   // ignore: annotate_overrides
   bool get wantKeepAlive => true;
@@ -102,7 +103,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
     polyEditor = PolyEditor(
       addClosePathMarker: false,
-      points: editablePolyline.points,
+      points: editablePoints,
       pointIcon: const Icon(
         Icons.crop_square,
         size: 20,
@@ -123,13 +124,20 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
       callbackRefresh: () => {setState(() {})},
     );
-
-    polyLines.add(editablePolyline);
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  void beginEditingLine(Waypoint waypoint) {
+    polyLines.clear();
+    polyLines.add(Polyline(color: waypoint.getColor(), points: editablePoints, strokeWidth: 5));
+    editablePoints.clear();
+    editablePoints.addAll(waypoint.latlng);
+    editingWp = waypoint.id;
+    setFocusMode(FocusMode.editPath);
   }
 
   void setFocusMode(FocusMode mode) {
@@ -203,7 +211,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     debugPrint("onMapTap: $latlng");
     if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
       // --- Add waypoint in path
-      polyEditor.add(editablePolyline.points, latlng);
+      polyEditor.add(editablePoints, latlng);
     } else {
       setState(() {
         measurementPolyline.points.add(latlng);
@@ -213,8 +221,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   void onMapLongPress(BuildContext context, LatLng latlng) {
     // Prime the editor incase we decide to make a path
-    editablePolyline.points.clear();
-    editablePolyline.points.add(latlng);
+    polyLines.clear();
+    polyLines.add(Polyline(color: Colors.amber, points: editablePoints, strokeWidth: 5));
+    editablePoints.clear();
+    editablePoints.add(latlng);
     tapPointDialog(context, latlng, setFocusMode);
   }
 
@@ -244,9 +254,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         }
                       },
                       allowPanningOnScrollingParent: false,
-                      plugins: [
-                        DragMarkerPlugin(),
-                      ],
+                      plugins: [DragMarkerPlugin(), TappablePolylineMapPlugin()],
                     ),
                     layers: [
                       settings.getMapTileLayer(settings.curMapTiles),
@@ -278,29 +286,60 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         polylines: [plan.buildNextWpIndicator(myTelemetry.geo)],
                       ),
 
-                      // Flight plan paths
-                      PolylineLayerOptions(
-                        polylines: plan.waypoints.values
-                            .where((value) => value.latlng.length > 1)
-                            .mapIndexed((i, e) => Polyline(points: e.latlng, strokeWidth: 6, color: e.getColor()))
-                            .toList(),
-                      ),
-
                       // Polyline Directional Barbs
                       MarkerLayerOptions(
                           markers: makePathBarbs(
                               editingWp != null
                                   ? plan.waypoints.values.whereNot((element) => element.id == editingWp)
-                                  // TODO: revisit
-                                  // ...add(Waypoint(plan.waypoints[editingWp!].name, editablePolyline.points, null,
-                                  //     plan.waypoints[editingWp!].color)))
                                   : plan.waypoints.values,
                               45,
-                              Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
-                                  ? 1000
-                                  : 1609.344)),
+                              ((mapReady && mapController.zoom < 11) ? 10 : 1) *
+                                  (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
+                                          DisplayUnitsDist.metric
+                                      ? 1000
+                                      : 1609.344))),
 
-                      // Flight plan markers
+                      // Polyline Directional Barbs for live edit
+                      if (editablePoints.isNotEmpty && editingWp != null)
+                        MarkerLayerOptions(
+                            markers: makePathBarbs(
+                                [
+                              Waypoint(
+                                  name: plan.waypoints[editingWp!]?.name ?? "",
+                                  latlngs: editablePoints,
+                                  color: plan.waypoints[editingWp!]?.color)
+                            ],
+                                45,
+                                ((mapReady && mapController.zoom < 11) ? 10 : 1) *
+                                    (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
+                                            DisplayUnitsDist.metric
+                                        ? 1000
+                                        : 1609.344))),
+
+                      // Waypoints: paths
+                      TappablePolylineLayerOptions(
+                          pointerDistanceTolerance: 20,
+                          polylineCulling: true,
+                          polylines: plan.waypoints.values
+                              .where((value) => value.latlng.length > 1)
+                              .whereNot(
+                                (element) => element.id == editingWp,
+                              )
+                              .mapIndexed((i, e) =>
+                                  TaggedPolyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), tag: e.id))
+                              .toList(),
+                          onTap: (p0, tapPosition) {
+                            // Select this path waypoint
+                            plan.selectedWp = plan.waypoints[p0.tag];
+                          },
+                          onLongPress: ((p0, tapPosition) {
+                            // Start editing path waypoint
+                            if (plan.waypoints.containsKey(p0.tag)) {
+                              beginEditingLine(plan.waypoints[p0.tag]!);
+                            }
+                          })),
+
+                      // Waypoints: pin markers
                       DragMarkerPluginOptions(
                         markers: plan.waypoints.values
                             .map((e) => e.latlng.length == 1
@@ -562,7 +601,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
               }
               return Positioned(
                   right: Provider.of<Settings>(context).mapControlsRightSide ? 70 : 0,
-                  bottom: 0,
+                  bottom: 80,
                   // left: 100,
                   child: Column(
                     verticalDirection: VerticalDirection.up,
@@ -644,9 +683,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     ),
                     onPressed: () {
                       setState(() {
-                        var tmp = editablePolyline.points.toList();
-                        editablePolyline.points.clear();
-                        editablePolyline.points.addAll(tmp.reversed);
+                        var tmp = editablePoints.toList();
+                        editablePoints.clear();
+                        editablePoints.addAll(tmp.reversed);
                       });
                     },
                   ),
@@ -660,7 +699,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     ),
                     onPressed: () => {setFocusMode(prevFocusMode)},
                   ),
-                  if (editablePolyline.points.length > 1)
+                  if (editablePoints.length > 1)
                     IconButton(
                       padding: EdgeInsets.zero,
                       iconSize: 40,
@@ -673,7 +712,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         // --- finish editing path
                         var plan = Provider.of<ActivePlan>(context, listen: false);
                         if (editingWp == null) {
-                          var temp = Waypoint(name: "", latlngs: editablePolyline.points.toList());
+                          var temp = Waypoint(name: "", latlngs: editablePoints.toList());
                           editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
                               ?.then((newWaypoint) {
                             if (newWaypoint != null) {
@@ -681,7 +720,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             }
                           });
                         } else {
-                          plan.moveWaypoint(editingWp!, editablePolyline.points.toList());
+                          plan.moveWaypoint(editingWp!, editablePoints.toList());
                           editingWp = null;
                         }
                         setFocusMode(prevFocusMode);
@@ -692,13 +731,14 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
             ),
 
           // --- Current waypoint
-          Positioned(
-              bottom: 5,
-              child: ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
-                  child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                      child: Container(color: Colors.white30, child: const WaypointNavBar())))),
+          if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
+            Positioned(
+                bottom: 5,
+                child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                        child: Container(color: Colors.white30, child: const WaypointNavBar())))),
 
           // --- Map View Buttons
           Positioned(

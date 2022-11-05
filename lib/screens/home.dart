@@ -39,6 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   PageController viewController = PageController(initialPage: 0);
   int viewPageIndex = 1;
+  final pageIndexNames = ["Menu", "Map", "Side", "Points", "Chat"];
 
   final features = [
     "focusOnMe",
@@ -114,6 +115,12 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     debugPrint("Build /home");
     setSystemUI();
+
+    if (pageIndexNames[viewPageIndex] == "Chat") {
+      // Don't notify
+      Provider.of<ChatMessages>(context, listen: false).markAllRead(false);
+    }
+
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(

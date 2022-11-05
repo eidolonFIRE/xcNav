@@ -37,7 +37,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
   final filterText = TextEditingController();
   String? filterIcon;
   Color? filterColor;
-  bool filterDist = false;
+  bool filterDist = true;
 
   int compareColor(Color a, Color b) {
     return (a.blue - b.blue).abs() + (a.red - b.red).abs() + (a.green - b.green).abs();
@@ -123,17 +123,17 @@ class ViewWaypointsState extends State<ViewWaypoints> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // --- Filter Distance
-                Switch(
-                  value: filterDist,
-                  inactiveThumbImage: IconImageProvider(Icons.straighten),
-                  activeThumbImage: IconImageProvider(Icons.straighten, color: Colors.black),
-                  onChanged: (value) {
-                    setState(() {
-                      filterDist = value;
-                    });
-                  },
-                ),
+                // // --- Filter Distance
+                // Switch(
+                //   value: filterDist,
+                //   inactiveThumbImage: IconImageProvider(Icons.straighten),
+                //   activeThumbImage: IconImageProvider(Icons.straighten, color: Colors.black),
+                //   onChanged: (value) {
+                //     setState(() {
+                //       filterDist = value;
+                //     });
+                //   },
+                // ),
 
                 // --- Filter Color
                 DropdownButtonHideUnderline(
@@ -150,7 +150,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                             value: e,
                             child: Card(
                               color: e,
-                              child: const SizedBox(width: 50, height: 30),
+                              child: const SizedBox(width: 40, height: 30),
                             )))
                       ],
                       onChanged: ((value) {
@@ -314,8 +314,6 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                           editWaypoint(
                             context,
                             items[i],
-                            // TODO
-                            // editPointsCallback: () => onEditPoints(i),
                           )?.then((newWaypoint) {
                             if (newWaypoint != null) {
                               // --- Update selected waypoint
@@ -354,17 +352,15 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                       )
                     ],
                   ),
-                  child: Expanded(
-                    child: WaypointCard(
-                      waypoint: items[i],
-                      index: i,
-                      refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
-                      onSelect: () {
-                        debugPrint("Selected $i");
-                        activePlan.selectedWp = items[i];
-                      },
-                      isSelected: items[i].id == activePlan.selectedWp?.id,
-                    ),
+                  child: WaypointCard(
+                    waypoint: items[i],
+                    index: i,
+                    refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
+                    onSelect: () {
+                      debugPrint("Selected ${items[i].id}");
+                      activePlan.selectedWp = items[i];
+                    },
+                    isSelected: items[i].id == activePlan.selectedWp?.id,
                   ),
                 ),
               );

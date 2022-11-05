@@ -46,12 +46,13 @@ typedef WaypointID = String;
 class Waypoint {
   late String name;
   late List<LatLng> _latlng;
-  late String? icon;
+  late String? _icon;
   late int? color;
   late final WaypointID id;
 
   double? _length;
   List<Barb>? _barbs;
+  double? _barbInterval;
 
   List<double>? _elevation;
 
@@ -60,9 +61,15 @@ class Waypoint {
 
   bool get isPath => _latlng.length > 1;
 
-  Waypoint({required this.name, required List<LatLng> latlngs, this.icon, this.color, this.id = ""}) {
+  String? get icon => isPath ? "PATH" : _icon;
+  set icon(String? newIcon) {
+    _icon = newIcon;
+  }
+
+  Waypoint({required this.name, required List<LatLng> latlngs, String? icon, this.color, WaypointID? newId}) {
     latlng = latlngs;
-    if (id == "") id = makeId();
+    _icon = icon;
+    id = newId ?? makeId();
   }
 
   @override
@@ -72,7 +79,7 @@ class Waypoint {
   Waypoint.fromJson(json) {
     id = json["id"] ?? makeId();
     name = json["name"];
-    icon = json["icon"];
+    _icon = json["icon"];
     color = json["color"];
     _latlng = [];
     List<dynamic> rawList = json["latlng"];
@@ -97,6 +104,7 @@ class Waypoint {
     _latlng = newLatlngs;
     _length = null;
     _barbs = null;
+    _barbInterval = null;
     _segments = null;
     _elevation = null;
   }
@@ -109,7 +117,10 @@ class Waypoint {
   }
 
   List<Barb> getBarbs(interval) {
-    return _barbs ??= _makeBarbs(interval);
+    if (interval != _barbInterval || _barbs == null) {
+      _barbs = _makeBarbs(interval);
+    }
+    return _barbs!;
   }
 
   /// Elevation per latlng point. (will be lazy loaded so it may return [0, ...] at first)
@@ -226,6 +237,7 @@ class Waypoint {
 
     barbs.add(Barb(latlng.last, latlngCalc.bearing(latlng[latlng.length - 2], latlng.last) * pi / 180));
 
+    _barbInterval = interval;
     return barbs;
   }
 
