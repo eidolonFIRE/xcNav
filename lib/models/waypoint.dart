@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:math';
+import 'package:bisection/bisect.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/dem_service.dart';
@@ -142,9 +144,9 @@ class Waypoint {
   List<double> get segments {
     if (_segments == null) {
       // Bake the list
-      _segments = [];
+      _segments = [0];
       for (int t = 0; t < latlng.length - 1; t++) {
-        _segments!.add(latlngCalc.distance(latlng[t], latlng[t + 1]));
+        _segments!.add(_segments!.last + latlngCalc.distance(latlng[t], latlng[t + 1]));
       }
     }
     return _segments!;
@@ -167,7 +169,7 @@ class Waypoint {
       // --- to point
       if (latlng.isNotEmpty) {
         double dist = geo.distanceToLatlng(latlng[0]);
-        return ETA.fromSpeed(dist, speed);
+        return ETA.fromSpeed(dist, speed, pathIntercept: PathIntercept(0, latlng.first));
       } else {
         return ETA.fromSpeed(0, speed);
       }
@@ -177,43 +179,38 @@ class Waypoint {
   /// Linear interpolate down the path by some distance.
   /// If `initialLatlng` is given, that point will precede the selected path points.
   Barb interpolate(double distance, int startIndex, {int? endIndex, LatLng? initialLatlng}) {
-    if (!isPath) return Barb(latlng[0], 0);
-
-    List<LatLng> points = latlng.sublist(startIndex, endIndex);
-    List<double> segs = segments.sublist(startIndex, endIndex == null ? null : (endIndex - 1));
-
-    if (points.length == 1) return Barb(points.first, 0);
-    if (points.isEmpty) return Barb(latlng[0], 0);
-
+    double initialSeg = 0;
     if (initialLatlng != null) {
-      points.insert(0, initialLatlng);
-      segs.insert(0, latlngCalc.distance(initialLatlng, latlng[0]));
+      /// Imaginary added segment to the beginning
+      initialSeg = latlngCalc.distance(initialLatlng, latlng[startIndex]);
+
+      // Early-out for first imaginary segment
+      if (distance <= initialSeg || !isPath) {
+        final brg = latlngCalc.bearing(initialLatlng, latlng[startIndex]);
+        return Barb(latlngCalc.offset(initialLatlng, distance, brg), brg * pi / 180);
+      }
     }
 
-    // Check for overflow
-    // if (distance >= segs.reduce((a, b) => a + b)) {
-    //   return Barb(points.last, latlngCalc.bearing(points[points.length - 2], points.last) * pi / 180);
-    // }
+    /// value of segments not in use
+    final offsetSegs = segments[startIndex];
+    int segIndex = max(
+        0,
+        bisect_left<double>(segments, distance + offsetSegs - initialSeg,
+                hi: segments.length - 1, compare: (a, b) => (a - b).toInt()) -
+            1);
+    final distRemaining = distance - segments[segIndex] + offsetSegs - initialSeg;
 
-    // Iter through segs until we find the segment we are in the middle of
-    int segIndex = 0;
-    double distTicker = 0;
-    // debugPrint("${segs}");
-    while (segs[segIndex] + distTicker < distance && segIndex < segs.length - 1) {
-      // we can still jump to the next segment
-      distTicker += segs[segIndex];
-      segIndex++;
-    }
-    // debugPrint("seg: $segIndex, dist: $distTicker / $distance");
-
-    final brg = latlngCalc.bearing(points[segIndex], points[segIndex + 1]);
-    return Barb(latlngCalc.offset(points[segIndex], distance - distTicker, brg), brg * pi / 180);
+    /// If we start from the last point, use the last segment heading
+    final brg = segIndex >= latlng.length - 1
+        ? latlngCalc.bearing(latlng[segIndex - 1], latlng[segIndex])
+        : latlngCalc.bearing(latlng[segIndex], latlng[segIndex + 1]);
+    return Barb(latlngCalc.offset(latlng[segIndex], distRemaining, brg), brg * pi / 180);
   }
 
   /// Cumulative segment distances between path vertices
   double lengthBetweenIndexs(int start, int end) {
     if (start >= end) return 0;
-    return segments.sublist(start, end).reduce((a, b) => a + b);
+    return segments[end] - segments[start];
   }
 
   List<Barb> _makeBarbs(double interval) {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -122,20 +123,34 @@ class ActivePlan with ChangeNotifier {
     notifyListeners();
   }
 
-  Polyline buildNextWpIndicator(Geo geo) {
-    List<LatLng> points = [geo.latLng];
-
+  List<Polyline> buildNextWpIndicator(Geo geo, double interval) {
     if (selectedWp != null) {
-      // update wp guide
-      LatLng? target;
-      if (selectedWp!.latlng.length > 1) {
-        target = geo.nearestPointOnPath(selectedWp!.latlng, false).latlng;
-      } else if (selectedWp!.latlng.isNotEmpty) {
-        target = selectedWp!.latlng[0];
-      }
-      if (target != null) points.add(target);
-    }
+      final waypointETA = selectedWp!.eta(geo, 1);
 
-    return Polyline(points: points, color: Colors.red, strokeWidth: 5);
+      // Underlying grey line
+      List<Polyline> lines = [];
+      lines.add(Polyline(
+          points: [geo.latLng] + selectedWp!.latlng.sublist(waypointETA.pathIntercept?.index ?? 0),
+          color: Colors.white60,
+          strokeWidth: 20));
+
+      // Dashes
+      List<LatLng> points = [];
+      for (double t = 1; t < waypointETA.distance; t += min(interval, waypointETA.distance - t)) {
+        points.add(selectedWp!.interpolate(t, waypointETA.pathIntercept?.index ?? 0, initialLatlng: geo.latLng).latlng);
+      }
+      for (int t = 1; t < points.length - 1; t += 2) {
+        lines.add(Polyline(
+            points: [points[t], points[t + 1]],
+            // Dark dash every 10th mile
+            color: (t % 5 == 4) ? Colors.black : Colors.black45,
+            strokeWidth: 20,
+            strokeCap: StrokeCap.butt));
+      }
+
+      return lines;
+    } else {
+      return [];
+    }
   }
 }

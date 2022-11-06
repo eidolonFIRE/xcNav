@@ -284,16 +284,20 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               useRadiusInMeter: true)
                         ]),
 
+                      // Indicate next waypoint
                       PolylineLayerOptions(
-                        polylines: [plan.buildNextWpIndicator(myTelemetry.geo)],
+                        polylines: plan.buildNextWpIndicator(
+                            myTelemetry.geo,
+                            (Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
+                                ? 1000
+                                : 1609.344)),
                       ),
 
                       // Polyline Directional Barbs
                       MarkerLayerOptions(
                           markers: makePathBarbs(
-                              editingWp != null
-                                  ? plan.waypoints.values.whereNot((element) => element.id == editingWp)
-                                  : plan.waypoints.values,
+                              plan.waypoints.values
+                                  .whereNot((element) => element.id == editingWp || element.id == plan.selectedWp?.id),
                               45,
                               ((mapReady && mapController.zoom < 11) ? 10 : 1) *
                                   (Provider.of<Settings>(context, listen: false).displayUnitsDist ==

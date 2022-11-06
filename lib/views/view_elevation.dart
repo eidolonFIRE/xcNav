@@ -57,22 +57,16 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
     Completer<List<ElevSample?>> samplesCompleter = Completer();
     List<Completer<ElevSample?>> completers = [];
 
-    /// Degrees
-    double bearing = geo.hdg / pi * 180;
-    if (waypoint != null) {
-      bearing = latlngCalc.bearing(geo.latLng, waypoint.latlng.first);
-    }
-
     // Build up a list of individual tasks that need to complete
     for (int t = 0; t <= forecastDuration.inMilliseconds; t += sampleInterval.inMilliseconds) {
       final Completer<ElevSample?> newCompleter = Completer();
-      final sampleLatlng = waypoint?.isPath == true
-          ? waypoint!
+      final sampleLatlng = waypoint != null
+          ? waypoint
               .interpolate(
-                  waypointETA!.distance * t / waypointETA!.time!.inMilliseconds, waypointETA!.pathIntercept!.index,
+                  waypointETA!.distance * t / waypointETA!.time!.inMilliseconds, waypointETA!.pathIntercept?.index ?? 0,
                   initialLatlng: geo.latLng)
               .latlng
-          : latlngCalc.offset(geo.latLng, geo.spdSmooth * t / 1000, bearing);
+          : latlngCalc.offset(geo.latLng, geo.spdSmooth * t / 1000, geo.hdg / pi * 180);
       // debugPrint("${sampleLatlng}");
       sampleDem(sampleLatlng, false).then((value) {
         if (value != null) {
