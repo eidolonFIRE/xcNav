@@ -32,16 +32,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
       return Scaffold(
           appBar: AppBar(
             title: const Text("Settings"),
-            // TODO: when we have enough settings, we can use a search
-            // title: SizedBox(
-            //   height: 32,
-            //   child: TextField(
-            //     style: const TextStyle(fontSize: 24),
-            //     controller: searchInput,
-            //     decoration:
-            //         const InputDecoration(suffixIcon: Icon(Icons.search)),
-            //   ),
-            // ),
           ),
           body: SettingsList(
             darkTheme: SettingsThemeData(

@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
@@ -76,7 +75,7 @@ class TaggedPolyline extends Polyline {
 class TappablePolylineLayerWidget extends StatelessWidget {
   final TappablePolylineLayerOptions options;
 
-  TappablePolylineLayerWidget({Key? key, required this.options}) : super(key: key);
+  const TappablePolylineLayerWidget({Key? key, required this.options}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +99,7 @@ class TappablePolylineLayer extends StatelessWidget {
   /// The Stream used by flutter_map to notify us when a redraw is required
   final Stream<void> stream;
 
-  TappablePolylineLayer(this.polylineOpts, this.map, this.stream);
+  const TappablePolylineLayer(this.polylineOpts, this.map, this.stream, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

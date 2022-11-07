@@ -49,7 +49,8 @@ List<Marker> buildMeasurementMarkers(List<LatLng> points) {
                   if (index > 0 || points.length > 1)
                     Text.rich(
                       TextSpan(children: [
-                        richValue(UnitType.distCoarse, sumDist[index], valueStyle: valueStyle, unitStyle: unitStyle),
+                        richValue(UnitType.distCoarse, sumDist[index],
+                            valueStyle: valueStyle, unitStyle: unitStyle, autoDecimalThresh: 10.0),
                         // TextSpan(text: " + "),
                         // richValue(UnitType.distCoarse, dist, valueStyle: valueStyle, unitStyle: unitStyle),
                         // TextSpan(text: ")"),

@@ -13,7 +13,6 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/widgets/icon_image.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
 // --- Widgets
@@ -252,7 +251,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                                 );
                               }).then((value) {
                             if (value) {
-                              activePlan.waypoints.clear();
+                              activePlan.clearAllWayponits();
                               Provider.of<Client>(context, listen: false).pushWaypoints();
                             }
                           });
@@ -362,9 +361,9 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                       refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
                       onSelect: () {
                         debugPrint("Selected ${items[i].id}");
-                        activePlan.selectedWp = items[i];
+                        activePlan.selectedWp = items[i].id;
                       },
-                      isSelected: items[i].id == activePlan.selectedWp?.id,
+                      isSelected: items[i].id == activePlan.selectedWp,
                     ),
                   ),
                 );

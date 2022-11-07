@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -13,7 +12,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
-import 'package:xcnav/dialogs/tap_point.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -24,11 +22,9 @@ import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/adsb.dart';
-import 'package:xcnav/tappablePolyline.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
-import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
 import 'package:xcnav/widgets/map_marker.dart';
@@ -38,6 +34,7 @@ import 'package:xcnav/widgets/waypoint_nav_bar.dart';
 
 // dialogs
 import 'package:xcnav/dialogs/edit_waypoint.dart';
+import 'package:xcnav/dialogs/tap_point.dart';
 
 // models
 import 'package:xcnav/models/geo.dart';
@@ -47,6 +44,7 @@ import 'package:xcnav/models/waypoint.dart';
 
 // misc
 import 'package:xcnav/units.dart';
+import 'package:xcnav/tappablePolyline.dart';
 
 enum FocusMode {
   unlocked,
@@ -284,7 +282,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               useRadiusInMeter: true)
                         ]),
 
-                      // Indicate next waypoint
+                      // Next waypoint: path
                       PolylineLayerOptions(
                         polylines: plan.buildNextWpIndicator(
                             myTelemetry.geo,
@@ -293,38 +291,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 : 1609.344)),
                       ),
 
-                      // Polyline Directional Barbs
-                      MarkerLayerOptions(
-                          markers: makePathBarbs(
-                              plan.waypoints.values
-                                  .whereNot((element) => element.id == editingWp || element.id == plan.selectedWp?.id),
-                              45,
-                              ((mapReady && mapController.zoom < 11) ? 10 : 1) *
-                                  (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
-                                          DisplayUnitsDist.metric
-                                      ? 1000
-                                      : 1609.344))),
-
-                      // Polyline Directional Barbs for live edit
-                      if (editablePoints.isNotEmpty && editingWp != null)
-                        MarkerLayerOptions(
-                            markers: makePathBarbs(
-                                [
-                              Waypoint(
-                                  name: plan.waypoints[editingWp!]?.name ?? "",
-                                  latlngs: editablePoints,
-                                  color: plan.waypoints[editingWp!]?.color)
-                            ],
-                                45,
-                                ((mapReady && mapController.zoom < 11) ? 10 : 1) *
-                                    (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
-                                            DisplayUnitsDist.metric
-                                        ? 1000
-                                        : 1609.344))),
-
                       // Waypoints: paths
                       TappablePolylineLayerOptions(
-                          pointerDistanceTolerance: 20,
+                          pointerDistanceTolerance: 30,
                           polylineCulling: true,
                           polylines: plan.waypoints.values
                               .where((value) => value.latlng.length > 1)
@@ -336,7 +305,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               .toList(),
                           onTap: (p0, tapPosition) {
                             // Select this path waypoint
-                            plan.selectedWp = plan.waypoints[p0.tag];
+                            if (plan.selectedWp == p0.tag) {
+                              plan.waypoints[p0.tag]?.toggleDirection();
+                            }
+                            plan.selectedWp = p0.tag;
                           },
                           onLongPress: ((p0, tapPosition) {
                             // Start editing path waypoint
@@ -344,6 +316,28 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               beginEditingLine(plan.waypoints[p0.tag]!);
                             }
                           })),
+
+                      // Next waypoint: barbs
+                      MarkerLayerOptions(
+                          markers: plan
+                              .buildNextWpBarbs(
+                                  myTelemetry.geo,
+                                  (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
+                                          DisplayUnitsDist.metric
+                                      ? 1000
+                                      : 1609.344))
+                              .map((e) => Marker(
+                                  point: e.latlng,
+                                  width: 20,
+                                  height: 20,
+                                  builder: (ctx) => IgnorePointer(
+                                        child: Container(
+                                            transformAlignment: const Alignment(0, 0),
+                                            transform: Matrix4.rotationZ(e.hdg),
+                                            child:
+                                                SvgPicture.asset("assets/images/chevron.svg", color: Colors.black87)),
+                                      )))
+                              .toList()),
 
                       // Waypoints: pin markers
                       DragMarkerPluginOptions(
@@ -355,7 +349,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     width: 40 * 0.8,
                                     updateMapNearEdge: true,
                                     useLongPress: true,
-                                    onTap: (_) => plan.selectedWp = e,
+                                    onTap: (_) => plan.selectedWp = e.id,
                                     onLongDragEnd: (p0, p1) => {
                                           plan.moveWaypoint(e.id, [p1])
                                         },
@@ -789,19 +783,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // --- Focus on Me
-                      DescribedFeatureOverlay(
-                        featureId: "focusOnMe",
-                        tapTarget: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
-                        title: const Text("Focus on Me"),
-                        overflowMode: OverflowMode.extendBackground,
-                        description: const Text("Keep me in center of view."),
-                        child: MapButton(
-                          size: 60,
-                          selected: focusMode == FocusMode.me,
-                          child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
-                          onPressed: () => setFocusMode(FocusMode.me),
-                        ),
+                      MapButton(
+                        size: 60,
+                        selected: focusMode == FocusMode.me,
+                        child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                        onPressed: () => setFocusMode(FocusMode.me),
                       ),
+
                       //
                       SizedBox(
                           width: 2,
@@ -810,18 +798,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             color: Colors.black,
                           )),
                       // --- Focus on Group
-                      DescribedFeatureOverlay(
-                        featureId: "focusOnGroup",
-                        tapTarget: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
-                        title: const Text("Follow Group"),
-                        overflowMode: OverflowMode.extendBackground,
-                        description: const Text("Keep everyone in view."),
-                        child: MapButton(
-                          size: 60,
-                          selected: focusMode == FocusMode.group,
-                          onPressed: () => setFocusMode(FocusMode.group),
-                          child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
-                        ),
+                      MapButton(
+                        size: 60,
+                        selected: focusMode == FocusMode.group,
+                        onPressed: () => setFocusMode(FocusMode.group),
+                        child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
                       ),
                     ],
                   ),

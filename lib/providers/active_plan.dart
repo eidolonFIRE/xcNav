@@ -1,5 +1,5 @@
+// ignore_for_file: curly_braces_in_flow_control_structures
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -18,7 +18,7 @@ class ActivePlan with ChangeNotifier {
     Waypoint waypoint,
   )? onWaypointAction;
 
-  void Function(WaypointID waypointID)? onSelectWaypoint;
+  void Function(WaypointID? waypointID)? onSelectWaypoint;
 
   @override
   ActivePlan() {
@@ -37,14 +37,22 @@ class ActivePlan with ChangeNotifier {
     super.notifyListeners();
   }
 
-  Waypoint? _selectedWp;
-  Waypoint? get selectedWp => _selectedWp;
-  set selectedWp(Waypoint? waypoint) {
+  WaypointID? _selectedWp;
+  WaypointID? get selectedWp => _selectedWp;
+  set selectedWp(WaypointID? waypointID) {
     // check this waypoint is in our list
-    if (waypoint != null && waypoints.containsKey(waypoint.id)) {
-      _selectedWp = waypoint;
-      if (onSelectWaypoint != null) onSelectWaypoint!(waypoint.id);
+    if (waypoints.containsKey(waypointID)) {
+      _selectedWp = waypointID;
+      onSelectWaypoint?.call(waypointID);
       notifyListeners();
+    }
+  }
+
+  Waypoint? getSelectedWp() {
+    if (waypoints.containsKey(_selectedWp)) {
+      return waypoints[_selectedWp];
+    } else {
+      return null;
     }
   }
 
@@ -65,6 +73,11 @@ class ActivePlan with ChangeNotifier {
     await prefs.setStringList("flightPlan.waypoints", waypoints.values.map((e) => e.toString()).toList());
   }
 
+  void clearAllWayponits() {
+    waypoints.clear();
+    notifyListeners();
+  }
+
   void parseWaypointsSync(Map<String, dynamic> planData) {
     waypoints.clear();
     // add back each waypoint
@@ -82,14 +95,14 @@ class ActivePlan with ChangeNotifier {
   }
 
   void backendRemoveWaypoint(WaypointID id) {
-    if (id == selectedWp?.id) selectedWp = null;
+    if (id == selectedWp) selectedWp = null;
     waypoints.remove(id);
     isSaved = false;
     notifyListeners();
   }
 
   void removeWaypoint(WaypointID waypointID) {
-    if (selectedWp?.id == waypointID) {
+    if (selectedWp == waypointID) {
       selectedWp = null;
     }
     backendRemoveWaypoint(waypointID);
@@ -124,33 +137,49 @@ class ActivePlan with ChangeNotifier {
   }
 
   List<Polyline> buildNextWpIndicator(Geo geo, double interval) {
-    if (selectedWp != null) {
-      final waypointETA = selectedWp!.eta(geo, 1);
+    final waypointETA = getSelectedWp()?.eta(geo, 1);
 
-      // Underlying grey line
-      List<Polyline> lines = [];
-      lines.add(Polyline(
-          points: [geo.latLng] + selectedWp!.latlng.sublist(waypointETA.pathIntercept?.index ?? 0),
-          color: Colors.white60,
-          strokeWidth: 20));
-
-      // Dashes
-      List<LatLng> points = [];
-      for (double t = 1; t < waypointETA.distance; t += min(interval, waypointETA.distance - t)) {
-        points.add(selectedWp!.interpolate(t, waypointETA.pathIntercept?.index ?? 0, initialLatlng: geo.latLng).latlng);
-      }
-      for (int t = 1; t < points.length - 1; t += 2) {
-        lines.add(Polyline(
-            points: [points[t], points[t + 1]],
-            // Dark dash every 10th mile
-            color: (t % 5 == 4) ? Colors.black : Colors.black45,
-            strokeWidth: 20,
-            strokeCap: StrokeCap.butt));
-      }
-
-      return lines;
-    } else {
-      return [];
+    // Underlying grey line
+    if (waypointETA != null) {
+      return [
+        Polyline(
+            points: [geo.latLng] + getSelectedWp()!.latlngOriented.sublist(waypointETA.pathIntercept?.index ?? 0),
+            color: Colors.white70,
+            strokeWidth: 20)
+      ];
     }
+
+    return [];
+  }
+
+  List<BarbData> buildNextWpBarbs(Geo geo, double interval) {
+    final waypointETA = getSelectedWp()?.eta(geo, 1);
+    List<BarbData> barbs = [];
+
+    /// I tried some algorithms to replace this, but turns out this is simpler and more performant. \shrug
+    int barbSpacing(int t) {
+      if (t < 5)
+        return 1;
+      else if (t < 10)
+        return 5;
+      else if (t < 50)
+        return 10;
+      else if (t < 100)
+        return 50;
+      else
+        return 100;
+    }
+
+    // Dashes
+    if (waypointETA != null) {
+      for (int t = 1; t < waypointETA.distance / interval; t += barbSpacing(t)) {
+        barbs.add(getSelectedWp()!
+            .interpolate(t * interval, waypointETA.pathIntercept?.index ?? 0, initialLatlng: geo.latLng));
+      }
+
+      return barbs;
+    }
+
+    return [];
   }
 }

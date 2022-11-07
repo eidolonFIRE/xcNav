@@ -143,7 +143,7 @@ class Geo {
         // debugPrint("match: $index) $dist  $angleToNext");
       }
     }
-    return PathIntercept(matchIndex, path[matchIndex]);
+    return PathIntercept(isReversed ? path.length - 1 - matchIndex : matchIndex, path[matchIndex]);
   }
 
   double distanceTo(Geo other) {

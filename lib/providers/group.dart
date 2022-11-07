@@ -137,7 +137,7 @@ class Group with ChangeNotifier {
     }
   }
 
-  void pilotSelectedWaypoint(String pilotID, WaypointID waypointID) {
+  void pilotSelectedWaypoint(String pilotID, WaypointID? waypointID) {
     Pilot? pilot = pilots[pilotID];
     if (pilot != null) {
       pilot.selectedWp = waypointID;

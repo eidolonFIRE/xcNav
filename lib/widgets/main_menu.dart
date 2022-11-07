@@ -1,4 +1,3 @@
-import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
@@ -231,23 +230,13 @@ class _MainMenuState extends State<MainMenu> {
             "Group",
             style: Theme.of(context).textTheme.headline5,
           ),
-          trailing: DescribedFeatureOverlay(
-            featureId: "qrScanner",
-            title: const Text("Join / Invite"),
-            description: const Text("Scan a QR code to join a group."),
-            tapTarget: const Icon(
-              Icons.qr_code_scanner,
-              color: Colors.lightBlue,
-              size: 50,
-            ),
-            child: IconButton(
-                iconSize: 30,
-                onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
-                icon: const Icon(
-                  Icons.qr_code_scanner,
-                  color: Colors.lightBlue,
-                )),
-          ),
+          trailing: IconButton(
+              iconSize: 30,
+              onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
+              icon: const Icon(
+                Icons.qr_code_scanner,
+                color: Colors.lightBlue,
+              )),
         ),
 
         ListTile(

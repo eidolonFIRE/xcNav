@@ -8,7 +8,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:provider/provider.dart';
-import 'package:xcnav/dialogs/tap_point.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
@@ -18,17 +17,16 @@ import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/tappablePolyline.dart';
-import 'package:xcnav/units.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
-import 'package:xcnav/widgets/make_path_barbs.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
 // --- Misc
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/views/view_map.dart';
+import 'package:xcnav/tappablePolyline.dart';
+import 'package:xcnav/dialogs/tap_point.dart';
 
 class PlanEditor extends StatefulWidget {
   const PlanEditor({Key? key}) : super(key: key);
@@ -195,36 +193,6 @@ class _PlanEditorState extends State<PlanEditor> {
                     ),
                     layers: [
                       Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName, opacity: 1.0),
-
-                      // Polyline Directional Barbs
-                      MarkerLayerOptions(
-                          markers: makePathBarbs(
-                              editingWp != null
-                                  ? plan!.waypoints.values.whereNot((element) => element.id == editingWp)
-                                  : plan!.waypoints.values,
-                              45,
-                              ((mapReady && mapController.zoom < 11) ? 10 : 1) *
-                                  (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
-                                          DisplayUnitsDist.metric
-                                      ? 1000
-                                      : 1609.344))),
-
-                      // Polyline Directional Barbs for live edit
-                      if (editablePoints.isNotEmpty && editingWp != null)
-                        MarkerLayerOptions(
-                            markers: makePathBarbs(
-                                [
-                              Waypoint(
-                                  name: plan!.waypoints[editingWp!]?.name ?? "",
-                                  latlngs: editablePoints,
-                                  color: plan!.waypoints[editingWp!]?.color)
-                            ],
-                                45,
-                                ((mapReady && mapController.zoom < 11) ? 10 : 1) *
-                                    (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
-                                            DisplayUnitsDist.metric
-                                        ? 1000
-                                        : 1609.344))),
 
                       // Flight plan markers
                       TappablePolylineLayerOptions(

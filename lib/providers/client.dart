@@ -266,7 +266,7 @@ class Client with ChangeNotifier {
     });
   }
 
-  void selectWaypoint(WaypointID waypointID) {
+  void selectWaypoint(WaypointID? waypointID) {
     sendToAWS("pilotSelectedWaypoint",
         {"pilot_id": Provider.of<Profile>(context, listen: false).id, "waypoint_id": waypointID});
   }

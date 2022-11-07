@@ -188,14 +188,15 @@ class AudioCueService {
 
   void cueNextWaypoint(Geo myGeo) {
     // --- Next Waypoint
-    if (mode != null && activePlan.selectedWp != null && (config["Next Waypoint"] ?? false)) {
+    final selectedWp = activePlan.getSelectedWp();
+    if (mode != null && selectedWp != null && (config["Next Waypoint"] ?? false)) {
       final maxInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][1]! as double) * 60).toInt());
       final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
       final hdgPrecision = precisionLUT["hdg"][mode];
 
-      final target = activePlan.selectedWp!.latlng.length > 1
-          ? myGeo.nearestPointOnPath(activePlan.selectedWp!.latlng, false).latlng
-          : activePlan.selectedWp!.latlng[0];
+      final target = selectedWp.latlng.length > 1
+          ? myGeo.nearestPointOnPath(selectedWp.latlng, false).latlng
+          : selectedWp.latlng[0];
 
       final relativeHdg = myGeo.relativeHdgLatlng(target);
 
@@ -206,7 +207,7 @@ class AudioCueService {
           (DateTime.now().isAfter(lastHdg!.timestamp.add(minInterval)) && ((relativeHdg).abs() >= hdgPrecision))) {
         lastHdg = LastReport.now(myGeo.hdg);
 
-        final eta = activePlan.selectedWp!.eta(myGeo, myGeo.spd);
+        final eta = selectedWp.eta(myGeo, myGeo.spd);
         if (eta.time != null) {
           final etaTime = printHrMinLexical(eta.time!);
           final dist = printDoubleLexical(
@@ -227,8 +228,8 @@ class AudioCueService {
   }
 
   void cueFuel(Geo myGeo, double fuel, Duration fuelTimeRemaining) {
-    if (mode != null && fuel > 0 && activePlan.selectedWp != null) {
-      final etaNext = activePlan.selectedWp!.eta(myGeo, myGeo.spd);
+    if (mode != null && fuel > 0 && activePlan.getSelectedWp() != null) {
+      final etaNext = activePlan.getSelectedWp()!.eta(myGeo, myGeo.spd);
       if (etaNext.time != null && fuelTimeRemaining < etaNext.time!) {
         final minInterval = Duration(seconds: ((intervalLUT["Fuel"][mode][0]! as double) * 60).toInt());
 

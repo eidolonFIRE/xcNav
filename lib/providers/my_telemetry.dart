@@ -78,6 +78,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   @override
   void dispose() {
     _save();
+    timer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -131,11 +132,12 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           baro = null;
 
           // if a waypoint is selected, teleport to there first (useful for doing testing)
-          if (activePlan.selectedWp != null) {
+          final selectedWp = activePlan.getSelectedWp();
+          if (selectedWp != null) {
             updateGeo(
                 Position(
-                  latitude: activePlan.selectedWp!.latlng[0].latitude,
-                  longitude: activePlan.selectedWp!.latlng[0].longitude,
+                  latitude: selectedWp.latlng[0].latitude,
+                  longitude: selectedWp.latlng[0].longitude,
                   altitude: geo.alt,
                   speed: 0,
                   timestamp: DateTime.now(),
@@ -148,11 +150,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
           fakeFlight.initFakeFlight(geo);
           timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-            final target = activePlan.selectedWp == null
+            final target = activePlan.getSelectedWp() == null
                 ? null
-                : activePlan.selectedWp!.latlng.length > 1
-                    ? geo.nearestPointOnPath(activePlan.selectedWp!.latlng, false).latlng
-                    : activePlan.selectedWp!.latlng[0];
+                : activePlan.getSelectedWp()!.latlng.length > 1
+                    ? geo.nearestPointOnPath(activePlan.getSelectedWp()!.latlng, false).latlng
+                    : activePlan.getSelectedWp()!.latlng[0];
             handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target, geoPrev));
           });
         }

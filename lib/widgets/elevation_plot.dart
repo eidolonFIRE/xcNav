@@ -232,9 +232,13 @@ class ElevationPlotPainter extends CustomPainter {
       if (waypoint!.isPath) {
         final List<Offset> points = [];
         // Start from the end and go backwards so we can subtract from the known full eta
-        for (int index = waypoint!.latlng.length - 1; index >= (waypointETA?.pathIntercept?.index ?? 0); index--) {
+        for (int index = waypoint!.latlngOriented.length - 1;
+            index >= (waypointETA?.pathIntercept?.index ?? 0);
+            index--) {
           final int pointEta = waypointETA!.time!.inMilliseconds -
-              (waypoint!.lengthBetweenIndexs(index, waypoint!.latlng.length - 1) / geoData.last.spdSmooth * 1000)
+              (waypoint!.lengthBetweenIndexs(index, waypoint!.latlngOriented.length - 1) /
+                      geoData.last.spdSmooth *
+                      1000)
                   .round();
           points.add(Offset(scaleX(geoData.last.time + pointEta), scaleY(waypoint!.elevation[index])));
         }
@@ -245,7 +249,7 @@ class ElevationPlotPainter extends CustomPainter {
         canvas.translate(dx, dy);
         svgPin!.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 100, height: 100));
 
-        dynamic icon = iconOptions[waypoint?.icon];
+        dynamic icon = waypoint != null ? getWpIcon(waypoint!.icon, 32, waypoint?.getColor()) : null;
         if (waypoint?.icon != null && icon != null) {
           if (icon.runtimeType == IconData) {
             // Render standard icon

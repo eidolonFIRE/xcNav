@@ -44,6 +44,8 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
 
   Future<List<ElevSample?>> doSamples(Geo geo, Waypoint? waypoint) async {
     waypointETA = waypoint?.eta(geo, geo.spdSmooth);
+
+    /// Use either the selected duration, or derive from ETA to waypoint (plus over-shoot a little)
     Duration forecastDuration = lookAhead.runtimeType == Duration
         ? lookAhead
         : ((waypointETA != null && waypointETA?.time != null)
@@ -52,7 +54,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
     // Set some limits
     forecastDuration =
         Duration(milliseconds: min(forecastDuration.inMilliseconds, const Duration(hours: 10).inMilliseconds));
-    final sampleInterval = Duration(milliseconds: (forecastDuration.inMilliseconds / 30).ceil());
+    final sampleInterval = Duration(milliseconds: max(3000, forecastDuration.inMilliseconds / 30).ceil());
 
     Completer<List<ElevSample?>> samplesCompleter = Completer();
     List<Completer<ElevSample?>> completers = [];
@@ -60,7 +62,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
     // Build up a list of individual tasks that need to complete
     for (int t = 0; t <= forecastDuration.inMilliseconds; t += sampleInterval.inMilliseconds) {
       final Completer<ElevSample?> newCompleter = Completer();
-      final sampleLatlng = waypoint != null
+      final sampleLatlng = (waypoint != null && waypointETA != null)
           ? waypoint
               .interpolate(
                   waypointETA!.distance * t / waypointETA!.time!.inMilliseconds, waypointETA!.pathIntercept?.index ?? 0,
@@ -139,7 +141,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
             // constraints: const BoxConstraints(maxHeight: 400),
             child: ClipRect(
                 child: FutureBuilder<List<ElevSample?>>(
-                    future: doSamples(Provider.of<MyTelemetry>(context).geo, activePlan.selectedWp),
+                    future: doSamples(Provider.of<MyTelemetry>(context).geo, activePlan.getSelectedWp()),
                     builder: (context, groundSamples) {
                       final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
                       final oldestTimestamp = lookBehind != null
@@ -152,7 +154,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                             Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
                                 ? 100
                                 : 152.4,
-                            waypoint: activePlan.selectedWp,
+                            waypoint: activePlan.getSelectedWp(),
                             waypointETA: waypointETA),
                       );
                     })),
@@ -185,17 +187,18 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                       }),
                   isSelected: lookAheadOptions.map((e) => e == lookAhead).toList(),
                   children: lookAheadOptions.map((e) {
+                    final selectedWp = activePlan.getSelectedWp()!;
                     switch (e.runtimeType) {
                       case Duration:
                         return Text("${e.inMinutes}");
 
-                      case Waypoint:
+                      case WaypointID:
                         return SizedBox(
                           width: 30,
-                          height: 30,
-                          child: activePlan.selectedWp!.isPath
-                              ? SvgPicture.asset("assets/images/path.svg", color: activePlan.selectedWp!.getColor())
-                              : MapMarker(activePlan.selectedWp!, 30),
+                          height: 32,
+                          child: selectedWp.isPath
+                              ? SvgPicture.asset("assets/images/path.svg", color: selectedWp.getColor())
+                              : MapMarker(selectedWp, 30),
                         );
                       default:
                         return Container();

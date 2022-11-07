@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:feature_discovery/feature_discovery.dart';
 // ignore: depend_on_referenced_packages
 import 'package:provider/provider.dart';
 
@@ -61,18 +60,10 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-    showFeatures();
-
     Provider.of<MyTelemetry>(context, listen: false).addListener(() {
       if (viewMapKey.currentState?.mapReady ?? false) {
         viewMapKey.currentState?.refreshMapView();
       }
-    });
-  }
-
-  void showFeatures() {
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      FeatureDiscovery.discoverFeatures(context, features);
     });
   }
 

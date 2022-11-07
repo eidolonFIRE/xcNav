@@ -119,7 +119,7 @@ void showWindDialog(BuildContext context) {
                                 height: 40,
                                 transformAlignment: const Alignment(0, 0),
                                 transform: Matrix4.rotationZ(
-                                    settings.northlockWind ? 0 : (wind.samples.isEmpty ? 0 : wind.samples.last.hdg)),
+                                    settings.northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
                                 child: settings.northlockWind
                                     ? Transform.scale(
                                         scale: 1.6,

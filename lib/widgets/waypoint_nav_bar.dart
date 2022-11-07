@@ -11,20 +11,18 @@ class WaypointNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle instrLower = const TextStyle(fontSize: 30, color: Colors.black);
-    TextStyle instrLabel = const TextStyle(fontSize: 14, color: Colors.black, fontStyle: FontStyle.italic);
+    TextStyle instrLower = const TextStyle(fontSize: 35, color: Colors.black);
+    TextStyle instrLabel = const TextStyle(fontSize: 18, color: Colors.black, fontStyle: FontStyle.italic);
 
     return Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
-      ETA etaNext = activePlan.selectedWp != null
-          ? activePlan.selectedWp!.eta(myTelemetry.geo, myTelemetry.geo.spd)
-          : ETA(0, const Duration());
+      ETA etaNext = activePlan.getSelectedWp()?.eta(myTelemetry.geo, myTelemetry.geo.spd) ?? ETA(0, const Duration());
 
-      final curWp = activePlan.selectedWp;
+      final curWp = activePlan.getSelectedWp();
 
       return (curWp == null)
           ? Container()
           : Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
@@ -34,7 +32,7 @@ class WaypointNavBar extends StatelessWidget {
                   Text.rich(
                     TextSpan(children: [
                       WidgetSpan(
-                        child: getWpIcon(curWp.icon, 25, curWp.getColor()),
+                        child: getWpIcon(curWp.icon, 30, curWp.getColor()),
                       ),
                       const TextSpan(text: "  "),
                       TextSpan(

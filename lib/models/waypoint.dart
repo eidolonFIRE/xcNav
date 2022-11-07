@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:bisection/bisect.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/dem_service.dart';
@@ -35,12 +36,12 @@ String hashWaypointsData(Map<WaypointID, Waypoint> waypoints) {
   return (hash < 0 ? hash * -2 : hash).toRadixString(16);
 }
 
-class Barb {
+class BarbData {
   LatLng latlng;
 
   /// Radians
   double hdg;
-  Barb(this.latlng, this.hdg);
+  BarbData(this.latlng, this.hdg);
 }
 
 typedef WaypointID = String;
@@ -53,13 +54,14 @@ class Waypoint {
   late final WaypointID id;
 
   double? _length;
-  List<Barb>? _barbs;
-  double? _barbInterval;
+
+  bool _isReversed = false;
+  List<LatLng>? _latlngOriented;
 
   List<double>? _elevation;
 
-  /// Cached distances between latlng points
-  List<double>? _segments;
+  /// Cached distances between oriented latlng points
+  List<double>? _segsOriented;
 
   bool get isPath => _latlng.length > 1;
 
@@ -91,9 +93,8 @@ class Waypoint {
     }
   }
 
-  static WaypointID makeId() {
-    // TODO: this could be better
-    return DateTime.now().millisecondsSinceEpoch.toString();
+  WaypointID makeId() {
+    return sha256.convert([DateTime.now().millisecondsSinceEpoch, hashCode]).toString();
   }
 
   @override
@@ -104,11 +105,14 @@ class Waypoint {
   List<LatLng> get latlng => _latlng;
   set latlng(List<LatLng> newLatlngs) {
     _latlng = newLatlngs;
+    _latlngOriented = null;
     _length = null;
-    _barbs = null;
-    _barbInterval = null;
-    _segments = null;
+    _segsOriented = null;
     _elevation = null;
+  }
+
+  List<LatLng> get latlngOriented {
+    return _latlngOriented ??= _isReversed ? _latlng.reversed.toList() : _latlng;
   }
 
   /// Get full waypoint length.
@@ -118,11 +122,10 @@ class Waypoint {
     return _length ??= lengthBetweenIndexs(0, latlng.length - 1);
   }
 
-  List<Barb> getBarbs(interval) {
-    if (interval != _barbInterval || _barbs == null) {
-      _barbs = _makeBarbs(interval);
-    }
-    return _barbs!;
+  void toggleDirection() {
+    _isReversed = !_isReversed;
+    _latlngOriented = null;
+    _segsOriented = null;
   }
 
   /// Elevation per latlng point. (will be lazy loaded so it may return [0, ...] at first)
@@ -141,15 +144,15 @@ class Waypoint {
   }
 
   /// Segment distances between latlng points
-  List<double> get segments {
-    if (_segments == null) {
+  List<double> get segsOriented {
+    if (_segsOriented == null) {
       // Bake the list
-      _segments = [0];
-      for (int t = 0; t < latlng.length - 1; t++) {
-        _segments!.add(_segments!.last + latlngCalc.distance(latlng[t], latlng[t + 1]));
+      _segsOriented = [0];
+      for (int t = 0; t < latlngOriented.length - 1; t++) {
+        _segsOriented!.add(_segsOriented!.last + latlngCalc.distance(latlngOriented[t], latlngOriented[t + 1]));
       }
     }
-    return _segments!;
+    return _segsOriented!;
   }
 
   Color getColor() {
@@ -158,12 +161,11 @@ class Waypoint {
 
   /// ETA from a location to a waypoint
   /// If target is a path, result is dist to nearest intercept + remaining path
-  ETA eta(Geo geo, double speed, {bool isReversed = false}) {
+  ETA eta(Geo geo, double speed) {
     if (latlng.length > 1) {
       // --- to path
-      final intercept = geo.nearestPointOnPath(latlng, isReversed);
-      double dist = geo.distanceToLatlng(intercept.latlng) +
-          lengthBetweenIndexs(intercept.index, isReversed ? 0 : latlng.length - 1);
+      final intercept = geo.nearestPointOnPath(latlng, _isReversed);
+      double dist = geo.distanceToLatlng(intercept.latlng) + lengthBetweenIndexs(intercept.index, latlng.length - 1);
       return ETA.fromSpeed(dist, speed, pathIntercept: intercept);
     } else {
       // --- to point
@@ -178,54 +180,39 @@ class Waypoint {
 
   /// Linear interpolate down the path by some distance.
   /// If `initialLatlng` is given, that point will precede the selected path points.
-  Barb interpolate(double distance, int startIndex, {int? endIndex, LatLng? initialLatlng}) {
+  BarbData interpolate(double distance, int startIndex, {LatLng? initialLatlng}) {
     double initialSeg = 0;
     if (initialLatlng != null) {
       /// Imaginary added segment to the beginning
-      initialSeg = latlngCalc.distance(initialLatlng, latlng[startIndex]);
+      initialSeg = latlngCalc.distance(initialLatlng, latlngOriented[startIndex]);
 
       // Early-out for first imaginary segment
       if (distance <= initialSeg || !isPath) {
-        final brg = latlngCalc.bearing(initialLatlng, latlng[startIndex]);
-        return Barb(latlngCalc.offset(initialLatlng, distance, brg), brg * pi / 180);
+        final brg = latlngCalc.bearing(initialLatlng, latlngOriented[startIndex]);
+        return BarbData(latlngCalc.offset(initialLatlng, distance, brg), brg * pi / 180);
       }
     }
 
     /// value of segments not in use
-    final offsetSegs = segments[startIndex];
+    final offsetSegs = segsOriented[startIndex];
     int segIndex = max(
         0,
-        bisect_left<double>(segments, distance + offsetSegs - initialSeg,
-                hi: segments.length - 1, compare: (a, b) => (a - b).toInt()) -
+        bisect_left<double>(segsOriented, distance + offsetSegs - initialSeg,
+                hi: segsOriented.length - 1, compare: (a, b) => (a - b).toInt()) -
             1);
-    final distRemaining = distance - segments[segIndex] + offsetSegs - initialSeg;
+    final distRemaining = distance - segsOriented[segIndex] + offsetSegs - initialSeg;
 
     /// If we start from the last point, use the last segment heading
-    final brg = segIndex >= latlng.length - 1
-        ? latlngCalc.bearing(latlng[segIndex - 1], latlng[segIndex])
-        : latlngCalc.bearing(latlng[segIndex], latlng[segIndex + 1]);
-    return Barb(latlngCalc.offset(latlng[segIndex], distRemaining, brg), brg * pi / 180);
+    final brg = segIndex >= latlngOriented.length - 1
+        ? latlngCalc.bearing(latlngOriented[segIndex - 1], latlngOriented[segIndex])
+        : latlngCalc.bearing(latlngOriented[segIndex], latlngOriented[segIndex + 1]);
+    return BarbData(latlngCalc.offset(latlngOriented[segIndex], distRemaining, brg), brg * pi / 180);
   }
 
   /// Cumulative segment distances between path vertices
   double lengthBetweenIndexs(int start, int end) {
     if (start >= end) return 0;
-    return segments[end] - segments[start];
-  }
-
-  List<Barb> _makeBarbs(double interval) {
-    if (latlng.length < 2) return [];
-
-    List<Barb> barbs = [];
-
-    for (double dist = 0; dist <= length; dist += interval) {
-      barbs.add(interpolate(dist, 0));
-    }
-
-    barbs.add(Barb(latlng.last, latlngCalc.bearing(latlng[latlng.length - 2], latlng.last) * pi / 180));
-
-    _barbInterval = interval;
-    return barbs;
+    return segsOriented[end] - segsOriented[start];
   }
 
   dynamic toJson() {
