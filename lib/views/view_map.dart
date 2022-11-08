@@ -673,22 +673,22 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ),
                     ),
                   ),
-                  IconButton(
-                    iconSize: 40,
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(
-                      Icons.swap_horizontal_circle,
-                      size: 40,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        var tmp = editablePoints.toList();
-                        editablePoints.clear();
-                        editablePoints.addAll(tmp.reversed);
-                      });
-                    },
-                  ),
+                  // IconButton(
+                  //   iconSize: 40,
+                  //   padding: EdgeInsets.zero,
+                  //   icon: const Icon(
+                  //     Icons.swap_horizontal_circle,
+                  //     size: 40,
+                  //     color: Colors.black,
+                  //   ),
+                  //   onPressed: () {
+                  //     setState(() {
+                  //       var tmp = editablePoints.toList();
+                  //       editablePoints.clear();
+                  //       editablePoints.addAll(tmp.reversed);
+                  //     });
+                  //   },
+                  // ),
                   IconButton(
                     iconSize: 40,
                     padding: EdgeInsets.zero,
@@ -862,6 +862,26 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         ]),
                       ),
                     ))),
+
+          // --- Toggle map layer
+          Positioned(
+              top: 10,
+              right: 10,
+              child: Consumer<Settings>(builder: (context, settings, _) {
+                final options = Settings.mapTileThumbnails.keys.toList();
+                final nextTile = (options.indexOf(settings.curMapTiles) + 1) % options.length;
+                return InkWell(
+                  child: Container(
+                    decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black, width: 1), borderRadius: BorderRadius.circular(15)),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: SizedBox(width: 60, height: 60, child: Settings.mapTileThumbnails[options[nextTile]]),
+                    ),
+                  ),
+                  onTap: () => {settings.curMapTiles = options[nextTile]},
+                );
+              }))
         ]),
       ),
     );

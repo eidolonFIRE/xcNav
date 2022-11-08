@@ -72,7 +72,7 @@ class _WaypointCardState extends State<WaypointCard> {
                                         widget.refLatlng!.latitude, widget.refLatlng!.longitude, 0, 0, 0, 1, 0),
                                     1)
                                 .distance,
-                            digits: 1,
+                            digits: 3,
                             valueStyle: TextStyle(color: widget.isSelected ? Colors.black : Colors.white, fontSize: 18),
                             unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12)),
                         textAlign: TextAlign.end,

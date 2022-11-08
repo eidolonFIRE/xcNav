@@ -95,8 +95,8 @@ class Geo {
         hdg = latlngCalc.bearing(LatLng(prev.lat, prev.lng), LatLng(lat, lng)) * 3.1415926 / 180;
       }
     } else {
-      spd = location.speed;
-      hdg = location.heading;
+      spd = prev?.spd ?? location.speed;
+      hdg = prev?.hdg ?? location.heading;
     }
 
     if (baro != null) {

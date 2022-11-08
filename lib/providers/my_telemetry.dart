@@ -379,6 +379,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     // --- In-Flight detector
+    // TODO: use AGL
     const triggerDuration = Duration(seconds: 30);
     if ((geo.spd > 2.5 || geo.vario.abs() > 1.0) ^ inFlight) {
       triggerHyst += geo.time - geoPrev.time;

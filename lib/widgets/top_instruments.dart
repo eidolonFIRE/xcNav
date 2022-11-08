@@ -30,7 +30,7 @@ Widget topInstruments(BuildContext context) {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text.rich(richValue(UnitType.speed, myTelemetry.geo.spd,
-                    digits: 3, valueStyle: const TextStyle(fontSize: 55), unitStyle: unitStyle)),
+                    digits: 3, autoDecimalThresh: 0, valueStyle: const TextStyle(fontSize: 55), unitStyle: unitStyle)),
               ],
             ),
           ),
@@ -48,8 +48,7 @@ Widget topInstruments(BuildContext context) {
                       child: wind.result != null
                           ? Stack(
                               children: [
-                                /// Wind direction indicator
-
+                                // Wind direction indicator
                                 Align(
                                     alignment: Alignment.topCenter,
                                     child: Container(
@@ -63,7 +62,6 @@ Widget topInstruments(BuildContext context) {
                                         // color: Colors.blue,
                                       ),
                                     )),
-
                                 Align(
                                     alignment: Alignment.center,
                                     child: Text(

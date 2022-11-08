@@ -15,10 +15,10 @@ import 'package:xcnav/widgets/map_marker.dart';
 /// Elevation Sample for a given LatLng coordinate
 class ElevSample {
   final LatLng latlng;
-  final double y;
-  final double x;
+  final double elev;
+  final double dist;
 
-  ElevSample(this.latlng, this.x, this.y);
+  ElevSample(this.latlng, this.dist, this.elev);
 }
 
 ui.Image? _arrow;
@@ -37,13 +37,15 @@ class ElevationPlotPainter extends CustomPainter {
   final List<ElevSample?> groundData;
 
   final double vertGridRes;
+  final double distScale;
 
   final Waypoint? waypoint;
   final ETA? waypointETA;
 
   DrawableRoot? svgPin;
 
-  ElevationPlotPainter(this.geoData, this.groundData, this.vertGridRes, {this.waypoint, this.waypointETA}) {
+  ElevationPlotPainter(this.geoData, this.groundData, this.vertGridRes, this.distScale,
+      {this.waypoint, this.waypointETA}) {
     _paintGround = Paint()
       ..color = Colors.orange.shade800
       ..style = PaintingStyle.fill;
@@ -131,7 +133,7 @@ class ElevationPlotPainter extends CustomPainter {
                         geoData.map((e) => e.alt).reduce((a, b) => a > b ? a : b),
                         groundData
                             .where((element) => element != null)
-                            .map((e) => e!.y)
+                            .map((e) => e!.elev)
                             .reduce((a, b) => a > b ? a : b)) +
                     vertGridRes / 2) /
                 vertGridRes)
@@ -144,7 +146,11 @@ class ElevationPlotPainter extends CustomPainter {
                                 .where((element) => element != null)
                                 .reduce((a, b) => a! < b! ? a : b) ??
                             0,
-                        groundData.where((element) => element != null).reduce((a, b) => a!.y < b!.y ? a : b)?.y ?? 0) -
+                        groundData
+                                .where((element) => element != null)
+                                .reduce((a, b) => a!.elev < b!.elev ? a : b)
+                                ?.elev ??
+                            0) -
                     vertGridRes / 2) /
                 vertGridRes)
             .floor() *
@@ -155,7 +161,7 @@ class ElevationPlotPainter extends CustomPainter {
       return size.height - size.height * (value - minElev) / rangeElev;
     }
 
-    final double farthestDist = groundData.last?.x ?? 0;
+    final double farthestDist = groundData.last?.dist ?? 0;
     final rangeX = geoData.last.time - geoData.first.time + farthestDist;
 
     double scaleX(int value) {
@@ -185,7 +191,7 @@ class ElevationPlotPainter extends CustomPainter {
       groundPath.addPolygon(
           groundData
                   .where((element) => element != null)
-                  .map((e) => Offset(scaleX(e!.x + geoData.last.time), scaleY(e.x.toDouble())))
+                  .map((e) => Offset(scaleX(e!.dist.toInt() + geoData.last.time), scaleY(e.elev.toDouble())))
                   .toList() +
               [Offset(size.width, size.height), Offset(scaleX(geoData.last.time), size.height)],
           true);
@@ -217,8 +223,10 @@ class ElevationPlotPainter extends CustomPainter {
     }
 
     // --- Draw Vario Trendline
+    // TODO: this now needs to use the geo spd
     final base = scaleOffset(Offset(geoData.last.time.toDouble(), geoData.last.alt));
-    final slope = Offset(scaleX(1000 + geoData.first.time), -size.height + scaleY(geoData.last.varioSmooth + minElev));
+    final slope = Offset(scaleX((geoData.last.spdSmooth * distScale).toInt() + geoData.first.time),
+        -size.height + scaleY(geoData.last.varioSmooth + minElev));
     for (double t = 0; t < size.width - base.dx; t += 20) {
       canvas.drawLine(base + slope * t / slope.dx, base + slope * (t + 10) / slope.dx, _paintVarioTrend);
     }
@@ -226,37 +234,38 @@ class ElevationPlotPainter extends CustomPainter {
     // --- Draw Waypoint
     if (waypoint != null && svgPin != null && waypointETA?.time != null) {
       if (waypoint!.isPath) {
+        // --- Waypoint: Path
         final List<Offset> points = [];
         // Start from the end and go backwards so we can subtract from the known full eta
         for (int index = waypoint!.latlngOriented.length - 1;
             index >= (waypointETA?.pathIntercept?.index ?? 0);
             index--) {
-          final int pointEta = waypointETA!.time!.inMilliseconds -
-              (waypoint!.lengthBetweenIndexs(index, waypoint!.latlngOriented.length - 1) /
-                      geoData.last.spdSmooth *
-                      1000)
-                  .round();
-          points.add(Offset(scaleX(geoData.last.time + pointEta), scaleY(waypoint!.elevation[index])));
+          final double pointEta =
+              (waypointETA!.distance - waypoint!.lengthBetweenIndexs(index, waypoint!.latlngOriented.length - 1)) *
+                  distScale;
+          points.add(Offset(scaleX(geoData.last.time + pointEta.toInt()), scaleY(waypoint!.elevation[index])));
         }
         canvas.drawPoints(ui.PointMode.polygon, points, _paintPath..color = waypoint!.getColor());
       } else {
-        final dx = scaleX((waypointETA!.time!.inMilliseconds + geoData.last.time).round()) - 20;
+        // --- Waypoint: Point
+        final dx = scaleX((waypointETA!.distance * distScale + geoData.last.time).round()) - 20;
         final dy = scaleY(waypoint!.elevation[0]) - 60;
         canvas.translate(dx, dy);
         svgPin!.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 100, height: 100));
 
-        dynamic icon = waypoint != null ? getWpIcon(waypoint!.icon, 32, waypoint?.getColor()) : null;
+        dynamic icon = waypoint != null ? iconOptions[waypoint!.icon] : null;
         if (waypoint?.icon != null && icon != null) {
-          if (icon.runtimeType == IconData) {
+          if (icon is IconData) {
             // Render standard icon
             TextPainter textPainter = TextPainter(textDirection: TextDirection.rtl);
             textPainter.text = TextSpan(
                 text: String.fromCharCode(icon.codePoint),
                 style: TextStyle(fontSize: 30.0, fontFamily: icon.fontFamily));
             textPainter.layout();
-            textPainter.paint(canvas, const Offset(5.0, 5.0));
-          } else if (icon.runtimeType == String) {
+            textPainter.paint(canvas, const Offset(5.0, 6.0));
+          } else if (icon is String) {
             // Render svg
+            debugPrint("Render SVG");
             canvas.translate(3, 1);
             // getLoadedSvg(icon)?.scaleCanvasToViewBox(canvas, const Size(32, 32));
             canvas.scale(2.5, 2.5);

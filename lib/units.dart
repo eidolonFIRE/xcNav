@@ -207,8 +207,7 @@ String printHrMinLexical(Duration duration) {
   }
 }
 
-TextSpan richHrMin(
-    {required Duration? duration, required TextStyle valueStyle, TextStyle? unitStyle, bool longUnits = false}) {
+TextSpan richHrMin({required Duration? duration, TextStyle? valueStyle, TextStyle? unitStyle, bool longUnits = false}) {
   if (duration == null) {
     return TextSpan(text: "∞", style: valueStyle);
   } else {
