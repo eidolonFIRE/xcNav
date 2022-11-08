@@ -15,10 +15,10 @@ import 'package:xcnav/widgets/map_marker.dart';
 /// Elevation Sample for a given LatLng coordinate
 class ElevSample {
   final LatLng latlng;
-  final double value;
-  final int time;
+  final double y;
+  final double x;
 
-  ElevSample(this.latlng, this.value, this.time);
+  ElevSample(this.latlng, this.x, this.y);
 }
 
 ui.Image? _arrow;
@@ -131,7 +131,7 @@ class ElevationPlotPainter extends CustomPainter {
                         geoData.map((e) => e.alt).reduce((a, b) => a > b ? a : b),
                         groundData
                             .where((element) => element != null)
-                            .map((e) => e!.value)
+                            .map((e) => e!.y)
                             .reduce((a, b) => a > b ? a : b)) +
                     vertGridRes / 2) /
                 vertGridRes)
@@ -144,11 +144,7 @@ class ElevationPlotPainter extends CustomPainter {
                                 .where((element) => element != null)
                                 .reduce((a, b) => a! < b! ? a : b) ??
                             0,
-                        groundData
-                                .where((element) => element != null)
-                                .reduce((a, b) => a!.value < b!.value ? a : b)
-                                ?.value ??
-                            0) -
+                        groundData.where((element) => element != null).reduce((a, b) => a!.y < b!.y ? a : b)?.y ?? 0) -
                     vertGridRes / 2) /
                 vertGridRes)
             .floor() *
@@ -159,11 +155,11 @@ class ElevationPlotPainter extends CustomPainter {
       return size.height - size.height * (value - minElev) / rangeElev;
     }
 
-    final lastGroundTime = groundData.last?.time ?? 0;
-    final rangeTime = geoData.last.time - geoData.first.time + lastGroundTime;
+    final double farthestDist = groundData.last?.x ?? 0;
+    final rangeX = geoData.last.time - geoData.first.time + farthestDist;
 
     double scaleX(int value) {
-      return size.width * (value - geoData.first.time) / rangeTime;
+      return size.width * (value - geoData.first.time) / rangeX;
     }
 
     Offset scaleOffset(Offset value) {
@@ -189,7 +185,7 @@ class ElevationPlotPainter extends CustomPainter {
       groundPath.addPolygon(
           groundData
                   .where((element) => element != null)
-                  .map((e) => Offset(scaleX(e!.time + geoData.last.time), scaleY(e.value.toDouble())))
+                  .map((e) => Offset(scaleX(e!.x + geoData.last.time), scaleY(e.x.toDouble())))
                   .toList() +
               [Offset(size.width, size.height), Offset(scaleX(geoData.last.time), size.height)],
           true);
@@ -214,7 +210,7 @@ class ElevationPlotPainter extends CustomPainter {
     // --- Draw Time grid lines
     for (int t = geoData.first.time +
             ((-geoData.first.time + geoData.last.time) % const Duration(minutes: 5).inMilliseconds);
-        t <= rangeTime + geoData.last.time;
+        t <= rangeX + geoData.last.time;
         t += const Duration(minutes: 5).inMilliseconds) {
       canvas.drawLine(Offset(scaleX(t), 0), Offset(scaleX(t), 20), _paintGrid);
       canvas.drawLine(Offset(scaleX(t), size.height), Offset(scaleX(t), size.height - 20), _paintGrid);

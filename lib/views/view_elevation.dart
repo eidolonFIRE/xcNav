@@ -46,33 +46,29 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
     waypointETA = waypoint?.eta(geo, geo.spdSmooth);
 
     /// Use either the selected duration, or derive from ETA to waypoint (plus over-shoot a little)
-    Duration forecastDuration = lookAhead.runtimeType == Duration
+    /// Max 200km
+    double forecastDuration = lookAhead.runtimeType == double
         ? lookAhead
-        : ((waypointETA != null && waypointETA?.time != null)
-            ? Duration(milliseconds: (waypointETA!.time!.inMilliseconds * 1.2).ceil())
-            : const Duration(minutes: 10));
-    // Set some limits
-    forecastDuration =
-        Duration(milliseconds: min(forecastDuration.inMilliseconds, const Duration(hours: 10).inMilliseconds));
-    final sampleInterval = Duration(milliseconds: max(3000, forecastDuration.inMilliseconds / 30).ceil());
+        : ((waypointETA != null && waypointETA?.distance != null)
+            ? (min(200000, waypointETA!.distance * 1.2)).ceil()
+            : Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
+                ? 10000
+                : 8046.72);
+    final sampleInterval = max(1000, forecastDuration / 30).ceil();
 
     Completer<List<ElevSample?>> samplesCompleter = Completer();
     List<Completer<ElevSample?>> completers = [];
 
     // Build up a list of individual tasks that need to complete
-    for (int t = 0; t <= forecastDuration.inMilliseconds; t += sampleInterval.inMilliseconds) {
+    for (double dist = 0; dist <= forecastDuration; dist += sampleInterval) {
       final Completer<ElevSample?> newCompleter = Completer();
       final sampleLatlng = (waypoint != null && waypointETA != null)
-          ? waypoint
-              .interpolate(
-                  waypointETA!.distance * t / waypointETA!.time!.inMilliseconds, waypointETA!.pathIntercept?.index ?? 0,
-                  initialLatlng: geo.latLng)
-              .latlng
-          : latlngCalc.offset(geo.latLng, geo.spdSmooth * t / 1000, geo.hdg / pi * 180);
+          ? waypoint.interpolate(dist, waypointETA!.pathIntercept?.index ?? 0, initialLatlng: geo.latLng).latlng
+          : latlngCalc.offset(geo.latLng, dist, geo.hdg / pi * 180);
       // debugPrint("${sampleLatlng}");
-      sampleDem(sampleLatlng, false).then((value) {
-        if (value != null) {
-          newCompleter.complete(ElevSample(sampleLatlng, value, t));
+      sampleDem(sampleLatlng, false).then((elevation) {
+        if (elevation != null) {
+          newCompleter.complete(ElevSample(sampleLatlng, dist, elevation));
         } else {
           newCompleter.complete(null);
         }
@@ -91,10 +87,11 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
     final activePlan = Provider.of<ActivePlan>(context, listen: false);
 
     // --- Build view options
+    final isMetric = Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric;
     List<dynamic> lookAheadOptions = [
-      const Duration(minutes: 10),
-      const Duration(minutes: 30),
-      const Duration(minutes: 60),
+      isMetric ? 10000 : 8046.72, // 5mi
+      isMetric ? 20000 : 16093.44, // 10mi
+      isMetric ? 100000 : 80467.2, // 50mi
     ];
     if (activePlan.selectedWp != null) lookAheadOptions.add(activePlan.selectedWp);
 
@@ -174,7 +171,10 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                         lookBehind = lookBehindOptions[index];
                       }),
                   isSelected: lookBehindOptions.map((e) => e == lookBehind).toList(),
-                  children: lookBehindOptions.map((e) => Text(e != null ? "${e.inMinutes}" : "All")).toList()),
+                  children: lookBehindOptions
+                      .map((e) =>
+                          Text(e != null ? "${e.inMinutes}${e == lookBehindOptions.first ? " min" : ""}" : "All"))
+                      .toList()),
               const Expanded(
                   child: Divider(
                 thickness: 2,
@@ -189,8 +189,17 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                   children: lookAheadOptions.map((e) {
                     final selectedWp = activePlan.getSelectedWp()!;
                     switch (e.runtimeType) {
-                      case Duration:
-                        return Text("${e.inMinutes}");
+                      case double:
+                        return e == lookAheadOptions.first
+                            ? Text.rich(richValue(
+                                UnitType.distCoarse, e,
+                                // unitStyle: TextStyle(fontSize: 10, color: Colors.grey)
+                              ))
+                            : Text(printDouble(
+                                value: unitConverters[UnitType.distCoarse]!(e),
+                                digits: 1,
+                                decimals: 0,
+                                autoDecimalThresh: 1));
 
                       case WaypointID:
                         return SizedBox(
