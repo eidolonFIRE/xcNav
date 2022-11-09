@@ -15,7 +15,6 @@ import 'package:xcnav/providers/settings.dart';
 // Widgets
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
-import 'package:xcnav/widgets/icon_image.dart';
 
 const List<String> quickchat = [
   "Waiting here... ⏱️",

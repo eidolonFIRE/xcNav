@@ -266,7 +266,7 @@ String printDoubleLexical(
 }
 
 TextSpan richValue(UnitType type, double value,
-    {int digits = 4, int decimals = 0, TextStyle? valueStyle, TextStyle? unitStyle, double autoDecimalThresh = 1.0}) {
+    {int digits = 4, int decimals = 0, TextStyle? valueStyle, TextStyle? unitStyle, double? autoDecimalThresh}) {
   // Cases for increasing decimals
 
   if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps ||

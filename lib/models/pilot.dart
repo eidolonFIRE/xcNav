@@ -173,7 +173,7 @@ class Pilot {
 
   Polyline buildFlightTrace() {
     return Polyline(
-        points: flightTrace.map((e) => e.latLng).toList().sublist(max(0, flightTrace.length - 60)),
+        points: flightTrace.map((e) => e.latlng).toList().sublist(max(0, flightTrace.length - 60)),
         strokeWidth: 4,
         color: color.withAlpha(150),
         isDotted: true);

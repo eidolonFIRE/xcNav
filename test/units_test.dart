@@ -24,6 +24,9 @@ void main() {
 
   test("printValue", () {
     // Positive numbers
+    expect(printDouble(value: 9.2, digits: 2, decimals: 0, autoDecimalThresh: 10.0), "9.2");
+    expect(printDouble(value: 9.2, digits: 2, decimals: 0), "9");
+
     expect(printDouble(value: 1.0, digits: 2, decimals: 1, autoDecimalThresh: 1.0), "1.0");
     expect(printDouble(value: 0.99, digits: 2, decimals: 1, autoDecimalThresh: 1.0), "0.99");
     expect(printDouble(value: 0.99, digits: 2, decimals: 1), "1.0");
@@ -130,7 +133,10 @@ void main() {
     expect(richValue(UnitType.distFine, 1.0, decimals: 2).children!.map((InlineSpan e) => e.toPlainText()).toList(),
         ["3.28", "ft"]);
     expect(
-        richValue(UnitType.distCoarse, 1000.0, decimals: 2).children!.map((InlineSpan e) => e.toPlainText()).toList(),
+        richValue(UnitType.distCoarse, 1000.0, decimals: 2, autoDecimalThresh: null)
+            .children!
+            .map((InlineSpan e) => e.toPlainText())
+            .toList(),
         ["0.62", "mi"]);
 
     // Fuel

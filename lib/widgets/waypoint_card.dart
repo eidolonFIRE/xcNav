@@ -66,12 +66,9 @@ class _WaypointCardState extends State<WaypointCard> {
                       child: Text.rich(
                         richValue(
                             UnitType.distCoarse,
-                            widget.waypoint
-                                .eta(
-                                    Geo.fromValues(
-                                        widget.refLatlng!.latitude, widget.refLatlng!.longitude, 0, 0, 0, 1, 0),
-                                    1)
-                                .distance,
+                            Geo(lat: widget.refLatlng!.latitude, lng: widget.refLatlng!.longitude, spd: 1)
+                                .getIntercept(widget.waypoint.latlngOriented)
+                                .dist,
                             digits: 3,
                             valueStyle: TextStyle(color: widget.isSelected ? Colors.black : Colors.white, fontSize: 18),
                             unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12)),

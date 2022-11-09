@@ -9,8 +9,8 @@ import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/wind_plot.dart';
 
 void showWindDialog(BuildContext context) {
-  const valueStyle = TextStyle(fontSize: 35, color: Colors.white);
-  const unitStyle = TextStyle(fontSize: 16, color: Colors.grey, fontStyle: FontStyle.italic);
+  const valueStyle = TextStyle(fontSize: 40, color: Colors.white);
+  const unitStyle = TextStyle(fontSize: 18, color: Colors.grey, fontStyle: FontStyle.italic);
 
   showDialog(
     context: context,
@@ -30,7 +30,7 @@ void showWindDialog(BuildContext context) {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Padding(
-                      padding: EdgeInsets.all(8.0),
+                      padding: EdgeInsets.all(10.0),
                       child: Text(
                         "Wind Detector",
                         textAlign: TextAlign.center,
@@ -126,6 +126,7 @@ void showWindDialog(BuildContext context) {
                                         child: SvgPicture.asset(
                                           "assets/images/compass_north.svg",
                                           // fit: BoxFit.none,
+                                          color: Colors.white,
                                         ),
                                       )
                                     : Transform.scale(

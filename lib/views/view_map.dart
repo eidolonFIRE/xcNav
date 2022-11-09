@@ -161,7 +161,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     if (focusMode == FocusMode.me) {
       centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
     } else if (focusMode == FocusMode.group) {
-      List<LatLng> points = Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latLng).toList();
+      List<LatLng> points = Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
       points.add(LatLng(geo.lat, geo.lng));
       if (lastMapChange == null ||
           (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
@@ -242,7 +242,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     options: MapOptions(
                       interactiveFlags:
                           InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
-                      center: myTelemetry.geo.latLng,
+                      center: myTelemetry.geo.latlng,
                       zoom: 12.0,
                       onTap: (tapPosition, point) => onMapTap(context, point),
                       onLongPress: (tapPosition, point) => onMapLongPress(context, point),
@@ -274,7 +274,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       if (Provider.of<ADSB>(context, listen: false).enabled)
                         CircleLayerOptions(circles: [
                           CircleMarker(
-                              point: myTelemetry.geo.latLng,
+                              point: myTelemetry.geo.latlng,
                               color: Colors.transparent,
                               borderStrokeWidth: 1,
                               borderColor: Colors.black54,
@@ -369,7 +369,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           Marker(
                               width: 40 * 0.6,
                               height: 60 * 0.6,
-                              point: myTelemetry.launchGeo!.latLng,
+                              point: myTelemetry.launchGeo!.latlng,
                               builder: (ctx) => Container(
                                     transformAlignment: const Alignment(0, 0),
                                     transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
@@ -459,7 +459,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             .activePilots
                             // .toList()
                             .map((pilot) => Marker(
-                                point: pilot.geo!.latLng,
+                                point: pilot.geo!.latlng,
                                 width: 40,
                                 height: 40,
                                 builder: (ctx) => Container(
@@ -480,7 +480,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           Marker(
                             width: 50.0,
                             height: 50.0,
-                            point: myTelemetry.geo.latLng,
+                            point: myTelemetry.geo.latlng,
                             builder: (ctx) => Container(
                               transformAlignment: const Alignment(0, 0),
                               transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
@@ -520,15 +520,15 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         // fit: StackFit.expand,
                         children: Provider.of<Group>(context)
                             .activePilots
-                            .where((e) => !markerIsInView(e.geo!.latLng))
+                            .where((e) => !markerIsInView(e.geo!.latlng))
                             .map((e) => Builder(builder: (context) {
-                                  final theta = (latlngCalc.bearing(mapController.center, e.geo!.latLng) +
+                                  final theta = (latlngCalc.bearing(mapController.center, e.geo!.latlng) +
                                           mapController.rotation -
                                           90) *
                                       pi /
                                       180;
                                   final hypo = MediaQuery.of(context).size.width * 0.8 - 40;
-                                  final dist = latlngCalc.distance(mapController.center, e.geo!.latLng);
+                                  final dist = latlngCalc.distance(mapController.center, e.geo!.latlng);
 
                                   return Opacity(
                                       opacity: 0.5,
@@ -866,7 +866,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           // --- Toggle map layer
           Positioned(
               top: 10,
-              right: 10,
+              right: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
+              left: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
               child: Consumer<Settings>(builder: (context, settings, _) {
                 final options = Settings.mapTileThumbnails.keys.toList();
                 final nextTile = (options.indexOf(settings.curMapTiles) + 1) % options.length;

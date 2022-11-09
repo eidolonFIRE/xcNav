@@ -12,7 +12,8 @@ Distance latlngCalc = const Distance(roundResult: false);
 class PathIntercept {
   final int index;
   final LatLng latlng;
-  PathIntercept(this.index, this.latlng);
+  final double dist;
+  PathIntercept(this.index, this.latlng, this.dist);
 }
 
 /// Simple direction and value
@@ -53,6 +54,7 @@ class Geo {
     _gnd = value;
   }
 
+  ///
   double? get ground => _gnd ?? prevGnd;
 
   /// milliseconds since epoch
@@ -73,11 +75,12 @@ class Geo {
   /// meters/sec
   double varioSmooth = 0;
 
-  LatLng get latLng => LatLng(lat, lng);
-  Offset get latLngOffset => Offset(lng, lat);
+  LatLng get latlng => LatLng(lat, lng);
+  Offset get latlngOffset => Offset(lng, lat);
 
-  Geo();
-  Geo.fromValues(this.lat, this.lng, this.alt, this.time, this.hdg, this.spd, this.vario);
+  Geo({this.lat = 0, this.lng = 0, this.alt = 0, int? timestamp, this.hdg = 0, this.spd = 0, this.vario = 0}) {
+    time = timestamp ?? DateTime.now().millisecondsSinceEpoch;
+  }
 
   Geo.fromPosition(Position location, Geo? prev, BarometerValue? baro, BarometerValue? baroAmbient) {
     lat = location.latitude;
@@ -121,7 +124,12 @@ class Geo {
 
   /// Find distance to and location of the best intercept to path.
   /// (Nearest point that doesn't have acute angle between next point and this point)
-  PathIntercept nearestPointOnPath(List<LatLng> path, bool isReversed) {
+  PathIntercept getIntercept(List<LatLng> path, {bool isReversed = false}) {
+    // Early out
+    if (path.length == 1) {
+      return PathIntercept(0, path[0], latlngCalc.distance(latlng, path[0]));
+    }
+
     // Scan through all line segments and find intercept
     int matchIndex = isReversed ? 0 : path.length - 1;
     double matchdist = double.infinity;
@@ -129,10 +137,10 @@ class Geo {
     for (int index = isReversed ? path.length - 1 : 0;
         isReversed ? (index > 0) : (index < path.length);
         index += isReversed ? -1 : 1) {
-      final dist = latlngCalc.distance(latLng, path[index]);
+      final dist = latlngCalc.distance(latlng, path[index]);
       double angleToNext = double.nan;
       if (isReversed ? (index > 0) : (index < path.length - 1)) {
-        double delta = latlngCalc.bearing(path[index], latLng) -
+        double delta = latlngCalc.bearing(path[index], latlng) -
             latlngCalc.bearing(path[index], path[index + (isReversed ? -1 : 1)]);
         delta = (delta + 180) % 360 - 180;
         angleToNext = delta.abs();
@@ -143,25 +151,26 @@ class Geo {
         // debugPrint("match: $index) $dist  $angleToNext");
       }
     }
-    return PathIntercept(isReversed ? path.length - 1 - matchIndex : matchIndex, path[matchIndex]);
+    return PathIntercept(isReversed ? path.length - 1 - matchIndex : matchIndex, path[matchIndex],
+        latlngCalc.distance(latlng, path[matchIndex]));
   }
 
   double distanceTo(Geo other) {
-    return latlngCalc.distance(other.latLng, latLng);
+    return latlngCalc.distance(other.latlng, latlng);
   }
 
   double distanceToLatlng(LatLng other) {
-    return latlngCalc.distance(other, latLng);
+    return latlngCalc.distance(other, latlng);
   }
 
   /// Returns radians +/- pi
   double relativeHdg(Geo other) {
-    final delta = latlngCalc.bearing(latLng, other.latLng) * pi / 180 - hdg;
+    final delta = latlngCalc.bearing(latlng, other.latlng) * pi / 180 - hdg;
     return (delta + pi) % (2 * pi) - pi;
   }
 
   double relativeHdgLatlng(LatLng other) {
-    final delta = latlngCalc.bearing(latLng, other) * pi / 180 - hdg;
+    final delta = latlngCalc.bearing(latlng, other) * pi / 180 - hdg;
     return (delta + pi) % (2 * pi) - pi;
   }
 

@@ -162,20 +162,9 @@ class Waypoint {
   /// ETA from a location to a waypoint
   /// If target is a path, result is dist to nearest intercept + remaining path
   ETA eta(Geo geo, double speed) {
-    if (latlng.length > 1) {
-      // --- to path
-      final intercept = geo.nearestPointOnPath(latlng, _isReversed);
-      double dist = geo.distanceToLatlng(intercept.latlng) + lengthBetweenIndexs(intercept.index, latlng.length - 1);
-      return ETA.fromSpeed(dist, speed, pathIntercept: intercept);
-    } else {
-      // --- to point
-      if (latlng.isNotEmpty) {
-        double dist = geo.distanceToLatlng(latlng[0]);
-        return ETA.fromSpeed(dist, speed, pathIntercept: PathIntercept(0, latlng.first));
-      } else {
-        return ETA.fromSpeed(0, speed);
-      }
-    }
+    final intercept = geo.getIntercept(latlng, isReversed: _isReversed);
+    double dist = intercept.dist + lengthBetweenIndexs(intercept.index, latlng.length - 1);
+    return ETA.fromSpeed(dist, speed, pathIntercept: intercept);
   }
 
   /// Linear interpolate down the path by some distance.

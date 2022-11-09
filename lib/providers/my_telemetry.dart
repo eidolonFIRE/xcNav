@@ -153,7 +153,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             final target = activePlan.getSelectedWp() == null
                 ? null
                 : activePlan.getSelectedWp()!.latlng.length > 1
-                    ? geo.nearestPointOnPath(activePlan.getSelectedWp()!.latlng, false).latlng
+                    ? geo.getIntercept(activePlan.getSelectedWp()!.latlng).latlng
                     : activePlan.getSelectedWp()!.latlng[0];
             handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target, geoPrev));
           });
@@ -358,7 +358,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
     geo.prevGnd = geoPrev.ground;
-    await sampleDem(geo.latLng, true).then((value) {
+    await sampleDem(geo.latlng, true).then((value) {
       if (value != null) {
         geo.ground = value;
       }
@@ -379,19 +379,34 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     // --- In-Flight detector
-    // TODO: use AGL
-    const triggerDuration = Duration(seconds: 30);
-    if ((geo.spd > 2.5 || geo.vario.abs() > 1.0) ^ inFlight) {
-      triggerHyst += geo.time - geoPrev.time;
+    if (inFlight) {
+      // Is moving slowly near the ground?
+      if (geo.spdSmooth < 3.0 && geo.varioSmooth.abs() < 1.0 && geo.alt - (geo.ground ?? geo.alt) < 30) {
+        triggerHyst += geo.time - geoPrev.time;
+      } else {
+        triggerHyst = 0;
+      }
+      if (triggerHyst > 60000) {
+        // Landed!
+        inFlight = false;
+        debugPrint("Flight Ended");
+        // Save current flight to log
+        if (!bypassRecording) {
+          saveFlight();
+        }
+      }
     } else {
-      triggerHyst = 0;
-    }
-    if (triggerHyst > triggerDuration.inMilliseconds) {
-      inFlight = !inFlight;
-      triggerHyst = 0;
-      if (inFlight) {
-        // TODO: Use real timestamp search here (it's hardcoded to 3seconds)
-        final launchIndex = max(0, recordGeo.length - (triggerDuration.inSeconds ~/ 3) - 3);
+      // Is moving a normal speed and above the ground?
+      if (4.0 < geo.spd && geo.spd < 20 && geo.alt - (geo.ground ?? 0) > 30) {
+        triggerHyst += geo.time - geoPrev.time;
+      } else {
+        triggerHyst = 0;
+      }
+      if (triggerHyst > 30000) {
+        // Launched!
+        inFlight = true;
+        // TODO: Use real timestamp search here (it's hardcoded to 3 seconds)
+        final launchIndex = max(0, recordGeo.length - (30 ~/ 3));
         launchGeo = recordGeo[launchIndex];
 
         takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
@@ -399,13 +414,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
         // clear the log
         recordGeo.removeRange(0, launchIndex);
-      } else {
-        debugPrint("Flight Ended");
-
-        // Save current flight to log
-        if (!bypassRecording) {
-          saveFlight();
-        }
       }
     }
 
@@ -414,8 +422,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev.time) / 3600000.0);
 
       // --- Record path
-      if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo.latLng) > 50)) {
-        flightTrace.add(geo.latLng);
+      if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo.latlng) > 50)) {
+        flightTrace.add(geo.latlng);
         // --- keep list from bloating
         if (flightTrace.length > 10000) {
           flightTrace.removeRange(0, 100);
@@ -468,7 +476,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   List<Geo> getHistory(DateTime oldest, {Duration? interval}) {
     final bisectIndex = bisect_left<Geo>(
       recordGeo,
-      Geo.fromValues(0, 0, 0, oldest.millisecondsSinceEpoch, 0, 0, 0),
+      Geo(timestamp: oldest.millisecondsSinceEpoch),
       compare: (a, b) => a.time - b.time,
     );
 

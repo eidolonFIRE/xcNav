@@ -30,7 +30,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
               final Pilot pilot = group.pilots[pilotId]!;
               final double dist = pilot.geo!.distanceTo(myTelemetry.geo);
 
-              final double relHdg = latlngCalc.bearing(myTelemetry.geo.latLng, pilot.geo!.latLng) * pi / 180;
+              final double relHdg = latlngCalc.bearing(myTelemetry.geo.latlng, pilot.geo!.latlng) * pi / 180;
 
               final double closingSpd = myTelemetry.geo.spd * cos(myTelemetry.geo.hdg - relHdg) -
                   pilot.geo!.spd * cos(pilot.geo!.hdg - relHdg);

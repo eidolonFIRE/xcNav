@@ -127,7 +127,7 @@ class ElevationPlotPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    debugPrint("PAINT ELEVATION PLOT");
+    // debugPrint("PAINT ELEVATION PLOT");
     // --- Common misc.
     final double maxElev = ((max(
                         geoData.map((e) => e.alt).reduce((a, b) => a > b ? a : b),

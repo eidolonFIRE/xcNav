@@ -30,7 +30,7 @@ class AudioCueService {
   late final Group group;
   late final ActivePlan activePlan;
 
-  late final SharedPreferences _prefs;
+  SharedPreferences? _prefs;
 
   Map<String, bool> _config = {
     "My Telemetry": true,
@@ -117,21 +117,21 @@ class AudioCueService {
   }) {
     SharedPreferences.getInstance().then((instance) {
       _prefs = instance;
-      final loadedConfig = _prefs.getString("audio_cues_config");
+      final loadedConfig = _prefs?.getString("audio_cues_config");
       if (loadedConfig != null) {
         final loaded = jsonDecode(loadedConfig);
         for (final String name in _config.keys) {
           _config[name] = loaded[name] as bool? ?? true;
         }
       }
-      mode = _prefs.getInt("audio_cues_mode");
+      mode = _prefs?.getInt("audio_cues_mode");
     });
   }
 
   Map<String, bool> get config => _config;
   set config(Map<String, bool> newConfig) {
     _config = newConfig;
-    _prefs.setString("audio_cues_config", jsonEncode(config));
+    _prefs?.setString("audio_cues_config", jsonEncode(config));
   }
 
   int? _mode;
@@ -139,9 +139,9 @@ class AudioCueService {
   set mode(int? newmode) {
     _mode = newmode;
     if (newmode != null) {
-      _prefs.setInt("audio_cues_mode", newmode);
+      _prefs?.setInt("audio_cues_mode", newmode);
     } else {
-      _prefs.remove("audio_cues_mode");
+      _prefs?.remove("audio_cues_mode");
     }
   }
 
@@ -194,9 +194,7 @@ class AudioCueService {
       final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
       final hdgPrecision = precisionLUT["hdg"][mode];
 
-      final target = selectedWp.latlng.length > 1
-          ? myGeo.nearestPointOnPath(selectedWp.latlng, false).latlng
-          : selectedWp.latlng[0];
+      final target = selectedWp.latlng.length > 1 ? myGeo.getIntercept(selectedWp.latlng).latlng : selectedWp.latlng[0];
 
       final relativeHdg = myGeo.relativeHdgLatlng(target);
 

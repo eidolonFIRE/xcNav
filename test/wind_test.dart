@@ -43,25 +43,27 @@ void main() {
   test("wind1", () {
     wind.handleVector(Vector(0, 15));
     wind.handleVector(Vector(pi / 4, 13));
+    wind.handleVector(Vector(pi / 3, 12));
     wind.handleVector(Vector(pi / 2, 10));
     wind.handleVector(Vector(pi, 5));
 
     expect(wind.result != null, true, reason: "Wind Solution");
     expect(round(wind.result!.airspeed), 10.02, reason: "Airspeed");
-    expect(round(wind.result!.windSpd), 4.85, reason: "Wind Speed");
-    expect(round(wind.result!.windHdg), 0.15, reason: "Wind Heading");
+    expect(round(wind.result!.windSpd), 4.82, reason: "Wind Speed");
+    expect(round(wind.result!.windHdg), 0.13, reason: "Wind Heading");
   });
 
   test("wind2", () {
     wind.handleVector(Vector(0, 15));
     wind.handleVector(Vector(-pi / 4, 13));
+    wind.handleVector(Vector(-pi / 3, 12));
     wind.handleVector(Vector(-pi / 2, 10));
     wind.handleVector(Vector(-pi, 5));
 
     expect(wind.result != null, true, reason: "Wind Solution");
     expect(round(wind.result!.airspeed), 10.02, reason: "Airspeed");
-    expect(round(wind.result!.windSpd), 4.85, reason: "Wind Speed");
-    expect(round(wind.result!.windHdg), 6.14, reason: "Wind Heading");
+    expect(round(wind.result!.windSpd), 4.82, reason: "Wind Speed");
+    expect(round(wind.result!.windHdg), 6.16, reason: "Wind Heading");
   });
 
   test("wind3", () {

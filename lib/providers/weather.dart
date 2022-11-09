@@ -161,7 +161,7 @@ class Weather with ChangeNotifier {
         (_sounding != null &&
             ((_sounding!.center.longitude - myTelemetry.geo.lng).abs() > 0.2 ||
                 (_sounding!.center.latitude - myTelemetry.geo.lat).abs() > 0.2))) {
-      final box = Rect.fromCircle(center: myTelemetry.geo.latLngOffset, radius: 0.3);
+      final box = Rect.fromCircle(center: myTelemetry.geo.latlngOffset, radius: 0.3);
 
       _updateSounding(box).then((value) => completer.complete(value));
     } else {

@@ -66,8 +66,8 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
     for (double dist = 0; dist < forecastDist; dist += sampleInterval) {
       final Completer<ElevSample?> newCompleter = Completer();
       final sampleLatlng = (waypoint != null && waypointETA != null)
-          ? waypoint.interpolate(dist, waypointETA!.pathIntercept?.index ?? 0, initialLatlng: geo.latLng).latlng
-          : latlngCalc.offset(geo.latLng, dist, geo.hdg / pi * 180);
+          ? waypoint.interpolate(dist, waypointETA!.pathIntercept?.index ?? 0, initialLatlng: geo.latlng).latlng
+          : latlngCalc.offset(geo.latlng, dist, geo.hdg / pi * 180);
       // debugPrint("${sampleLatlng}");
       sampleDem(sampleLatlng, false).then((elevation) {
         if (elevation != null) {

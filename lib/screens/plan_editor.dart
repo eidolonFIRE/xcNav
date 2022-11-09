@@ -160,8 +160,8 @@ class _PlanEditorState extends State<PlanEditor> {
       plan = ModalRoute.of(context)!.settings.arguments as FlightPlan;
       mapBounds = plan!.getBounds() ??
           (LatLngBounds.fromPoints([
-            Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
-            Provider.of<MyTelemetry>(context, listen: false).geo.latLng..longitude += 0.05
+            Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
+            Provider.of<MyTelemetry>(context, listen: false).geo.latlng..longitude += 0.05
           ])
             ..pad(2));
     }

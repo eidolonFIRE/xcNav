@@ -30,7 +30,7 @@ Widget topInstruments(BuildContext context) {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text.rich(richValue(UnitType.speed, myTelemetry.geo.spd,
-                    digits: 3, autoDecimalThresh: 0, valueStyle: const TextStyle(fontSize: 55), unitStyle: unitStyle)),
+                    digits: 3, autoDecimalThresh: -1, valueStyle: const TextStyle(fontSize: 55), unitStyle: unitStyle)),
               ],
             ),
           ),

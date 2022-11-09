@@ -62,7 +62,7 @@ class _QRScannerState extends State<QRScanner> {
               ),
             ),
           ),
-          IconButton(onPressed: () => {joinCode(inputGroupId.text)}, icon: const Icon(Icons.arrow_forward))
+          IconButton(onPressed: () => {joinCode(inputGroupId.text)}, icon: const Icon(Icons.login))
         ]),
       ),
       body: Column(

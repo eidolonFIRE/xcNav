@@ -6,17 +6,16 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 
 // --- Dialogs
 import 'package:xcnav/dialogs/save_plan.dart';
-import 'package:xcnav/models/geo.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/widgets/map_marker.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
+import 'package:xcnav/widgets/map_marker.dart';
 
 // --- Misc
 import 'package:xcnav/dialogs/edit_waypoint.dart';
@@ -64,10 +63,9 @@ class ViewWaypointsState extends State<ViewWaypoints> {
           ((compareColor(a.getColor(), filterColor!) - compareColor(b.getColor(), filterColor!)) * colorWeight).toInt();
     }
     if (filterDist) {
-      final refLatlng = Provider.of<MyTelemetry>(context, listen: false).geo.latLng;
+      final geo = Provider.of<MyTelemetry>(context, listen: false).geo;
       retval +=
-          ((latlngCalc.distance(refLatlng, a.latlng[0]) - latlngCalc.distance(refLatlng, b.latlng[0])) * distWeight)
-              .round();
+          ((geo.getIntercept(a.latlngOriented).dist - geo.getIntercept(b.latlngOriented).dist) * distWeight).round();
     }
     return retval;
   }
@@ -358,7 +356,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                     child: WaypointCard(
                       waypoint: items[i],
                       index: i,
-                      refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latLng,
+                      refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
                       onSelect: () {
                         debugPrint("Selected ${items[i].id}");
                         activePlan.selectedWp = items[i].id;

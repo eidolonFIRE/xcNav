@@ -143,7 +143,7 @@ class ActivePlan with ChangeNotifier {
     if (waypointETA != null) {
       return [
         Polyline(
-            points: [geo.latLng] + getSelectedWp()!.latlngOriented.sublist(waypointETA.pathIntercept?.index ?? 0),
+            points: [geo.latlng] + getSelectedWp()!.latlngOriented.sublist(waypointETA.pathIntercept?.index ?? 0),
             color: Colors.white70,
             strokeWidth: 20)
       ];
@@ -174,7 +174,7 @@ class ActivePlan with ChangeNotifier {
     if (waypointETA != null) {
       for (int t = 1; t < waypointETA.distance / interval; t += barbSpacing(t)) {
         barbs.add(getSelectedWp()!
-            .interpolate(t * interval, waypointETA.pathIntercept?.index ?? 0, initialLatlng: geo.latLng));
+            .interpolate(t * interval, waypointETA.pathIntercept?.index ?? 0, initialLatlng: geo.latlng));
       }
 
       return barbs;

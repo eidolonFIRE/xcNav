@@ -218,8 +218,8 @@ class ADSB with ChangeNotifier {
     ProximityConfig config = Provider.of<Settings>(context, listen: false).proximityProfile;
 
     for (GA each in planes.values) {
-      final double dist = latlngCalc.distance(each.latlng, observer.latLng);
-      final double bearing = latlngCalc.bearing(each.latlng, observer.latLng);
+      final double dist = latlngCalc.distance(each.latlng, observer.latlng);
+      final double bearing = latlngCalc.bearing(each.latlng, observer.latlng);
 
       final double delta = deltaHdg(bearing, each.hdg).abs();
 
@@ -263,21 +263,23 @@ class ADSB with ChangeNotifier {
     final double? eta = (ga.spd > 0 && delta < 30 && tangentOffset < config.horizontalDist) ? dist / ga.spd : null;
     speakWarning(
         ga,
-        Geo.fromValues(0, 0, 0, DateTime.now().millisecondsSinceEpoch, rand.nextDouble() * 2 * pi,
-            11.15 + 4.5 * rand.nextDouble(), 0),
+        Geo(
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+            hdg: rand.nextDouble() * 2 * pi,
+            spd: 11.15 + 4.5 * rand.nextDouble()),
         eta);
   }
 
   void speakWarning(GA ga, Geo observer, double? eta) {
     // direction
     final int oclock =
-        (((deltaHdg(latlngCalc.bearing(observer.latLng, ga.latlng), observer.hdg * 180 / pi) / 360.0 * 12.0).round() +
+        (((deltaHdg(latlngCalc.bearing(observer.latlng, ga.latlng), observer.hdg * 180 / pi) / 360.0 * 12.0).round() +
                     11) %
                 12) +
             1;
 
     // distance, eta
-    final dist = unitConverters[UnitType.distCoarse]!(latlngCalc.distance(ga.latlng, observer.latLng));
+    final dist = unitConverters[UnitType.distCoarse]!(latlngCalc.distance(ga.latlng, observer.latlng));
     final String distMsg = "${printDoubleLexical(value: dist)} ${getUnitStr(UnitType.distCoarse, lexical: true)}";
     final String? etaStr = eta != null ? "${eta.toStringAsFixed(0)} seconds out" : null;
 
