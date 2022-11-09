@@ -773,10 +773,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                       : Matrix4.rotationZ(0),
                                   child: northLock
                                       ? SvgPicture.asset("assets/images/compass_north.svg", fit: BoxFit.none)
-                                      : SvgPicture.asset(
-                                          "assets/images/compass.svg",
-                                          fit: BoxFit.none,
-                                        ),
+                                      : SvgPicture.asset("assets/images/compass.svg", fit: BoxFit.cover),
                                 )),
                       ])),
                   Column(

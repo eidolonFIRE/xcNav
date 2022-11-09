@@ -121,13 +121,10 @@ void showWindDialog(BuildContext context) {
                                 transform: Matrix4.rotationZ(
                                     settings.northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
                                 child: settings.northlockWind
-                                    ? Transform.scale(
-                                        scale: 1.6,
-                                        child: SvgPicture.asset(
-                                          "assets/images/compass_north.svg",
-                                          // fit: BoxFit.none,
-                                          color: Colors.white,
-                                        ),
+                                    ? SvgPicture.asset(
+                                        "assets/images/compass_north.svg",
+                                        // fit: BoxFit.none,
+                                        color: Colors.white,
                                       )
                                     : Transform.scale(
                                         scale: 1.4,
