@@ -17,7 +17,7 @@ import 'package:xcnav/providers/plans.dart';
 // --- Misc
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/flight_plan.dart';
-import 'package:xcnav/tappablePolyline.dart';
+import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
 

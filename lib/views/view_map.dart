@@ -44,7 +44,7 @@ import 'package:xcnav/models/waypoint.dart';
 
 // misc
 import 'package:xcnav/units.dart';
-import 'package:xcnav/tappablePolyline.dart';
+import 'package:xcnav/tappable_polyline.dart';
 
 enum FocusMode {
   unlocked,

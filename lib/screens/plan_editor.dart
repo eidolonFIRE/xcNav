@@ -25,7 +25,7 @@ import 'package:xcnav/widgets/map_marker.dart';
 // --- Misc
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/views/view_map.dart';
-import 'package:xcnav/tappablePolyline.dart';
+import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
 
 class PlanEditor extends StatefulWidget {
