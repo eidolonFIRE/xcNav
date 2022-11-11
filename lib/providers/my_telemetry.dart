@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,12 +22,22 @@ import 'package:xcnav/fake_path.dart';
 // --- Models
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
+
+enum FlightEventType { init, takeoff, land }
+
+class FlightEvent {
+  final FlightEventType type;
+  final DateTime time;
+  final LatLng? latlng;
+  FlightEvent({required this.type, required this.time, this.latlng});
+}
 
 class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo geo = Geo();
@@ -47,6 +58,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   // in-flight hysterisis
   int triggerHyst = 0;
   bool inFlight = false;
+  StreamController<FlightEvent> flightEvent = StreamController<FlightEvent>();
+  StreamSubscription? _flightEventListener;
 
   // fuel save interval
   double? lastSavedFuelLevel;
@@ -79,6 +92,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   void dispose() {
     _save();
     timer?.cancel();
+    _flightEventListener?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -91,33 +105,30 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void init(BuildContext context) {
-    debugPrint("Build /MyTelemetry PROVIDER");
+    debugPrint("Build /MyTelemetry");
 
-    // --- Location Spoofer for debugging
+    if (flightEvent.hasListener) {
+      flightEvent.close();
+      flightEvent = StreamController<FlightEvent>();
+    }
+    // Initial value of the event stream
+    flightEvent.add(FlightEvent(type: FlightEventType.init, time: DateTime.now()));
+    _flightEventListener = flightEvent.stream.listen(
+      (event) {
+        if (event.type == FlightEventType.takeoff) {
+          // Add launch waypoints
+          Provider.of<ActivePlan>(context, listen: false).updateWaypoint(Waypoint(
+              name: "Launch ${DateFormat("h:mm a").format(event.time)}",
+              latlngs: [event.latlng!],
+              color: 0xff00df00,
+              icon: "takeoff",
+              ephemeral: true));
+        }
+      },
+    );
 
-    final client = Provider.of<Client>(context, listen: false);
     final settings = Provider.of<Settings>(context, listen: false);
     final activePlan = Provider.of<ActivePlan>(context, listen: false);
-
-    addListener((() {
-      if (!settings.groundMode || settings.groundModeTelemetry) {
-        if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty || client.telemetrySkips > 20) {
-          client.sendTelemetry(geo, fuel);
-          client.telemetrySkips = 0;
-        } else {
-          client.telemetrySkips++;
-        }
-      }
-
-      // Update ADSB
-      Provider.of<ADSB>(context, listen: false).refresh(geo);
-
-      audioCueService.cueMyTelemetry(geo);
-      audioCueService.cueNextWaypoint(geo);
-      audioCueService.cueGroupAwareness(geo);
-      // audioCueService.cueFuel(geo, fuel, fuelTimeRemaining);
-    }));
-
     _setupServiceStatusStream(context);
     settings.addListener(() {
       if (settings.spoofLocation) {
@@ -173,12 +184,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           timer?.cancel();
           timer = null;
         }
-      }
-    });
-
-    addListener(() {
-      if (inFlight && geo.spd > 1) {
-        Provider.of<Wind>(context, listen: false).handleVector(Vector(geo.hdg, geo.spd));
       }
     });
   }
@@ -277,10 +282,33 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Do all the things with a GPS update
   void handleGeomUpdate(BuildContext context, Position position) {
     final settings = Provider.of<Settings>(context, listen: false);
+    final client = Provider.of<Client>(context, listen: false);
+    final group = Provider.of<Group>(context, listen: false);
+    final adsb = Provider.of<ADSB>(context, listen: false);
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
       updateGeo(position, bypassRecording: settings.groundMode);
     }
+
+    if (!settings.groundMode || settings.groundModeTelemetry) {
+      if (group.activePilots.isNotEmpty || client.telemetrySkips > 20) {
+        client.sendTelemetry(geo, fuel);
+        client.telemetrySkips = 0;
+      } else {
+        client.telemetrySkips++;
+      }
+    }
+
+    if (inFlight && geo.spd > 1) {
+      Provider.of<Wind>(context, listen: false).handleVector(Vector(geo.hdg, geo.spd));
+    }
+
+    // Update ADSB
+    adsb.refresh(geo);
+
+    audioCueService.cueMyTelemetry(geo);
+    audioCueService.cueNextWaypoint(geo);
+    audioCueService.cueGroupAwareness(geo);
   }
 
   void _load() async {
@@ -390,6 +418,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         // Landed!
         inFlight = false;
         debugPrint("Flight Ended");
+        flightEvent.add(FlightEvent(
+            type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
         // Save current flight to log
         if (!bypassRecording) {
           saveFlight();
@@ -397,7 +427,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
     } else {
       // Is moving a normal speed and above the ground?
-      if (4.0 < geo.spd && geo.spd < 20 && geo.alt - (geo.ground ?? 0) > 30) {
+      if (4.0 < geo.spd && geo.spd < 25 && geo.alt - (geo.ground ?? 0) > 30) {
         triggerHyst += geo.time - geoPrev.time;
       } else {
         triggerHyst = 0;
@@ -411,6 +441,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
         takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
         debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
+
+        flightEvent.add(FlightEvent(
+            type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
 
         // clear the log
         recordGeo.removeRange(0, launchIndex);

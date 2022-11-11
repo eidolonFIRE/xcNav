@@ -122,12 +122,14 @@ class ViewChatState extends State<ViewChat> {
                     });
               }),
 
-              // AUDIO SWITCH
+              // --- Text to Speak toggle
               Consumer<Settings>(
-                  builder: (context, settings, child) => Padding(
-                        padding: const EdgeInsets.all(8.0),
+                  builder: (context, settings, child) => Positioned(
+                        left: 8,
+                        top: 8,
                         child: FloatingActionButton(
-                          backgroundColor: settings.chatTts ? Colors.greenAccent : Colors.grey,
+                          backgroundColor:
+                              settings.chatTts ? Colors.greenAccent.withAlpha(200) : Colors.red.shade900.withAlpha(100),
                           child: Icon(
                             settings.chatTts ? Icons.volume_up : Icons.volume_off,
                             color: Colors.black,
@@ -135,7 +137,22 @@ class ViewChatState extends State<ViewChat> {
                           ),
                           onPressed: () => settings.chatTts = !settings.chatTts,
                         ),
-                      ))
+                      )),
+
+              // --- Group Menu
+              Positioned(
+                  right: 8,
+                  top: 8,
+                  child: FloatingActionButton(
+                      backgroundColor: Colors.grey,
+                      heroTag: "group",
+                      onPressed: (() {
+                        Navigator.pushNamed(context, "/groupDetails");
+                      }),
+                      child: const Icon(
+                        Icons.groups,
+                        size: 30,
+                      )))
             ],
           ),
         ),

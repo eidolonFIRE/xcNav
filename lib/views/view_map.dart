@@ -363,37 +363,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             .toList(),
                       ),
 
-                      // Launch Location (automatic marker)
-                      if (myTelemetry.launchGeo != null)
-                        MarkerLayerOptions(markers: [
-                          Marker(
-                              width: 40 * 0.6,
-                              height: 60 * 0.6,
-                              point: myTelemetry.launchGeo!.latlng,
-                              builder: (ctx) => Container(
-                                    transformAlignment: const Alignment(0, 0),
-                                    transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
-                                    child: Stack(children: [
-                                      Container(
-                                        transform: Matrix4.translationValues(0, -60 * 0.6 / 2, 0),
-                                        child: SvgPicture.asset(
-                                          "assets/images/pin.svg",
-                                          color: Colors.lightGreen,
-                                        ),
-                                      ),
-                                      Center(
-                                        child: Container(
-                                          transform: Matrix4.translationValues(0, -60 * 0.6 / 1.5, 0),
-                                          child: const Icon(
-                                            Icons.flight_takeoff,
-                                            size: 60 * 0.6 / 2,
-                                          ),
-                                        ),
-                                      ),
-                                    ]),
-                                  ))
-                        ]),
-
                       // GA planes (ADSB IN)
                       if (Provider.of<ADSB>(context, listen: false).enabled)
                         MarkerLayerOptions(

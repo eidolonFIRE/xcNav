@@ -46,8 +46,13 @@ class ViewWaypointsState extends State<ViewWaypoints> {
     const iconWeight = 50;
     const colorWeight = 0.1;
     const distWeight = 0.001;
+    const textWeight = 3;
 
-    int retval = ratio(b.name, filterText.text) - ratio(a.name, filterText.text);
+    int retval =
+        (weightedRatio(b.name.toLowerCase(), filterText.text) - weightedRatio(a.name.toLowerCase(), filterText.text)) *
+            textWeight;
+    retval += a.ephemeral ? 100 : 0;
+    retval -= b.ephemeral ? 100 : 0;
     if (filterIcon != null) {
       if (filterIcon == "PATH") {
         retval += b.isPath ? iconWeight : 0;
@@ -267,7 +272,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                                 Icons.save_as,
                                 color: Colors.green,
                               ),
-                              title: Text("Save Plan"),
+                              title: Text("Save"),
                             ),
                           ),
                           PopupMenuItem(
@@ -277,7 +282,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                                 Icons.delete_forever,
                                 color: Colors.red,
                               ),
-                              title: Text("Clear Waypoints"),
+                              title: Text("Clear"),
                             ),
                           ),
                         ]),
@@ -332,7 +337,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                                 context: context,
                                 builder: (context) => SimpleDialog(
                                       title: Text(Provider.of<Plans>(context, listen: false).loadedPlans.isEmpty
-                                          ? "Oops, make a plan / collection in Waypoints menu first!"
+                                          ? "Oops, make a collection in Waypoints menu first!"
                                           : "Save waypoint into:"),
                                       children: Provider.of<Plans>(context, listen: false)
                                           .loadedPlans
@@ -358,8 +363,13 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                       index: i,
                       refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
                       onSelect: () {
-                        debugPrint("Selected ${items[i].id}");
-                        activePlan.selectedWp = items[i].id;
+                        debugPrint("Selected ${items[i].id} (prev: ${activePlan.selectedWp}");
+                        if (activePlan.selectedWp == items[i].id) {
+                          // Deselect
+                          activePlan.selectedWp = null;
+                        } else {
+                          activePlan.selectedWp = items[i].id;
+                        }
                       },
                       isSelected: items[i].id == activePlan.selectedWp,
                     ),

@@ -41,6 +41,11 @@ class _QRScannerState extends State<QRScanner> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: (() => Navigator.popUntil(context, ModalRoute.withName("/home"))),
+        ),
         title: Row(mainAxisSize: MainAxisSize.min, children: [
           Expanded(
             child: Padding(
@@ -128,8 +133,9 @@ class _QRScannerState extends State<QRScanner> {
                         bottom: 0,
                         width: MediaQuery.of(context).size.width,
                         child: TextButton.icon(
-                          onPressed: () =>
-                              {Share.share(Provider.of<Group>(context, listen: false).currentGroupID ?? "")},
+                          onPressed: () => {
+                            Share.share(Provider.of<Group>(context, listen: false).currentGroupID?.toUpperCase() ?? "")
+                          },
                           icon: const Icon(
                             Icons.share,
                             color: Colors.black,

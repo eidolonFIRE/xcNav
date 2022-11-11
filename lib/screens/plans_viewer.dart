@@ -87,7 +87,7 @@ class _PlansViewerState extends State<PlansViewer> {
                     padding: EdgeInsets.all(8.0),
                     child: Text("Use the buttons in the upper right corner to:", softWrap: true, maxLines: 3),
                   ),
-                  Text("- Create a new plan / collection\n- Save the active plan\n- Import a KML file"),
+                  Text("- Create a collection\n- Save the active set of waypoints\n- Import a KML file"),
                 ],
               ))
             : ListView.builder(

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:bisection/bisect.dart';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/dem_service.dart';
@@ -20,6 +19,7 @@ String hashWaypointsData(Map<WaypointID, Waypoint> waypoints) {
   String str = "Plan";
 
   for (final each in waypoints.entries) {
+    if (each.value.ephemeral) continue;
     str += each.key + each.value.id + (each.value.icon ?? "") + (each.value.color?.toString() ?? "");
     for (LatLng g in each.value.latlng) {
       // large tolerance for floats
@@ -53,6 +53,9 @@ class Waypoint {
   late int? color;
   late final WaypointID id;
 
+  /// Ephemeral waypoints will not be synchronized to the backend, or saved to file.
+  late final bool ephemeral;
+
   double? _length;
 
   bool _isReversed = false;
@@ -70,7 +73,13 @@ class Waypoint {
     _icon = newIcon;
   }
 
-  Waypoint({required this.name, required List<LatLng> latlngs, String? icon, this.color, WaypointID? newId}) {
+  Waypoint(
+      {required this.name,
+      required List<LatLng> latlngs,
+      String? icon,
+      this.color,
+      WaypointID? newId,
+      this.ephemeral = false}) {
     latlng = latlngs;
     _icon = icon;
     id = newId ?? makeId();
@@ -81,6 +90,7 @@ class Waypoint {
   bool operator ==(other) => other is Waypoint && other.id == id;
 
   Waypoint.fromJson(json) {
+    ephemeral = false;
     id = json["id"] ?? makeId();
     name = json["name"];
     _icon = json["icon"];
@@ -94,7 +104,7 @@ class Waypoint {
   }
 
   WaypointID makeId() {
-    return sha256.convert([DateTime.now().millisecondsSinceEpoch, hashCode]).toString();
+    return DateTime.now().millisecondsSinceEpoch.toRadixString(36) + hashCode.toRadixString(36);
   }
 
   @override

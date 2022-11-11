@@ -41,9 +41,15 @@ class ActivePlan with ChangeNotifier {
   WaypointID? get selectedWp => _selectedWp;
   set selectedWp(WaypointID? waypointID) {
     // check this waypoint is in our list
-    if (waypoints.containsKey(waypointID)) {
+    if (waypoints.containsKey(waypointID) || waypointID == null) {
       _selectedWp = waypointID;
-      onSelectWaypoint?.call(waypointID);
+      // Don't notify backend if it's ephemeral
+      if (waypoints[waypointID]?.ephemeral == false) {
+        onSelectWaypoint?.call(waypointID);
+      } else {
+        // (deselect from other's point of view)
+        onSelectWaypoint?.call(null);
+      }
       notifyListeners();
     }
   }
@@ -70,7 +76,8 @@ class ActivePlan with ChangeNotifier {
 
   void save() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList("flightPlan.waypoints", waypoints.values.map((e) => e.toString()).toList());
+    await prefs.setStringList("flightPlan.waypoints",
+        waypoints.values.where((element) => !element.ephemeral).map((e) => e.toString()).toList());
   }
 
   void clearAllWayponits() {
@@ -107,7 +114,7 @@ class ActivePlan with ChangeNotifier {
     }
     backendRemoveWaypoint(waypointID);
     // callback
-    if (onWaypointAction != null && waypoints.containsKey(waypointID)) {
+    if (onWaypointAction != null && waypoints.containsKey(waypointID) && !waypoints[waypointID]!.ephemeral) {
       onWaypointAction!(WaypointAction.delete, waypoints[waypointID]!);
     }
   }
@@ -116,7 +123,7 @@ class ActivePlan with ChangeNotifier {
     if (waypoints.containsKey(id)) {
       waypoints[id]?.latlng = latlngs;
       // callback
-      if (onWaypointAction != null && waypoints.containsKey(id)) {
+      if (onWaypointAction != null && waypoints.containsKey(id) && !waypoints[id]!.ephemeral) {
         onWaypointAction!(WaypointAction.update, waypoints[id]!);
       }
       isSaved = false;
@@ -128,7 +135,7 @@ class ActivePlan with ChangeNotifier {
     waypoints[waypoint.id] = waypoint;
 
     // callback
-    if (onWaypointAction != null) {
+    if (onWaypointAction != null && !waypoint.ephemeral) {
       onWaypointAction!(WaypointAction.update, waypoint);
     }
 

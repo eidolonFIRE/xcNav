@@ -121,7 +121,12 @@ class _WaypointCardState extends State<WaypointCard> {
                             ),
                           if (widget.waypoint.icon != null) const TextSpan(text: " "),
                           // --- Name
-                          TextSpan(text: widget.waypoint.name, style: TextStyle(color: textColor, fontSize: 24)),
+                          TextSpan(
+                              text: widget.waypoint.name,
+                              style: TextStyle(
+                                  color: widget.waypoint.ephemeral ? Colors.grey.shade600 : textColor,
+                                  fontSize: 24,
+                                  fontStyle: widget.waypoint.ephemeral ? FontStyle.italic : FontStyle.normal)),
                           // --- Length
                           if (widget.waypoint.latlng.length > 1)
                             TextSpan(text: " (", style: TextStyle(color: textColor.withAlpha(100), fontSize: 18)),

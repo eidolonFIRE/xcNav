@@ -219,25 +219,25 @@ class _MainMenuState extends State<MainMenu> {
         Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 
         /// Group
-        ListTile(
-          minVerticalPadding: 20,
-          onTap: () => {Navigator.popAndPushNamed(context, "/groupDetails")},
-          leading: const Icon(
-            Icons.groups,
-            size: 30,
-          ),
-          title: Text(
-            "Group",
-            style: Theme.of(context).textTheme.headline5,
-          ),
-          trailing: IconButton(
-              iconSize: 30,
-              onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
-              icon: const Icon(
-                Icons.qr_code_scanner,
-                color: Colors.lightBlue,
-              )),
-        ),
+        // ListTile(
+        //   minVerticalPadding: 20,
+        //   onTap: () => {Navigator.popAndPushNamed(context, "/groupDetails")},
+        //   leading: const Icon(
+        //     Icons.groups,
+        //     size: 30,
+        //   ),
+        //   title: Text(
+        //     "Group",
+        //     style: Theme.of(context).textTheme.headline5,
+        //   ),
+        //   trailing: IconButton(
+        //       iconSize: 30,
+        //       onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
+        //       icon: const Icon(
+        //         Icons.qr_code_scanner,
+        //         color: Colors.lightBlue,
+        //       )),
+        // ),
 
         ListTile(
           minVerticalPadding: 20,

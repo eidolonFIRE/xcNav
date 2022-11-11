@@ -14,6 +14,7 @@ import 'package:image/image.dart' as img;
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/secrets.dart';
 
 class Pilot {
   // basic info
@@ -155,13 +156,10 @@ class Pilot {
   }
 
   Future _fetchS3asset(String pilotID) async {
-    Uri uri =
-        Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com", "/xcnav_avatar_service", {"pilot_id": pilotID});
+    final countryCode = WidgetsBinding.instance.window.locale.countryCode;
+    Uri uri = Uri.https(endpoints[countryCode]?.avatarUrl ?? "", "/xcnav_avatar_service", {"pilot_id": pilotID});
     return http
-        .get(
-      uri,
-    )
-        .then((http.Response response) {
+        .get(uri, headers: {"authorizationToken": endpoints[countryCode]?.token ?? ""}).then((http.Response response) {
       final int statusCode = response.statusCode;
 
       if (statusCode < 200 || statusCode > 400) {

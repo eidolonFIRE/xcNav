@@ -128,6 +128,7 @@ class ElevationPlotPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // debugPrint("PAINT ELEVATION PLOT");
+
     // --- Common misc.
     final double maxElev = ((max(
                         geoData.map((e) => e.alt).reduce((a, b) => a > b ? a : b),
@@ -223,12 +224,13 @@ class ElevationPlotPainter extends CustomPainter {
     }
 
     // --- Draw Vario Trendline
-    // TODO: this now needs to use the geo spd
     final base = scaleOffset(Offset(geoData.last.time.toDouble(), geoData.last.alt));
     final slope = Offset(scaleX((geoData.last.spdSmooth * distScale).toInt() + geoData.first.time),
         -size.height + scaleY(geoData.last.varioSmooth + minElev));
-    for (double t = 0; t < size.width - base.dx; t += 20) {
-      canvas.drawLine(base + slope * t / slope.dx, base + slope * (t + 10) / slope.dx, _paintVarioTrend);
+    if (slope.dx.abs() > 0) {
+      for (double t = 0; t < size.width - base.dx; t += 20) {
+        canvas.drawLine(base + slope * t / slope.dx, base + slope * (t + 10) / slope.dx, _paintVarioTrend);
+      }
     }
 
     // --- Draw Waypoint

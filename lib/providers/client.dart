@@ -71,7 +71,7 @@ class Client with ChangeNotifier {
     final countryCode = WidgetsBinding.instance.window.locale.countryCode;
     debugPrint("Country Code: $countryCode");
 
-    WebSocket.connect(endpoints[countryCode]?.url ?? "",
+    WebSocket.connect(endpoints[countryCode]?.apiUrl ?? "",
         headers: {"authorizationToken": endpoints[countryCode]?.token ?? ""}).then((newSocket) {
       reconnectionWait = 0;
 
@@ -261,8 +261,11 @@ class Client with ChangeNotifier {
   void pushWaypoints() {
     sendToAWS("waypointsSync", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
-      "waypoints": Map.fromEntries(
-          Provider.of<ActivePlan>(context, listen: false).waypoints.values.map((e) => MapEntry(e.id, e.toJson())))
+      "waypoints": Map.fromEntries(Provider.of<ActivePlan>(context, listen: false)
+          .waypoints
+          .values
+          .where((element) => !element.ephemeral)
+          .map((e) => MapEntry(e.id, e.toJson())))
     });
   }
 
