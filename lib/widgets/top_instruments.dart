@@ -8,6 +8,7 @@ import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
+import 'package:xcnav/widgets/map_button.dart';
 
 Widget topInstruments(BuildContext context) {
   const upperStyle = TextStyle(fontSize: 45);
@@ -48,6 +49,31 @@ Widget topInstruments(BuildContext context) {
                       child: wind.result != null
                           ? Stack(
                               children: [
+                                Positioned(
+                                  left: 4,
+                                  top: 4,
+                                  child: Container(
+                                    width: 15,
+                                    height: 15,
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: Matrix4.rotationZ(settings.northlockWind
+                                        ? 0
+                                        : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
+                                    child: settings.northlockWind
+                                        ? SvgPicture.asset(
+                                            "assets/images/compass_north.svg",
+                                            // fit: BoxFit.none,
+                                            color: Colors.white,
+                                          )
+                                        : Transform.scale(
+                                            scale: 1.4,
+                                            child: SvgPicture.asset(
+                                              "assets/images/compass.svg",
+                                              // fit: BoxFit.none,
+                                            ),
+                                          ),
+                                  ),
+                                ),
                                 // Wind direction indicator
                                 Align(
                                     alignment: Alignment.topCenter,
@@ -59,7 +85,6 @@ Widget topInstruments(BuildContext context) {
                                         "assets/images/arrow.svg",
                                         width: 80,
                                         height: 80,
-                                        // color: Colors.blue,
                                       ),
                                     )),
                                 Align(
@@ -117,22 +142,6 @@ Widget topInstruments(BuildContext context) {
               );
             }),
           ),
-
-          //         DropdownMenuItem(
-          //           value: "Den",
-          //           alignment: Alignment.centerRight,
-          //           child: FutureBuilder<double?>(
-          //             future: sampleDem(myTelemetry.geo.latLng, offset: -myTelemetry.geo.alt),
-          //             builder: ((context, snapshot) => snapshot.hasData && snapshot.data != null
-          //                 ? Altimeter(
-          //                     1000,
-          //                     valueStyle: instrUpper,
-          //                     unitStyle: instrLabel,
-          //                     unitTag: "Den",
-          //                   )
-          //                 : const CircularProgressIndicator()),
-          //           ),
-          //         )
         ]),
       ),
     ),

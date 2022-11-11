@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:image/image.dart';
 import 'package:provider/provider.dart';
 
 import 'package:xcnav/providers/settings.dart';
@@ -105,53 +106,48 @@ void showWindDialog(BuildContext context) {
                                       settings.northlockWind),
                                 ),
                               ),
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: MapButton(
-                              size: 40,
-                              // padding: const EdgeInsets.all(4.0),
-                              onPressed: () => {settings.northlockWind = !settings.northlockWind},
-                              selected: false,
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                transformAlignment: const Alignment(0, 0),
-                                transform: Matrix4.rotationZ(
-                                    settings.northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
-                                child: settings.northlockWind
-                                    ? SvgPicture.asset(
-                                        "assets/images/compass_north.svg",
+                        Positioned(
+                          left: 4,
+                          top: 4,
+                          child: MapButton(
+                            size: 40,
+                            onPressed: () => {settings.northlockWind = !settings.northlockWind},
+                            selected: false,
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              transformAlignment: const Alignment(0, 0),
+                              transform: Matrix4.rotationZ(
+                                  settings.northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
+                              child: settings.northlockWind
+                                  ? SvgPicture.asset(
+                                      "assets/images/compass_north.svg",
+                                      // fit: BoxFit.none,
+                                      color: Colors.white,
+                                    )
+                                  : Transform.scale(
+                                      scale: 1.4,
+                                      child: SvgPicture.asset(
+                                        "assets/images/compass.svg",
                                         // fit: BoxFit.none,
-                                        color: Colors.white,
-                                      )
-                                    : Transform.scale(
-                                        scale: 1.4,
-                                        child: SvgPicture.asset(
-                                          "assets/images/compass.svg",
-                                          // fit: BoxFit.none,
-                                        ),
                                       ),
-                              ),
+                                    ),
                             ),
                           ),
                         ),
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: MapButton(
-                              size: 40,
-                              onPressed: () {
-                                if (wind.samples.length > 10) {
-                                  wind.samples.removeRange(0, wind.samples.length - 10);
-                                  wind.clearResult();
-                                }
-                              },
-                              selected: false,
-                              child: const Icon(Icons.refresh),
-                            ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: MapButton(
+                            size: 40,
+                            onPressed: () {
+                              if (wind.samples.length > 10) {
+                                wind.samples.removeRange(0, wind.samples.length - 10);
+                                wind.clearResult();
+                              }
+                            },
+                            selected: false,
+                            child: const Icon(Icons.refresh),
                           ),
                         )
                       ],
