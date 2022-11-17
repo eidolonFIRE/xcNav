@@ -166,7 +166,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                 : activePlan.getSelectedWp()!.latlng.length > 1
                     ? geo.getIntercept(activePlan.getSelectedWp()!.latlng).latlng
                     : activePlan.getSelectedWp()!.latlng[0];
-            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target, geoPrev));
+            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target, geoPrev), bypassRecording: true);
           });
         }
       } else {
@@ -280,14 +280,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   /// Do all the things with a GPS update
-  void handleGeomUpdate(BuildContext context, Position position) {
+  void handleGeomUpdate(BuildContext context, Position position, {bool bypassRecording = false}) {
     final settings = Provider.of<Settings>(context, listen: false);
     final client = Provider.of<Client>(context, listen: false);
     final group = Provider.of<Group>(context, listen: false);
     final adsb = Provider.of<ADSB>(context, listen: false);
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
-      updateGeo(position, bypassRecording: settings.groundMode);
+      updateGeo(position, bypassRecording: settings.groundMode || bypassRecording);
     }
 
     if (!settings.groundMode || settings.groundModeTelemetry) {
@@ -300,7 +300,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     if (inFlight && geo.spd > 1) {
-      Provider.of<Wind>(context, listen: false).handleVector(Vector(geo.hdg, geo.spd));
+      Provider.of<Wind>(context, listen: false).handleVector(Vector(geo.hdg, geo.spd, timestamp: position.timestamp));
     }
 
     // Update ADSB

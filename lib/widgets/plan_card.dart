@@ -372,12 +372,14 @@ class _PlanCardState extends State<PlanCard> {
                       alignment: Alignment.bottomRight,
                       child: ElevatedButton.icon(
                           onPressed: () {
-                            Provider.of<ActivePlan>(context, listen: false).waypoints.addAll(checkedElements.isEmpty
+                            final plan = Provider.of<ActivePlan>(context, listen: false);
+                            plan.waypoints.addAll(checkedElements.isEmpty
                                 ? widget.plan.waypoints
                                 : Map<WaypointID, Waypoint>.fromEntries(widget.plan.waypoints.entries
                                     .where((element) => checkedElements.contains(element.key))));
                             Provider.of<Client>(context, listen: false).pushWaypoints();
                             Navigator.popUntil(context, ModalRoute.withName("/home"));
+                            plan.notifyListeners();
                           },
                           icon: const Icon(
                             Icons.playlist_add,

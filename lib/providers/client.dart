@@ -343,7 +343,8 @@ class Client with ChangeNotifier {
     } else if (msg["action"] == WaypointAction.update.index) {
       // Make updates to a waypoint
       if (msg["waypoint"] != null) {
-        Provider.of<ActivePlan>(context, listen: false).updateWaypoint(Waypoint.fromJson(msg["waypoint"]));
+        Provider.of<ActivePlan>(context, listen: false)
+            .updateWaypoint(Waypoint.fromJson(msg["waypoint"]), shouldCallback: false);
       }
     } else {
       // no-op

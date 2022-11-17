@@ -20,6 +20,7 @@ List<Marker> buildMeasurementMarkers(List<LatLng> points) {
         point: e,
         width: 75,
         height: 54,
+        rotate: true,
         anchorPos: AnchorPos.exactly(Anchor(80, 0)),
         builder: ((context) => Card(
               color: Colors.black.withAlpha(100),

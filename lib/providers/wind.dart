@@ -26,7 +26,7 @@ class Wind with ChangeNotifier {
   WindSolveResult? _result;
   WindSolveResult? get result => _result;
 
-  static const maxSamples = 150;
+  static const maxSampleAge = Duration(minutes: 5);
 
   static double remainingHeadway(double theta, double mySpd, double wSpd) =>
       sqrt(pow(mySpd, 2) - pow(wSpd * sin(theta), 2)) - cos(theta) * wSpd;
@@ -39,7 +39,8 @@ class Wind with ChangeNotifier {
 
   void handleVector(Vector newSample) {
     samples.add(newSample);
-    if (samples.length > maxSamples) {
+    while (samples.isNotEmpty &&
+        (samples.first.timestamp == null || samples.first.timestamp!.isBefore(DateTime.now().subtract(maxSampleAge)))) {
       // Remove 10 at a time for performance
       samples.removeRange(0, min(10, samples.length));
     }

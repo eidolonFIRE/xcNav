@@ -131,11 +131,11 @@ class ActivePlan with ChangeNotifier {
     }
   }
 
-  void updateWaypoint(Waypoint waypoint) {
+  void updateWaypoint(Waypoint waypoint, {bool shouldCallback = true}) {
     waypoints[waypoint.id] = waypoint;
 
     // callback
-    if (onWaypointAction != null && !waypoint.ephemeral) {
+    if (shouldCallback && onWaypointAction != null && !waypoint.ephemeral) {
       onWaypointAction!(WaypointAction.update, waypoint);
     }
 

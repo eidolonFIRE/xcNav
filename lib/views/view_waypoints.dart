@@ -33,6 +33,7 @@ class ViewWaypoints extends StatefulWidget {
 
 class ViewWaypointsState extends State<ViewWaypoints> {
   final filterText = TextEditingController();
+  final textFocusNode = FocusNode();
   String? filterIcon;
   Color? filterColor;
   bool filterDist = true;
@@ -45,7 +46,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
     // Weights for different factors of the fuzzy sort
     const iconWeight = 50;
     const colorWeight = 0.1;
-    const distWeight = 0.001;
+    const distWeight = 0.0002;
     const textWeight = 3;
 
     int retval =
@@ -178,6 +179,8 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                   child: Container(
                     constraints: const BoxConstraints(maxHeight: 40),
                     child: TextField(
+                      autofocus: false,
+                      focusNode: textFocusNode,
                       style: const TextStyle(fontSize: 20),
                       textAlignVertical: TextAlignVertical.bottom,
                       controller: filterText,
@@ -199,6 +202,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                         filterText.clear();
                         filterIcon = null;
                         filterColor = null;
+                        textFocusNode.unfocus();
                       });
                     },
                     icon: const Icon(

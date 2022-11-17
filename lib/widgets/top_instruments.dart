@@ -46,64 +46,65 @@ Widget topInstruments(BuildContext context) {
                     width: 90,
                     height: 90,
                     child: Card(
-                      child: wind.result != null
-                          ? Stack(
-                              children: [
-                                Positioned(
-                                  left: 4,
-                                  top: 4,
-                                  child: Container(
-                                    width: 15,
-                                    height: 15,
-                                    transformAlignment: const Alignment(0, 0),
-                                    transform: Matrix4.rotationZ(settings.northlockWind
-                                        ? 0
-                                        : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
-                                    child: settings.northlockWind
-                                        ? SvgPicture.asset(
-                                            "assets/images/compass_north.svg",
-                                            // fit: BoxFit.none,
-                                            color: Colors.white,
-                                          )
-                                        : Transform.scale(
-                                            scale: 1.4,
-                                            child: SvgPicture.asset(
-                                              "assets/images/compass.svg",
-                                              // fit: BoxFit.none,
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                                // Wind direction indicator
-                                Align(
-                                    alignment: Alignment.topCenter,
-                                    child: Container(
-                                      transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.rotationZ(
-                                          wind.result!.windHdg + (settings.northlockWind ? 0 : -myTelemetry.geo.hdg)),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            left: 4,
+                            top: 4,
+                            child: Container(
+                              width: 15,
+                              height: 15,
+                              transformAlignment: const Alignment(0, 0),
+                              transform: Matrix4.rotationZ(
+                                  settings.northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
+                              child: settings.northlockWind
+                                  ? SvgPicture.asset(
+                                      "assets/images/compass_north.svg",
+                                      // fit: BoxFit.none,
+                                      color: Colors.white,
+                                    )
+                                  : Transform.scale(
+                                      scale: 1.4,
                                       child: SvgPicture.asset(
-                                        "assets/images/arrow.svg",
-                                        width: 80,
-                                        height: 80,
+                                        "assets/images/compass.svg",
+                                        // fit: BoxFit.none,
                                       ),
-                                    )),
-                                Align(
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      printDouble(
-                                          value: unitConverters[UnitType.speed]!(wind.result!.windSpd),
-                                          digits: 2,
-                                          decimals: 0),
-                                      style: const TextStyle(
-                                          color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
-                                    )),
-                              ],
-                            )
-                          : const Center(
-                              child: Text(
+                                    ),
+                            ),
+                          ),
+                          // Wind direction indicator
+                          if (wind.result != null)
+                            Align(
+                                alignment: Alignment.topCenter,
+                                child: Container(
+                                  transformAlignment: const Alignment(0, 0),
+                                  transform: Matrix4.rotationZ(
+                                      wind.result!.windHdg + (settings.northlockWind ? 0 : -myTelemetry.geo.hdg)),
+                                  child: SvgPicture.asset(
+                                    "assets/images/arrow.svg",
+                                    width: 80,
+                                    height: 80,
+                                  ),
+                                )),
+                          if (wind.result != null)
+                            Align(
+                                alignment: Alignment.center,
+                                child: Text(
+                                  printDouble(
+                                      value: unitConverters[UnitType.speed]!(wind.result!.windSpd),
+                                      digits: 2,
+                                      decimals: 0),
+                                  style:
+                                      const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                                )),
+                          if (wind.result == null)
+                            const Center(
+                                child: Text(
                               "?",
-                              style: lowerStyle,
-                            )),
+                              style: TextStyle(color: Colors.grey, fontSize: 20),
+                            ))
+                        ],
+                      ),
                     ),
                   ))),
 

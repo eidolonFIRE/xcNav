@@ -122,6 +122,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                               child: Text(
                                 "wow, such empty",
                                 textAlign: TextAlign.center,
+                                style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
                               ),
                             ),
                           )

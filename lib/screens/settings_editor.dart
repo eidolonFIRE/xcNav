@@ -116,6 +116,16 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     // description:
                     //     const Text("Alters UI and doesn't record track."),
                   ),
+                  SettingsTile.navigation(
+                      title: const Text("Primary Altimeter"),
+                      leading: const Icon(Icons.vertical_align_top),
+                      trailing: DropdownButton<String>(
+                          onChanged: (value) => {settings.altInstr = value ?? "MSL"},
+                          value: settings.altInstr,
+                          items: const [
+                            DropdownMenuItem(value: "AGL", child: Text("AGL")),
+                            DropdownMenuItem(value: "MSL", child: Text("MSL")),
+                          ]))
                 ],
               ),
               // --- ADSB options
