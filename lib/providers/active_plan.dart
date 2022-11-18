@@ -109,14 +109,11 @@ class ActivePlan with ChangeNotifier {
   }
 
   void removeWaypoint(WaypointID waypointID) {
-    if (selectedWp == waypointID) {
-      selectedWp = null;
-    }
-    backendRemoveWaypoint(waypointID);
     // callback
     if (onWaypointAction != null && waypoints.containsKey(waypointID) && !waypoints[waypointID]!.ephemeral) {
       onWaypointAction!(WaypointAction.delete, waypoints[waypointID]!);
     }
+    backendRemoveWaypoint(waypointID);
   }
 
   void moveWaypoint(WaypointID id, List<LatLng> latlngs) {

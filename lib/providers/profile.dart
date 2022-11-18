@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:xcnav/secrets.dart';
 
 class Profile with ChangeNotifier {
   String? name;
@@ -106,9 +107,11 @@ class Profile with ChangeNotifier {
   }
 
   Future pushAvatar() async {
+    final countryCode = WidgetsBinding.instance.window.locale.countryCode;
+
     return http
-        .post(Uri.parse("https://gx49w49rb4.execute-api.us-west-1.amazonaws.com/xcnav_avatar_service"),
-            headers: {"Content-Type": "application/json"},
+        .post(Uri.parse(endpoints[countryCode]?.avatarUrl ?? ""),
+            headers: {"Content-Type": "application/json", "authorizationToken": endpoints[countryCode]?.token ?? ""},
             body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
         .then((http.Response response) {
       final int statusCode = response.statusCode;
@@ -134,7 +137,7 @@ class Profile with ChangeNotifier {
 
   String _hash() {
     // build long string
-    String str = "Meta${name ?? ""}${id ?? ""}${avatarHash ?? ""}${tier ?? ""}";
+    String str = "Meta${name ?? ""}${id ?? ""}${avatarHash ?? ""}";
 
     // fold string into hash
     int hash = 0;

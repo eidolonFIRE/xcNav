@@ -42,7 +42,7 @@ class Pilot {
   Pilot.fromJson(Map<String, dynamic> json) {
     id = json["id"];
     name = json["name"];
-    avatarHash = json["avatar_hash"];
+    avatarHash = json["avatarHash"];
     tier = json["tier"];
     _loadAvatar();
   }
@@ -51,7 +51,7 @@ class Pilot {
     return {
       "id": id,
       "name": name,
-      "avatar_hash": avatarHash,
+      "avatarHash": avatarHash,
       "tier": tier,
     };
   }

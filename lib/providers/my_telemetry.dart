@@ -464,8 +464,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
 
       // --- Periodically save log
-      if (!bypassRecording && lastSavedLog == null ||
-          lastSavedLog!.add(const Duration(minutes: 2)).isBefore(DateTime.now())) {
+      if (!bypassRecording &&
+          (lastSavedLog == null || lastSavedLog!.add(const Duration(minutes: 2)).isBefore(DateTime.now()))) {
         saveFlight();
       }
     }

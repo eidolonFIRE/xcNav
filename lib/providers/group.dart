@@ -104,13 +104,13 @@ class Group with ChangeNotifier {
 
   void saveGroup(String groupID) {
     if (prefs != null) {
-      prefs!.setString("group.currentGroupID", groupID);
+      prefs!.setString("group.currentGroupId.V2.0", groupID);
     }
   }
 
   String? loadGroup() {
     if (prefs != null) {
-      return prefs!.getString("group.currentGroupID");
+      return prefs!.getString("group.currentGroupId.V2.0");
     }
     return null;
   }

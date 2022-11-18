@@ -26,7 +26,21 @@ enum ClientState {
   authenticated,
 }
 
-const double apiVersion = 6.0;
+const double apiVersion = 7.0;
+
+class MyHttpOverrides extends HttpOverrides {
+  String goodCert;
+
+  MyHttpOverrides(this.goodCert);
+
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) {
+        return cert.pem == goodCert;
+      };
+  }
+}
 
 class Client with ChangeNotifier {
   WebSocket? socket;
@@ -53,7 +67,7 @@ class Client with ChangeNotifier {
   set state(ClientState newState) {
     _state = newState;
     if (newState == ClientState.disconnected) {
-      debugPrint("Reconnecting!");
+      debugPrint("Reconnecting in ${reconnectionWait}sec...");
       if (socket != null) {
         socket!.close().then((value) {
           Timer(Duration(seconds: reconnectionWait), (() => connect()));
@@ -70,7 +84,7 @@ class Client with ChangeNotifier {
 
     final countryCode = WidgetsBinding.instance.window.locale.countryCode;
     debugPrint("Country Code: $countryCode");
-
+    HttpOverrides.global = MyHttpOverrides(endpoints[countryCode]?.cert ?? "");
     WebSocket.connect(endpoints[countryCode]?.apiUrl ?? "",
         headers: {"authorizationToken": endpoints[countryCode]?.token ?? ""}).then((newSocket) {
       reconnectionWait = 0;
@@ -174,11 +188,15 @@ class Client with ChangeNotifier {
       final settings = Provider.of<Settings>(context, listen: false);
       debugPrint("Authenticating) ${profile.name}, ${profile.id}");
       sendToAWS("authRequest", {
-        "secret_id": profile.secretID,
-        "pilot": {"id": profile.id, "name": profile.name, "avatar_hash": profile.avatarHash},
-        "group": Provider.of<Group>(context, listen: false).loadGroup(),
-        "tier_hash": crypto.sha256.convert((settings.patreonEmail + settings.patreonName).codeUnits).toString(),
-        "api_version": apiVersion,
+        "pilot": {
+          "id": profile.id,
+          "name": profile.name,
+          "avatarHash": profile.avatarHash,
+          "secretToken": profile.secretID,
+        },
+        "group_id": Provider.of<Group>(context, listen: false).loadGroup(),
+        "tierHash": crypto.sha256.convert((settings.patreonEmail + settings.patreonName).codeUnits).toString(),
+        "apiVersion": apiVersion,
       });
     } else {
       debugPrint("... we are already authenticated.");
@@ -188,8 +206,12 @@ class Client with ChangeNotifier {
   void pushProfile(Profile profile) {
     debugPrint("Push Profile: ${profile.name}, ${profile.id}");
     sendToAWS("updateProfile", {
-      "pilot": {"id": profile.id, "name": profile.name, "avatar_hash": profile.avatarHash},
-      "secret_id": profile.secretID
+      "pilot": {
+        "id": profile.id,
+        "name": profile.name,
+        "avatarHash": profile.avatarHash,
+        "secretToken": profile.secretID
+      },
     });
   }
 
@@ -197,7 +219,7 @@ class Client with ChangeNotifier {
     Group group = Provider.of<Group>(context, listen: false);
     sendToAWS("chatMessage", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
-      "group": group.currentGroupID, // target group
+      "group_id": group.currentGroupID, // target group
       "pilot_id": "", // sender (filled in by backend)
       "text": text,
       "emergency": isEmergency ?? false,
@@ -216,7 +238,6 @@ class Client with ChangeNotifier {
             "lng": geo.lng,
             "alt": geo.alt,
           },
-          "fuel": fuel,
         },
       });
     }
@@ -224,13 +245,13 @@ class Client with ChangeNotifier {
 
   void requestGroupInfo(String? reqGroupID) {
     if (reqGroupID != null && reqGroupID != "") {
-      sendToAWS("groupInfoRequest", {"group": reqGroupID});
+      sendToAWS("groupInfoRequest", {"group_id": reqGroupID});
     }
   }
 
   void _joinGroup(String reqGroupID) {
     sendToAWS("joinGroupRequest", {
-      "group": reqGroupID.toLowerCase(),
+      "group_id": reqGroupID.toLowerCase(),
     });
     debugPrint("Requesting Join Group $reqGroupID");
   }
@@ -239,11 +260,11 @@ class Client with ChangeNotifier {
     savePlan(context, isSavingFirst: true).then((value) => _joinGroup(reqGroupID));
   }
 
-  void leaveGroup(bool promptSplit) {
+  void leaveGroup() {
     // This is just alias to joining an unknown group
     Provider.of<Group>(context, listen: false).currentGroupID = null;
     Provider.of<ChatMessages>(context, listen: false).leftGroup();
-    sendToAWS("joinGroupRequest", {"prompt_split": promptSplit});
+    sendToAWS("joinGroupRequest", {"group_id": ""});
   }
 
   void waypointsUpdate(
@@ -284,12 +305,12 @@ class Client with ChangeNotifier {
   void handleChatMessage(Map<String, dynamic> msg) {
     final group = Provider.of<Group>(context, listen: false);
     String? currentGroupID = group.currentGroupID;
-    if (msg["group"] == currentGroupID) {
+    if (msg["group_id"] == currentGroupID) {
       Provider.of<ChatMessages>(context, listen: false)
           .processMessageFromServer(group.pilots[msg["pilot_id"]]?.name ?? "", msg);
     } else {
       // getting messages from the wrong group!
-      debugPrint("Wrong group ID! $currentGroupID, ${msg["group"]}");
+      debugPrint("Wrong group ID! $currentGroupID, ${msg["group_id"]}");
     }
   }
 
@@ -323,9 +344,6 @@ class Client with ChangeNotifier {
     }
     Group group = Provider.of<Group>(context, listen: false);
     group.removePilot(msg["pilot_id"]);
-    if (msg["new_group"] != "") {
-      // TODO: prompt yes/no should we follow them to new group
-    }
   }
 
   // --- Full waypoints sync
@@ -385,24 +403,24 @@ class Client with ChangeNotifier {
 
       // compare API version
       // TODO: should have big warning banners for this
-      if (msg["api_version"] > apiVersion) {
+      if (msg["apiVersion"] > apiVersion) {
         debugPrint("---/!\\--- Client is out of date!");
-      } else if (msg["api_version"] < apiVersion) {
+      } else if (msg["apiVersion"] < apiVersion) {
         debugPrint("---/!\\--- Server is out of date!");
       }
 
       Profile profile = Provider.of<Profile>(context, listen: false);
       profile.tier = msg["tier"];
-      profile.updateID(msg["pilot_id"], msg["secret_id"]);
+      profile.updateID(msg["pilot_id"], msg["secretToken"]);
 
       // join the provided group
       Group group = Provider.of<Group>(context, listen: false);
-      group.currentGroupID = msg["group"];
+      group.currentGroupID = msg["group_id"];
       requestGroupInfo(group.currentGroupID);
 
       // update profile
-      if (msg["pilot_meta_hash"] != profile.hash) {
-        debugPrint("Server had outdate profile meta. (${msg["pilot_meta_hash"]} != ${profile.hash})");
+      if (msg["pilotMetaHash"] != profile.hash) {
+        debugPrint("Server had outdate profile meta. (${msg["pilotMetaHash"]} != ${profile.hash})");
         pushProfile(profile);
       }
     }
@@ -420,7 +438,7 @@ class Client with ChangeNotifier {
     } else {
       // ignore if it's not a group I'm in
       Group group = Provider.of<Group>(context, listen: false);
-      if (msg["group"] != group.currentGroupID) {
+      if (msg["group_id"] != group.currentGroupID) {
         debugPrint("Received info for another group.");
         return;
       }
@@ -441,16 +459,6 @@ class Client with ChangeNotifier {
         debugPrint("Pushing our plan!");
         pushWaypoints();
       }
-
-      // handle selections
-      if (msg["selections"] != null) {
-        final Map<String, WaypointID> selections = msg["selections"];
-        for (final each in selections.entries) {
-          if (group.hasPilot(each.key)) {
-            group.pilotSelectedWaypoint(each.key, each.value);
-          }
-        }
-      }
     }
   }
 
@@ -459,16 +467,16 @@ class Client with ChangeNotifier {
     if (msg["status"] != ErrorCode.success.index) {
       // not a valid group
       if (msg["status"] == ErrorCode.invalidId.index) {
-        debugPrint("Attempted to join invalid group ${msg["group"]}");
-      } else if (msg["status"] == ErrorCode.noop.index && msg["group"] == group.currentGroupID) {
+        debugPrint("Attempted to join invalid group ${msg["group_id"]}");
+      } else if (msg["status"] == ErrorCode.noop.index && msg["group_id"] == group.currentGroupID) {
         // we were already in this group... update anyway
-        group.currentGroupID = msg["group"];
+        group.currentGroupID = msg["group_id"];
       } else {
         debugPrint("Error joining group ${msg['status']}");
       }
     } else {
       // successfully joined group
-      group.currentGroupID = msg["group"];
+      group.currentGroupID = msg["group_id"];
       requestGroupInfo(group.currentGroupID);
     }
   }
