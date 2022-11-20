@@ -64,6 +64,8 @@ class WaypointNavBar extends StatelessWidget {
                       if (myTelemetry.inFlight)
                         richHrMin(duration: etaNext.time, valueStyle: instrLower, unitStyle: instrLabel),
                     ]),
+                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ));

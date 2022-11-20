@@ -53,6 +53,7 @@ enum FocusMode {
   addWaypoint,
   addPath,
   editPath,
+  measurement,
 }
 
 class ViewMap extends StatefulWidget {
@@ -140,7 +141,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   void setFocusMode(FocusMode mode) {
     setState(() {
-      prevFocusMode = focusMode;
+      if (focusMode == FocusMode.unlocked || focusMode == FocusMode.me || focusMode == FocusMode.group) {
+        prevFocusMode = focusMode;
+      }
       focusMode = mode;
       if (mode != FocusMode.editPath) editingWp = null;
       if (mode == FocusMode.group) lastMapChange = null;
@@ -210,10 +213,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
       // --- Add waypoint in path
       polyEditor.add(editablePoints, latlng);
-    } else {
-      setState(() {
-        measurementPolyline.points.add(latlng);
-      });
+    } else if (focusMode == FocusMode.measurement) {
+      // setState(() {
+      //   measurementPolyline.points.add(latlng);
+      // });
+      measurementEditor.add(measurementPolyline.points, latlng);
     }
   }
 
@@ -460,17 +464,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ),
 
                       // Measurement Polyline
-                      if (focusMode != FocusMode.addPath &&
-                          focusMode != FocusMode.editPath &&
-                          measurementPolyline.points.isNotEmpty)
+                      if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
                         PolylineLayerOptions(polylines: [measurementPolyline]),
-                      if (focusMode != FocusMode.addPath &&
-                          focusMode != FocusMode.editPath &&
-                          measurementPolyline.points.isNotEmpty)
+                      if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
                         DragMarkerPluginOptions(markers: measurementEditor.edit()),
-                      if (focusMode != FocusMode.addPath &&
-                          focusMode != FocusMode.editPath &&
-                          measurementPolyline.points.isNotEmpty)
+                      if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
                         MarkerLayerOptions(markers: buildMeasurementMarkers(measurementPolyline.points)),
 
                       // Draggable line editor
@@ -548,166 +546,192 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             .toList()),
                   )),
 
-          // --- Chat bubbles
-          Consumer<ChatMessages>(
-            builder: (context, chat, child) {
-              // get valid bubbles
-              const numSeconds = 20;
-              List<Message> bubbles = [];
-              for (int i = chat.messages.length - 1; i >= 0; i--) {
-                if (chat.messages[i].timestamp >
-                        max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
-                    chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
-                  bubbles.add(chat.messages[i]);
+          // --- Secondary column (default to right side)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: Column(
+              verticalDirection: VerticalDirection.up,
+              mainAxisAlignment: MainAxisAlignment.start,
+              // crossAxisAlignment: Provider.of<Settings>(context).mapControlsRightSide
+              //     ? CrossAxisAlignment.start
+              //     : CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // --- Current waypoint info
+                if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
+                  Align(
+                    alignment: Alignment.center,
+                    child: ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                            child: Container(
+                                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
+                                color: Colors.white30,
+                                child: const WaypointNavBar()))),
+                  ),
 
-                  Timer(const Duration(seconds: numSeconds), () {
-                    // "self destruct" the message after several seconds by triggering a refresh
-                    chat.refresh();
-                  });
-                } else {
-                  break;
-                }
-              }
-              return Positioned(
-                  right: Provider.of<Settings>(context).mapControlsRightSide ? 70 : 0,
-                  bottom: 80,
-                  // left: 100,
-                  child: Column(
-                    verticalDirection: VerticalDirection.up,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: bubbles
-                        .map(
-                          (e) => ChatBubble(
-                              false,
-                              e.text,
-                              AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20,
-                                  tier: Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.tier),
-                              null,
-                              e.timestamp),
-                        )
-                        .toList(),
-                  ));
-            },
-          ),
+                // --- Measurement (X)
+                if (focusMode == FocusMode.measurement)
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Measure",
+                          style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          iconSize: 40,
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.cancel,
+                            size: 40,
+                            color: Colors.red,
+                          ),
+                          onPressed: () => {
+                            setState(() {
+                              measurementPolyline.points.clear();
+                              setFocusMode(prevFocusMode);
+                            })
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
 
-          // --- Map overlay layers
-          if (focusMode != FocusMode.addPath &&
-              focusMode != FocusMode.editPath &&
-              measurementPolyline.points.isNotEmpty)
-            Positioned(
-              bottom: 10,
-              right: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
-              left: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
-              child: IconButton(
-                iconSize: 40,
-                padding: EdgeInsets.zero,
-                icon: const Icon(
-                  Icons.cancel,
-                  size: 40,
-                  color: Colors.red,
-                ),
-                onPressed: () => {
-                  setState(() {
-                    measurementPolyline.points.clear();
-                  })
-                },
-              ),
-            ),
-
-          if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-            Positioned(
-              bottom: 10,
-              right: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
-              left: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Card(
-                    color: Colors.amber.shade400,
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text.rich(
-                        TextSpan(children: [
-                          WidgetSpan(
-                              child: Icon(
-                            Icons.touch_app,
-                            size: 18,
-                            color: Colors.black,
-                          )),
-                          TextSpan(text: "Tap to add to path")
-                        ]),
-                        style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-                        // textAlign: TextAlign.justify,
+                if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(Provider.of<Settings>(context).mapControlsRightSide ? 10 : 80, 20,
+                        Provider.of<Settings>(context).mapControlsRightSide ? 80 : 10, 10),
+                    child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Card(
+                            color: Colors.amber.shade400,
+                            child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text.rich(
+                                TextSpan(children: [
+                                  WidgetSpan(
+                                      child: Icon(
+                                    Icons.touch_app,
+                                    size: 18,
+                                    color: Colors.black,
+                                  )),
+                                  TextSpan(text: "Tap to add to path")
+                                ]),
+                                style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                                // textAlign: TextAlign.justify,
+                              ),
+                            ),
+                          ),
+                          // IconButton(
+                          //   iconSize: 40,
+                          //   padding: EdgeInsets.zero,
+                          //   icon: const Icon(
+                          //     Icons.swap_horizontal_circle,
+                          //     size: 40,
+                          //     color: Colors.black,
+                          //   ),
+                          //   onPressed: () {
+                          //     setState(() {
+                          //       var tmp = editablePoints.toList();
+                          //       editablePoints.clear();
+                          //       editablePoints.addAll(tmp.reversed);
+                          //     });
+                          //   },
+                          // ),
+                          IconButton(
+                            iconSize: 40,
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.cancel,
+                              size: 40,
+                              color: Colors.red,
+                            ),
+                            onPressed: () => {setFocusMode(prevFocusMode)},
+                          ),
+                          if (editablePoints.length > 1)
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              iconSize: 40,
+                              icon: const Icon(
+                                Icons.check_circle,
+                                size: 40,
+                                color: Colors.green,
+                              ),
+                              onPressed: () {
+                                // --- finish editing path
+                                var plan = Provider.of<ActivePlan>(context, listen: false);
+                                if (editingWp == null) {
+                                  var temp = Waypoint(name: "", latlngs: editablePoints.toList());
+                                  editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
+                                      ?.then((newWaypoint) {
+                                    if (newWaypoint != null) {
+                                      plan.updateWaypoint(newWaypoint);
+                                    }
+                                  });
+                                } else {
+                                  plan.moveWaypoint(editingWp!, editablePoints.toList());
+                                  editingWp = null;
+                                }
+                                setFocusMode(prevFocusMode);
+                              },
+                            ),
+                        ],
                       ),
                     ),
                   ),
-                  // IconButton(
-                  //   iconSize: 40,
-                  //   padding: EdgeInsets.zero,
-                  //   icon: const Icon(
-                  //     Icons.swap_horizontal_circle,
-                  //     size: 40,
-                  //     color: Colors.black,
-                  //   ),
-                  //   onPressed: () {
-                  //     setState(() {
-                  //       var tmp = editablePoints.toList();
-                  //       editablePoints.clear();
-                  //       editablePoints.addAll(tmp.reversed);
-                  //     });
-                  //   },
-                  // ),
-                  IconButton(
-                    iconSize: 40,
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(
-                      Icons.cancel,
-                      size: 40,
-                      color: Colors.red,
-                    ),
-                    onPressed: () => {setFocusMode(prevFocusMode)},
-                  ),
-                  if (editablePoints.length > 1)
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      iconSize: 40,
-                      icon: const Icon(
-                        Icons.check_circle,
-                        size: 40,
-                        color: Colors.green,
-                      ),
-                      onPressed: () {
-                        // --- finish editing path
-                        var plan = Provider.of<ActivePlan>(context, listen: false);
-                        if (editingWp == null) {
-                          var temp = Waypoint(name: "", latlngs: editablePoints.toList());
-                          editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
-                              ?.then((newWaypoint) {
-                            if (newWaypoint != null) {
-                              plan.updateWaypoint(newWaypoint);
-                            }
+
+                // --- Chat bubbles
+                Padding(
+                  padding: EdgeInsets.fromLTRB(Provider.of<Settings>(context).mapControlsRightSide ? 0 : 80, 20,
+                      Provider.of<Settings>(context).mapControlsRightSide ? 80 : 0, 10),
+                  child: Consumer<ChatMessages>(
+                    builder: (context, chat, child) {
+                      // get valid bubbles
+                      const numSeconds = 20;
+                      List<Message> bubbles = [];
+                      for (int i = chat.messages.length - 1; i >= 0; i--) {
+                        if (chat.messages[i].timestamp >
+                                max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
+                            chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
+                          bubbles.add(chat.messages[i]);
+
+                          Timer(const Duration(seconds: numSeconds), () {
+                            // "self destruct" the message after several seconds by triggering a refresh
+                            chat.refresh();
                           });
                         } else {
-                          plan.moveWaypoint(editingWp!, editablePoints.toList());
-                          editingWp = null;
+                          break;
                         }
-                        setFocusMode(prevFocusMode);
-                      },
-                    ),
-                ],
-              ),
+                      }
+                      return Column(
+                        verticalDirection: VerticalDirection.up,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: bubbles
+                            .map(
+                              (e) => ChatBubble(
+                                  false,
+                                  e.text,
+                                  AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20,
+                                      tier: Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.tier),
+                                  null,
+                                  e.timestamp),
+                            )
+                            .toList(),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-
-          // --- Current waypoint
-          if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
-            Positioned(
-                bottom: 5,
-                child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                        child: Container(color: Colors.white30, child: const WaypointNavBar())))),
+          ),
 
           // --- Map View Buttons
           Positioned(
@@ -803,8 +827,20 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
                     ),
                   ]),
-                  // --- Empty spacer to push buttons up
-                  Container()
+
+                  // --- Measurement
+                  MapButton(
+                    size: 60,
+                    onPressed: () {
+                      setFocusMode(FocusMode.measurement);
+                    },
+                    selected: false,
+                    child: const Icon(
+                      Icons.straighten,
+                      size: 30,
+                      color: Colors.black,
+                    ),
+                  )
                 ]),
           ),
 

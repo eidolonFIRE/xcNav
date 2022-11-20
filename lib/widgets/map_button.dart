@@ -6,12 +6,7 @@ class MapButton extends StatelessWidget {
   final double size;
   final bool selected;
 
-  const MapButton(
-      {required this.child,
-      required this.size,
-      required this.onPressed,
-      required this.selected,
-      Key? key})
+  const MapButton({required this.child, required this.size, required this.onPressed, required this.selected, Key? key})
       : super(key: key);
 
   @override
@@ -24,7 +19,7 @@ class MapButton extends StatelessWidget {
           onPressed: onPressed,
           shape: RoundedRectangleBorder(
             borderRadius: const BorderRadius.all(Radius.circular(30)),
-            side: BorderSide(color: Colors.black, width: selected ? 3 : 1),
+            side: BorderSide(color: selected ? Colors.black : Colors.black45, width: selected ? 3 : 1),
           ),
           child: child),
     );
