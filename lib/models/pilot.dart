@@ -13,6 +13,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/secrets.dart';
 
 class Pilot {
   // basic info
@@ -30,8 +32,7 @@ class Pilot {
   Color color = Colors.grey.shade800;
   String? tier;
 
-  // Flightplan
-  int? selectedWaypoint;
+  WaypointID? selectedWp;
 
   Pilot(this.id, this.name, this.avatarHash, this.geo, this.tier) {
     // Load Avatar
@@ -41,7 +42,7 @@ class Pilot {
   Pilot.fromJson(Map<String, dynamic> json) {
     id = json["id"];
     name = json["name"];
-    avatarHash = json["avatar_hash"];
+    avatarHash = json["avatarHash"];
     tier = json["tier"];
     _loadAvatar();
   }
@@ -50,7 +51,7 @@ class Pilot {
     return {
       "id": id,
       "name": name,
-      "avatar_hash": avatarHash,
+      "avatarHash": avatarHash,
       "tier": tier,
     };
   }
@@ -155,13 +156,10 @@ class Pilot {
   }
 
   Future _fetchS3asset(String pilotID) async {
-    Uri uri =
-        Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com", "/xcnav_avatar_service", {"pilot_id": pilotID});
+    final countryCode = WidgetsBinding.instance.window.locale.countryCode;
+    Uri uri = Uri.https(endpoints[countryCode]?.avatarUrl ?? "", "/xcnav_avatar_service", {"pilot_id": pilotID});
     return http
-        .get(
-      uri,
-    )
-        .then((http.Response response) {
+        .get(uri, headers: {"authorizationToken": endpoints[countryCode]?.token ?? ""}).then((http.Response response) {
       final int statusCode = response.statusCode;
 
       if (statusCode < 200 || statusCode > 400) {
@@ -173,7 +171,7 @@ class Pilot {
 
   Polyline buildFlightTrace() {
     return Polyline(
-        points: flightTrace.map((e) => e.latLng).toList().sublist(max(0, flightTrace.length - 60)),
+        points: flightTrace.map((e) => e.latlng).toList().sublist(max(0, flightTrace.length - 60)),
         strokeWidth: 4,
         color: color.withAlpha(150),
         isDotted: true);

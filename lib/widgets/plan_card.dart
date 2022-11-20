@@ -14,8 +14,10 @@ import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/plans.dart';
 
+// --- Misc
+import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/flight_plan.dart';
-import 'package:xcnav/widgets/make_path_barbs.dart';
+import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
 
@@ -31,7 +33,21 @@ class PlanCard extends StatefulWidget {
 class _PlanCardState extends State<PlanCard> {
   var formKey = GlobalKey<FormState>();
   bool isExpanded = false;
-  Set<int> checkedElements = {};
+  Set<WaypointID> checkedElements = {};
+
+  final mapController = MapController();
+  bool mapReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    mapController.onReady.then((value) => setState(
+          () {
+            debugPrint("Mapready");
+            mapReady = true;
+          },
+        ));
+  }
 
   void deletePlan(BuildContext context) {
     showDialog(
@@ -67,7 +83,7 @@ class _PlanCardState extends State<PlanCard> {
     final activePlan = Provider.of<ActivePlan>(context, listen: false);
     activePlan.waypoints.clear();
     activePlan.waypoints.addAll(widget.plan.waypoints);
-    Provider.of<Client>(context, listen: false).pushFlightPlan();
+    Provider.of<Client>(context, listen: false).pushWaypoints();
     activePlan.isSaved = true;
   }
 
@@ -81,7 +97,7 @@ class _PlanCardState extends State<PlanCard> {
     }
   }
 
-  void toggleItem(int index) {
+  void toggleItem(WaypointID index) {
     if (checkedElements.contains(index)) {
       checkedElements.remove(index);
     } else {
@@ -215,7 +231,7 @@ class _PlanCardState extends State<PlanCard> {
                           value: "replace",
                           child: ListTile(
                               title: Text(
-                                "Use as Active Plan",
+                                "Replace All",
                                 style: TextStyle(color: Colors.amber, fontSize: 20),
                               ),
                               leading: Icon(
@@ -284,67 +300,99 @@ class _PlanCardState extends State<PlanCard> {
               // width: MediaQuery.of(context).size.width / 2,
               // height: MediaQuery.of(context).size.width / 2,
               aspectRatio: 1.5,
-              child: FlutterMap(
-                  options: MapOptions(
-                    bounds: widget.plan.getBounds(),
-                    interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                    // allowPanningOnScrollingParent: false
-                  ),
-                  layers: [
-                    TileLayerOptions(
-                      // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                      // subdomains: ['a', 'b', 'c'],
-                      urlTemplate:
-                          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                      // tileSize: 512,
-                      // zoomOffset: -1,
-                    ),
-                    // Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
+              child: Stack(
+                children: [
+                  FlutterMap(
+                      mapController: mapController,
+                      options: MapOptions(
+                          bounds: widget.plan.getBounds(),
+                          interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                          // allowPanningOnScrollingParent: false
+                          plugins: [TappablePolylineMapPlugin()]),
+                      layers: [
+                        TileLayerOptions(
+                          // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                          // subdomains: ['a', 'b', 'c'],
+                          urlTemplate:
+                              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+                          // tileSize: 512,
+                          // zoomOffset: -1,
+                        ),
+                        // Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
 
-                    // Trip snake lines
-                    PolylineLayerOptions(polylines: widget.plan.buildTripSnake()),
-
-                    // Flight plan markers
-                    PolylineLayerOptions(
-                      polylines: widget.plan.waypoints
-                          // .where((value) => value.latlng.length > 1)
-                          .mapIndexed((i, e) => e.latlng.length > 1
-                              ? Polyline(
+                        // Flight plan paths - Polyline
+                        TappablePolylineLayerOptions(
+                          polylines: widget.plan.waypoints.values
+                              .where(
+                                (element) => element.isPath,
+                              )
+                              .map((e) => TaggedPolyline(
                                   points: e.latlng,
-                                  strokeWidth: checkedElements.contains(i) ? 8 : 3,
-                                  color: e.getColor(),
-                                  isDotted: e.isOptional)
-                              : null)
-                          .whereNotNull()
-                          .toList(),
-                    ),
-
-                    // Flight plan paths - directional barbs
-                    MarkerLayerOptions(markers: makePathBarbs(widget.plan.waypoints, false, 30)),
-
-                    // Waypoint Markers
-                    MarkerLayerOptions(
-                      markers: widget.plan.waypoints
-                          .mapIndexed((i, e) {
-                            if (e.latlng.length == 1) {
-                              final bool isChecked = checkedElements.contains(i);
-                              return Marker(
-                                  point: e.latlng[0],
-                                  height: isChecked ? 40 : 30,
-                                  width: (isChecked ? 40 : 30) * 2 / 3,
-                                  builder: (context) => Container(
-                                      transform: Matrix4.translationValues(0, isChecked ? (-15 * 4 / 3) : -15, 0),
-                                      child: GestureDetector(
-                                          onTap: () => setState(() => toggleItem(i)),
-                                          child: MapMarker(e, isChecked ? 40 : 30))));
-                            } else {
-                              return null;
+                                  tag: e.id,
+                                  strokeWidth: checkedElements.contains(e.id) ? 6.0 : 3.0,
+                                  color: e.getColor()))
+                              .toList(),
+                          onTap: (p0, tapPosition) {
+                            if (p0.tag != null) {
+                              setState(
+                                () {
+                                  toggleItem(p0.tag!);
+                                },
+                              );
                             }
-                          })
-                          .whereNotNull()
-                          .toList(),
+                          },
+                        ),
+
+                        // Waypoint Markers
+                        MarkerLayerOptions(
+                          markers: widget.plan.waypoints.values
+                              .map((e) {
+                                if (e.latlng.length == 1) {
+                                  final bool isChecked = checkedElements.contains(e.id);
+                                  return Marker(
+                                      point: e.latlng[0],
+                                      height: isChecked ? 40 : 30,
+                                      width: (isChecked ? 40 : 30) * 2 / 3,
+                                      builder: (context) => Container(
+                                          transform: Matrix4.translationValues(0, isChecked ? (-15 * 4 / 3) : -15, 0),
+                                          child: GestureDetector(
+                                              onTap: () => setState(() => toggleItem(e.id)),
+                                              child: MapMarker(e, isChecked ? 40 : 30))));
+                                } else {
+                                  return null;
+                                }
+                              })
+                              .whereNotNull()
+                              .toList(),
+                        ),
+                      ]),
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: ElevatedButton.icon(
+                          onPressed: () {
+                            final plan = Provider.of<ActivePlan>(context, listen: false);
+                            plan.waypoints.addAll(checkedElements.isEmpty
+                                ? widget.plan.waypoints
+                                : Map<WaypointID, Waypoint>.fromEntries(widget.plan.waypoints.entries
+                                    .where((element) => checkedElements.contains(element.key))));
+                            Provider.of<Client>(context, listen: false).pushWaypoints();
+                            Navigator.popUntil(context, ModalRoute.withName("/home"));
+                            plan.notifyListeners();
+                          },
+                          icon: const Icon(
+                            Icons.playlist_add,
+                            color: Colors.lightGreen,
+                          ),
+                          label: Text(
+                            "Load ${checkedElements.isEmpty ? "All" : "Selected (${checkedElements.length})"}",
+                            style: const TextStyle(fontSize: 18),
+                          )),
                     ),
-                  ]),
+                  )
+                ],
+              ),
             ),
           if (isExpanded)
             Container(
@@ -355,39 +403,18 @@ class _PlanCardState extends State<PlanCard> {
                   itemCount: widget.plan.waypoints.length,
                   itemBuilder: (context, index) => WaypointCard(
                         index: index,
-                        waypoint: widget.plan.waypoints[index],
+                        waypoint: widget.plan.waypoints.values.toList()[index],
                         onSelect: () {
                           setState(
                             () {
-                              toggleItem(index);
+                              toggleItem(widget.plan.waypoints.values.toList()[index].id);
                             },
                           );
                         },
-                        onToggleOptional: () {},
-                        isSelected: checkedElements.contains(index),
+                        isSelected: checkedElements.contains(widget.plan.waypoints.values.toList()[index].id),
                         showPilots: false,
                       )),
             ),
-          if (isExpanded)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: ElevatedButton.icon(
-                  onPressed: () {
-                    Provider.of<ActivePlan>(context, listen: false).waypoints.addAll(checkedElements.isEmpty
-                        ? widget.plan.waypoints
-                        : checkedElements.map((e) => widget.plan.waypoints[e]).toList());
-                    Provider.of<Client>(context, listen: false).pushFlightPlan();
-                    Navigator.popUntil(context, ModalRoute.withName("/home"));
-                  },
-                  icon: const Icon(
-                    Icons.playlist_add,
-                    color: Colors.lightGreen,
-                  ),
-                  label: Text(
-                    "Activate ${checkedElements.isEmpty ? "All" : "Selected (${checkedElements.length})"}",
-                    style: const TextStyle(fontSize: 18),
-                  )),
-            )
         ]),
       ),
     );

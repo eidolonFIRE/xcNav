@@ -112,7 +112,8 @@ class Plans with ChangeNotifier {
         File file = File(filename);
 
         file.create(recursive: true).then((value) => file
-            .writeAsString(jsonEncode({"title": name, "waypoints": plan.waypoints.map((e) => e.toJson()).toList()}))
+            .writeAsString(
+                jsonEncode({"title": name, "waypoints": plan.waypoints.values.map((e) => e.toJson()).toList()}))
             .then((_) => completer.complete()));
       });
       return completer.future;

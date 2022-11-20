@@ -26,6 +26,9 @@ enum TtsState {
   playing,
 }
 
+/// Global Singleton
+late TtsService ttsService;
+
 /// Singleton for queueing up messages to speak to users
 class TtsService {
   late final FlutterTts instance;

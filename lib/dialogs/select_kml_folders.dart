@@ -3,8 +3,7 @@ import 'package:xml/xml.dart';
 
 class SelectedFoldersOptions {
   final List<XmlElement> folders;
-  final bool allOptional;
-  SelectedFoldersOptions(this.allOptional, this.folders);
+  SelectedFoldersOptions(this.folders);
 }
 
 Future<SelectedFoldersOptions?> selectKmlFolders(BuildContext context, List<XmlElement> folders) {
@@ -12,26 +11,14 @@ Future<SelectedFoldersOptions?> selectKmlFolders(BuildContext context, List<XmlE
       context: context,
       builder: (context) {
         Set<int> checkedElements = {};
-        bool allOptional = false;
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
             title: const Text("Select KML Folders"),
             actions: [
-              SwitchListTile(
-                  title: const Text("All Waypoints Optional"),
-                  value: allOptional,
-                  onChanged: (checked) {
-                    setState(
-                      () {
-                        allOptional = checked;
-                      },
-                    );
-                  }),
               IconButton(
                   onPressed: () {
                     // Return list of selected folders
-                    Navigator.pop(
-                        context, SelectedFoldersOptions(allOptional, checkedElements.map((e) => folders[e]).toList()));
+                    Navigator.pop(context, SelectedFoldersOptions(checkedElements.map((e) => folders[e]).toList()));
                   },
                   icon: const Icon(
                     Icons.check,

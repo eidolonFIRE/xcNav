@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // Models
 import 'package:xcnav/models/pilot.dart';
+import 'package:xcnav/models/waypoint.dart';
 
 class PastGroup {
   // [id] == name
@@ -103,13 +104,13 @@ class Group with ChangeNotifier {
 
   void saveGroup(String groupID) {
     if (prefs != null) {
-      prefs!.setString("group.currentGroupID", groupID);
+      prefs!.setString("group.currentGroupId.V2.0", groupID);
     }
   }
 
   String? loadGroup() {
     if (prefs != null) {
-      return prefs!.getString("group.currentGroupID");
+      return prefs!.getString("group.currentGroupId.V2.0");
     }
     return null;
   }
@@ -136,25 +137,11 @@ class Group with ChangeNotifier {
     }
   }
 
-  void pilotSelectedWaypoint(String pilotID, int index) {
+  void pilotSelectedWaypoint(String pilotID, WaypointID? waypointID) {
     Pilot? pilot = pilots[pilotID];
     if (pilot != null) {
-      pilot.selectedWaypoint = index;
+      pilot.selectedWp = waypointID;
     }
     notifyListeners();
-  }
-
-  void fixPilotSelectionsOnSort(int oldIndex, int newIndex) {
-    for (final p in pilots.values) {
-      if (p.selectedWaypoint != null) {
-        if (p.selectedWaypoint == oldIndex) {
-          p.selectedWaypoint = newIndex;
-        } else if (newIndex <= p.selectedWaypoint! && oldIndex > p.selectedWaypoint!) {
-          p.selectedWaypoint = p.selectedWaypoint! + 1;
-        } else if (p.selectedWaypoint! <= newIndex && p.selectedWaypoint! > oldIndex) {
-          p.selectedWaypoint = p.selectedWaypoint! - 1;
-        }
-      }
-    }
   }
 }

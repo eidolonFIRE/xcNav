@@ -22,16 +22,15 @@ class LastReport<T> {
   }
 }
 
+late AudioCueService audioCueService;
+
 class AudioCueService {
   late final TtsService ttsService;
   late final Settings settings;
   late final Group group;
   late final ActivePlan activePlan;
 
-  /// Current global multiplier
-  int? _mode = 0;
-
-  late final SharedPreferences _prefs;
+  SharedPreferences? _prefs;
 
   Map<String, bool> _config = {
     "My Telemetry": true,
@@ -118,30 +117,31 @@ class AudioCueService {
   }) {
     SharedPreferences.getInstance().then((instance) {
       _prefs = instance;
-      final loadedConfig = _prefs.getString("audio_cues_config");
+      final loadedConfig = _prefs?.getString("audio_cues_config");
       if (loadedConfig != null) {
         final loaded = jsonDecode(loadedConfig);
         for (final String name in _config.keys) {
           _config[name] = loaded[name] as bool? ?? true;
         }
       }
-      mode = _prefs.getInt("audio_cues_mode");
+      mode = _prefs?.getInt("audio_cues_mode");
     });
   }
 
   Map<String, bool> get config => _config;
   set config(Map<String, bool> newConfig) {
     _config = newConfig;
-    _prefs.setString("audio_cues_config", jsonEncode(config));
+    _prefs?.setString("audio_cues_config", jsonEncode(config));
   }
 
+  int? _mode;
   int? get mode => _mode;
   set mode(int? newmode) {
     _mode = newmode;
     if (newmode != null) {
-      _prefs.setInt("audio_cues_mode", newmode);
+      _prefs?.setInt("audio_cues_mode", newmode);
     } else {
-      _prefs.remove("audio_cues_mode");
+      _prefs?.remove("audio_cues_mode");
     }
   }
 
@@ -188,14 +188,13 @@ class AudioCueService {
 
   void cueNextWaypoint(Geo myGeo) {
     // --- Next Waypoint
-    if (mode != null && activePlan.selectedWp != null && (config["Next Waypoint"] ?? false)) {
+    final selectedWp = activePlan.getSelectedWp();
+    if (mode != null && selectedWp != null && (config["Next Waypoint"] ?? false)) {
       final maxInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][1]! as double) * 60).toInt());
       final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
       final hdgPrecision = precisionLUT["hdg"][mode];
 
-      final target = activePlan.selectedWp!.latlng.length > 1
-          ? myGeo.nearestPointOnPath(activePlan.selectedWp!.latlng, activePlan.isReversed).latlng
-          : activePlan.selectedWp!.latlng[0];
+      final target = selectedWp.latlng.length > 1 ? myGeo.getIntercept(selectedWp.latlng).latlng : selectedWp.latlng[0];
 
       final relativeHdg = myGeo.relativeHdgLatlng(target);
 
@@ -206,7 +205,7 @@ class AudioCueService {
           (DateTime.now().isAfter(lastHdg!.timestamp.add(minInterval)) && ((relativeHdg).abs() >= hdgPrecision))) {
         lastHdg = LastReport.now(myGeo.hdg);
 
-        final eta = activePlan.etaToWaypoint(myGeo, myGeo.spd, activePlan.selectedIndex!);
+        final eta = selectedWp.eta(myGeo, myGeo.spd);
         if (eta.time != null) {
           final etaTime = printHrMinLexical(eta.time!);
           final dist = printDoubleLexical(
@@ -227,8 +226,8 @@ class AudioCueService {
   }
 
   void cueFuel(Geo myGeo, double fuel, Duration fuelTimeRemaining) {
-    if (mode != null && fuel > 0 && activePlan.selectedWp != null) {
-      final etaNext = activePlan.etaToWaypoint(myGeo, myGeo.spd, activePlan.selectedIndex!);
+    if (mode != null && fuel > 0 && activePlan.getSelectedWp() != null) {
+      final etaNext = activePlan.getSelectedWp()!.eta(myGeo, myGeo.spd);
       if (etaNext.time != null && fuelTimeRemaining < etaNext.time!) {
         final minInterval = Duration(seconds: ((intervalLUT["Fuel"][mode][0]! as double) * 60).toInt());
 

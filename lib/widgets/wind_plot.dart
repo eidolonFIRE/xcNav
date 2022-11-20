@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'dart:async';
@@ -21,13 +20,13 @@ class WindPlotPainter extends CustomPainter {
   late final double circleRadius;
   late final Paint circlePaint;
 
+  late final bool northlock;
+
   late final Paint _barbPaint;
   late final Paint _mePaint;
 
-  late final bool isActive;
-
   WindPlotPainter(
-      double width, this.dataX, this.dataY, this.maxValue, this.circleCenter, this.circleRadius, this.isActive) {
+      double width, this.dataX, this.dataY, this.maxValue, this.circleCenter, this.circleRadius, this.northlock) {
     _paint = Paint()..color = Colors.red;
     _paint.style = PaintingStyle.fill;
 
@@ -71,6 +70,12 @@ class WindPlotPainter extends CustomPainter {
     final maxSize = min(size.width, size.height) / 2;
     final Offset center = Offset(size.width / 2, size.height / 2);
 
+    if (!northlock) {
+      canvas.translate(size.width / 2, size.height / 2);
+      canvas.rotate(-atan2(dataY.last, dataX.last) - pi / 2);
+      canvas.translate(-size.width / 2, -size.height / 2);
+    }
+
     // Paint grid
     const pad = 0.9;
     canvas.drawLine(
@@ -90,7 +95,7 @@ class WindPlotPainter extends CustomPainter {
     // Wind barb
     canvas.drawLine(center, cCenter, _barbPaint);
     canvas.drawPoints(
-        PointMode.polygon,
+        ui.PointMode.polygon,
         [
           cCenter +
               Offset(cos(circleCenter.direction - pi / 1.2), sin(circleCenter.direction - pi / 1.2)) *
@@ -109,16 +114,15 @@ class WindPlotPainter extends CustomPainter {
         _barbPaint);
 
     // Last reading (current movement)
-    if (isActive) {
-      final lastPoint = Offset(dataX.last, dataY.last);
-      final lastPointScaled = lastPoint * maxSize / maxValue + center;
-      canvas.drawLine(center, lastPointScaled, _mePaint);
-      if (_arrow != null) {
-        canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
-        canvas.rotate(lastPoint.direction + pi / 2);
-        canvas.drawImageRect(_arrow!, const Rect.fromLTWH(0, 0, 128, 130),
-            Rect.fromCenter(center: const Offset(0, 0), width: maxSize / 3, height: maxSize / 3), Paint());
-      }
+
+    final lastPoint = Offset(dataX.last, dataY.last);
+    final lastPointScaled = lastPoint * maxSize / maxValue + center;
+    canvas.drawLine(center, lastPointScaled, _mePaint);
+    if (_arrow != null) {
+      canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
+      canvas.rotate(lastPoint.direction + pi / 2);
+      canvas.drawImageRect(_arrow!, const Rect.fromLTWH(0, 0, 113, 130),
+          Rect.fromCenter(center: const Offset(0, 0), width: maxSize / 3, height: maxSize / 3), Paint());
     }
   }
 

@@ -66,7 +66,8 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
 
       // Go to next screen
-      if (Provider.of<Profile>(context, listen: false).name != null) {
+      final name = Provider.of<Profile>(context, listen: false).name;
+      if (name != null && name.length >= 2) {
         Navigator.pushReplacementNamed(context, "/home");
       } else {
         Navigator.pushReplacementNamed(context, "/profileEditor");

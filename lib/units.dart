@@ -207,8 +207,7 @@ String printHrMinLexical(Duration duration) {
   }
 }
 
-TextSpan richHrMin(
-    {required Duration? duration, required TextStyle valueStyle, TextStyle? unitStyle, bool longUnits = false}) {
+TextSpan richHrMin({required Duration? duration, TextStyle? valueStyle, TextStyle? unitStyle, bool longUnits = false}) {
   if (duration == null) {
     return TextSpan(text: "∞", style: valueStyle);
   } else {
@@ -267,17 +266,21 @@ String printDoubleLexical(
 }
 
 TextSpan richValue(UnitType type, double value,
-    {int digits = 4, int decimals = 0, TextStyle? valueStyle, TextStyle? unitStyle, bool autoDecimal = true}) {
+    {int digits = 4, int decimals = 0, TextStyle? valueStyle, TextStyle? unitStyle, double? autoDecimalThresh}) {
   // Cases for increasing decimals
-  if (autoDecimal) {
-    if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps) decimals++;
-    if (type == UnitType.speed && _unitSpeed == DisplayUnitsVario.mps) decimals++;
-  }
+
+  if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps ||
+      type == UnitType.speed && _unitSpeed == DisplayUnitsVario.mps) decimals++;
 
   // Make the textspan
   return TextSpan(children: [
     TextSpan(
-        text: printDouble(value: unitConverters[type]!(value), digits: digits, decimals: decimals), style: valueStyle),
+        text: printDouble(
+            value: unitConverters[type]!(value),
+            digits: digits,
+            decimals: decimals,
+            autoDecimalThresh: autoDecimalThresh),
+        style: valueStyle),
     TextSpan(text: getUnitStr(type), style: unitStyle),
   ]);
 }
