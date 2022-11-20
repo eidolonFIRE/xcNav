@@ -26,15 +26,15 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="7.3448334"
-     inkscape:cx="84.860446"
-     inkscape:cy="87.568567"
+     inkscape:cx="72.699276"
+     inkscape:cy="84.810931"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:window-width="2880"
-     inkscape:window-height="1620"
+     inkscape:window-height="1855"
      inkscape:window-x="372"
-     inkscape:window-y="357"
+     inkscape:window-y="122"
      inkscape:window-maximized="0">
     <inkscape:grid
        type="xygrid"
@@ -58,23 +58,21 @@
      id="layer1"
      transform="translate(0,-247)">
     <path
-       style="fill:#2196f3;fill-opacity:1;stroke:#000000;stroke-width:0.8;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 25,248 4.5,7 0,39 -4.5,-2 -4.5,2 v -39 z"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 15,281 10,8 9.999998,-8"
+       id="path823"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:#e99c59;fill-opacity:1;stroke:#000000;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 30,248.5 c 1,12.5 1,12.5 5,32.5 0,0 -5,-0.7 -10,-0.7 -5,0 -10,0.7 -10,0.7 4,-20 4,-20 5,-32.5 0,0 1.999012,-0.49983 5,-0.5 3.000988,-1.7e-4 5,0.5 5,0.5 z"
        id="path817"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccccccc" />
+       sodipodi:nodetypes="cczcczc" />
     <circle
-       style="opacity:1;fill:#2196f3;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:0.82426;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
-       id="path846"
+       style="opacity:1;fill:#c5c5c5;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+       id="path819"
        cx="25"
-       cy="272"
-       r="7.4878702" />
-    <rect
-       style="opacity:1;fill:#2196f3;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.48466054;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
-       id="rect848"
-       width="8.1999998"
-       height="22"
-       x="20.9"
-       y="261" />
+       cy="288.99997"
+       r="2.6666667" />
   </g>
 </svg>

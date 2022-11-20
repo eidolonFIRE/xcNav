@@ -14,7 +14,6 @@ import 'package:xcnav/providers/adsb.dart';
 //
 import 'package:xcnav/units.dart';
 import 'package:xcnav/dialogs/patreon_info.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 
 class SettingsEditor extends StatefulWidget {
   const SettingsEditor({Key? key}) : super(key: key);
@@ -33,16 +32,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
       return Scaffold(
           appBar: AppBar(
             title: const Text("Settings"),
-            // TODO: when we have enough settings, we can use a search
-            // title: SizedBox(
-            //   height: 32,
-            //   child: TextField(
-            //     style: const TextStyle(fontSize: 24),
-            //     controller: searchInput,
-            //     decoration:
-            //         const InputDecoration(suffixIcon: Icon(Icons.search)),
-            //   ),
-            // ),
           ),
           body: SettingsList(
             darkTheme: SettingsThemeData(
@@ -127,6 +116,16 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     // description:
                     //     const Text("Alters UI and doesn't record track."),
                   ),
+                  SettingsTile.navigation(
+                      title: const Text("Primary Altimeter"),
+                      leading: const Icon(Icons.vertical_align_top),
+                      trailing: DropdownButton<String>(
+                          onChanged: (value) => {settings.altInstr = value ?? "MSL"},
+                          value: settings.altInstr,
+                          items: const [
+                            DropdownMenuItem(value: "AGL", child: Text("AGL")),
+                            DropdownMenuItem(value: "MSL", child: Text("MSL")),
+                          ]))
                 ],
               ),
               // --- ADSB options
@@ -244,18 +243,18 @@ class _SettingsEditorState extends State<SettingsEditor> {
                       ),
                       onToggle: (value) => {settings.spoofLocation = value},
                     ),
-                    // --- Clear path
-                    SettingsTile.navigation(
-                      title: const Text("Clear Current Flight"),
-                      leading: const Icon(
-                        Icons.delete_sweep,
-                        color: Colors.red,
-                      ),
-                      onPressed: (_) {
-                        Provider.of<MyTelemetry>(context, listen: false).recordGeo.clear();
-                        Provider.of<MyTelemetry>(context, listen: false).flightTrace.clear();
-                      },
-                    ),
+                    // // --- Clear path
+                    // SettingsTile.navigation(
+                    //   title: const Text("Clear Current Flight"),
+                    //   leading: const Icon(
+                    //     Icons.delete_sweep,
+                    //     color: Colors.red,
+                    //   ),
+                    //   onPressed: (_) {
+                    //     Provider.of<MyTelemetry>(context, listen: false).recordGeo.clear();
+                    //     Provider.of<MyTelemetry>(context, listen: false).flightTrace.clear();
+                    //   },
+                    // ),
                     // --- Erase Identity
                     SettingsTile.navigation(
                       title: const Text("Clear Identity"),

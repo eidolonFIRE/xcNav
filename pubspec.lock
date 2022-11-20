@@ -50,6 +50,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.2.0"
+  bisection:
+    dependency: "direct main"
+    description:
+      name: bisection
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.4.3+1"
   boolean_selector:
     dependency: transitive
     description:
@@ -190,6 +197,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.5"
+  dart_numerics:
+    dependency: "direct main"
+    description:
+      name: dart_numerics
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.6"
   dart_style:
     dependency: transitive
     description:
@@ -393,6 +407,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.3"
+  fuzzywuzzy:
+    dependency: "direct main"
+    description:
+      name: fuzzywuzzy
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.2.0"
   geolocator:
     dependency: "direct main"
     description:
@@ -849,7 +870,7 @@ packages:
     source: hosted
     version: "1.0.1"
   positioned_tap_detector_2:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: positioned_tap_detector_2
       url: "https://pub.dartlang.org"

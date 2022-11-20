@@ -1,5 +1,5 @@
+// ignore_for_file: curly_braces_in_flow_control_structures
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,24 +8,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/models/eta.dart';
-import 'package:xcnav/providers/wind.dart';
 
 class ActivePlan with ChangeNotifier {
-  List<Waypoint> waypoints = [];
-  bool _isReversed = false;
-  bool _includeReturnTrip = false;
-  bool _useWind = false;
+  final Map<WaypointID, Waypoint> waypoints = {};
   bool isSaved = false;
 
   void Function(
     WaypointAction action,
-    int index,
-    int? newIndex,
-    Waypoint? data,
+    Waypoint waypoint,
   )? onWaypointAction;
 
-  void Function(int index)? onSelectWaypoint;
+  void Function(WaypointID? waypointID)? onSelectWaypoint;
 
   @override
   ActivePlan() {
@@ -44,27 +37,29 @@ class ActivePlan with ChangeNotifier {
     super.notifyListeners();
   }
 
-  int? selectedIndex;
-  Waypoint? get selectedWp =>
-      (selectedIndex != null && selectedIndex! < waypoints.length) ? waypoints[selectedIndex!] : null;
-
-  bool get includeReturnTrip => _includeReturnTrip;
-  set includeReturnTrip(bool value) {
-    _includeReturnTrip = value;
-    notifyListeners();
+  WaypointID? _selectedWp;
+  WaypointID? get selectedWp => _selectedWp;
+  set selectedWp(WaypointID? waypointID) {
+    // check this waypoint is in our list
+    if (waypoints.containsKey(waypointID) || waypointID == null) {
+      _selectedWp = waypointID;
+      // Don't notify backend if it's ephemeral
+      if (waypoints[waypointID]?.ephemeral == false) {
+        onSelectWaypoint?.call(waypointID);
+      } else {
+        // (deselect from other's point of view)
+        onSelectWaypoint?.call(null);
+      }
+      notifyListeners();
+    }
   }
 
-  bool get isReversed => _isReversed;
-  set isReversed(bool value) {
-    _isReversed = value;
-    notifyListeners();
-  }
-
-  bool get useWind => _useWind;
-  set useWind(bool value) {
-    _useWind = value;
-    debugPrint("Used wind: $value");
-    notifyListeners();
+  Waypoint? getSelectedWp() {
+    if (waypoints.containsKey(_selectedWp)) {
+      return waypoints[_selectedWp];
+    } else {
+      return null;
+    }
   }
 
   void load() async {
@@ -73,334 +68,123 @@ class ActivePlan with ChangeNotifier {
     final List<String>? items = prefs.getStringList("flightPlan.waypoints");
     if (items != null) {
       for (String wpUnparsed in items) {
-        Map wp = jsonDecode(wpUnparsed);
-        waypoints.add(Waypoint.fromJson(wp));
+        final wp = Waypoint.fromJson(jsonDecode(wpUnparsed));
+        waypoints[wp.id] = wp;
       }
     }
   }
 
   void save() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList("flightPlan.waypoints", waypoints.map((e) => e.toString()).toList());
+    await prefs.setStringList("flightPlan.waypoints",
+        waypoints.values.where((element) => !element.ephemeral).map((e) => e.toString()).toList());
   }
 
-  void selectWaypoint(int index) {
-    selectedIndex = index;
-    // callback
-    if (onSelectWaypoint != null) onSelectWaypoint!(index);
-    notifyListeners();
-  }
-
-  int? findNextWaypoint() {
-    if (selectedIndex != null && selectedIndex! < waypoints.length - 1) {
-      // (Skip optional waypoints)
-      for (int i = selectedIndex! + 1; i < waypoints.length; i++) {
-        if (!waypoints[i].isOptional) {
-          return i;
-        }
-      }
-    }
-    return null;
-  }
-
-  int? findPrevWaypoint() {
-    if (selectedIndex != null && selectedIndex! > 0) {
-      // (Skip optional waypoints)
-      for (int i = selectedIndex! - 1; i >= 0; i--) {
-        if (!waypoints[i].isOptional) {
-          return i;
-        }
-      }
-    }
-    return null;
-  }
-
-  void parseFlightPlanSync(List<dynamic> planData) {
+  void clearAllWayponits() {
     waypoints.clear();
-    // add back each waypoint
-    for (dynamic each in planData) {
-      waypoints.add(Waypoint.fromJson(each));
-    }
     notifyListeners();
   }
 
-  int _resolveNewWaypointIndex(int? index) {
-    if (index != null) {
-      return max(0, min(waypoints.length, index));
-    } else {
-      if (selectedIndex != null) {
-        return max(0, min(selectedIndex! + (isReversed ? -1 : 1), waypoints.length));
-      } else {
-        return 0;
-      }
+  void parseWaypointsSync(Map<String, dynamic> planData) {
+    // Only remove waypoints that aren't emphemeral
+    waypoints.removeWhere((key, value) => !value.ephemeral);
+    // add back each waypoint
+    for (dynamic each in planData.values) {
+      final wp = Waypoint.fromJson(each);
+      waypoints[wp.id] = wp;
     }
+    notifyListeners();
   }
 
   // Called from client
-  void backendInsertWaypoint(int index, Waypoint newPoint) {
-    waypoints.insert(_resolveNewWaypointIndex(index), newPoint);
+  void backendInsertWaypoint(Waypoint waypoint) {
+    waypoints[waypoint.id] = waypoint;
     notifyListeners();
   }
 
-  // Called from UI
-  void insertWaypoint(int? index, String name, List<LatLng> latlngs, bool? isOptional, String? icon, int? color) {
-    Waypoint newWaypoint = Waypoint(name, latlngs.toList(), isOptional ?? false, icon, color);
-    int resolvedIndex = _resolveNewWaypointIndex(index);
-    waypoints.insert(resolvedIndex, newWaypoint);
+  void backendRemoveWaypoint(WaypointID id) {
+    if (id == selectedWp) selectedWp = null;
+    waypoints.remove(id);
+    isSaved = false;
+    notifyListeners();
+  }
 
+  void removeWaypoint(WaypointID waypointID) {
     // callback
-    if (onWaypointAction != null) {
-      onWaypointAction!(WaypointAction.add, resolvedIndex, null, newWaypoint);
+    if (onWaypointAction != null && waypoints.containsKey(waypointID) && !waypoints[waypointID]!.ephemeral) {
+      onWaypointAction!(WaypointAction.delete, waypoints[waypointID]!);
     }
-    isSaved = false;
-    notifyListeners();
+    backendRemoveWaypoint(waypointID);
   }
 
-  void backendReplaceWaypoint(int index, Waypoint replacement) {
-    waypoints[index] = replacement;
-    isSaved = false;
-    notifyListeners();
-  }
-
-  void removeSelectedWaypoint() {
-    if (selectedIndex != null) removeWaypoint(selectedIndex!);
-  }
-
-  void backendRemoveWaypoint(int index) {
-    waypoints.removeAt(index);
-    if (waypoints.isEmpty) {
-      selectedIndex = null;
-    }
-    if (selectedIndex != null && selectedIndex! >= waypoints.length) {
-      selectWaypoint(waypoints.length - 1);
-    }
-    isSaved = false;
-    notifyListeners();
-  }
-
-  void removeWaypoint(int index) {
-    backendRemoveWaypoint(index);
-    // callback
-    if (onWaypointAction != null) {
-      onWaypointAction!(WaypointAction.delete, index, null, null);
-    }
-  }
-
-  void toggleOptional(int index) {
-    waypoints[index].isOptional = !waypoints[index].isOptional;
-
-    // callback
-    if (onWaypointAction != null) {
-      onWaypointAction!(WaypointAction.modify, index, null, waypoints[index]);
-    }
-    isSaved = false;
-    notifyListeners();
-  }
-
-  void moveWaypoint(int? index, List<LatLng> latlngs) {
-    if (index != null || selectedIndex != null) {
-      int i = index ?? selectedIndex!;
-      waypoints[i].latlng = latlngs;
+  void moveWaypoint(WaypointID id, List<LatLng> latlngs) {
+    if (waypoints.containsKey(id)) {
+      waypoints[id]?.latlng = latlngs;
       // callback
-      if (onWaypointAction != null) {
-        onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
+      if (onWaypointAction != null && waypoints.containsKey(id) && !waypoints[id]!.ephemeral) {
+        onWaypointAction!(WaypointAction.update, waypoints[id]!);
       }
       isSaved = false;
       notifyListeners();
     }
   }
 
-  void editWaypoint(int? index, String name, String? icon, int? color) {
-    if (index != null || selectedIndex != null) {
-      int i = index ?? selectedIndex!;
+  void updateWaypoint(Waypoint waypoint, {bool shouldCallback = true}) {
+    waypoints[waypoint.id] = waypoint;
 
-      waypoints[i].name = name;
-      waypoints[i].color = color;
-      waypoints[i].icon = icon;
-
-      // callback
-      if (onWaypointAction != null) {
-        onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
-      }
-      isSaved = false;
-      notifyListeners();
+    // callback
+    if (shouldCallback && onWaypointAction != null && !waypoint.ephemeral) {
+      onWaypointAction!(WaypointAction.update, waypoint);
     }
-  }
 
-  void updateWaypoint(int? index, String name, String? icon, int? color, List<LatLng> latlngs) {
-    if (index != null || selectedIndex != null) {
-      int i = index ?? selectedIndex!;
-
-      waypoints[i].name = name;
-      waypoints[i].color = color;
-      waypoints[i].icon = icon;
-      waypoints[i].latlng = latlngs;
-
-      // callback
-      if (onWaypointAction != null) {
-        onWaypointAction!(WaypointAction.modify, i, null, waypoints[i]);
-      }
-      isSaved = false;
-      notifyListeners();
-    }
-  }
-
-  void backendSortWaypoint(int oldIndex, int newIndex) {
-    Waypoint temp = waypoints[oldIndex];
-    waypoints.removeAt(oldIndex);
-    waypoints.insert(newIndex, temp);
-
-    if (selectedIndex != null) {
-      if (selectedIndex == oldIndex) {
-        selectWaypoint(newIndex);
-      } else if (newIndex <= selectedIndex! && oldIndex > selectedIndex!) {
-        selectWaypoint(selectedIndex! + 1);
-      } else if (selectedIndex! <= newIndex && selectedIndex! > oldIndex) {
-        selectWaypoint(selectedIndex! - 1);
-      }
-    }
     isSaved = false;
     notifyListeners();
   }
 
-  void sortWaypoint(int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) newIndex--;
-    backendSortWaypoint(oldIndex, newIndex);
-    // callback
-    if (onWaypointAction != null) {
-      onWaypointAction!(WaypointAction.sort, oldIndex, newIndex, null);
-    }
-  }
+  List<Polyline> buildNextWpIndicator(Geo geo, double interval) {
+    final waypointETA = getSelectedWp()?.eta(geo, 1);
 
-  Polyline _buildTripSnakeSegment(List<LatLng> points) {
-    return Polyline(
-      points: points,
-      color: Colors.black,
-      strokeWidth: 3,
-    );
-  }
-
-  List<Polyline> buildTripSnake() {
-    List<Polyline> retval = [];
-
-    List<LatLng> points = [];
-    for (Waypoint wp in waypoints) {
-      // skip optional waypoints
-      if (wp.isOptional) continue;
-
-      if (wp.latlng.isNotEmpty) {
-        points.add(wp.latlng[0]);
-      }
-      if (wp.latlng.length > 1) {
-        // pinch off trip snake
-        retval.add(_buildTripSnakeSegment(points));
-        // start again at last point
-        points = [wp.latlng[wp.latlng.length - 1]];
-      }
+    // Underlying grey line
+    if (waypointETA != null) {
+      return [
+        Polyline(
+            points: [geo.latlng] + getSelectedWp()!.latlngOriented.sublist(waypointETA.pathIntercept?.index ?? 0),
+            color: Colors.white70,
+            strokeWidth: 20)
+      ];
     }
 
-    if (points.length > 1) retval.add(_buildTripSnakeSegment(points));
-    return retval;
+    return [];
   }
 
-  Polyline buildNextWpIndicator(Geo geo) {
-    List<LatLng> points = [geo.latLng];
+  List<BarbData> buildNextWpBarbs(Geo geo, double interval) {
+    final waypointETA = getSelectedWp()?.eta(geo, 1);
+    List<BarbData> barbs = [];
 
-    if (selectedWp != null) {
-      // update wp guide
-      LatLng? target;
-      if (selectedWp!.latlng.length > 1) {
-        target = geo.nearestPointOnPath(selectedWp!.latlng, isReversed).latlng;
-      } else if (selectedWp!.latlng.isNotEmpty) {
-        target = selectedWp!.latlng[0];
-      }
-      if (target != null) points.add(target);
+    /// I tried some algorithms to replace this, but turns out this is simpler and more performant. \shrug
+    int barbSpacing(int t) {
+      if (t < 5)
+        return 1;
+      else if (t < 10)
+        return 5;
+      else if (t < 50)
+        return 10;
+      else if (t < 100)
+        return 50;
+      else
+        return 100;
     }
 
-    return Polyline(points: points, color: Colors.red, strokeWidth: 5);
-  }
-
-  /// ETA from a location to a waypoint
-  /// If target is a path, result is dist to nearest intercept + remaining path
-  ETA etaToWaypoint(Geo geo, double speed, int waypointIndex) {
-    if (waypointIndex < waypoints.length) {
-      Waypoint target = waypoints[waypointIndex];
-      if (target.latlng.length > 1) {
-        // --- to path
-        final intercept = geo.nearestPointOnPath(target.latlng, isReversed);
-        double dist = geo.distanceToLatlng(intercept.latlng) +
-            target.lengthBetweenIndexs(intercept.index, isReversed ? 0 : target.latlng.length - 1);
-        return ETA.fromSpeed(dist, speed);
-      } else {
-        // --- to point
-        if (target.latlng.isNotEmpty) {
-          double dist = geo.distanceToLatlng(target.latlng[0]);
-          return ETA.fromSpeed(dist, speed);
-        } else {
-          return ETA.fromSpeed(0, speed);
-        }
+    // Dashes
+    if (waypointETA != null) {
+      for (int t = 1; t < waypointETA.distance / interval; t += barbSpacing(t)) {
+        barbs.add(getSelectedWp()!
+            .interpolate(t * interval, waypointETA.pathIntercept?.index ?? 0, initialLatlng: geo.latlng));
       }
+
+      return barbs;
     }
-    return ETA(0, const Duration());
-  }
 
-  /// ETA from a waypoint to the end of the trip
-  ETA etaToTripEnd(double speed, int waypointIndex, Wind wind) {
-    // sum up the route
-    var retval = ETA(0, const Duration());
-    if (waypointIndex < waypoints.length) {
-      int? prevIndex;
-      for (int i = waypointIndex; isReversed ? (i >= 0) : (i < waypoints.length); i += isReversed ? -1 : 1) {
-        // skip optional waypoints
-        Waypoint wpIndex = waypoints[i];
-        if (wpIndex.isOptional) continue;
-
-        if (prevIndex != null && wpIndex.latlng.isNotEmpty && waypoints[prevIndex].latlng.isNotEmpty) {
-          // Will take the last point of the current waypoint, first point of the next
-          final prevLatlng = isReversed ? waypoints[prevIndex].latlng.first : waypoints[prevIndex].latlng.last;
-          final nextLatlng = isReversed ? wpIndex.latlng.first : wpIndex.latlng.last;
-
-          if (wind.result != null && useWind) {
-            if (wind.result!.windSpd >= wind.result!.airspeed) {
-              // NO SOLUTION!
-              debugPrint("No solution!");
-              retval += ETA(latlngCalc.distance(nextLatlng, prevLatlng) + wpIndex.length, null);
-            } else {
-              /// This works by first canceling lateral speed loss by rotating our vector to compensate.
-              /// Then, account for forward loss of speed.
-
-              double relativeHdg =
-                  wind.result!.windHdg - latlngCalc.bearing(prevLatlng, nextLatlng) * pi / 180 + (isReversed ? 0 : pi);
-
-              // debugPrint("Relative headings: ${relativeHdg % (2 * pi)}");
-
-              retval += ETA.fromSpeed(latlngCalc.distance(nextLatlng, prevLatlng),
-                  Wind.remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
-            }
-          } else {
-            // use your current speed
-            retval += ETA.fromSpeed(latlngCalc.distance(nextLatlng, prevLatlng), speed);
-          }
-        }
-
-        // Account for path lenths
-        if (wpIndex.length > 0 && i != waypointIndex) {
-          if (wind.result != null && useWind) {
-            double relativeHdg = wind.result!.windHdg -
-                latlngCalc.bearing(wpIndex.latlng.first, wpIndex.latlng.last) * pi / 180 +
-                (isReversed ? 0 : pi);
-
-            retval += ETA.fromSpeed(
-                wpIndex.length, Wind.remainingHeadway(relativeHdg, wind.result!.airspeed, wind.result!.windSpd));
-          } else {
-            retval += ETA.fromSpeed(wpIndex.length, speed);
-          }
-        }
-
-        prevIndex = i;
-      }
-      return retval;
-    }
-    return ETA(0, const Duration());
+    return [];
   }
 }

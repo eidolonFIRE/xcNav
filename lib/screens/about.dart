@@ -80,7 +80,7 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                 SizedBox(
                   width: MediaQuery.of(context).size.width / 1.5,
                   child: const Text(
-                    "This project was started by Caleb Johnson with the goal of to put all the tools for coordinating a group, cross-country flight into one app. \n\nThis app is free and open source forever. We rely on your contributions to keep it alive.",
+                    "This project was started by Caleb Johnson with the goal of putting all the tools for coordinating a group, cross-country flight into one app. \n\nThis app is free and open source forever. We rely on your contributions to keep it alive.\n\nCheckout the resources below to get involved.",
                     textAlign: TextAlign.center,
                   ),
                 ),

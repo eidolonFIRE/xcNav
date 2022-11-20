@@ -41,6 +41,11 @@ class _QRScannerState extends State<QRScanner> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: (() => Navigator.popUntil(context, ModalRoute.withName("/home"))),
+        ),
         title: Row(mainAxisSize: MainAxisSize.min, children: [
           Expanded(
             child: Padding(
@@ -48,13 +53,13 @@ class _QRScannerState extends State<QRScanner> {
               child: SizedBox(
                 height: 50,
                 child: TextField(
-                  maxLength: 8,
+                  maxLength: 6,
                   textAlign: TextAlign.center,
                   textCapitalization: TextCapitalization.characters,
                   enableIMEPersonalizedLearning: false,
                   keyboardType: TextInputType.name,
                   decoration: const InputDecoration(hintText: "Group Code"),
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9]"))],
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[A-Z0-9]"))],
                   controller: inputGroupId,
                   textInputAction: TextInputAction.go,
                   onSubmitted: (text) => {joinCode(text)},
@@ -62,7 +67,7 @@ class _QRScannerState extends State<QRScanner> {
               ),
             ),
           ),
-          IconButton(onPressed: () => {joinCode(inputGroupId.text)}, icon: const Icon(Icons.arrow_forward))
+          IconButton(onPressed: () => {joinCode(inputGroupId.text)}, icon: const Icon(Icons.login))
         ]),
       ),
       body: Column(
@@ -109,7 +114,7 @@ class _QRScannerState extends State<QRScanner> {
                             child: QrImage(
                               foregroundColor: Colors.black,
                               backgroundColor: Colors.white,
-                              data: Provider.of<Group>(context).currentGroupID!,
+                              data: Provider.of<Group>(context).currentGroupID!.toUpperCase(),
                               version: QrVersions.auto,
                               gapless: true,
                               padding: const EdgeInsets.all(60),
@@ -128,8 +133,9 @@ class _QRScannerState extends State<QRScanner> {
                         bottom: 0,
                         width: MediaQuery.of(context).size.width,
                         child: TextButton.icon(
-                          onPressed: () =>
-                              {Share.share(Provider.of<Group>(context, listen: false).currentGroupID ?? "")},
+                          onPressed: () => {
+                            Share.share(Provider.of<Group>(context, listen: false).currentGroupID?.toUpperCase() ?? "")
+                          },
                           icon: const Icon(
                             Icons.share,
                             color: Colors.black,
@@ -145,7 +151,7 @@ class _QRScannerState extends State<QRScanner> {
 
   void joinCode(String code) {
     controller!.pauseCamera().then((_) {
-      final exp = RegExp(r'([0-9a-zA-Z]{8})');
+      final exp = RegExp(r'^([0-9A-Z]{6})$');
       if (exp.hasMatch(code)) {
         debugPrint("Joined code: $code");
         Navigator.pop<bool>(context, true);

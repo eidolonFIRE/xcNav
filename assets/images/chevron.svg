@@ -9,13 +9,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="60"
-   height="140"
-   viewBox="0 0 15.875 37.041667"
+   width="50"
+   height="50"
+   viewBox="0 0 50 50"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="wp_path.svg">
+   sodipodi:docname="chevron.svg">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,40 +25,25 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="7.9195959"
-     inkscape:cx="14.052171"
-     inkscape:cy="79.225624"
-     inkscape:document-units="mm"
+     inkscape:zoom="16"
+     inkscape:cx="21.717516"
+     inkscape:cy="27.475635"
+     inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
-     showguides="true"
-     inkscape:window-width="3840"
-     inkscape:window-height="2087"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1"
-     units="px">
+     units="px"
+     inkscape:snap-grids="true"
+     inkscape:window-width="2880"
+     inkscape:window-height="1620"
+     inkscape:window-x="722"
+     inkscape:window-y="262"
+     inkscape:window-maximized="0">
     <inkscape:grid
        type="xygrid"
-       id="grid823"
+       id="grid815"
        units="px"
-       spacingx="0.26458334"
-       spacingy="0.26458334"
-       empcolor="#3f3fff"
-       empopacity="0.25098039"
-       empspacing="1"
-       dotted="false" />
-    <inkscape:grid
-       type="xygrid"
-       id="grid5755"
-       units="px"
-       spacingx="2.6458334"
-       spacingy="2.6458334"
-       color="#ff3f3a"
-       opacity="0.1254902"
-       empcolor="#ff3f42"
-       empopacity="0.25098039"
-       empspacing="10" />
+       spacingx="1"
+       spacingy="1" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -76,14 +61,12 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-259.95833)">
+     transform="translate(0,-283.77082)">
     <path
-       style="fill:none;stroke:#000000;stroke-width:2.64583325;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 7.9375002,259.95833 c -0.002,5.29168 -9.65109,7.94832 0,18.52084 9.6510898,10.57252 0,11.90625 0,18.52083"
-       id="path825-6-1-5"
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:1.88976378;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+       d="m 1,323.77082 24,-35 24,35 -24,-5 z"
+       id="path817"
        inkscape:connector-curvature="0"
-       sodipodi:nodetypes="czc"
-       inkscape:export-xdpi="43.841583"
-       inkscape:export-ydpi="43.841583" />
+       sodipodi:nodetypes="ccccc" />
   </g>
 </svg>

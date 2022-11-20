@@ -48,7 +48,7 @@ class FakeFlight {
   FakeFlight() {
     rand = Random(DateTime.now().millisecondsSinceEpoch);
 
-    initFakeFlight(Geo.fromValues(0, 0, 0, DateTime.now().millisecondsSinceEpoch, 0, 0, 0));
+    initFakeFlight(Geo());
     spd = 11.15 + 4.5 * rand.nextDouble();
   }
 
@@ -63,13 +63,14 @@ class FakeFlight {
     latlng = LatLng(center.lat, center.lng);
     alt = center.alt;
 
-    windSpd = rand.nextDouble() * 3 + 5;
+    windSpd = rand.nextDouble() * 3 + 2;
     windHdg = rand.nextDouble() * 360;
 
     debugPrint("Fake Wind: $windSpd, $windHdg");
   }
 
-  Position genFakeLocationFlight(LatLng? target) {
+  Position genFakeLocationFlight(LatLng? target, Geo prevGeo) {
+    debugPrint("Gen fake path...");
     if (target != null) {
       final delta = ((latlngCalc.bearing(latlng, target)) - hdg + 180) % (360) - 180;
       // debugPrint("Delta Degrees to Target $delta");
@@ -83,7 +84,9 @@ class FakeFlight {
 
     vario = min(5, max(-5, vario + randomCentered() / 2)) * 0.99;
     if (alt < 1) vario = randomCentered() + 1;
-    alt = max(0, alt * 0.999 + vario);
+    if (alt - (prevGeo.ground ?? 0) < 500) vario += 0.1;
+    if (alt - (prevGeo.ground ?? 0) > 1000) vario -= 0.1;
+    alt = max(prevGeo.ground ?? 0, alt * 0.99999 + vario) + randomCentered() * 2;
 
     return fakeGeoToLoc(FakeGeo(latlng.longitude, latlng.latitude, alt));
   }

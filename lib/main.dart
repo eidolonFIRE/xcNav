@@ -1,4 +1,3 @@
-import 'package:feature_discovery/feature_discovery.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +21,6 @@ import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/screens/adsb_help.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/screens/loading.dart';
-import 'package:xcnav/screens/chat.dart';
 import 'package:xcnav/screens/plan_editor.dart';
 import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
@@ -36,8 +34,7 @@ import 'package:xcnav/screens/weather_viewer.dart';
 // Misc
 import 'package:xcnav/notifications.dart';
 import 'package:xcnav/tts_service.dart';
-
-late TtsService ttsService;
+import 'package:xcnav/audio_cue_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -109,86 +106,101 @@ class MyApp extends StatelessWidget {
     ttsService = TtsService();
     ttsService.init();
 
+    Provider.of<MyTelemetry>(context, listen: false).init(context);
+
     debugPrint("Building App");
 
     const darkColor = Color.fromARGB(255, 42, 42, 42);
 
-    return FeatureDiscovery(
-      child: MaterialApp(
-        title: 'xcNav',
-        debugShowCheckedModeBanner: false,
-        darkTheme: ThemeData(
-          fontFamily: "roboto-condensed",
-          // appBarTheme: AppBarTheme(backgroundColor: primaryDarkColor),
-          // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
-          // primaryColorLight: primaryDarkColor,
-          backgroundColor: darkColor,
-          appBarTheme: const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40), backgroundColor: darkColor),
-          // primarySwatch: Colors.grey,
-          // scaffoldBackgroundColor: Colors.blueGrey.shade900,
-          brightness: Brightness.dark,
-          bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
-          bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
-          textTheme: const TextTheme(
-              headline4: TextStyle(color: Colors.white),
-              button: TextStyle(
-                fontSize: 30,
-                color: Colors.white,
-              )),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ButtonStyle(
-              side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.black)),
-              backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.black38),
-              minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
-              padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(12)),
-              // shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
-              //   return RoundedRectangleBorder(
-              //       borderRadius: BorderRadius.circular(20));
-              // }),
-              textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                  (states) => const TextStyle(color: Colors.white, fontSize: 22)),
-            ),
+    // --- Setup Audio Cue Service
+    audioCueService = AudioCueService(
+      ttsService: ttsService,
+      settings: Provider.of<Settings>(context, listen: false),
+      group: Provider.of<Group>(context, listen: false),
+      activePlan: Provider.of<ActivePlan>(context, listen: false),
+    );
 
-            // child: ElevatedButton(onPressed: () {}, child: Text('label')),
+    final chatMessages = Provider.of<ChatMessages>(context, listen: false);
+    chatMessages.addListener(() {
+      if (chatMessages.messages.isNotEmpty &&
+          chatMessages.messages.last.pilotId != Provider.of<Profile>(context, listen: false).id) {
+        audioCueService.cueChatMessage(chatMessages.messages.last);
+      }
+    });
+
+    return MaterialApp(
+      title: 'xcNav',
+      debugShowCheckedModeBanner: false,
+      darkTheme: ThemeData(
+        fontFamily: "roboto-condensed",
+        // appBarTheme: AppBarTheme(backgroundColor: primaryDarkColor),
+        // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
+        // primaryColorLight: primaryDarkColor,
+        backgroundColor: darkColor,
+        appBarTheme: const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40), backgroundColor: darkColor),
+        // primarySwatch: Colors.grey,
+        // scaffoldBackgroundColor: Colors.blueGrey.shade900,
+        brightness: Brightness.dark,
+        bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
+        textTheme: const TextTheme(
+            headline4: TextStyle(color: Colors.white),
+            button: TextStyle(
+              fontSize: 30,
+              color: Colors.white,
+            )),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+            side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.black)),
+            backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.black38),
+            minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
+            padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(12)),
+            // shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
+            //   return RoundedRectangleBorder(
+            //       borderRadius: BorderRadius.circular(20));
+            // }),
+            textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+                (states) => const TextStyle(color: Colors.white, fontSize: 22)),
           ),
 
-          popupMenuTheme: PopupMenuThemeData(textStyle: Theme.of(context).textTheme.bodyMedium),
-
-          textButtonTheme: TextButtonThemeData(
-            style: ButtonStyle(
-              foregroundColor: MaterialStateProperty.all(Colors.white),
-              textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                  (states) => const TextStyle(color: Colors.white, fontSize: 24)),
-            ),
-
-            // child: ElevatedButton(onPressed: () {}, child: Text('label')),
-          ),
-
-          // textButtonTheme: TextButtonThemeData(
-          //   style: ButtonStyle(
-          //       textStyle: MaterialStateProperty.resolveWith((state) => const TextStyle(color: Colors.white),
-          //     ),
-          //   )
-          // )
+          // child: ElevatedButton(onPressed: () {}, child: Text('label')),
         ),
-        themeMode: ThemeMode.dark,
-        initialRoute: "/",
-        routes: {
-          "/": (context) => const LoadingScreen(),
-          "/home": (context) => const MyHomePage(),
-          "/profileEditor": (context) => const ProfileEditor(),
-          "/chat": (context) => const Chat(),
-          "/qrScanner": (context) => const QRScanner(),
-          "/settings": (context) => const SettingsEditor(),
-          "/flightLogs": (context) => const FlightLogViewer(),
-          "/plans": (context) => const PlansViewer(),
-          "/planEditor": (context) => const PlanEditor(),
-          "/groupDetails": (context) => const GroupDetails(),
-          "/weather": (context) => const WeatherViewer(),
-          "/about": (context) => const About(),
-          "/adsbHelp": (context) => const ADSBhelp(),
-        },
+        popupMenuTheme: PopupMenuThemeData(textStyle: Theme.of(context).textTheme.bodyMedium),
+        textButtonTheme: TextButtonThemeData(
+          style: ButtonStyle(
+            foregroundColor: MaterialStateProperty.all(Colors.white),
+            textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+                (states) => const TextStyle(color: Colors.white, fontSize: 24)),
+          ),
+
+          // child: ElevatedButton(onPressed: () {}, child: Text('label')),
+        ),
+        // navigationBarTheme: const NavigationBarThemeData(
+        //   backgroundColor: darkColor,
+        // )
+        // textButtonTheme: TextButtonThemeData(
+        //   style: ButtonStyle(
+        //       textStyle: MaterialStateProperty.resolveWith((state) => const TextStyle(color: Colors.white),
+        //     ),
+        //   )
+        // )
       ),
+      themeMode: ThemeMode.dark,
+      initialRoute: "/",
+      routes: {
+        "/": (context) => const LoadingScreen(),
+        "/home": (context) => const MyHomePage(),
+        "/profileEditor": (context) => const ProfileEditor(),
+        "/qrScanner": (context) => const QRScanner(),
+        "/settings": (context) => const SettingsEditor(),
+        "/flightLogs": (context) => const FlightLogViewer(),
+        "/plans": (context) => const PlansViewer(),
+        "/planEditor": (context) => const PlanEditor(),
+        "/groupDetails": (context) => const GroupDetails(),
+        "/weather": (context) => const WeatherViewer(),
+        "/about": (context) => const About(),
+        "/adsbHelp": (context) => const ADSBhelp(),
+      },
     );
   }
 }
