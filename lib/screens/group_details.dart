@@ -135,8 +135,8 @@ class _GroupDetailsState extends State<GroupDetails> {
                       heroTag: "group",
                       child: const Icon(
                         // Icons.qr_code_scanner,
-                        Icons.add,
-                        size: 35,
+                        Icons.person_add,
+                        size: 30,
                         color: Colors.black,
                       ),
                     ))

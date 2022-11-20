@@ -150,8 +150,8 @@ class ViewChatState extends State<ViewChat> {
                         Navigator.pushNamed(context, "/groupDetails");
                       }),
                       child: const Icon(
-                        Icons.groups,
-                        size: 30,
+                        Icons.group_add,
+                        size: 28,
                       )))
             ],
           ),

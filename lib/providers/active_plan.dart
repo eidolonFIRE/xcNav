@@ -86,7 +86,8 @@ class ActivePlan with ChangeNotifier {
   }
 
   void parseWaypointsSync(Map<String, dynamic> planData) {
-    waypoints.clear();
+    // Only remove waypoints that aren't emphemeral
+    waypoints.removeWhere((key, value) => !value.ephemeral);
     // add back each waypoint
     for (dynamic each in planData.values) {
       final wp = Waypoint.fromJson(each);

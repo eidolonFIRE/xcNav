@@ -59,7 +59,7 @@ class _QRScannerState extends State<QRScanner> {
                   enableIMEPersonalizedLearning: false,
                   keyboardType: TextInputType.name,
                   decoration: const InputDecoration(hintText: "Group Code"),
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9]"))],
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[A-Z0-9]"))],
                   controller: inputGroupId,
                   textInputAction: TextInputAction.go,
                   onSubmitted: (text) => {joinCode(text)},
@@ -114,7 +114,7 @@ class _QRScannerState extends State<QRScanner> {
                             child: QrImage(
                               foregroundColor: Colors.black,
                               backgroundColor: Colors.white,
-                              data: Provider.of<Group>(context).currentGroupID!,
+                              data: Provider.of<Group>(context).currentGroupID!.toUpperCase(),
                               version: QrVersions.auto,
                               gapless: true,
                               padding: const EdgeInsets.all(60),
@@ -151,7 +151,7 @@ class _QRScannerState extends State<QRScanner> {
 
   void joinCode(String code) {
     controller!.pauseCamera().then((_) {
-      final exp = RegExp(r'([0-9a-zA-Z]{6})');
+      final exp = RegExp(r'^([0-9A-Z]{6})$');
       if (exp.hasMatch(code)) {
         debugPrint("Joined code: $code");
         Navigator.pop<bool>(context, true);
