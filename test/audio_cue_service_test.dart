@@ -45,6 +45,7 @@ class MockGroup extends Group {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late AudioCueService cueService;
   late TtsService ttsService;
   late MockFlutterTts flutterTts;
