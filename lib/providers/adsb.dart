@@ -300,10 +300,10 @@ class ADSB with ChangeNotifier {
 
   /// Trigger update refresh
   /// Provide observer geo to calculate warnings
-  void refresh(Geo observer) {
+  void refresh(Geo observer, bool inFlight) {
     if (planes.isNotEmpty) {
       cleanupOldEntries();
-      if (_enabled) checkProximity(observer);
+      if (_enabled && inFlight) checkProximity(observer);
       notifyListeners();
     }
   }

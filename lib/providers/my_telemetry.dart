@@ -304,11 +304,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     // Update ADSB
-    adsb.refresh(geo);
+    adsb.refresh(geo, inFlight);
 
-    audioCueService.cueMyTelemetry(geo);
-    audioCueService.cueNextWaypoint(geo);
-    audioCueService.cueGroupAwareness(geo);
+    if (inFlight) {
+      audioCueService.cueMyTelemetry(geo);
+      audioCueService.cueNextWaypoint(geo);
+      audioCueService.cueGroupAwareness(geo);
+    }
   }
 
   void _load() async {

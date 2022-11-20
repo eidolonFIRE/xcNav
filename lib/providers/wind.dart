@@ -26,7 +26,7 @@ class Wind with ChangeNotifier {
   WindSolveResult? _result;
   WindSolveResult? get result => _result;
 
-  static const maxSampleAge = Duration(minutes: 5);
+  static const maxSampleAge = Duration(minutes: 3);
 
   static double remainingHeadway(double theta, double mySpd, double wSpd) =>
       sqrt(pow(mySpd, 2) - pow(wSpd * sin(theta), 2)) - cos(theta) * wSpd;
@@ -61,6 +61,9 @@ class Wind with ChangeNotifier {
       // debugPrint("FOV: $fov  (${samples.length} samples)");
 
       if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
+    } else {
+      _result = null;
+      notifyListeners();
     }
   }
 
