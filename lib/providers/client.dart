@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:xcnav/dialogs/save_plan.dart';
+import 'package:xcnav/endpoint.dart';
 
 // --- Models
 import 'package:xcnav/models/error_code.dart';
@@ -18,7 +19,6 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
-import 'package:xcnav/secrets.dart';
 
 enum ClientState {
   disconnected,
@@ -82,46 +82,49 @@ class Client with ChangeNotifier {
   void connect() async {
     reconnectionWait += 1;
 
-    final countryCode = WidgetsBinding.instance.window.locale.countryCode;
-    debugPrint("Country Code: $countryCode");
-    HttpOverrides.global = MyHttpOverrides(endpoints[countryCode]?.cert ?? "");
-    WebSocket.connect(endpoints[countryCode]?.apiUrl ?? "",
-        headers: {"authorizationToken": endpoints[countryCode]?.token ?? ""}).then((newSocket) {
-      reconnectionWait = 0;
-
-      socket = newSocket;
-      state = ClientState.connected;
-      debugPrint("Connected!");
-
-      socket!.listen(handleResponse, onError: (errorRaw) {
-        debugPrint("RX-error: $errorRaw");
-        state = ClientState.disconnected;
-      }, onDone: () {
-        debugPrint("RX-done");
-        state = ClientState.disconnected;
-      });
-
-      Profile profile = Provider.of<Profile>(context, listen: false);
-      authenticate(profile);
-
-      // Watch updates to Profile
-      Provider.of<Profile>(context, listen: false).addListener(() {
-        Profile profile = Provider.of<Profile>(context, listen: false);
-        if (state == ClientState.connected) {
-          authenticate(profile);
-        } else if (state == ClientState.authenticated && profile.name != null) {
-          // Just need to update server with new profile
-          pushProfile(profile);
-        }
-      });
-
-      // Register Callbacks to waypoints
-      Provider.of<ActivePlan>(context, listen: false).onWaypointAction = waypointsUpdate;
-      Provider.of<ActivePlan>(context, listen: false).onSelectWaypoint = selectWaypoint;
-    }).onError((error, stackTrace) {
-      debugPrint("Failed to connect! $error");
+    if (serverEndpoint == null) {
+      debugPrint("Waiting for server to be selected.");
       state = ClientState.disconnected;
-    });
+    } else {
+      HttpOverrides.global = MyHttpOverrides(serverEndpoint!.cert);
+      WebSocket.connect(serverEndpoint!.apiUrl, headers: {"authorizationToken": serverEndpoint!.token})
+          .then((newSocket) {
+        reconnectionWait = 0;
+
+        socket = newSocket;
+        state = ClientState.connected;
+        debugPrint("Connected!");
+
+        socket!.listen(handleResponse, onError: (errorRaw) {
+          debugPrint("RX-error: $errorRaw");
+          state = ClientState.disconnected;
+        }, onDone: () {
+          debugPrint("RX-done");
+          state = ClientState.disconnected;
+        });
+
+        Profile profile = Provider.of<Profile>(context, listen: false);
+        authenticate(profile);
+
+        // Watch updates to Profile
+        Provider.of<Profile>(context, listen: false).addListener(() {
+          Profile profile = Provider.of<Profile>(context, listen: false);
+          if (state == ClientState.connected) {
+            authenticate(profile);
+          } else if (state == ClientState.authenticated && profile.name != null) {
+            // Just need to update server with new profile
+            pushProfile(profile);
+          }
+        });
+
+        // Register Callbacks to waypoints
+        Provider.of<ActivePlan>(context, listen: false).onWaypointAction = waypointsUpdate;
+        Provider.of<ActivePlan>(context, listen: false).onSelectWaypoint = selectWaypoint;
+      }).onError((error, stackTrace) {
+        debugPrint("Failed to connect! $error");
+        state = ClientState.disconnected;
+      });
+    }
   }
 
   void handleResponse(dynamic response) {

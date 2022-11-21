@@ -9,13 +9,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="50mm"
-   height="50mm"
-   viewBox="0 0 50 50"
+   width="200"
+   height="200"
+   viewBox="0 0 52.916666 52.916666"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="plane_heli.svg">
+   sodipodi:docname="ga_heli.svg">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.959798"
-     inkscape:cx="163.31948"
-     inkscape:cy="126.05501"
+     inkscape:zoom="5.6"
+     inkscape:cx="94.23198"
+     inkscape:cy="105.03719"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -35,10 +35,14 @@
      inkscape:window-height="1620"
      inkscape:window-x="802"
      inkscape:window-y="423"
-     inkscape:window-maximized="0">
+     inkscape:window-maximized="0"
+     units="px">
     <inkscape:grid
        type="xygrid"
-       id="grid815" />
+       id="grid815"
+       units="px"
+       spacingx="1.0583333"
+       spacingy="1.0583333" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -56,41 +60,42 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-247)">
+     transform="translate(0,-244.08333)">
     <ellipse
        style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#090909;stroke-width:0.55840147;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
        id="path2130"
-       cx="25"
-       cy="265"
+       cx="26.5"
+       cy="265.14999"
        rx="5.7207994"
-       ry="8.7207994" />
+       ry="8.7208052" />
     <path
        style="fill:none;stroke:#000000;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="M 12,278 38,256"
+       d="m 13.499999,278.14994 26,-21.99999"
        id="path2132"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <path
        style="fill:none;stroke:#000000;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 12,256 26,22"
+       d="m 13.499999,256.14995 26,21.99999"
        id="path2134"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <path
        style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 28,267 -2,27 h -2 l -2,-27 z"
+       d="m 29.499999,267.14995 -2,27.00006 h -2 l -2,-27.00006 z"
        id="path2136"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccc" />
-    <circle
+    <ellipse
        style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#090909;stroke-width:0.51356101;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
        id="path2138"
-       cx="25"
-       cy="267"
-       r="18.743219" />
+       cx="26.5"
+       cy="267.14999"
+       rx="18.743219"
+       ry="18.743229" />
     <path
-       style="fill:#000000;stroke:#000000;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;fill-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
-       d="m 19,295 6,-2 5.999998,2 v -2 L 25,290 l -6,3 z"
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 20.499999,295.15001 6,-2 5.999998,2 v -2 l -5.999998,-3 -6,3 z"
        id="path2140"
        inkscape:connector-curvature="0" />
   </g>

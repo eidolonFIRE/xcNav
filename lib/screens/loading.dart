@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:xcnav/endpoint.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -64,6 +66,9 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     _getCurrentPosition().then((location) {
       debugPrint("initial location: $location");
       Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
+
+      // Setup the backend
+      selectEndpoint(LatLng(location.latitude, location.longitude));
 
       // Go to next screen
       final name = Provider.of<Profile>(context, listen: false).name;

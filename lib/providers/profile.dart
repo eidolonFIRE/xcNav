@@ -4,10 +4,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
-import 'package:xcnav/secrets.dart';
+import 'package:xcnav/endpoint.dart';
 
 class Profile with ChangeNotifier {
   String? name;
@@ -107,20 +108,23 @@ class Profile with ChangeNotifier {
   }
 
   Future pushAvatar() async {
-    final countryCode = WidgetsBinding.instance.window.locale.countryCode;
+    if (serverEndpoint != null) {
+      return http
+          .post(Uri.parse(serverEndpoint!.avatarUrl),
+              headers: {"Content-Type": "application/json", "authorizationToken": serverEndpoint!.token},
+              body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
+          .then((http.Response response) {
+        final int statusCode = response.statusCode;
 
-    return http
-        .post(Uri.parse(endpoints[countryCode]?.avatarUrl ?? ""),
-            headers: {"Content-Type": "application/json", "authorizationToken": endpoints[countryCode]?.token ?? ""},
-            body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
-        .then((http.Response response) {
-      final int statusCode = response.statusCode;
-
-      if (statusCode < 200 || statusCode > 400) {
-        throw Exception("Error while pushing avatar");
-      }
-      return response.body;
-    });
+        if (statusCode < 200 || statusCode > 400) {
+          throw Exception("Error while pushing avatar");
+        }
+        return response.body;
+      });
+    } else {
+      debugPrint("Error: endpoint wasn't selected yet!");
+      return Future.value();
+    }
   }
 
   updateID(String newID, String newSecretID) {

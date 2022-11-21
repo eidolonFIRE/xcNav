@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="50mm"
-   height="50mm"
-   viewBox="0 0 50 50"
+   width="200"
+   height="200"
+   viewBox="0 0 52.916666 52.916666"
    version="1.1"
    id="svg825"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
@@ -26,8 +26,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="5.6568542"
-     inkscape:cx="44.088144"
-     inkscape:cy="79.97841"
+     inkscape:cx="76.413258"
+     inkscape:cy="69.620575"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -35,10 +35,14 @@
      inkscape:window-height="1620"
      inkscape:window-x="297"
      inkscape:window-y="333"
-     inkscape:window-maximized="0">
+     inkscape:window-maximized="0"
+     units="px">
     <inkscape:grid
        type="xygrid"
-       id="grid1373" />
+       id="grid1373"
+       units="px"
+       spacingx="1.0583333"
+       spacingy="1.0583333" />
   </sodipodi:namedview>
   <metadata
      id="metadata822">
@@ -48,7 +52,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -56,10 +60,10 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-247)">
+     transform="translate(0,-244.08333)">
     <path
-       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 25,249 c 0,0 23.75,18 23.75,38 0,10 -47.5,10 -47.5,0 C 1.25,267 25,249 25,249 Z"
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.00146556;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 26.499999,246.20073 c 0,0 25.249268,19.10711 25.249268,40.33724 0,10.61507 -50.4985342,10.61507 -50.4985342,0 0,-21.23013 25.2492662,-40.33724 25.2492662,-40.33724 z"
        id="path1377"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cssc" />

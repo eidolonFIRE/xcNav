@@ -25,7 +25,7 @@ class ChatBubble extends StatelessWidget {
                 mainAxisSize: MainAxisSize.max,
                 children: [
                   ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: 20, maxWidth: MediaQuery.of(context).size.width - 120),
+                    constraints: BoxConstraints(minWidth: 30, maxWidth: MediaQuery.of(context).size.width - 100),
                     child: Card(
                       color: text.toLowerCase().startsWith("emergency:")
                           ? Colors.red
