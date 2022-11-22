@@ -878,8 +878,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     decoration: BoxDecoration(
                         border: Border.all(color: Colors.black, width: 1), borderRadius: BorderRadius.circular(15)),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: SizedBox(width: 60, height: 60, child: Settings.mapTileThumbnails[options[nextTile]]),
+                      borderRadius: BorderRadius.circular(14),
+                      child: SizedBox(width: 50, height: 50, child: Settings.mapTileThumbnails[options[nextTile]]),
                     ),
                   ),
                   onTap: () => {settings.curMapTiles = options[nextTile]},

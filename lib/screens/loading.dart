@@ -87,7 +87,6 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     }
 
     if (checked) {
-      debugPrint("Skipping location permission check...");
       return;
     }
 

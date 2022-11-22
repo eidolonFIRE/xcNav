@@ -5,17 +5,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:crypto/crypto.dart' as crypto;
-import 'package:xcnav/dialogs/save_plan.dart';
 import 'package:xcnav/endpoint.dart';
 
 // --- Models
 import 'package:xcnav/models/error_code.dart';
+import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
@@ -260,7 +261,18 @@ class Client with ChangeNotifier {
   }
 
   void joinGroup(BuildContext context, String reqGroupID) {
-    savePlan(context, isSavingFirst: true).then((value) => _joinGroup(reqGroupID));
+    // Autosave waypoints into library before they are replaced.
+    final activePlan = Provider.of<ActivePlan>(context, listen: false);
+    if (activePlan.waypoints.isNotEmpty && !activePlan.isSaved) {
+      FlightPlan newPlan = FlightPlan("~Autosave: previous group");
+      debugPrint("Autosaving waypoints to ${newPlan.name}");
+      for (final each in activePlan.waypoints.values) {
+        newPlan.waypoints[each.id] = Waypoint.from(each);
+      }
+      Provider.of<Plans>(context, listen: false).setPlan(newPlan);
+      activePlan.isSaved = true;
+    }
+    _joinGroup(reqGroupID);
   }
 
   void leaveGroup() {

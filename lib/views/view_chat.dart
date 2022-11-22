@@ -151,7 +151,7 @@ class ViewChatState extends State<ViewChat> {
                       }),
                       child: const Icon(
                         Icons.group_add,
-                        size: 28,
+                        size: 30,
                       )))
             ],
           ),

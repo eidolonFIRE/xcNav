@@ -160,7 +160,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
               ]),
 
               /// --- Patreon Info
-              // TODO: validation should consider both fields at the same time... need both or neither
               SettingsSection(
                   title: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -183,7 +182,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                       title: TextFormField(
                           initialValue: settings.patreonName,
                           decoration: const InputDecoration(label: Text("First Name")),
-                          onFieldSubmitted: (value) {
+                          onChanged: (value) {
                             settings.patreonName = value;
                           }),
                       trailing: Container(),
@@ -196,7 +195,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                           validator: (value) =>
                               EmailValidator.validate(value ?? "") || value == "" ? null : "Not a valid email",
                           decoration: const InputDecoration(label: Text("Email")),
-                          onFieldSubmitted: (value) {
+                          onChanged: (value) {
                             if (emailFormKey.currentState?.validate() ?? false) {
                               settings.patreonEmail = value;
                             }

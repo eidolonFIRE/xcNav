@@ -40,7 +40,7 @@ class Wind with ChangeNotifier {
   void handleVector(Vector newSample) {
     samples.add(newSample);
     while (samples.isNotEmpty &&
-        (samples.first.timestamp == null || samples.first.timestamp!.isBefore(DateTime.now().subtract(maxSampleAge)))) {
+        (samples.first.timestamp != null && samples.first.timestamp!.isBefore(DateTime.now().subtract(maxSampleAge)))) {
       // Remove 10 at a time for performance
       samples.removeRange(0, min(10, samples.length));
     }

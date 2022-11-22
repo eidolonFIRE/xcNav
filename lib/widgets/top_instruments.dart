@@ -8,7 +8,6 @@ import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
-import 'package:xcnav/widgets/map_button.dart';
 
 Widget topInstruments(BuildContext context) {
   const upperStyle = TextStyle(fontSize: 45);

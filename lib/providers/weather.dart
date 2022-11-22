@@ -129,7 +129,8 @@ class Sounding {
     // debugPrint("Searching for baro: $baroAlt");
     if (baroAlt < data.first.baroAlt) return data.first;
 
-    final index = bisect<double>(data.map((e) => e.baroAlt).toList(), baroAlt, compare: (a, b) => (a - b).toInt()) - 1;
+    final index = min(data.length - 2,
+        bisect<double>(data.map((e) => e.baroAlt).toList(), baroAlt, compare: (a, b) => (a - b).toInt()) - 1);
 
     return data[index]
         .blend(data[index + 1], (baroAlt - data[index].baroAlt) / (data[index + 1].baroAlt - data[index].baroAlt));

@@ -85,6 +85,15 @@ class Waypoint {
     id = newId ?? makeId();
   }
 
+  Waypoint.from(Waypoint other) {
+    name = other.name;
+    latlng = other.latlng.toList();
+    _icon = other.icon;
+    color = other.color;
+    id = other.id;
+    ephemeral = other.ephemeral;
+  }
+
   @override
   // ignore: hash_and_equals
   bool operator ==(other) => other is Waypoint && other.id == id;
