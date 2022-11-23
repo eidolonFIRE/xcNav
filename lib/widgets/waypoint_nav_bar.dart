@@ -11,8 +11,8 @@ class WaypointNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle instrLower = const TextStyle(fontSize: 35, color: Colors.black);
-    TextStyle instrLabel = const TextStyle(fontSize: 18, color: Colors.black, fontStyle: FontStyle.italic);
+    TextStyle instrLower = const TextStyle(fontSize: 30, color: Colors.black);
+    TextStyle instrLabel = const TextStyle(fontSize: 14, color: Colors.black87, fontStyle: FontStyle.italic);
 
     return Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
       ETA etaNext = activePlan.getSelectedWp()?.eta(myTelemetry.geo, myTelemetry.geo.spd) ?? ETA(0, const Duration());
@@ -64,6 +64,8 @@ class WaypointNavBar extends StatelessWidget {
                       if (myTelemetry.inFlight)
                         richHrMin(duration: etaNext.time, valueStyle: instrLower, unitStyle: instrLabel),
                     ]),
+                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ));

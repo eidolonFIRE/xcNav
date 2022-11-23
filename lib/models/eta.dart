@@ -9,7 +9,7 @@ class ETA {
 
   ETA(this.distance, this.time, {this.pathIntercept});
   ETA.fromSpeed(this.distance, double speed, {this.pathIntercept}) {
-    if (speed > 0) {
+    if (speed > 0.001) {
       time = Duration(milliseconds: distance * 1000 ~/ speed);
     } else {
       time = null;

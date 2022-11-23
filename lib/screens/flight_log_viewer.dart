@@ -85,7 +85,6 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
         title: Text(
           "Flight Logs  (${keys.length})",
         ),
-        // TODO: show some aggregate numbers here
       ),
       body: !loaded
           ? const Center(

@@ -304,11 +304,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     // Update ADSB
-    adsb.refresh(geo);
+    adsb.refresh(geo, inFlight);
 
-    audioCueService.cueMyTelemetry(geo);
-    audioCueService.cueNextWaypoint(geo);
-    audioCueService.cueGroupAwareness(geo);
+    if (inFlight) {
+      audioCueService.cueMyTelemetry(geo);
+      audioCueService.cueNextWaypoint(geo);
+      audioCueService.cueGroupAwareness(geo);
+    }
   }
 
   void _load() async {
@@ -391,7 +393,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         geo.ground = value;
       }
     }).timeout(const Duration(milliseconds: 500), onTimeout: () {
-      debugPrint("DEM SERVICE TIMEOUT!");
+      debugPrint("DEM SERVICE TIMEOUT! ${geo.latlng}");
     });
 
     recordGeo.add(geo);

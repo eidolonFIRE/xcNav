@@ -137,6 +137,8 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              showUnselectedLabels: false,
               showSelectedLabels: false,
               unselectedItemColor: Colors.white54,
               selectedItemColor: Colors.white,

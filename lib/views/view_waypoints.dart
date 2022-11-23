@@ -44,16 +44,19 @@ class ViewWaypointsState extends State<ViewWaypoints> {
 
   int compareWaypoints(Waypoint a, Waypoint b) {
     // Weights for different factors of the fuzzy sort
-    const iconWeight = 50;
-    const colorWeight = 0.1;
-    const distWeight = 0.0002;
-    const textWeight = 3;
+    const iconWeight = 1000;
+    const colorWeight = 2;
+    const distWeight = 0.004;
+    const textWeight = 60;
+    const emphemeralWeight = 2000;
 
-    int retval =
-        (weightedRatio(b.name.toLowerCase(), filterText.text) - weightedRatio(a.name.toLowerCase(), filterText.text)) *
-            textWeight;
-    retval += a.ephemeral ? 100 : 0;
-    retval -= b.ephemeral ? 100 : 0;
+    int retval = 0;
+    if (filterText.text.isNotEmpty) {
+      (weightedRatio(b.name.toLowerCase(), filterText.text) - weightedRatio(a.name.toLowerCase(), filterText.text)) *
+          textWeight;
+    }
+    retval += a.ephemeral ? emphemeralWeight : 0;
+    retval -= b.ephemeral ? emphemeralWeight : 0;
     if (filterIcon != null) {
       if (filterIcon == "PATH") {
         retval += b.isPath ? iconWeight : 0;
@@ -352,7 +355,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                                     )).then((value) {
                               if (value != null) {
                                 Provider.of<Plans>(context, listen: false).loadedPlans[value]?.waypoints[items[i].id] =
-                                    items[i];
+                                    Waypoint.from(items[i]);
                               }
                             });
                           },

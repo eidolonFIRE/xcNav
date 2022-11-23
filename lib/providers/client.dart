@@ -5,20 +5,21 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:crypto/crypto.dart' as crypto;
-import 'package:xcnav/dialogs/save_plan.dart';
+import 'package:xcnav/endpoint.dart';
 
 // --- Models
 import 'package:xcnav/models/error_code.dart';
+import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/settings.dart';
-import 'package:xcnav/secrets.dart';
 
 enum ClientState {
   disconnected,
@@ -82,46 +83,49 @@ class Client with ChangeNotifier {
   void connect() async {
     reconnectionWait += 1;
 
-    final countryCode = WidgetsBinding.instance.window.locale.countryCode;
-    debugPrint("Country Code: $countryCode");
-    HttpOverrides.global = MyHttpOverrides(endpoints[countryCode]?.cert ?? "");
-    WebSocket.connect(endpoints[countryCode]?.apiUrl ?? "",
-        headers: {"authorizationToken": endpoints[countryCode]?.token ?? ""}).then((newSocket) {
-      reconnectionWait = 0;
-
-      socket = newSocket;
-      state = ClientState.connected;
-      debugPrint("Connected!");
-
-      socket!.listen(handleResponse, onError: (errorRaw) {
-        debugPrint("RX-error: $errorRaw");
-        state = ClientState.disconnected;
-      }, onDone: () {
-        debugPrint("RX-done");
-        state = ClientState.disconnected;
-      });
-
-      Profile profile = Provider.of<Profile>(context, listen: false);
-      authenticate(profile);
-
-      // Watch updates to Profile
-      Provider.of<Profile>(context, listen: false).addListener(() {
-        Profile profile = Provider.of<Profile>(context, listen: false);
-        if (state == ClientState.connected) {
-          authenticate(profile);
-        } else if (state == ClientState.authenticated && profile.name != null) {
-          // Just need to update server with new profile
-          pushProfile(profile);
-        }
-      });
-
-      // Register Callbacks to waypoints
-      Provider.of<ActivePlan>(context, listen: false).onWaypointAction = waypointsUpdate;
-      Provider.of<ActivePlan>(context, listen: false).onSelectWaypoint = selectWaypoint;
-    }).onError((error, stackTrace) {
-      debugPrint("Failed to connect! $error");
+    if (serverEndpoint == null) {
+      debugPrint("Waiting for server to be selected.");
       state = ClientState.disconnected;
-    });
+    } else {
+      HttpOverrides.global = MyHttpOverrides(serverEndpoint!.cert);
+      WebSocket.connect(serverEndpoint!.apiUrl, headers: {"authorizationToken": serverEndpoint!.token})
+          .then((newSocket) {
+        reconnectionWait = 0;
+
+        socket = newSocket;
+        state = ClientState.connected;
+        debugPrint("Connected!");
+
+        socket!.listen(handleResponse, onError: (errorRaw) {
+          debugPrint("RX-error: $errorRaw");
+          state = ClientState.disconnected;
+        }, onDone: () {
+          debugPrint("RX-done");
+          state = ClientState.disconnected;
+        });
+
+        Profile profile = Provider.of<Profile>(context, listen: false);
+        authenticate(profile);
+
+        // Watch updates to Profile
+        Provider.of<Profile>(context, listen: false).addListener(() {
+          Profile profile = Provider.of<Profile>(context, listen: false);
+          if (state == ClientState.connected) {
+            authenticate(profile);
+          } else if (state == ClientState.authenticated && profile.name != null) {
+            // Just need to update server with new profile
+            pushProfile(profile);
+          }
+        });
+
+        // Register Callbacks to waypoints
+        Provider.of<ActivePlan>(context, listen: false).onWaypointAction = waypointsUpdate;
+        Provider.of<ActivePlan>(context, listen: false).onSelectWaypoint = selectWaypoint;
+      }).onError((error, stackTrace) {
+        debugPrint("Failed to connect! $error");
+        state = ClientState.disconnected;
+      });
+    }
   }
 
   void handleResponse(dynamic response) {
@@ -257,7 +261,18 @@ class Client with ChangeNotifier {
   }
 
   void joinGroup(BuildContext context, String reqGroupID) {
-    savePlan(context, isSavingFirst: true).then((value) => _joinGroup(reqGroupID));
+    // Autosave waypoints into library before they are replaced.
+    final activePlan = Provider.of<ActivePlan>(context, listen: false);
+    if (activePlan.waypoints.isNotEmpty && !activePlan.isSaved) {
+      FlightPlan newPlan = FlightPlan("~Autosave: previous group");
+      debugPrint("Autosaving waypoints to ${newPlan.name}");
+      for (final each in activePlan.waypoints.values) {
+        newPlan.waypoints[each.id] = Waypoint.from(each);
+      }
+      Provider.of<Plans>(context, listen: false).setPlan(newPlan);
+      activePlan.isSaved = true;
+    }
+    _joinGroup(reqGroupID);
   }
 
   void leaveGroup() {
