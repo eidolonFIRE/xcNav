@@ -393,7 +393,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         geo.ground = value;
       }
     }).timeout(const Duration(milliseconds: 500), onTimeout: () {
-      debugPrint("DEM SERVICE TIMEOUT!");
+      debugPrint("DEM SERVICE TIMEOUT! ${geo.latlng}");
     });
 
     recordGeo.add(geo);

@@ -49,7 +49,7 @@ class Settings with ChangeNotifier {
             urlTemplate:
                 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             tileProvider: makeTileProvider(name),
-            maxNativeZoom: 20,
+            maxNativeZoom: 19,
             opacity: (opacity ?? _mapOpacity["satellite"] ?? 1.0) * 0.8 + 0.2);
       default:
         return TileLayerOptions(

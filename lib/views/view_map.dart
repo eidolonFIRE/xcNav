@@ -8,6 +8,7 @@ import 'package:flutter_map/plugin_api.dart';
 // ignore: depend_on_referenced_packages
 import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -85,6 +86,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   late PolyEditor measurementEditor;
   final measurementPolyline = Polyline(color: Colors.orange, points: [], strokeWidth: 8);
+
+  ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
 
   @override
   void initState() {
@@ -210,6 +213,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   void onMapTap(BuildContext context, LatLng latlng) {
     debugPrint("onMapTap: $latlng");
+    isMapDialOpen.value = false;
     if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
       // --- Add waypoint in path
       polyEditor.add(editablePoints, latlng);
@@ -254,6 +258,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         // debugPrint("$mapPosition $hasGesture");
                         if (hasGesture && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
                           // --- Unlock any focus lock
+                          isMapDialOpen.value = false;
                           setFocusMode(FocusMode.unlocked);
                         }
                       },
@@ -871,19 +876,60 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
               right: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
               left: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
               child: Consumer<Settings>(builder: (context, settings, _) {
-                final options = Settings.mapTileThumbnails.keys.toList();
-                final nextTile = (options.indexOf(settings.curMapTiles) + 1) % options.length;
-                return InkWell(
-                  child: Container(
-                    decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black, width: 1), borderRadius: BorderRadius.circular(15)),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: SizedBox(width: 50, height: 50, child: Settings.mapTileThumbnails[options[nextTile]]),
-                    ),
-                  ),
-                  onTap: () => {settings.curMapTiles = options[nextTile]},
-                );
+                const opacityLevels = [0.2, 0.5, 1.0];
+                return SpeedDial(
+                    icon: Icons.layers_outlined,
+                    iconTheme: const IconThemeData(size: 50, color: Colors.black87),
+                    buttonSize: const Size(40, 40),
+                    direction: SpeedDialDirection.down,
+                    renderOverlay: false,
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    openCloseDial: isMapDialOpen,
+                    children:
+                        // - Sectional / Satellite
+                        ["sectional", "satellite", "topo"]
+                            .mapIndexed((layerIndex, layerName) => SpeedDialChild(
+                                    labelWidget: SizedBox(
+                                  height: 40,
+                                  child: ToggleButtons(
+                                      isSelected: opacityLevels.sublist(layerIndex).map((e) =>
+                                          // settings.curMapTiles == layerName && settings.mapOpacity(layerName) == e)
+                                          false).toList(),
+                                      borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                      borderWidth: 1,
+                                      borderColor: Colors.black45,
+                                      onPressed: ((index) {
+                                        settings.curMapTiles = layerName;
+                                        settings.setMapOpacity(layerName, opacityLevels.sublist(layerIndex)[index]);
+                                        isMapDialOpen.value = false;
+                                      }),
+                                      children: opacityLevels
+                                          .sublist(layerIndex)
+                                          .map(
+                                            (e) => SizedBox(
+                                                width: 50,
+                                                height: 40,
+                                                child: Stack(
+                                                  fit: StackFit.expand,
+                                                  children: [
+                                                    Container(
+                                                      color: Colors.white,
+                                                    ),
+                                                    Opacity(opacity: e, child: Settings.mapTileThumbnails[layerName]),
+                                                    if (settings.curMapTiles == layerName &&
+                                                        settings.mapOpacity(layerName) == e)
+                                                      const Icon(
+                                                        Icons.check_circle,
+                                                        color: Colors.black,
+                                                        size: 30,
+                                                      )
+                                                  ],
+                                                )),
+                                          )
+                                          .toList()),
+                                )))
+                            .toList());
               }))
         ]),
       ),
