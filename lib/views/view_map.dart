@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -255,11 +256,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       onTap: (tapPosition, point) => onMapTap(context, point),
                       onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                       onPositionChanged: (mapPosition, hasGesture) {
-                        // debugPrint("$mapPosition $hasGesture");
-                        if (hasGesture && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
-                          // --- Unlock any focus lock
+                        if (hasGesture) {
                           isMapDialOpen.value = false;
-                          setFocusMode(FocusMode.unlocked);
+                          if (focusMode == FocusMode.me || focusMode == FocusMode.group) {
+                            // --- Unlock any focus lock
+                            setFocusMode(FocusMode.unlocked);
+                          }
                         }
                       },
                       allowPanningOnScrollingParent: false,
@@ -267,6 +269,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     ),
                     layers: [
                       settings.getMapTileLayer(settings.curMapTiles),
+                      if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
+                        settings.getMapTileLayer("airspace"),
+                      if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
+                        settings.getMapTileLayer("airports"),
 
                       // Other Pilot path trace
                       PolylineLayerOptions(
@@ -889,47 +895,85 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     children:
                         // - Sectional / Satellite
                         ["sectional", "satellite", "topo"]
-                            .mapIndexed((layerIndex, layerName) => SpeedDialChild(
-                                    labelWidget: SizedBox(
-                                  height: 40,
-                                  child: ToggleButtons(
-                                      isSelected: opacityLevels.sublist(layerIndex).map((e) =>
-                                          // settings.curMapTiles == layerName && settings.mapOpacity(layerName) == e)
-                                          false).toList(),
-                                      borderRadius: const BorderRadius.all(Radius.circular(12)),
-                                      borderWidth: 1,
-                                      borderColor: Colors.black45,
-                                      onPressed: ((index) {
-                                        settings.curMapTiles = layerName;
-                                        settings.setMapOpacity(layerName, opacityLevels.sublist(layerIndex)[index]);
-                                        isMapDialOpen.value = false;
-                                      }),
-                                      children: opacityLevels
-                                          .sublist(layerIndex)
-                                          .map(
-                                            (e) => SizedBox(
-                                                width: 50,
-                                                height: 40,
-                                                child: Stack(
-                                                  fit: StackFit.expand,
-                                                  children: [
-                                                    Container(
-                                                      color: Colors.white,
-                                                    ),
-                                                    Opacity(opacity: e, child: Settings.mapTileThumbnails[layerName]),
-                                                    if (settings.curMapTiles == layerName &&
-                                                        settings.mapOpacity(layerName) == e)
-                                                      const Icon(
-                                                        Icons.check_circle,
-                                                        color: Colors.black,
-                                                        size: 30,
-                                                      )
-                                                  ],
-                                                )),
-                                          )
-                                          .toList()),
-                                )))
-                            .toList());
+                                .mapIndexed((layerIndex, layerName) => SpeedDialChild(
+                                        labelWidget: SizedBox(
+                                      height: 40,
+                                      child: ToggleButtons(
+                                          isSelected: opacityLevels.sublist(layerIndex).map((e) =>
+                                              // settings.curMapTiles == layerName && settings.mapOpacity(layerName) == e)
+                                              false).toList(),
+                                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                          borderWidth: 1,
+                                          borderColor: Colors.black45,
+                                          onPressed: ((index) {
+                                            settings.curMapTiles = layerName;
+                                            settings.setMapOpacity(layerName, opacityLevels.sublist(layerIndex)[index]);
+                                            isMapDialOpen.value = false;
+                                          }),
+                                          children: opacityLevels
+                                              .sublist(layerIndex)
+                                              .map(
+                                                (e) => SizedBox(
+                                                    width: 50,
+                                                    height: 40,
+                                                    child: Stack(
+                                                      fit: StackFit.expand,
+                                                      children: [
+                                                        Container(
+                                                          color: Colors.white,
+                                                        ),
+                                                        Opacity(
+                                                            opacity: e, child: Settings.mapTileThumbnails[layerName]),
+                                                        if (settings.curMapTiles == layerName &&
+                                                            settings.mapOpacity(layerName) == e)
+                                                          const Icon(
+                                                            Icons.check_circle,
+                                                            color: Colors.black,
+                                                            size: 30,
+                                                          )
+                                                      ],
+                                                    )),
+                                              )
+                                              .toList()),
+                                    )))
+                                .toList() +
+                            [
+                              SpeedDialChild(
+                                  labelWidget: SizedBox(
+                                width: 50,
+                                child: MaterialButton(
+                                    visualDensity: VisualDensity.compact,
+                                    height: 50,
+                                    elevation: 0,
+                                    color: Colors.white70,
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                                      side: BorderSide(color: Colors.black45, width: 1),
+                                    ),
+                                    child: Stack(
+                                      children: [
+                                        Align(
+                                          alignment: Alignment.center,
+                                          child: settings.showAirspaceOverlay
+                                              ? Icon(
+                                                  Icons.flight,
+                                                  color: Colors.green.shade600,
+                                                  size: 35,
+                                                )
+                                              : Icon(
+                                                  Icons.airplanemode_inactive,
+                                                  color: Colors.red.shade900,
+                                                  size: 35,
+                                                ),
+                                        )
+                                      ],
+                                    ),
+                                    onPressed: () {
+                                      settings.showAirspaceOverlay = !settings.showAirspaceOverlay;
+                                      isMapDialOpen.value = false;
+                                    }),
+                              ))
+                            ]);
               }))
         ]),
       ),
