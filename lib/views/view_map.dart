@@ -255,11 +255,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       onTap: (tapPosition, point) => onMapTap(context, point),
                       onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                       onPositionChanged: (mapPosition, hasGesture) {
-                        // debugPrint("$mapPosition $hasGesture");
-                        if (hasGesture && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
-                          // --- Unlock any focus lock
+                        if (hasGesture) {
                           isMapDialOpen.value = false;
-                          setFocusMode(FocusMode.unlocked);
+                          if (focusMode == FocusMode.me || focusMode == FocusMode.group) {
+                            // --- Unlock any focus lock
+                            setFocusMode(FocusMode.unlocked);
+                          }
                         }
                       },
                       allowPanningOnScrollingParent: false,
@@ -267,6 +268,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     ),
                     layers: [
                       settings.getMapTileLayer(settings.curMapTiles),
+                      if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
+                        settings.getMapTileLayer("airspace"),
+                      if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
+                        settings.getMapTileLayer("airports"),
 
                       // Other Pilot path trace
                       PolylineLayerOptions(
@@ -929,7 +934,46 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           )
                                           .toList()),
                                 )))
-                            .toList());
+                            .toList()
+                    //     +
+                    // [
+                    //   SpeedDialChild(
+                    //       labelWidget: SizedBox(
+                    //     width: 50,
+                    //     child: MaterialButton(
+                    //         visualDensity: VisualDensity.compact,
+                    //         height: 50,
+                    //         elevation: 0,
+                    //         color: Colors.white70,
+                    //         shape: const RoundedRectangleBorder(
+                    //           borderRadius: BorderRadius.all(Radius.circular(12)),
+                    //           side: BorderSide(color: Colors.black45, width: 1),
+                    //         ),
+                    //         child: Stack(
+                    //           children: [
+                    //             Align(
+                    //               alignment: Alignment.center,
+                    //               child: settings.showAirspaceOverlay
+                    //                   // TODO: work on these icons
+                    //                   ? SvgPicture.asset(
+                    //                       "assets/images/airspace.svg",
+                    //                       width: 35,
+                    //                     )
+                    //                   : SvgPicture.asset(
+                    //                       "assets/images/airspace.svg",
+                    //                       width: 35,
+                    //                       color: Colors.red.shade900,
+                    //                     ),
+                    //             )
+                    //           ],
+                    //         ),
+                    //         onPressed: () {
+                    //           settings.showAirspaceOverlay = !settings.showAirspaceOverlay;
+                    //           isMapDialOpen.value = false;
+                    //         }),
+                    //   ))
+                    // ]
+                    );
               }))
         ]),
       ),

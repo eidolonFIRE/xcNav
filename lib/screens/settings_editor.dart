@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -125,7 +126,16 @@ class _SettingsEditorState extends State<SettingsEditor> {
                           items: const [
                             DropdownMenuItem(value: "AGL", child: Text("AGL")),
                             DropdownMenuItem(value: "MSL", child: Text("MSL")),
-                          ]))
+                          ])),
+                  SettingsTile.switchTile(
+                    title: const Text("Hide Airspace Overlay"),
+                    leading: SvgPicture.asset(
+                      "assets/images/airspace.svg",
+                      color: Colors.grey.shade400,
+                    ),
+                    onToggle: (value) => {settings.showAirspaceOverlay = !value},
+                    initialValue: !settings.showAirspaceOverlay,
+                  )
                 ],
               ),
               // --- ADSB options

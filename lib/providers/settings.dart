@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:xcnav/dem_service.dart';
 
 import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/secrets.dart';
 import 'package:xcnav/units.dart';
 
 class Settings with ChangeNotifier {
@@ -25,6 +26,8 @@ class Settings with ChangeNotifier {
     "topo": 1.0,
     "sectional": 1.0,
     "satellite": 1.0,
+    "airspace": 1.0,
+    "airports": 1.0,
   };
   TileLayerOptions getMapTileLayer(String name, {double? opacity}) {
     TileProvider makeTileProvider(name) {
@@ -51,6 +54,24 @@ class Settings with ChangeNotifier {
             tileProvider: makeTileProvider(name),
             maxNativeZoom: 19,
             opacity: (opacity ?? _mapOpacity["satellite"] ?? 1.0) * 0.8 + 0.2);
+      // https://docs.openaip.net/?urls.primaryName=Tiles%20API
+      case "airspace":
+        return TileLayerOptions(
+            urlTemplate: 'https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey={apiKey}',
+            tileProvider: makeTileProvider(name),
+            backgroundColor: Colors.transparent,
+            // maxZoom: 11,
+            maxNativeZoom: 11,
+            minZoom: 7,
+            additionalOptions: {"apiKey": aipClientToken});
+      case "airports":
+        return TileLayerOptions(
+            urlTemplate: 'https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey={apiKey}',
+            tileProvider: makeTileProvider(name),
+            backgroundColor: Colors.transparent,
+            maxZoom: 11,
+            minZoom: 9,
+            additionalOptions: {"apiKey": aipClientToken});
       default:
         return TileLayerOptions(
           urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
@@ -77,6 +98,16 @@ class Settings with ChangeNotifier {
       filterQuality: FilterQuality.high,
       fit: BoxFit.cover,
     ),
+    "airspace": Image.asset(
+      "assets/images/sectional.png",
+      filterQuality: FilterQuality.high,
+      fit: BoxFit.cover,
+    ),
+    "airports": Image.asset(
+      "assets/images/sectional.png",
+      filterQuality: FilterQuality.high,
+      fit: BoxFit.cover,
+    )
   };
 
   // --- UI
@@ -84,6 +115,7 @@ class Settings with ChangeNotifier {
   bool _showPilotNames = false;
   bool _northlockMap = false;
   bool _northlockWind = false;
+  bool _showAirspaceOverlay = true;
 
   // --- Units
   var _displayUnitsSpeed = DisplayUnitsSpeed.mph;
@@ -247,6 +279,15 @@ class Settings with ChangeNotifier {
     _northlockWind = value;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setBool("settings.northlockWind", _northlockWind);
+    });
+    notifyListeners();
+  }
+
+  bool get showAirspaceOverlay => _showAirspaceOverlay;
+  set showAirspaceOverlay(bool value) {
+    _showAirspaceOverlay = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.showAirspaceOverlay", _showAirspaceOverlay);
     });
     notifyListeners();
   }
