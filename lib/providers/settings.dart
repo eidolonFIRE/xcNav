@@ -98,13 +98,11 @@ class Settings with ChangeNotifier {
       filterQuality: FilterQuality.high,
       fit: BoxFit.cover,
     ),
-    // TODO: make thumbnail
     "airspace": Image.asset(
       "assets/images/sectional.png",
       filterQuality: FilterQuality.high,
       fit: BoxFit.cover,
     ),
-    // TODO: make thumbnail
     "airports": Image.asset(
       "assets/images/sectional.png",
       filterQuality: FilterQuality.high,
