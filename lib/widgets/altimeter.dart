@@ -61,7 +61,7 @@ class Altimeter extends StatelessWidget {
                         child: SizedBox(
                             width: valueStyle.fontSize != null ? valueStyle.fontSize! / 2 : null,
                             height: valueStyle.fontSize != null ? valueStyle.fontSize! / 2 : null,
-                            child: const CircularProgressIndicator()),
+                            child: const CircularProgressIndicator.adaptive()),
                       ),
                 Column(
                     verticalDirection: VerticalDirection.up,
@@ -90,7 +90,7 @@ class Altimeter extends StatelessWidget {
                           child: SizedBox(
                               width: valueStyle.fontSize != null ? valueStyle.fontSize! - 2 : null,
                               height: valueStyle.fontSize != null ? valueStyle.fontSize! - 2 : null,
-                              child: const CircularProgressIndicator(
+                              child: const CircularProgressIndicator.adaptive(
                                 strokeWidth: 2,
                               )),
                         )),

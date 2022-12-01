@@ -124,7 +124,7 @@ class _QRScannerState extends State<QRScanner> {
                             child: SizedBox(
                               width: 60,
                               height: 60,
-                              child: CircularProgressIndicator(
+                              child: CircularProgressIndicator.adaptive(
                                 strokeWidth: 2,
                               ),
                             ),

@@ -17,10 +17,6 @@ class TappablePolylineMapPlugin extends MapPlugin {
 
 /// The options allowing tappable polyline tweaks
 class TappablePolylineLayerOptions extends PolylineLayerOptions {
-  /// The list of [TaggedPolyline] which could be tapped
-  @override
-  final List<TaggedPolyline> polylines;
-
   /// The tolerated distance between pointer and user tap to trigger the [onTap] callback
   final double pointerDistanceTolerance;
 
@@ -31,18 +27,14 @@ class TappablePolylineLayerOptions extends PolylineLayerOptions {
   void Function(TaggedPolyline, TapPosition tapPosition)? onLongPress =
       (TaggedPolyline polyline, TapPosition tapPosition) {};
 
-  /// The ability to render only polylines in current view bounds
-  @override
-  final bool polylineCulling;
-
   TappablePolylineLayerOptions(
-      {this.polylines = const [],
+      {polylines = const [],
       rebuild,
       this.onTap,
       this.onLongPress,
       this.pointerDistanceTolerance = 15,
-      this.polylineCulling = false})
-      : super(rebuild: rebuild, polylineCulling: polylineCulling);
+      polylineCulling = false})
+      : super(rebuild: rebuild, polylines: polylines, polylineCulling: polylineCulling);
 }
 
 /// A polyline with a tag

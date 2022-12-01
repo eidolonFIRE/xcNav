@@ -40,7 +40,7 @@ List<Marker> buildMeasurementMarkers(List<LatLng> points) {
                                     child: SizedBox(
                                         width: 12,
                                         height: 12,
-                                        child: CircularProgressIndicator(
+                                        child: CircularProgressIndicator.adaptive(
                                           strokeWidth: 3,
                                         )),
                                   )),
