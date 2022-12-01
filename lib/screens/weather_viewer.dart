@@ -213,7 +213,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                               padding: EdgeInsets.all(10.0),
                               child: Text("Fetching"),
                             ),
-                            CircularProgressIndicator(),
+                            CircularProgressIndicator.adaptive(),
                           ],
                         ));
                       }

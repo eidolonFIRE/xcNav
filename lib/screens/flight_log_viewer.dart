@@ -88,7 +88,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
       ),
       body: !loaded
           ? const Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator.adaptive(),
             )
           : ListView.builder(
               itemCount: keys.length,

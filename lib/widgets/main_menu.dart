@@ -179,6 +179,14 @@ class _MainMenuState extends State<MainMenu> {
           //     )),
         ),
 
+        // Checklist
+        ListTile(
+          minVerticalPadding: 20,
+          leading: const Icon(Icons.checklist, size: 30),
+          title: Text("Checklist", style: Theme.of(context).textTheme.headline5),
+          onTap: () => {Navigator.popAndPushNamed(context, "/checklist")},
+        ),
+
         ListTile(
           minVerticalPadding: 20,
           leading: const Icon(
