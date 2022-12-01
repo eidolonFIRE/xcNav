@@ -161,11 +161,16 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
           fakeFlight.initFakeFlight(geo);
           timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-            final target = activePlan.getSelectedWp() == null
+            final targetWp = activePlan.getSelectedWp();
+            final target = targetWp == null
                 ? null
-                : activePlan.getSelectedWp()!.latlng.length > 1
-                    ? geo.getIntercept(activePlan.getSelectedWp()!.latlng).latlng
-                    : activePlan.getSelectedWp()!.latlng[0];
+                : targetWp.latlng.length > 1
+                    ? geo
+                        .getIntercept(
+                          targetWp.latlngOriented,
+                        )
+                        .latlng
+                    : targetWp.latlng[0];
             handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target, geoPrev), bypassRecording: true);
           });
         }
