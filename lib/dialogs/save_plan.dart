@@ -28,7 +28,7 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
   return showDialog<bool?>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text("Save Active Plan to Library${isSavingFirst ? " before it is replaced?" : ""}"),
+      title: Text("Save Waypoints to Library${isSavingFirst ? " before they are replaced?" : ""}"),
       content: Form(
         key: formKey,
         child: TextFormField(

@@ -20,8 +20,6 @@ void main() {
   }
 
   test("not enough samples", () {
-    wind.start();
-
     wind.handleVector(Vector(-0.01, 10));
     wind.handleVector(Vector(0, 10));
 
@@ -29,8 +27,6 @@ void main() {
   });
 
   test("nill wind", () {
-    wind.start();
-
     wind.handleVector(Vector(-0.01, 10));
     wind.handleVector(Vector(0, 10));
     wind.handleVector(Vector(pi / 4, 10));
@@ -45,35 +41,32 @@ void main() {
   });
 
   test("wind1", () {
-    wind.start();
-
     wind.handleVector(Vector(0, 15));
     wind.handleVector(Vector(pi / 4, 13));
+    wind.handleVector(Vector(pi / 3, 12));
     wind.handleVector(Vector(pi / 2, 10));
     wind.handleVector(Vector(pi, 5));
 
     expect(wind.result != null, true, reason: "Wind Solution");
     expect(round(wind.result!.airspeed), 10.02, reason: "Airspeed");
-    expect(round(wind.result!.windSpd), 4.85, reason: "Wind Speed");
-    expect(round(wind.result!.windHdg), 0.15, reason: "Wind Heading");
+    expect(round(wind.result!.windSpd), 4.82, reason: "Wind Speed");
+    expect(round(wind.result!.windHdg), 0.13, reason: "Wind Heading");
   });
 
   test("wind2", () {
-    wind.start();
-
     wind.handleVector(Vector(0, 15));
     wind.handleVector(Vector(-pi / 4, 13));
+    wind.handleVector(Vector(-pi / 3, 12));
     wind.handleVector(Vector(-pi / 2, 10));
     wind.handleVector(Vector(-pi, 5));
 
     expect(wind.result != null, true, reason: "Wind Solution");
     expect(round(wind.result!.airspeed), 10.02, reason: "Airspeed");
-    expect(round(wind.result!.windSpd), 4.85, reason: "Wind Speed");
-    expect(round(wind.result!.windHdg), 6.14, reason: "Wind Heading");
+    expect(round(wind.result!.windSpd), 4.82, reason: "Wind Speed");
+    expect(round(wind.result!.windHdg), 6.16, reason: "Wind Heading");
   });
 
   test("wind3", () {
-    wind.start();
     wind.handleVector(Vector(-1.8057157752057609, 17.35097410404365));
     wind.handleVector(Vector(-1.3318501519122217, 15.323218213770156));
     wind.handleVector(Vector(-1.5969167056437565, 16.94417899477183));
@@ -101,7 +94,6 @@ void main() {
   });
 
   test("wind4", () {
-    wind.start();
     wind.handleVector(Vector(-0.5108861036234996, 18.776286308145906));
     wind.handleVector(Vector(-0.6503151135347236, 19.47714893965392));
     wind.handleVector(Vector(-0.5820982224463074, 20.598967156702372));

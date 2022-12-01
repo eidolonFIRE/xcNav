@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:xcnav/endpoint.dart';
 
 class Profile with ChangeNotifier {
   String? name;
@@ -106,18 +107,23 @@ class Profile with ChangeNotifier {
   }
 
   Future pushAvatar() async {
-    return http
-        .post(Uri.parse("https://gx49w49rb4.execute-api.us-west-1.amazonaws.com/xcnav_avatar_service"),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
-        .then((http.Response response) {
-      final int statusCode = response.statusCode;
+    if (serverEndpoint != null) {
+      return http
+          .post(Uri.parse(serverEndpoint!.avatarUrl),
+              headers: {"Content-Type": "application/json", "authorizationToken": serverEndpoint!.token},
+              body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
+          .then((http.Response response) {
+        final int statusCode = response.statusCode;
 
-      if (statusCode < 200 || statusCode > 400) {
-        throw Exception("Error while pushing avatar");
-      }
-      return response.body;
-    });
+        if (statusCode < 200 || statusCode > 400) {
+          throw Exception("Error while pushing avatar");
+        }
+        return response.body;
+      });
+    } else {
+      debugPrint("Error: endpoint wasn't selected yet!");
+      return Future.value();
+    }
   }
 
   updateID(String newID, String newSecretID) {
@@ -130,14 +136,11 @@ class Profile with ChangeNotifier {
     prefs.setString("profile.secretID", newSecretID);
 
     hash = _hash();
-
-    // TODO: does this actually need to happen here?
-    // notifyListeners();
   }
 
   String _hash() {
     // build long string
-    String str = "Meta${name ?? ""}${id ?? ""}${avatarHash ?? ""}${tier ?? ""}";
+    String str = "Meta${name ?? ""}${id ?? ""}${avatarHash ?? ""}";
 
     // fold string into hash
     int hash = 0;

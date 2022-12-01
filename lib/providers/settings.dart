@@ -6,8 +6,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:xcnav/dem_service.dart';
 
 import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/secrets.dart';
 import 'package:xcnav/units.dart';
 
 class Settings with ChangeNotifier {
@@ -24,6 +26,8 @@ class Settings with ChangeNotifier {
     "topo": 1.0,
     "sectional": 1.0,
     "satellite": 1.0,
+    "airspace": 1.0,
+    "airports": 1.0,
   };
   TileLayerOptions getMapTileLayer(String name, {double? opacity}) {
     TileProvider makeTileProvider(name) {
@@ -48,11 +52,30 @@ class Settings with ChangeNotifier {
             urlTemplate:
                 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             tileProvider: makeTileProvider(name),
-            maxNativeZoom: 20,
+            maxNativeZoom: 19,
             opacity: (opacity ?? _mapOpacity["satellite"] ?? 1.0) * 0.8 + 0.2);
+      // https://docs.openaip.net/?urls.primaryName=Tiles%20API
+      case "airspace":
+        return TileLayerOptions(
+            urlTemplate: 'https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey={apiKey}',
+            tileProvider: makeTileProvider(name),
+            backgroundColor: Colors.transparent,
+            // maxZoom: 11,
+            maxNativeZoom: 11,
+            minZoom: 7,
+            additionalOptions: {"apiKey": aipClientToken});
+      case "airports":
+        return TileLayerOptions(
+            urlTemplate: 'https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey={apiKey}',
+            tileProvider: makeTileProvider(name),
+            backgroundColor: Colors.transparent,
+            maxZoom: 11,
+            minZoom: 9,
+            additionalOptions: {"apiKey": aipClientToken});
       default:
         return TileLayerOptions(
           urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+          // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
           tileProvider: makeTileProvider(name),
           opacity: opacity ?? 1.0,
         );
@@ -75,12 +98,24 @@ class Settings with ChangeNotifier {
       filterQuality: FilterQuality.high,
       fit: BoxFit.cover,
     ),
+    "airspace": Image.asset(
+      "assets/images/sectional.png",
+      filterQuality: FilterQuality.high,
+      fit: BoxFit.cover,
+    ),
+    "airports": Image.asset(
+      "assets/images/sectional.png",
+      filterQuality: FilterQuality.high,
+      fit: BoxFit.cover,
+    )
   };
 
   // --- UI
-  bool _showAirspace = false;
   bool _mapControlsRightSide = false;
   bool _showPilotNames = false;
+  bool _northlockMap = false;
+  bool _northlockWind = false;
+  bool _showAirspaceOverlay = true;
 
   // --- Units
   var _displayUnitsSpeed = DisplayUnitsSpeed.mph;
@@ -105,6 +140,7 @@ class Settings with ChangeNotifier {
 
   // --- Misc
   bool _chatTts = false;
+  String _altInstr = "MSL";
 
   Settings() {
     selectProximityConfig("Medium");
@@ -114,6 +150,7 @@ class Settings with ChangeNotifier {
 
   void initMapCache() async {
     FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
+    initDemCache();
 
     for (final mapName in mapTileThumbnails.keys) {
       final StoreDirectory store = FMTC.instance(mapName);
@@ -141,11 +178,17 @@ class Settings with ChangeNotifier {
   }
 
   Future<String> getMapTileCacheSize() async {
+    // Add together the cache size for all base map layers
     double sum = 0;
     for (final mapName in mapTileThumbnails.keys) {
       final StoreDirectory store = FMTC.instance(mapName);
       sum += (await store.stats.noCache.storeSizeAsync) * 1024;
     }
+
+    // Also add the elevation map
+    final StoreDirectory demStore = FMTC.instance("dem");
+    sum += (await demStore.stats.noCache.storeSizeAsync) * 1024;
+
     return asReadableSize(sum);
   }
 
@@ -170,6 +213,12 @@ class Settings with ChangeNotifier {
   }
 
   void emptyMapTileCache() {
+    // Empty elevation map cache
+    final StoreDirectory demStore = FMTC.instance("dem");
+    debugPrint("Clear Map Cache: dem");
+    demStore.manage.reset();
+
+    // Empty standard map caches
     for (final mapName in mapTileThumbnails.keys) {
       final StoreDirectory store = FMTC.instance(mapName);
       debugPrint("Clear Map Cache: $mapName");
@@ -179,6 +228,7 @@ class Settings with ChangeNotifier {
 
   _loadSettings() {
     SharedPreferences.getInstance().then((prefs) {
+      // --- Units
       _displayUnitsSpeed = DisplayUnitsSpeed.values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
       _displayUnitsVario = DisplayUnitsVario.values[prefs.getInt("settings.displayUnitsVario") ?? 0];
       _displayUnitsDist = DisplayUnitsDist.values[prefs.getInt("settings.displayUnitsDist") ?? 0];
@@ -187,6 +237,9 @@ class Settings with ChangeNotifier {
       configUnits(
           speed: displayUnitsSpeed, vario: _displayUnitsVario, dist: _displayUnitsDist, fuel: _displayUnitsFuel);
 
+      // --- UI
+      _northlockMap = prefs.getBool("settings.northlockMap") ?? false;
+      _northlockWind = prefs.getBool("settings.northlockWind") ?? false;
       _mapControlsRightSide = prefs.getBool("settings.mapControlsRightSide") ?? false;
       _showPilotNames = prefs.getBool("settings.showPilotNames") ?? false;
 
@@ -207,7 +260,36 @@ class Settings with ChangeNotifier {
 
       // --- Misc
       _chatTts = prefs.getBool("settings.chatTts") ?? false;
+      _altInstr = prefs.getString("settings.altInstr") ?? "MSL";
     });
+  }
+
+  // --- UI
+  bool get northlockMap => _northlockMap;
+  set northlockMap(bool value) {
+    _northlockMap = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.northlockMap", _northlockMap);
+    });
+    notifyListeners();
+  }
+
+  bool get northlockWind => _northlockWind;
+  set northlockWind(bool value) {
+    _northlockWind = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.northlockWind", _northlockWind);
+    });
+    notifyListeners();
+  }
+
+  bool get showAirspaceOverlay => _showAirspaceOverlay;
+  set showAirspaceOverlay(bool value) {
+    _showAirspaceOverlay = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.showAirspaceOverlay", _showAirspaceOverlay);
+    });
+    notifyListeners();
   }
 
   // --- mapControlsRightSide
@@ -274,12 +356,6 @@ class Settings with ChangeNotifier {
   bool get spoofLocation => _spoofLocation;
   set spoofLocation(bool value) {
     _spoofLocation = value;
-    notifyListeners();
-  }
-
-  bool get showAirspace => _showAirspace;
-  set showAirspace(bool value) {
-    _showAirspace = value;
     notifyListeners();
   }
 
@@ -354,6 +430,15 @@ class Settings with ChangeNotifier {
     _chatTts = value;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setBool("settings.chatTts", _chatTts);
+    });
+    notifyListeners();
+  }
+
+  String get altInstr => _altInstr;
+  set altInstr(String value) {
+    _altInstr = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString("settings.altInstr", value);
     });
     notifyListeners();
   }

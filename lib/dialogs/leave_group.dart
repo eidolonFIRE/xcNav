@@ -20,7 +20,7 @@ void promptLeaveGroup(BuildContext context) {
             ElevatedButton.icon(
                 label: const Text("Leave"),
                 onPressed: () {
-                  Provider.of<Client>(context, listen: false).leaveGroup(false);
+                  Provider.of<Client>(context, listen: false).leaveGroup();
                   Navigator.popUntil(context, ModalRoute.withName("/home"));
                 },
                 icon: const Icon(

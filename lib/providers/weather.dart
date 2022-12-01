@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:bisection/bisect.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -127,14 +128,12 @@ class Sounding {
   SoundingSample sampleBaro(double baroAlt) {
     // debugPrint("Searching for baro: $baroAlt");
     if (baroAlt < data.first.baroAlt) return data.first;
-    // TODO: use bisect rather than linear search
-    for (int t = 0; t < data.length - 1; t++) {
-      if (data[t].baroAlt <= baroAlt && data[t + 1].baroAlt > baroAlt) {
-        // debugPrint("found ($t, ${t + 1})");
-        return data[t].blend(data[t + 1], (baroAlt - data[t].baroAlt) / (data[t + 1].baroAlt - data[t].baroAlt));
-      }
-    }
-    return data.last;
+
+    final index = min(data.length - 2,
+        bisect<double>(data.map((e) => e.baroAlt).toList(), baroAlt, compare: (a, b) => (a - b).toInt()) - 1);
+
+    return data[index]
+        .blend(data[index + 1], (baroAlt - data[index].baroAlt) / (data[index + 1].baroAlt - data[index].baroAlt));
   }
 }
 
@@ -163,7 +162,7 @@ class Weather with ChangeNotifier {
         (_sounding != null &&
             ((_sounding!.center.longitude - myTelemetry.geo.lng).abs() > 0.2 ||
                 (_sounding!.center.latitude - myTelemetry.geo.lat).abs() > 0.2))) {
-      final box = Rect.fromCircle(center: myTelemetry.geo.latLngOffset, radius: 0.3);
+      final box = Rect.fromCircle(center: myTelemetry.geo.latlngOffset, radius: 0.3);
 
       _updateSounding(box).then((value) => completer.complete(value));
     } else {

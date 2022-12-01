@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/edit_plan_name.dart';
 
 // --- Dialogs
-import 'package:xcnav/dialogs/save_plan.dart';
 import 'package:xcnav/dialogs/select_kml_folders.dart';
 
 // --- Models
@@ -40,8 +39,7 @@ class _PlansViewerState extends State<PlansViewer> {
 
         final selectedFolderOptions = await selectKmlFolders(context, folderNames);
         final selectedFolders = folderNames.isNotEmpty ? selectedFolderOptions?.folders : null;
-        var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? [],
-            setAllOptional: selectedFolderOptions?.allOptional ?? false);
+        var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
         // TODO: notify if broken file
         if (newPlan.goodFile) {
           Provider.of<Plans>(context, listen: false).setPlan(newPlan);
@@ -59,7 +57,7 @@ class _PlansViewerState extends State<PlansViewer> {
       keys.sort((a, b) => a.compareTo(b));
       return Scaffold(
         appBar: AppBar(
-          title: const Text("Waypoints"),
+          title: const Text("Library"),
           actions: [
             IconButton(
                 iconSize: 30,
@@ -72,7 +70,6 @@ class _PlansViewerState extends State<PlansViewer> {
                   });
                 },
                 icon: const Icon(Icons.add)),
-            IconButton(iconSize: 30, onPressed: () => {savePlan(context)}, icon: const Icon(Icons.save_as)),
             IconButton(
                 iconSize: 30, onPressed: () => {selectKmlImport(context)}, icon: const Icon(Icons.file_upload_outlined))
           ],
@@ -90,7 +87,7 @@ class _PlansViewerState extends State<PlansViewer> {
                     padding: EdgeInsets.all(8.0),
                     child: Text("Use the buttons in the upper right corner to:", softWrap: true, maxLines: 3),
                   ),
-                  Text("- Create a new plan / collection\n- Save the active plan\n- Import a KML file"),
+                  Text("- Create a collection\n- Save the active set of waypoints\n- Import a KML file"),
                 ],
               ))
             : ListView.builder(

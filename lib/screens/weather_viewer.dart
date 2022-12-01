@@ -78,7 +78,8 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                         flex: 3,
                                         child: Text.rich(
                                           TextSpan(children: [
-                                            richValue(UnitType.distFine, getElevation(sample.baroAlt, 1013.25)),
+                                            richValue(UnitType.distFine, getElevation(sample.baroAlt, 1013.25),
+                                                digits: 5),
                                             const TextSpan(text: ",  "),
                                             TextSpan(
                                                 style: const TextStyle(color: Colors.blue),
@@ -124,7 +125,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                                           decimals: 0)
                                                       : "",
                                                   style:
-                                                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                                      const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                                                 ),
                                               ),
                                             ),
@@ -212,7 +213,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                               padding: EdgeInsets.all(10.0),
                               child: Text("Fetching"),
                             ),
-                            CircularProgressIndicator(),
+                            CircularProgressIndicator.adaptive(),
                           ],
                         ));
                       }

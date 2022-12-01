@@ -11,8 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
+import 'package:xcnav/endpoint.dart';
 
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/waypoint.dart';
 
 class Pilot {
   // basic info
@@ -30,8 +32,7 @@ class Pilot {
   Color color = Colors.grey.shade800;
   String? tier;
 
-  // Flightplan
-  int? selectedWaypoint;
+  WaypointID? selectedWp;
 
   Pilot(this.id, this.name, this.avatarHash, this.geo, this.tier) {
     // Load Avatar
@@ -41,7 +42,7 @@ class Pilot {
   Pilot.fromJson(Map<String, dynamic> json) {
     id = json["id"];
     name = json["name"];
-    avatarHash = json["avatar_hash"];
+    avatarHash = json["avatarHash"];
     tier = json["tier"];
     _loadAvatar();
   }
@@ -50,7 +51,7 @@ class Pilot {
     return {
       "id": id,
       "name": name,
-      "avatar_hash": avatarHash,
+      "avatarHash": avatarHash,
       "tier": tier,
     };
   }
@@ -62,8 +63,8 @@ class Pilot {
     if (gps["lat"] != 0.0 || gps["lng"] != 0.0) {
       geo = Geo.fromPosition(
           Position(
-            longitude: gps["lng"] as double,
-            latitude: gps["lat"] as double,
+            longitude: gps["lng"] is int ? (gps["alt"] as int).toDouble() : gps["lng"],
+            latitude: gps["lat"] is int ? (gps["alt"] as int).toDouble() : gps["lat"],
             timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp),
             accuracy: 1,
             altitude: gps["alt"] is int ? (gps["alt"] as int).toDouble() : gps["alt"],
@@ -155,25 +156,25 @@ class Pilot {
   }
 
   Future _fetchS3asset(String pilotID) async {
-    Uri uri =
-        Uri.https("gx49w49rb4.execute-api.us-west-1.amazonaws.com", "/xcnav_avatar_service", {"pilot_id": pilotID});
-    return http
-        .get(
-      uri,
-    )
-        .then((http.Response response) {
-      final int statusCode = response.statusCode;
+    if (serverEndpoint != null) {
+      Uri uri = Uri.https(serverEndpoint!.avatarUrl, "/xcnav_avatar_service", {"pilot_id": pilotID});
+      return http.get(uri, headers: {"authorizationToken": serverEndpoint!.token}).then((http.Response response) {
+        final int statusCode = response.statusCode;
 
-      if (statusCode < 200 || statusCode > 400) {
-        throw Exception("Error while fetching avatar");
-      }
-      return json.decode(response.body);
-    });
+        if (statusCode < 200 || statusCode > 400) {
+          throw Exception("Error while fetching avatar");
+        }
+        return json.decode(response.body);
+      });
+    } else {
+      debugPrint("Error: endpoint wasn't selected yet!");
+      return Future.value();
+    }
   }
 
   Polyline buildFlightTrace() {
     return Polyline(
-        points: flightTrace.map((e) => e.latLng).toList().sublist(max(0, flightTrace.length - 60)),
+        points: flightTrace.map((e) => e.latlng).toList().sublist(max(0, flightTrace.length - 60)),
         strokeWidth: 4,
         color: color.withAlpha(150),
         isDotted: true);

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -14,7 +15,6 @@ import 'package:xcnav/providers/adsb.dart';
 //
 import 'package:xcnav/units.dart';
 import 'package:xcnav/dialogs/patreon_info.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 
 class SettingsEditor extends StatefulWidget {
   const SettingsEditor({Key? key}) : super(key: key);
@@ -33,16 +33,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
       return Scaffold(
           appBar: AppBar(
             title: const Text("Settings"),
-            // TODO: when we have enough settings, we can use a search
-            // title: SizedBox(
-            //   height: 32,
-            //   child: TextField(
-            //     style: const TextStyle(fontSize: 24),
-            //     controller: searchInput,
-            //     decoration:
-            //         const InputDecoration(suffixIcon: Icon(Icons.search)),
-            //   ),
-            // ),
           ),
           body: SettingsList(
             darkTheme: SettingsThemeData(
@@ -127,6 +117,25 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     // description:
                     //     const Text("Alters UI and doesn't record track."),
                   ),
+                  SettingsTile.navigation(
+                      title: const Text("Primary Altimeter"),
+                      leading: const Icon(Icons.vertical_align_top),
+                      trailing: DropdownButton<String>(
+                          onChanged: (value) => {settings.altInstr = value ?? "MSL"},
+                          value: settings.altInstr,
+                          items: const [
+                            DropdownMenuItem(value: "AGL", child: Text("AGL")),
+                            DropdownMenuItem(value: "MSL", child: Text("MSL")),
+                          ])),
+                  SettingsTile.switchTile(
+                    title: const Text("Hide Airspace Overlay"),
+                    leading: SvgPicture.asset(
+                      "assets/images/airspace.svg",
+                      color: Colors.grey.shade400,
+                    ),
+                    onToggle: (value) => {settings.showAirspaceOverlay = !value},
+                    initialValue: !settings.showAirspaceOverlay,
+                  )
                 ],
               ),
               // --- ADSB options
@@ -161,7 +170,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
               ]),
 
               /// --- Patreon Info
-              // TODO: validation should consider both fields at the same time... need both or neither
               SettingsSection(
                   title: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -184,7 +192,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                       title: TextFormField(
                           initialValue: settings.patreonName,
                           decoration: const InputDecoration(label: Text("First Name")),
-                          onFieldSubmitted: (value) {
+                          onChanged: (value) {
                             settings.patreonName = value;
                           }),
                       trailing: Container(),
@@ -197,7 +205,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                           validator: (value) =>
                               EmailValidator.validate(value ?? "") || value == "" ? null : "Not a valid email",
                           decoration: const InputDecoration(label: Text("Email")),
-                          onFieldSubmitted: (value) {
+                          onChanged: (value) {
                             if (emailFormKey.currentState?.validate() ?? false) {
                               settings.patreonEmail = value;
                             }
@@ -244,18 +252,18 @@ class _SettingsEditorState extends State<SettingsEditor> {
                       ),
                       onToggle: (value) => {settings.spoofLocation = value},
                     ),
-                    // --- Clear path
-                    SettingsTile.navigation(
-                      title: const Text("Clear Current Flight"),
-                      leading: const Icon(
-                        Icons.delete_sweep,
-                        color: Colors.red,
-                      ),
-                      onPressed: (_) {
-                        Provider.of<MyTelemetry>(context, listen: false).recordGeo.clear();
-                        Provider.of<MyTelemetry>(context, listen: false).flightTrace.clear();
-                      },
-                    ),
+                    // // --- Clear path
+                    // SettingsTile.navigation(
+                    //   title: const Text("Clear Current Flight"),
+                    //   leading: const Icon(
+                    //     Icons.delete_sweep,
+                    //     color: Colors.red,
+                    //   ),
+                    //   onPressed: (_) {
+                    //     Provider.of<MyTelemetry>(context, listen: false).recordGeo.clear();
+                    //     Provider.of<MyTelemetry>(context, listen: false).flightTrace.clear();
+                    //   },
+                    // ),
                     // --- Erase Identity
                     SettingsTile.navigation(
                       title: const Text("Clear Identity"),

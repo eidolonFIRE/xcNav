@@ -1,19 +1,43 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:bisection/bisect.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/dem_service.dart';
+import 'package:xcnav/fake_path.dart';
 
 // --- Models
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/providers/client.dart';
+import 'package:xcnav/providers/group.dart';
+import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/providers/wind.dart';
+
+enum FlightEventType { init, takeoff, land }
+
+class FlightEvent {
+  final FlightEventType type;
+  final DateTime time;
+  final LatLng? latlng;
+  FlightEvent({required this.type, required this.time, this.latlng});
+}
 
 class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo geo = Geo();
@@ -34,6 +58,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   // in-flight hysterisis
   int triggerHyst = 0;
   bool inFlight = false;
+  StreamController<FlightEvent> flightEvent = StreamController<FlightEvent>();
+  StreamSubscription? _flightEventListener;
 
   // fuel save interval
   double? lastSavedFuelLevel;
@@ -46,6 +72,17 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   bool baroAmbientRequested = false;
   bool stationFound = false;
 
+  StreamSubscription<BarometerValue>? listenBaro;
+
+  final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
+  Stream<Position>? positionStream;
+  StreamSubscription<Position>? _positionStreamSubscription;
+  StreamSubscription<ServiceStatus>? _serviceStatusStreamSubscription;
+  bool positionStreamStarted = false;
+
+  FakeFlight fakeFlight = FakeFlight();
+  Timer? timer;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached && inFlight) saveFlight();
@@ -54,6 +91,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   @override
   void dispose() {
     _save();
+    timer?.cancel();
+    _flightEventListener?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -61,6 +100,222 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   MyTelemetry() {
     _load();
     WidgetsBinding.instance.addObserver(this);
+
+    _startBaroService();
+  }
+
+  void init(BuildContext context) {
+    debugPrint("Build /MyTelemetry");
+
+    if (flightEvent.hasListener) {
+      flightEvent.close();
+      flightEvent = StreamController<FlightEvent>();
+    }
+    // Initial value of the event stream
+    flightEvent.add(FlightEvent(type: FlightEventType.init, time: DateTime.now()));
+    _flightEventListener = flightEvent.stream.listen(
+      (event) {
+        if (event.type == FlightEventType.takeoff) {
+          // Add launch waypoints
+          Provider.of<ActivePlan>(context, listen: false).updateWaypoint(Waypoint(
+              name: "Launch ${DateFormat("h:mm a").format(event.time)}",
+              latlngs: [event.latlng!],
+              color: 0xff00df00,
+              icon: "takeoff",
+              ephemeral: true));
+        }
+      },
+    );
+
+    final settings = Provider.of<Settings>(context, listen: false);
+    final activePlan = Provider.of<ActivePlan>(context, listen: false);
+    _setupServiceStatusStream(context);
+    settings.addListener(() {
+      if (settings.spoofLocation) {
+        if (timer == null) {
+          // --- Spoof Location / Disable Baro
+          listenBaro?.cancel();
+          if (positionStreamStarted) {
+            positionStreamStarted = !positionStreamStarted;
+            _toggleListening(context);
+          }
+          debugPrint("--- Starting Location Spoofer ---");
+          baro = null;
+
+          // if a waypoint is selected, teleport to there first (useful for doing testing)
+          final selectedWp = activePlan.getSelectedWp();
+          if (selectedWp != null) {
+            updateGeo(
+                Position(
+                  latitude: selectedWp.latlng[0].latitude,
+                  longitude: selectedWp.latlng[0].longitude,
+                  altitude: geo.alt,
+                  speed: 0,
+                  timestamp: DateTime.now(),
+                  heading: 0,
+                  accuracy: 0,
+                  speedAccuracy: 0,
+                ),
+                bypassRecording: true);
+          }
+
+          fakeFlight.initFakeFlight(geo);
+          timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+            final targetWp = activePlan.getSelectedWp();
+            final target = targetWp == null
+                ? null
+                : targetWp.latlng.length > 1
+                    ? geo
+                        .getIntercept(
+                          targetWp.latlngOriented,
+                        )
+                        .latlng
+                    : targetWp.latlng[0];
+            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target, geoPrev), bypassRecording: true);
+          });
+        }
+      } else {
+        if (timer != null) {
+          // --- Real Location / Baro
+
+          _startBaroService();
+
+          if (!positionStreamStarted) {
+            positionStreamStarted = !positionStreamStarted;
+            _toggleListening(context);
+          }
+          _serviceStatusStreamSubscription!.resume();
+          debugPrint("--- Stopping Location Spoofer ---");
+          timer?.cancel();
+          timer = null;
+        }
+      }
+    });
+  }
+
+  void _startBaroService() {
+    listenBaro = FlutterBarometer.currentPressureEvent.listen((event) {
+      baro = event;
+    });
+  }
+
+  void _setupServiceStatusStream(BuildContext context) {
+    debugPrint("Toggle Location Service Stream");
+    if (_serviceStatusStreamSubscription == null) {
+      final serviceStatusStream = _geolocatorPlatform.getServiceStatusStream();
+      _serviceStatusStreamSubscription = serviceStatusStream.handleError((error) {
+        _serviceStatusStreamSubscription?.cancel();
+        _serviceStatusStreamSubscription = null;
+      }).listen((serviceStatus) {
+        if (serviceStatus == ServiceStatus.enabled) {
+          if (positionStreamStarted) {
+            _toggleListening(context);
+          }
+          if (defaultTargetPlatform == TargetPlatform.iOS && !positionStreamStarted) {
+            positionStreamStarted = true;
+            _toggleListening(context);
+          }
+          debugPrint("Location Service Enabled");
+        } else {
+          if (_positionStreamSubscription != null) {
+            _positionStreamSubscription?.cancel();
+            _positionStreamSubscription = null;
+            debugPrint('Position Stream has been canceled');
+          }
+          debugPrint("Location Service Disabled");
+        }
+      });
+
+      // Initial start of the position stream
+      if (!positionStreamStarted && defaultTargetPlatform == TargetPlatform.android) {
+        positionStreamStarted = true;
+        _toggleListening(context);
+      }
+    }
+  }
+
+  void _toggleListening(BuildContext context) {
+    debugPrint("Toggle Location Listening");
+    if (_positionStreamSubscription == null) {
+      late LocationSettings locationSettings;
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        locationSettings = AndroidSettings(
+            accuracy: LocationAccuracy.best,
+            distanceFilter: 0,
+            forceLocationManager: false,
+            intervalDuration: const Duration(seconds: 3),
+            //(Optional) Set foreground notification config to keep the app alive
+            //when going to the background
+            foregroundNotificationConfig: const ForegroundNotificationConfig(
+                notificationText: "Still sending your position to the group.",
+                notificationTitle: "xcNav",
+                enableWakeLock: true));
+      } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+        locationSettings = AppleSettings(
+          accuracy: LocationAccuracy.best,
+          // activityType: ActivityType.fitness,
+          distanceFilter: 0,
+          pauseLocationUpdatesAutomatically: false,
+          // Only set to true if our app will be started up in the background.
+          showBackgroundLocationIndicator: true,
+        );
+      } else {
+        locationSettings = const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 0,
+        );
+      }
+
+      positionStream = _geolocatorPlatform.getPositionStream(locationSettings: locationSettings);
+    }
+
+    if (_positionStreamSubscription == null) {
+      _positionStreamSubscription = positionStream!.handleError((error) {
+        _positionStreamSubscription?.cancel();
+        _positionStreamSubscription = null;
+      }).listen((position) => {handleGeomUpdate(context, position)});
+
+      debugPrint('Listening for position updates RESUMED');
+    } else {
+      _positionStreamSubscription?.cancel();
+      _positionStreamSubscription = null;
+      debugPrint('Listening for position updates PAUSED');
+    }
+  }
+
+  /// Do all the things with a GPS update
+  void handleGeomUpdate(BuildContext context, Position position, {bool bypassRecording = false}) {
+    final settings = Provider.of<Settings>(context, listen: false);
+    final client = Provider.of<Client>(context, listen: false);
+    final group = Provider.of<Group>(context, listen: false);
+    final adsb = Provider.of<ADSB>(context, listen: false);
+
+    if (position.latitude != 0.0 || position.longitude != 0.0) {
+      updateGeo(position, bypassRecording: settings.groundMode || bypassRecording);
+    }
+
+    if (!settings.groundMode || settings.groundModeTelemetry) {
+      if (group.activePilots.isNotEmpty || client.telemetrySkips > 20) {
+        client.sendTelemetry(geo, fuel);
+        client.telemetrySkips = 0;
+      } else {
+        client.telemetrySkips++;
+      }
+    }
+
+    if (inFlight && geo.spd > 1) {
+      Provider.of<Wind>(context, listen: false).handleVector(Vector(geo.hdg, geo.spd, timestamp: position.timestamp));
+    }
+
+    // Update ADSB
+    adsb.refresh(geo, inFlight);
+
+    if (inFlight) {
+      audioCueService.cueMyTelemetry(geo);
+      audioCueService.cueNextWaypoint(geo);
+      audioCueService.cueGroupAwareness(geo);
+    }
   }
 
   void _load() async {
@@ -133,10 +388,19 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     });
   }
 
-  void updateGeo(Position position, {bool bypassRecording = false}) {
+  void updateGeo(Position position, {bool bypassRecording = false}) async {
     // debugPrint("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
+    geo.prevGnd = geoPrev.ground;
+    await sampleDem(geo.latlng, true).then((value) {
+      if (value != null) {
+        geo.ground = value;
+      }
+    }).timeout(const Duration(milliseconds: 500), onTimeout: () {
+      debugPrint("DEM SERVICE TIMEOUT! ${geo.latlng}");
+    });
+
     recordGeo.add(geo);
 
     // fetch ambient baro from weather service
@@ -150,32 +414,46 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     // --- In-Flight detector
-    const triggerDuration = Duration(seconds: 30);
-    if ((geo.spd > 2.5 || geo.vario.abs() > 1.0) ^ inFlight) {
-      triggerHyst += geo.time - geoPrev.time;
+    if (inFlight) {
+      // Is moving slowly near the ground?
+      if (geo.spdSmooth < 3.0 && geo.varioSmooth.abs() < 1.0 && geo.alt - (geo.ground ?? geo.alt) < 30) {
+        triggerHyst += geo.time - geoPrev.time;
+      } else {
+        triggerHyst = 0;
+      }
+      if (triggerHyst > 60000) {
+        // Landed!
+        inFlight = false;
+        debugPrint("Flight Ended");
+        flightEvent.add(FlightEvent(
+            type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
+        // Save current flight to log
+        if (!bypassRecording) {
+          saveFlight();
+        }
+      }
     } else {
-      triggerHyst = 0;
-    }
-    if (triggerHyst > triggerDuration.inMilliseconds) {
-      inFlight = !inFlight;
-      triggerHyst = 0;
-      if (inFlight) {
-        // TODO: Use real timestamp search here (it's hardcoded to 5seconds)
-        final launchIndex = max(0, recordGeo.length - (triggerDuration.inSeconds ~/ 5) - 5);
+      // Is moving a normal speed and above the ground?
+      if (4.0 < geo.spd && geo.spd < 25 && geo.alt - (geo.ground ?? 0) > 30) {
+        triggerHyst += geo.time - geoPrev.time;
+      } else {
+        triggerHyst = 0;
+      }
+      if (triggerHyst > 30000) {
+        // Launched!
+        inFlight = true;
+        // TODO: Use real timestamp search here (it's hardcoded to 3 seconds)
+        final launchIndex = max(0, recordGeo.length - (30 ~/ 3));
         launchGeo = recordGeo[launchIndex];
 
         takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
         debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
 
+        flightEvent.add(FlightEvent(
+            type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
+
         // clear the log
         recordGeo.removeRange(0, launchIndex);
-      } else {
-        debugPrint("Flight Ended");
-
-        // Save current flight to log
-        if (!bypassRecording) {
-          saveFlight();
-        }
       }
     }
 
@@ -184,8 +462,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev.time) / 3600000.0);
 
       // --- Record path
-      if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo.latLng) > 50)) {
-        flightTrace.add(geo.latLng);
+      if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo.latlng) > 50)) {
+        flightTrace.add(geo.latlng);
         // --- keep list from bloating
         if (flightTrace.length > 10000) {
           flightTrace.removeRange(0, 100);
@@ -193,8 +471,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
 
       // --- Periodically save log
-      if (!bypassRecording && lastSavedLog == null ||
-          lastSavedLog!.add(const Duration(minutes: 2)).isBefore(DateTime.now())) {
+      if (!bypassRecording &&
+          (lastSavedLog == null || lastSavedLog!.add(const Duration(minutes: 2)).isBefore(DateTime.now()))) {
         saveFlight();
       }
     }
@@ -233,5 +511,30 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   Polyline buildFlightTrace() {
     return Polyline(points: flightTrace, strokeWidth: 4, color: const Color.fromARGB(150, 255, 50, 50), isDotted: true);
+  }
+
+  List<Geo> getHistory(DateTime oldest, {Duration? interval}) {
+    final bisectIndex = bisect_left<Geo>(
+      recordGeo,
+      Geo(timestamp: oldest.millisecondsSinceEpoch),
+      compare: (a, b) => a.time - b.time,
+    );
+
+    if (interval == null) {
+      return recordGeo.sublist(bisectIndex);
+    } else {
+      final int desiredCardinality =
+          ((recordGeo.last.time - max(recordGeo.first.time, oldest.millisecondsSinceEpoch)) / interval.inMilliseconds)
+              .ceil();
+      final startingCard = recordGeo.length - bisectIndex;
+      // debugPrint("recordGeo sample ratio: 1:${(startingCard / desiredCardinality).round()} (desired $desiredCardinality)");
+      List<Geo> retval = [];
+      for (int index = bisectIndex; index < recordGeo.length; index += (startingCard / desiredCardinality).round()) {
+        retval.add(recordGeo[index]);
+      }
+      // Add end-cap if missing
+      if (retval.last.time != recordGeo.last.time) retval.add(recordGeo.last);
+      return retval;
+    }
   }
 }

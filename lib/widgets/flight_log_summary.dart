@@ -17,7 +17,7 @@ class FlightLogSummary extends StatelessWidget {
   static const unitStyle = TextStyle(color: Colors.grey, fontSize: 12);
 
   FlightLogSummary(this.log, this.onDelete, {Key? key}) : super(key: key) {
-    mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latLng).toList());
+    mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList());
     mapBounds.pad(0.2);
     debugPrint("Built log: ${log.filename}");
   }
@@ -197,12 +197,11 @@ class FlightLogSummary extends StatelessWidget {
                       ),
                       PolylineLayerOptions(polylines: [
                         Polyline(
-                            points: log.samples.map((e) => e.latLng).toList(),
+                            points: log.samples.map((e) => e.latlng).toList(),
                             strokeWidth: 3,
                             color: Colors.red,
                             isDotted: false)
                       ]),
-                      // TODO: show other things like take-off, landing, and flight plan
                     ]),
               ),
 

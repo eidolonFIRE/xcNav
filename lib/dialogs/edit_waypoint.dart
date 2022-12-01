@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
 // --- Models
 import 'package:xcnav/models/waypoint.dart';
@@ -11,10 +12,16 @@ import 'package:xcnav/widgets/map_marker.dart';
 final TextEditingController newWaypointName = TextEditingController();
 
 Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
-    {VoidCallback? editPointsCallback, bool isPath = false, bool isNew = false}) {
+    {bool isPath = false, bool isNew = false}) {
   newWaypointName.value = TextEditingValue(text: waypoint.name);
   var formKey = GlobalKey<FormState>();
-
+  var formKeyLatlng = GlobalKey<FormState>();
+  final reMatch = RegExp(r"([-\d]+.?[\d]*),[\s]*([-\d]+.?[\d]*)");
+  final TextEditingController latlngText = TextEditingController(
+      text:
+          waypoint.latlng.map((e) => "${e.latitude.toStringAsFixed(5)}, ${e.longitude.toStringAsFixed(5)}").join("; "));
+  debugPrint(
+      waypoint.latlng.map((e) => "${e.latitude.toStringAsFixed(5)}, ${e.longitude.toStringAsFixed(5)}").join("; "));
   return showDialog<Waypoint?>(
       context: context,
       builder: (context) {
@@ -77,22 +84,26 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
               mainAxisSize: MainAxisSize.min,
               children: [
                 // --- Edit Name
-                Form(
-                  key: formKey,
-                  child: TextFormField(
-                    controller: newWaypointName,
-                    autofocus: true,
-                    validator: (value) {
-                      if (value != null) {
-                        if (value.trim().isEmpty || value.isEmpty) return "Must not be empty";
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      hintText: "waypoint name",
-                      border: OutlineInputBorder(),
+                SizedBox(
+                  height: 50,
+                  child: Form(
+                    key: formKey,
+                    child: TextFormField(
+                      controller: newWaypointName,
+                      autofocus: true,
+                      validator: (value) {
+                        if (value != null) {
+                          if (value.trim().isEmpty || value.isEmpty) return "Must not be empty";
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        hintText: "${isPath ? "Path" : "Waypoint"} Name",
+                        border: const OutlineInputBorder(),
+                      ),
+                      textAlignVertical: TextAlignVertical.bottom,
+                      style: const TextStyle(fontSize: 20),
                     ),
-                    style: const TextStyle(fontSize: 20),
                   ),
                 ),
                 const Divider(
@@ -103,9 +114,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                   direction: Axis.horizontal,
                   children: colorWidgets,
                 ),
-                const Divider(
-                  height: 20,
-                ),
+
                 // --- Edit Icon
                 if (showIconOptions)
                   Expanded(
@@ -121,22 +130,40 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                     ),
                   ),
 
-                if (!showIconOptions && editPointsCallback != null)
-                  TextButton.icon(
-                      onPressed: () {
-                        var newWaypoint = Waypoint(newWaypointName.text, waypoint.latlng, waypoint.isOptional,
-                            selectedIcon, selectedColor.value);
-                        Navigator.pop(context, newWaypoint);
-                        editPointsCallback();
-                      },
-                      icon: const Icon(
-                        Icons.edit,
-                        color: Colors.white,
+                const Divider(
+                  height: 20,
+                ),
+
+                // --- Edit LatLng
+                Padding(
+                  padding: const EdgeInsets.only(left: 30, right: 30),
+                  child: SizedBox(
+                    height: 50,
+                    child: Form(
+                      key: formKeyLatlng,
+                      child: TextFormField(
+                        maxLines: 1,
+
+                        controller: latlngText,
+                        // autofocus: true,
+                        validator: (value) {
+                          if (value != null) {
+                            if (value.trim().isEmpty) return "Must not be empty";
+                            if (!reMatch.hasMatch(value)) return "Unrecognized Format";
+                          }
+                          return null;
+                        },
+                        decoration: const InputDecoration(
+                          hintText: "Lat, Long  (or google-maps url)",
+                          // border: OutlineInputBorder(),
+                        ),
+                        textAlign: TextAlign.center,
+                        textAlignVertical: TextAlignVertical.bottom,
+                        style: const TextStyle(fontSize: 16),
                       ),
-                      label: Text(
-                        "Edit Path Points",
-                        style: Theme.of(context).textTheme.button!.merge(const TextStyle(fontSize: 20)),
-                      ))
+                    ),
+                  ),
+                ),
               ],
             ),
             actions: [
@@ -151,9 +178,20 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
               TextButton.icon(
                   label: Text(isNew ? "Add" : "Update"),
                   onPressed: () {
-                    if (formKey.currentState?.validate() ?? false) {
-                      var newWaypoint = Waypoint(newWaypointName.text, waypoint.latlng, waypoint.isOptional,
-                          selectedIcon, selectedColor.value);
+                    if ((formKey.currentState?.validate() ?? false) &&
+                        (formKeyLatlng.currentState?.validate() ?? false)) {
+                      final latLngValues = reMatch.allMatches(latlngText.text);
+
+                      var newWaypoint = Waypoint(
+                          newId: waypoint.id,
+                          name: newWaypointName.text,
+                          latlngs: latLngValues.isEmpty
+                              ? waypoint.latlng
+                              : latLngValues
+                                  .map((e) => LatLng(double.parse(e.group(1)!), double.parse(e.group(2)!)))
+                                  .toList(),
+                          icon: selectedIcon,
+                          color: selectedColor.value);
 
                       Navigator.pop(context, newWaypoint);
                     }

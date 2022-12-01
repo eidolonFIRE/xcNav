@@ -26,17 +26,7 @@ class Wind with ChangeNotifier {
   WindSolveResult? _result;
   WindSolveResult? get result => _result;
 
-  bool _isRecording = false;
-  bool _triggerStop = false;
-
-  /// At 5s/sample, this is 10minutes
-  static const maxSamples = 120;
-
-  bool get isRecording => _isRecording;
-  set isRecording(bool value) {
-    _isRecording = value;
-    notifyListeners();
-  }
+  static const maxSampleAge = Duration(minutes: 3);
 
   static double remainingHeadway(double theta, double mySpd, double wSpd) =>
       sqrt(pow(mySpd, 2) - pow(wSpd * sin(theta), 2)) - cos(theta) * wSpd;
@@ -47,52 +37,33 @@ class Wind with ChangeNotifier {
     notifyListeners();
   }
 
-  void start() {
-    clearResult();
-    isRecording = true;
-  }
-
-  void stop({bool waitTillSolution = false}) {
-    for (final each in samples) {
-      debugPrint("wind.handleVector(Vector(${each.hdg}, ${each.value}));");
-    }
-
-    if (waitTillSolution && _result == null) {
-      _triggerStop = true;
-    } else {
-      _triggerStop = false;
-      isRecording = false;
-    }
-  }
-
-  void clearStopTrigger() {
-    _triggerStop = false;
-  }
-
   void handleVector(Vector newSample) {
-    if (isRecording) {
-      samples.add(newSample);
-      if (samples.length > maxSamples) {
-        samples.removeAt(0);
+    samples.add(newSample);
+    while (samples.isNotEmpty &&
+        (samples.first.timestamp != null && samples.first.timestamp!.isBefore(DateTime.now().subtract(maxSampleAge)))) {
+      // Remove 10 at a time for performance
+      samples.removeRange(0, min(10, samples.length));
+    }
+
+    if (samples.length > 4) {
+      // Check sampled field-of-view is sufficient for confidence
+      var prev = samples.first.hdg;
+      var left = prev;
+      var right = prev;
+      for (var each in samples) {
+        final cur = prev + deltaHdg(each.hdg, prev);
+
+        left = min(left, cur);
+        right = max(right, cur);
+        prev = cur;
       }
+      final fov = right - left;
+      // debugPrint("FOV: $fov  (${samples.length} samples)");
 
-      if (samples.length > 2) {
-        // Check sampled field-of-view is sufficient for confidence
-        var prev = samples.first.hdg;
-        var left = prev;
-        var right = prev;
-        for (var each in samples) {
-          final cur = prev + deltaHdg(each.hdg, prev);
-
-          left = min(left, cur);
-          right = max(right, cur);
-          prev = cur;
-        }
-        final fov = right - left;
-        // debugPrint("FOV: $fov  (${samples.length} samples)");
-
-        if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
-      }
+      if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
+    } else {
+      _result = null;
+      notifyListeners();
     }
   }
 
@@ -186,8 +157,6 @@ class Wind with ChangeNotifier {
       _result = WindSolveResult(
           radius, windSpd, windHdg, Offset(xCenter, yCenter), maxSpd, samplesX, samplesY, DateTime.now());
       notifyListeners();
-
-      if (_triggerStop) stop();
     }
   }
 }
