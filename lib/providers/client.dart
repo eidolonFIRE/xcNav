@@ -417,7 +417,6 @@ class Client with ChangeNotifier {
       state = ClientState.authenticated;
 
       // compare API version
-      // TODO: should have big warning banners for this
       if (msg["apiVersion"] > apiVersion) {
         debugPrint("---/!\\--- Client is out of date!");
       } else if (msg["apiVersion"] < apiVersion) {

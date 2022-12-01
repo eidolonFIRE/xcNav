@@ -88,7 +88,7 @@ void showWindDialog(BuildContext context) {
                                     padding: EdgeInsets.all(10.0),
                                     child: Text("Slowly Turn 1/4 Circle", style: TextStyle(fontSize: 18)),
                                   ),
-                                  CircularProgressIndicator(
+                                  CircularProgressIndicator.adaptive(
                                     strokeWidth: 3,
                                   )
                                 ],

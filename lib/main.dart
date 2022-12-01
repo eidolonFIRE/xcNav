@@ -19,6 +19,7 @@ import 'package:xcnav/providers/wind.dart';
 
 // screens
 import 'package:xcnav/screens/adsb_help.dart';
+import 'package:xcnav/screens/checklist_viewer.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/screens/loading.dart';
 import 'package:xcnav/screens/plan_editor.dart';
@@ -200,6 +201,7 @@ class MyApp extends StatelessWidget {
         "/weather": (context) => const WeatherViewer(),
         "/about": (context) => const About(),
         "/adsbHelp": (context) => const ADSBhelp(),
+        "/checklist": (context) => const ChecklistViewer(),
       },
     );
   }
