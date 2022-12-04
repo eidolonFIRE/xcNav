@@ -266,12 +266,22 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       allowPanningOnScrollingParent: false,
                       plugins: [DragMarkerPlugin(), TappablePolylineMapPlugin()],
                     ),
-                    layers: [
+                    layers: <LayerOptions>[
                       settings.getMapTileLayer(settings.curMapTiles),
                       if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
                         settings.getMapTileLayer("airspace"),
                       if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
                         settings.getMapTileLayer("airports"),
+
+                      // https://nowcoast.noaa.gov/help/#!section=map-service-list
+                      TileLayerOptions(
+                        backgroundColor: Colors.transparent,
+                        wmsOptions: WMSTileLayerOptions(
+                          layers: ["1"],
+                          baseUrl:
+                              "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
+                        ),
+                      ),
 
                       // Other Pilot path trace
                       PolylineLayerOptions(
