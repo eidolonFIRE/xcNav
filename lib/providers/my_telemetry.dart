@@ -42,6 +42,8 @@ class FlightEvent {
 class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo geo = Geo();
 
+  BuildContext? globalContext;
+
   /// Liters
   double fuel = 0;
 
@@ -104,8 +106,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     _startBaroService();
   }
 
-  void init(BuildContext context) {
+  void init() {
     debugPrint("Build /MyTelemetry");
+
+    assert(globalContext != null, "globalContext in MyTelemetry instance hasn't been set yet!");
 
     if (flightEvent.hasListener) {
       flightEvent.close();
@@ -117,7 +121,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       (event) {
         if (event.type == FlightEventType.takeoff) {
           // Add launch waypoints
-          Provider.of<ActivePlan>(context, listen: false).updateWaypoint(Waypoint(
+          Provider.of<ActivePlan>(globalContext!, listen: false).updateWaypoint(Waypoint(
               name: "Launch ${DateFormat("h:mm a").format(event.time)}",
               latlngs: [event.latlng!],
               color: 0xff00df00,
@@ -127,9 +131,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       },
     );
 
-    final settings = Provider.of<Settings>(context, listen: false);
-    final activePlan = Provider.of<ActivePlan>(context, listen: false);
-    _setupServiceStatusStream(context);
+    final settings = Provider.of<Settings>(globalContext!, listen: false);
+    final activePlan = Provider.of<ActivePlan>(globalContext!, listen: false);
+    _setupServiceStatusStream(globalContext!);
     settings.addListener(() {
       if (settings.spoofLocation) {
         if (timer == null) {
@@ -137,7 +141,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           listenBaro?.cancel();
           if (positionStreamStarted) {
             positionStreamStarted = !positionStreamStarted;
-            _toggleListening(context);
+            _toggleListening(globalContext!);
           }
           debugPrint("--- Starting Location Spoofer ---");
           baro = null;
@@ -171,7 +175,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                         )
                         .latlng
                     : targetWp.latlng[0];
-            handleGeomUpdate(context, fakeFlight.genFakeLocationFlight(target, geoPrev), bypassRecording: true);
+            handleGeomUpdate(globalContext!, fakeFlight.genFakeLocationFlight(target, geoPrev), bypassRecording: true);
           });
         }
       } else {
@@ -182,7 +186,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
           if (!positionStreamStarted) {
             positionStreamStarted = !positionStreamStarted;
-            _toggleListening(context);
+            _toggleListening(globalContext!);
           }
           _serviceStatusStreamSubscription!.resume();
           debugPrint("--- Stopping Location Spoofer ---");
@@ -262,7 +266,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         );
       } else {
         locationSettings = const LocationSettings(
-          accuracy: LocationAccuracy.high,
+          accuracy: LocationAccuracy.best,
           distanceFilter: 0,
         );
       }
@@ -290,6 +294,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     final client = Provider.of<Client>(context, listen: false);
     final group = Provider.of<Group>(context, listen: false);
     final adsb = Provider.of<ADSB>(context, listen: false);
+
+    debugPrint(
+        "geomUpdate (${position.timestamp}): ${position.altitude}, ${position.latitude} x ${position.longitude}");
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
       updateGeo(position, bypassRecording: settings.groundMode || bypassRecording);

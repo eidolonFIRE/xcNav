@@ -107,7 +107,7 @@ class MyApp extends StatelessWidget {
     ttsService = TtsService();
     ttsService.init();
 
-    Provider.of<MyTelemetry>(context, listen: false).init(context);
+    Provider.of<MyTelemetry>(context, listen: false).globalContext = context;
 
     debugPrint("Building App");
 

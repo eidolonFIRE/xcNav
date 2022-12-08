@@ -65,6 +65,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     debugPrint("Getting initial location from GPS");
     _getCurrentPosition().then((location) {
       debugPrint("initial location: $location");
+      Provider.of<MyTelemetry>(context, listen: false).init();
       Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
 
       // Setup the backend
