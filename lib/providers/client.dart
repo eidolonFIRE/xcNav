@@ -105,7 +105,9 @@ class Client with ChangeNotifier {
         });
 
         Profile profile = Provider.of<Profile>(context, listen: false);
-        authenticate(profile);
+        if (Profile.nameValidator(profile.name) == null) {
+          authenticate(profile);
+        }
 
         // Watch updates to Profile
         Provider.of<Profile>(context, listen: false).addListener(() {

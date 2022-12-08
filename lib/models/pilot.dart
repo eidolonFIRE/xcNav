@@ -15,6 +15,7 @@ import 'package:xcnav/endpoint.dart';
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/secrets.dart';
 
 class Pilot {
   // basic info
@@ -136,40 +137,41 @@ class Pilot {
   }
 
   void _fetchAvatorFromS3() async {
-    debugPrint("Fetching pilot ($name) avatar from S3.");
-    // - cache miss, load from S3
-    Directory tempDir = await getTemporaryDirectory();
-    File fileAvatar = File("${tempDir.path}/avatars/$id.jpg");
-    _fetchS3asset(id).then((value) {
-      Uint8List bytes = base64Decode(value["avatar"]);
-      avatar = Image.memory(bytes);
-      _updateColor(bytes);
+    if (id.isNotEmpty) {
+      debugPrint("Fetching pilot ($name : $id) avatar from S3.");
+      // - cache miss, load from S3
+      Directory tempDir = await getTemporaryDirectory();
+      File fileAvatar = File("${tempDir.path}/avatars/$id.jpg");
+      _fetchS3asset(id).then((value) {
+        if (value != null) {
+          Uint8List bytes = base64Decode(value["avatar"]);
+          avatar = Image.memory(bytes);
+          _updateColor(bytes);
 
-      // save file to the temp file
-      fileAvatar.create(recursive: true).then((value) {
-        fileAvatar.writeAsBytes(bytes);
-        debugPrint("Pulled avatar $id.jpg from remote source");
+          // save file to the temp file
+          fileAvatar.create(recursive: true).then((value) {
+            fileAvatar.writeAsBytes(bytes);
+            debugPrint("Pulled avatar $id.jpg from remote source");
+          });
+        }
+      }, onError: (error) {
+        debugPrint("Failed to fetch avatar $id.jpg... $error");
       });
-    }, onError: (error) {
-      debugPrint("Failed to fetch avatar $id.jpg... $error");
-    });
+    } else {
+      debugPrint("Couldn't fetch avator since id == null.");
+    }
   }
 
   Future _fetchS3asset(String pilotID) async {
-    if (serverEndpoint != null) {
-      Uri uri = Uri.https(serverEndpoint!.avatarUrl, "/xcnav_avatar_service", {"pilot_id": pilotID});
-      return http.get(uri, headers: {"authorizationToken": serverEndpoint!.token}).then((http.Response response) {
-        final int statusCode = response.statusCode;
+    Uri uri = Uri.https(profileStoreUrl.split("/").first, profileStoreUrl.split("/").last, {"pilot_id": pilotID});
+    return http.get(uri, headers: {"authorizationToken": profileStoreToken}).then((http.Response response) {
+      final int statusCode = response.statusCode;
 
-        if (statusCode < 200 || statusCode > 400) {
-          throw Exception("Error while fetching avatar");
-        }
-        return json.decode(response.body);
-      });
-    } else {
-      debugPrint("Error: endpoint wasn't selected yet!");
-      return Future.value();
-    }
+      if (statusCode < 200 || statusCode > 400) {
+        throw Exception("Error while fetching avatar: $statusCode");
+      }
+      return json.decode(response.body);
+    });
   }
 
   Polyline buildFlightTrace() {

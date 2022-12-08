@@ -113,7 +113,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
       area = cropKey.currentState!.area!;
     }
 
-    debugPrint("${area.width} ${area.height}");
+    // debugPrint("${area.width} ${area.height}");
 
     // use crop state
     ImageCrop.cropImage(file: File(inputFile!.path), area: area).then((value) {
@@ -168,10 +168,14 @@ class _ProfileEditorState extends State<ProfileEditor> {
         actions: [
           IconButton(
             iconSize: 40,
-            onPressed: () => accept(context, isOptional),
+            disabledColor: Colors.grey,
+            color: Colors.lightGreen,
+            onPressed: ((formKey.currentState?.validate() ?? false) && croppedImage != null)
+                ? () => accept(context, isOptional)
+                : null,
             icon: const Icon(
               Icons.check,
-              color: Colors.lightGreen,
+              // color: Colors.lightGreen,
             ),
           )
         ],
@@ -206,16 +210,14 @@ class _ProfileEditorState extends State<ProfileEditor> {
                       maxLength: 20,
                       style: const TextStyle(fontSize: 20),
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ ]"))],
-                      validator: (value) {
-                        if (value != null) {
-                          if (value.trim().length < 2) return "Must be at least 2 characters.";
-                        }
-                        return null;
-                      },
+                      validator: Profile.nameValidator,
                       decoration: const InputDecoration(
                         label: Text("Pilot Name"),
                         border: OutlineInputBorder(),
                       ),
+                      onChanged: (value) => setState(() {
+                        formKey.currentState?.validate();
+                      }),
                       // onFieldSubmitted: (value) => formKey.currentState?.validate(),
                     ),
                   )),

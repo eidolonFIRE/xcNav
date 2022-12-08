@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:xcnav/endpoint.dart';
+import 'package:xcnav/secrets.dart';
 
 class Profile with ChangeNotifier {
   String? name;
@@ -48,6 +49,15 @@ class Profile with ChangeNotifier {
     debugPrint("Loaded Profile: $name, $id, $secretID, avatar: ${_avatarRaw?.length ?? 0}");
 
     hash = _hash();
+  }
+
+  static String? nameValidator(String? name) {
+    if (name != null) {
+      if (name.trim().length < 2) return "Must be at least 2 characters.";
+    } else {
+      return "Must not be empty.";
+    }
+    return null;
   }
 
   eraseIdentity() {
@@ -107,23 +117,18 @@ class Profile with ChangeNotifier {
   }
 
   Future pushAvatar() async {
-    if (serverEndpoint != null) {
-      return http
-          .post(Uri.parse(serverEndpoint!.avatarUrl),
-              headers: {"Content-Type": "application/json", "authorizationToken": serverEndpoint!.token},
-              body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
-          .then((http.Response response) {
-        final int statusCode = response.statusCode;
+    return http
+        .post(Uri.parse(profileStoreUrl),
+            headers: {"Content-Type": "application/json", "authorizationToken": profileStoreToken},
+            body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
+        .then((http.Response response) {
+      final int statusCode = response.statusCode;
 
-        if (statusCode < 200 || statusCode > 400) {
-          throw Exception("Error while pushing avatar");
-        }
-        return response.body;
-      });
-    } else {
-      debugPrint("Error: endpoint wasn't selected yet!");
-      return Future.value();
-    }
+      if (statusCode < 200 || statusCode > 400) {
+        throw Exception("Error while pushing avatar: $statusCode");
+      }
+      return response.body;
+    });
   }
 
   updateID(String newID, String newSecretID) {
