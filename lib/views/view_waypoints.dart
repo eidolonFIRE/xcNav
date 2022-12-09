@@ -231,7 +231,6 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                           Navigator.pushNamed(context, "/plans");
                           break;
                         case "save":
-                          Navigator.pop(context);
                           savePlan(context);
                           break;
                         case "clear":

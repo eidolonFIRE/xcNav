@@ -175,7 +175,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                         )
                         .latlng
                     : targetWp.latlng[0];
-            handleGeomUpdate(globalContext!, fakeFlight.genFakeLocationFlight(target, geoPrev), bypassRecording: true);
+            handleGeoUpdate(globalContext!, fakeFlight.genFakeLocationFlight(target, geoPrev), bypassRecording: true);
           });
         }
       } else {
@@ -278,7 +278,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       _positionStreamSubscription = positionStream!.handleError((error) {
         _positionStreamSubscription?.cancel();
         _positionStreamSubscription = null;
-      }).listen((position) => {handleGeomUpdate(context, position)});
+      }).listen((position) => {handleGeoUpdate(context, position)});
 
       debugPrint('Listening for position updates RESUMED');
     } else {
@@ -289,14 +289,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   /// Do all the things with a GPS update
-  void handleGeomUpdate(BuildContext context, Position position, {bool bypassRecording = false}) {
+  void handleGeoUpdate(BuildContext context, Position position, {bool bypassRecording = false}) {
     final settings = Provider.of<Settings>(context, listen: false);
     final client = Provider.of<Client>(context, listen: false);
     final group = Provider.of<Group>(context, listen: false);
     final adsb = Provider.of<ADSB>(context, listen: false);
 
-    debugPrint(
-        "geomUpdate (${position.timestamp}): ${position.altitude}, ${position.latitude} x ${position.longitude}");
+    // debugPrint("geoUpdate (${position.timestamp}): ${position.altitude}, ${position.latitude} x ${position.longitude}");
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
       updateGeo(position, bypassRecording: settings.groundMode || bypassRecording);
