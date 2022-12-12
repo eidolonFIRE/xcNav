@@ -6,7 +6,7 @@ import 'package:flutter_map_tile_caching/fmtc_advanced.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dart_numerics/dart_numerics.dart' as math;
 
-TileLayerOptions? _demTileLayer;
+TileLayer? _demTileLayer;
 
 // const demZoomLevel = 12;
 
@@ -28,7 +28,7 @@ void initDemCache() async {
   );
 
   // set the layer
-  _demTileLayer = TileLayerOptions(
+  _demTileLayer = TileLayer(
     urlTemplate: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
     tileProvider: FMTC.instance("dem").getTileProvider(
           FMTCTileProviderSettings(

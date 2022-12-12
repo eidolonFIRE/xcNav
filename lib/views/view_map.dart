@@ -5,8 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
-// ignore: depend_on_referenced_packages
-import 'package:flutter_map_dragmarker/dragmarker.dart';
+import 'package:flutter_map_line_editor/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_svg/svg.dart';
@@ -95,7 +94,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
     // intialize the controllers
     mapController = MapController();
-    mapController.onReady.then((value) => mapReady = true);
 
     // zoomMainMapToLatLng.stream.listen((latlng) {
     //   debugPrint("Map zoom to: $latlng");
@@ -248,6 +246,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     key: mapKey,
                     mapController: mapController,
                     options: MapOptions(
+                      absorbPanEventsOnScrollables: false,
+                      onMapReady: () {
+                        setState(() {
+                          mapReady = true;
+                        });
+                      },
                       interactiveFlags:
                           InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
                       center: myTelemetry.geo.latlng,
@@ -263,10 +267,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           }
                         }
                       },
-                      allowPanningOnScrollingParent: false,
-                      plugins: [DragMarkerPlugin(), TappablePolylineMapPlugin()],
                     ),
-                    layers: [
+                    children: [
                       settings.getMapTileLayer(settings.curMapTiles),
                       if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
                         settings.getMapTileLayer("airspace"),
@@ -274,7 +276,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         settings.getMapTileLayer("airports"),
 
                       // Other Pilot path trace
-                      PolylineLayerOptions(
+                      PolylineLayer(
                           polylines: Provider.of<Group>(context)
                               .activePilots
                               // .toList()
@@ -282,11 +284,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               .toList()),
 
                       // Flight Log
-                      PolylineLayerOptions(polylines: [myTelemetry.buildFlightTrace()]),
+                      PolylineLayer(polylines: [myTelemetry.buildFlightTrace()]),
 
                       // ADSB Proximity
                       if (Provider.of<ADSB>(context, listen: false).enabled)
-                        CircleLayerOptions(circles: [
+                        CircleLayer(circles: [
                           CircleMarker(
                               point: myTelemetry.geo.latlng,
                               color: Colors.transparent,
@@ -297,7 +299,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         ]),
 
                       // Next waypoint: path
-                      PolylineLayerOptions(
+                      PolylineLayer(
                         polylines: plan.buildNextWpIndicator(
                             myTelemetry.geo,
                             (Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
@@ -306,7 +308,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ),
 
                       // Waypoints: paths
-                      TappablePolylineLayerOptions(
+                      TappablePolylineLayer(
                           pointerDistanceTolerance: 30,
                           polylineCulling: true,
                           polylines: plan.waypoints.values
@@ -332,7 +334,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           })),
 
                       // Next waypoint: barbs
-                      MarkerLayerOptions(
+                      MarkerLayer(
                           markers: plan
                               .buildNextWpBarbs(
                                   myTelemetry.geo,
@@ -354,7 +356,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               .toList()),
 
                       // Waypoints: pin markers
-                      DragMarkerPluginOptions(
+                      DragMarkers(
                         markers: plan.waypoints.values
                             .map((e) => e.latlng.length == 1
                                 ? DragMarker(
@@ -379,7 +381,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                       // GA planes (ADSB IN)
                       if (Provider.of<ADSB>(context, listen: false).enabled)
-                        MarkerLayerOptions(
+                        MarkerLayer(
                             markers: Provider.of<ADSB>(context, listen: false)
                                 .planes
                                 .values
@@ -437,7 +439,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 .toList()),
 
                       // Live locations other pilots
-                      MarkerLayerOptions(
+                      MarkerLayer(
                         markers: Provider.of<Group>(context)
                             .activePilots
                             // .toList()
@@ -458,7 +460,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ),
 
                       // "ME" Live Location Marker
-                      MarkerLayerOptions(
+                      MarkerLayer(
                         markers: [
                           Marker(
                             width: 50.0,
@@ -475,17 +477,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                       // Measurement Polyline
                       if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                        PolylineLayerOptions(polylines: [measurementPolyline]),
+                        PolylineLayer(polylines: [measurementPolyline]),
                       if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                        DragMarkerPluginOptions(markers: measurementEditor.edit()),
+                        DragMarkers(markers: measurementEditor.edit()),
                       if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                        MarkerLayerOptions(markers: buildMeasurementMarkers(measurementPolyline.points)),
+                        MarkerLayer(markers: buildMeasurementMarkers(measurementPolyline.points)),
 
                       // Draggable line editor
                       if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                        PolylineLayerOptions(polylines: polyLines),
+                        PolylineLayer(polylines: polyLines),
                       if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                        DragMarkerPluginOptions(markers: polyEditor.edit()),
+                        DragMarkers(markers: polyEditor.edit()),
                     ],
                   )),
 

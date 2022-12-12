@@ -41,12 +41,6 @@ class _PlanCardState extends State<PlanCard> {
   @override
   void initState() {
     super.initState();
-    mapController.onReady.then((value) => setState(
-          () {
-            debugPrint("Mapready");
-            mapReady = true;
-          },
-        ));
   }
 
   void deletePlan(BuildContext context) {
@@ -305,12 +299,18 @@ class _PlanCardState extends State<PlanCard> {
                   FlutterMap(
                       mapController: mapController,
                       options: MapOptions(
+                          onMapReady: () => setState(
+                                () {
+                                  debugPrint("Mapready");
+                                  mapReady = true;
+                                },
+                              ),
                           bounds: widget.plan.getBounds(),
-                          interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                          // allowPanningOnScrollingParent: false
-                          plugins: [TappablePolylineMapPlugin()]),
-                      layers: [
-                        TileLayerOptions(
+                          interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+                      // allowPanningOnScrollingParent: false
+                      // plugins: [TappablePolylineMapPlugin()]),
+                      children: [
+                        TileLayer(
                           // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                           // subdomains: ['a', 'b', 'c'],
                           urlTemplate:
@@ -321,7 +321,7 @@ class _PlanCardState extends State<PlanCard> {
                         // Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
 
                         // Flight plan paths - Polyline
-                        TappablePolylineLayerOptions(
+                        TappablePolylineLayer(
                           polylines: widget.plan.waypoints.values
                               .where(
                                 (element) => element.isPath,
@@ -344,7 +344,7 @@ class _PlanCardState extends State<PlanCard> {
                         ),
 
                         // Waypoint Markers
-                        MarkerLayerOptions(
+                        MarkerLayer(
                           markers: widget.plan.waypoints.values
                               .map((e) {
                                 if (e.latlng.length == 1) {

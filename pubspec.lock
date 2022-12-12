@@ -203,7 +203,7 @@ packages:
       name: file_picker
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "5.2.3"
+    version: "5.2.4"
   fixnum:
     dependency: transitive
     description:
@@ -252,53 +252,49 @@ packages:
       name: flutter_local_notifications
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "9.9.1"
+    version: "12.0.4"
   flutter_local_notifications_linux:
     dependency: transitive
     description:
       name: flutter_local_notifications_linux
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.5.1"
+    version: "2.0.0"
   flutter_local_notifications_platform_interface:
     dependency: transitive
     description:
       name: flutter_local_notifications_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "5.0.0"
+    version: "6.0.0"
   flutter_map:
     dependency: "direct main"
     description:
       name: flutter_map
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.2.0"
-  flutter_map_dragmarker:
-    dependency: transitive
-    description:
-      path: "."
-      ref: HEAD
-      resolved-ref: a96a5ca9df0231b3b43dc475cfced1c0e1e8bf2a
-      url: "git@github.com:eidolonFIRE/flutter_map_dragmarker.git"
-    source: git
     version: "3.0.0"
+  flutter_map_dragmarker:
+    dependency: "direct main"
+    description:
+      name: flutter_map_dragmarker
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.1.2"
   flutter_map_line_editor:
     dependency: "direct main"
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: fa8bebac9d9408b3f33c9b101eaf0313344a69ab
-      url: "git@github.com:eidolonFIRE/flutter_map_line_editor.git"
-    source: git
-    version: "3.0.0"
+      name: flutter_map_line_editor
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.0.2"
   flutter_map_tile_caching:
     dependency: "direct main"
     description:
       name: flutter_map_tile_caching
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "5.1.1"
+    version: "6.2.0"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -609,7 +605,7 @@ packages:
       name: open_filex
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.3.1"
+    version: "4.3.2"
   package_config:
     dependency: transitive
     description:
@@ -847,21 +843,7 @@ packages:
       name: share_plus
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.5.3"
-  share_plus_linux:
-    dependency: transitive
-    description:
-      name: share_plus_linux
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.0.1"
-  share_plus_macos:
-    dependency: transitive
-    description:
-      name: share_plus_macos
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.0.1"
+    version: "6.3.0"
   share_plus_platform_interface:
     dependency: transitive
     description:
@@ -869,20 +851,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.2.0"
-  share_plus_web:
-    dependency: transitive
-    description:
-      name: share_plus_web
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.1.0"
-  share_plus_windows:
-    dependency: transitive
-    description:
-      name: share_plus_windows
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.0.1"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -1006,7 +974,7 @@ packages:
       name: timezone
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.8.0"
+    version: "0.9.0"
   tuple:
     dependency: transitive
     description:
@@ -1198,4 +1166,4 @@ packages:
     version: "3.1.1"
 sdks:
   dart: ">=2.18.0 <3.0.0"
-  flutter: ">=3.0.0"
+  flutter: ">=3.3.0"

@@ -7,11 +7,10 @@ void setFocus(bool focused) {
 }
 
 void configLocalNotification() {
-  var initializationSettingsAndroid =
-      const AndroidInitializationSettings("@mipmap/ic_launcher");
-  var initializationSettingsIOS = const IOSInitializationSettings();
-  var initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
+  var initializationSettingsAndroid = const AndroidInitializationSettings("@mipmap/ic_launcher");
+  var initializationSettingsIOS = const DarwinInitializationSettings();
+  var initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
   FlutterLocalNotificationsPlugin().initialize(initializationSettings);
 }
 
@@ -28,10 +27,9 @@ void showNotification(String fromPilot, String message) async {
     importance: Importance.high,
     priority: Priority.high,
   );
-  var iOSPlatformChannelSpecifics = const IOSNotificationDetails();
-  var platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics);
+  var iOSPlatformChannelSpecifics = const DarwinNotificationDetails();
+  var platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
   await FlutterLocalNotificationsPlugin().show(
     0, "xcNav - $fromPilot",
     message, platformChannelSpecifics,

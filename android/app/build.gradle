@@ -50,6 +50,7 @@ android {
         applicationId "com.xcnav"
         minSdkVersion 29
         targetSdkVersion 31
+        compileSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }

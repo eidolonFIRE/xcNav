@@ -177,17 +177,17 @@ class FlightLogSummary extends StatelessWidget {
                 width: MediaQuery.of(context).size.width / 2.5,
                 height: MediaQuery.of(context).size.width / 2.5,
                 child: FlutterMap(
-                    // mapController: mapController,
                     options: MapOptions(
                       interactiveFlags: InteractiveFlag.none,
                       bounds: mapBounds,
                       // center: mapBounds.center,
                       // zoom: mapBounds,
-                      allowPanningOnScrollingParent: false,
-                      allowPanning: false,
+                      // TODO
+                      // allowPanningOnScrollingParent: false,
+                      // allowPanning: false,
                     ),
-                    layers: [
-                      TileLayerOptions(
+                    children: [
+                      TileLayer(
                         // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                         // subdomains: ['a', 'b', 'c'],
                         urlTemplate:
@@ -195,7 +195,7 @@ class FlightLogSummary extends StatelessWidget {
                         // tileSize: 512,
                         // zoomOffset: -1,
                       ),
-                      PolylineLayerOptions(polylines: [
+                      PolylineLayer(polylines: [
                         Polyline(
                             points: log.samples.map((e) => e.latlng).toList(),
                             strokeWidth: 3,

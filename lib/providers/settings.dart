@@ -29,7 +29,7 @@ class Settings with ChangeNotifier {
     "airspace": 1.0,
     "airports": 1.0,
   };
-  TileLayerOptions getMapTileLayer(String name, {double? opacity}) {
+  TileLayer getMapTileLayer(String name, {double? opacity}) {
     TileProvider makeTileProvider(name) {
       return FMTC.instance(name).getTileProvider(
             FMTCTileProviderSettings(
@@ -41,14 +41,14 @@ class Settings with ChangeNotifier {
 
     switch (name) {
       case "sectional":
-        return TileLayerOptions(
+        return TileLayer(
             urlTemplate: 'http://wms.chartbundle.com/tms/v1.0/sec/{z}/{x}/{y}.png?type=google',
             tileProvider: makeTileProvider(name),
             maxNativeZoom: 13,
             minZoom: 4,
             opacity: (opacity ?? _mapOpacity["sectional"] ?? 1.0) * 0.8 + 0.2);
       case "satellite":
-        return TileLayerOptions(
+        return TileLayer(
             urlTemplate:
                 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             tileProvider: makeTileProvider(name),
@@ -56,24 +56,24 @@ class Settings with ChangeNotifier {
             opacity: (opacity ?? _mapOpacity["satellite"] ?? 1.0) * 0.8 + 0.2);
       // https://docs.openaip.net/?urls.primaryName=Tiles%20API
       case "airspace":
-        return TileLayerOptions(
+        return TileLayer(
             urlTemplate: 'https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey={apiKey}',
             tileProvider: makeTileProvider(name),
             backgroundColor: Colors.transparent,
             // maxZoom: 11,
             maxNativeZoom: 11,
             minZoom: 7,
-            additionalOptions: {"apiKey": aipClientToken});
+            additionalOptions: const {"apiKey": aipClientToken});
       case "airports":
-        return TileLayerOptions(
+        return TileLayer(
             urlTemplate: 'https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey={apiKey}',
             tileProvider: makeTileProvider(name),
             backgroundColor: Colors.transparent,
             maxZoom: 11,
             minZoom: 9,
-            additionalOptions: {"apiKey": aipClientToken});
+            additionalOptions: const {"apiKey": aipClientToken});
       default:
-        return TileLayerOptions(
+        return TileLayer(
           urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
           // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
           tileProvider: makeTileProvider(name),

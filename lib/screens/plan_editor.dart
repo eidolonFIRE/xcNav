@@ -1,11 +1,10 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map_line_editor/dragmarker.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:collection/collection.dart';
-// ignore: depend_on_referenced_packages
-import 'package:flutter_map_dragmarker/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:provider/provider.dart';
 
@@ -57,8 +56,6 @@ class _PlanEditorState extends State<PlanEditor> {
   @override
   void initState() {
     super.initState();
-
-    mapController.onReady.then((value) => mapReady = true);
 
     polyEditor = PolyEditor(
       addClosePathMarker: false,
@@ -182,20 +179,22 @@ class _PlanEditorState extends State<PlanEditor> {
                     key: const Key("planEditorMap"),
                     mapController: mapController,
                     options: MapOptions(
-                      controller: mapController,
+                      absorbPanEventsOnScrollables: false,
+                      onMapReady: () {
+                        setState(() {
+                          mapReady = true;
+                        });
+                      },
                       interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                      // interactiveFlags: InteractiveFlag.none,
                       bounds: mapBounds,
-                      allowPanningOnScrollingParent: false,
-                      plugins: [DragMarkerPlugin(), TappablePolylineMapPlugin()],
                       onTap: (tapPos, latlng) => onMapTap(context, latlng),
                       onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                     ),
-                    layers: [
+                    children: [
                       Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName, opacity: 1.0),
 
                       // Flight plan markers
-                      TappablePolylineLayerOptions(
+                      TappablePolylineLayer(
                           polylines: plan!.waypoints.values
                               .where((value) => value.isPath)
                               .whereNot((element) => element.id == editingWp)
@@ -217,7 +216,7 @@ class _PlanEditorState extends State<PlanEditor> {
                           }),
 
                       // Flight plan markers
-                      DragMarkerPluginOptions(
+                      DragMarkers(
                           markers: plan!.waypoints.values
                               .map((e) => e.latlng.length == 1
                                   ? DragMarker(
@@ -244,9 +243,9 @@ class _PlanEditorState extends State<PlanEditor> {
 
                       // Draggable line editor
                       if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                        PolylineLayerOptions(polylines: polyLines),
+                        PolylineLayer(polylines: polyLines),
                       if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                        DragMarkerPluginOptions(markers: polyEditor.edit()),
+                        DragMarkers(markers: polyEditor.edit()),
                     ]),
 
                 // --- Map overlay layers
