@@ -17,6 +17,7 @@ import 'package:xcnav/providers/plans.dart';
 // --- Misc
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -307,18 +308,8 @@ class _PlanCardState extends State<PlanCard> {
                               ),
                           bounds: widget.plan.getBounds(),
                           interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate),
-                      // allowPanningOnScrollingParent: false
-                      // plugins: [TappablePolylineMapPlugin()]),
                       children: [
-                        TileLayer(
-                          // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                          // subdomains: ['a', 'b', 'c'],
-                          urlTemplate:
-                              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                          // tileSize: 512,
-                          // zoomOffset: -1,
-                        ),
-                        // Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
+                        Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
 
                         // Flight plan paths - Polyline
                         TappablePolylineLayer(

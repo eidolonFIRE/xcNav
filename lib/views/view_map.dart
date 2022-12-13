@@ -7,7 +7,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_line_editor/dragmarker.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +27,7 @@ import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
 import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/map_selector.dart';
 import 'package:xcnav/widgets/measurement_markers.dart';
 import 'package:xcnav/widgets/pilot_marker.dart';
 import 'package:xcnav/widgets/waypoint_nav_bar.dart';
@@ -564,9 +564,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
             child: Column(
               verticalDirection: VerticalDirection.up,
               mainAxisAlignment: MainAxisAlignment.start,
-              // crossAxisAlignment: Provider.of<Settings>(context).mapControlsRightSide
-              //     ? CrossAxisAlignment.start
-              //     : CrossAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // --- Current waypoint info
@@ -615,8 +612,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                 if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
                   Padding(
-                    padding: EdgeInsets.fromLTRB(Provider.of<Settings>(context).mapControlsRightSide ? 10 : 80, 20,
-                        Provider.of<Settings>(context).mapControlsRightSide ? 80 : 10, 10),
+                    padding: EdgeInsets.fromLTRB(
+                        Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : 80,
+                        20,
+                        Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 80 : 10,
+                        10),
                     child: Align(
                       alignment: Alignment.bottomRight,
                       child: Row(
@@ -637,26 +637,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   TextSpan(text: "Tap to add to path")
                                 ]),
                                 style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-                                // textAlign: TextAlign.justify,
                               ),
                             ),
                           ),
-                          // IconButton(
-                          //   iconSize: 40,
-                          //   padding: EdgeInsets.zero,
-                          //   icon: const Icon(
-                          //     Icons.swap_horizontal_circle,
-                          //     size: 40,
-                          //     color: Colors.black,
-                          //   ),
-                          //   onPressed: () {
-                          //     setState(() {
-                          //       var tmp = editablePoints.toList();
-                          //       editablePoints.clear();
-                          //       editablePoints.addAll(tmp.reversed);
-                          //     });
-                          //   },
-                          // ),
                           IconButton(
                             iconSize: 40,
                             padding: EdgeInsets.zero,
@@ -701,8 +684,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                 // --- Chat bubbles
                 Padding(
-                  padding: EdgeInsets.fromLTRB(Provider.of<Settings>(context).mapControlsRightSide ? 0 : 80, 20,
-                      Provider.of<Settings>(context).mapControlsRightSide ? 80 : 0, 10),
+                  padding: EdgeInsets.fromLTRB(
+                      Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 0 : 80,
+                      20,
+                      Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 80 : 0,
+                      10),
                   child: Consumer<ChatMessages>(
                     builder: (context, chat, child) {
                       // get valid bubbles
@@ -747,8 +733,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
           // --- Map View Buttons
           Positioned(
-            left: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
-            right: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
+            left: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? null : 10,
+            right: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : null,
             top: 10,
             bottom: 10,
             child: Column(
@@ -880,63 +866,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           // --- Toggle map layer
           Positioned(
               top: 10,
-              right: Provider.of<Settings>(context).mapControlsRightSide ? null : 10,
-              left: Provider.of<Settings>(context).mapControlsRightSide ? 10 : null,
+              right: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? null : 10,
+              left: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : null,
               child: Consumer<Settings>(builder: (context, settings, _) {
-                const opacityLevels = [0.2, 0.5, 1.0];
-                return SpeedDial(
-                    icon: Icons.layers_outlined,
-                    iconTheme: const IconThemeData(size: 50, color: Colors.black87),
-                    buttonSize: const Size(40, 40),
-                    direction: SpeedDialDirection.down,
-                    renderOverlay: false,
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    openCloseDial: isMapDialOpen,
-                    children:
-                        // - Sectional / Satellite
-                        ["sectional", "satellite", "topo"]
-                            .mapIndexed((layerIndex, layerName) => SpeedDialChild(
-                                    labelWidget: SizedBox(
-                                  height: 40,
-                                  child: ToggleButtons(
-                                      isSelected: opacityLevels.sublist(layerIndex).map((e) =>
-                                          // settings.curMapTiles == layerName && settings.mapOpacity(layerName) == e)
-                                          false).toList(),
-                                      borderRadius: const BorderRadius.all(Radius.circular(12)),
-                                      borderWidth: 1,
-                                      borderColor: Colors.black45,
-                                      onPressed: ((index) {
-                                        settings.curMapTiles = layerName;
-                                        settings.setMapOpacity(layerName, opacityLevels.sublist(layerIndex)[index]);
-                                        isMapDialOpen.value = false;
-                                      }),
-                                      children: opacityLevels
-                                          .sublist(layerIndex)
-                                          .map(
-                                            (e) => SizedBox(
-                                                width: 50,
-                                                height: 40,
-                                                child: Stack(
-                                                  fit: StackFit.expand,
-                                                  children: [
-                                                    Container(
-                                                      color: Colors.white,
-                                                    ),
-                                                    Opacity(opacity: e, child: Settings.mapTileThumbnails[layerName]),
-                                                    if (settings.curMapTiles == layerName &&
-                                                        settings.mapOpacity(layerName) == e)
-                                                      const Icon(
-                                                        Icons.check_circle,
-                                                        color: Colors.black,
-                                                        size: 30,
-                                                      )
-                                                  ],
-                                                )),
-                                          )
-                                          .toList()),
-                                )))
-                            .toList());
+                return MapSelector(
+                    isMapDialOpen: isMapDialOpen,
+                    curLayer: settings.curMapTiles,
+                    curOpacity: settings.mapOpacity(settings.curMapTiles),
+                    onChanged: (layer, opacity) {
+                      settings.curMapTiles = layer;
+                      settings.setMapOpacity(layer, opacity);
+                    });
               }))
         ]),
       ),
