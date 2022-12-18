@@ -73,7 +73,9 @@ dependencies:
   usb_serial: ^0.4.0
   latlong2: ^0.8.1
   collection: ^1.16.0
-  flutter_map_tile_caching: ^6.2.0
+  flutter_map_tile_caching:
+    git:
+      url: git@github.com:eidolonFIRE/flutter_map_tile_caching.git
   open_filex: ^4.3.1
   dart_numerics: ^0.0.6
   fuzzywuzzy: ^0.2.0
@@ -94,6 +96,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.1
+  patrol: ^0.10.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

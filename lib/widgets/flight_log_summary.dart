@@ -88,6 +88,7 @@ class FlightLogSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    MapController mapController = MapController();
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -177,14 +178,13 @@ class FlightLogSummary extends StatelessWidget {
                 width: MediaQuery.of(context).size.width / 2.5,
                 height: MediaQuery.of(context).size.width / 2.5,
                 child: FlutterMap(
+                    mapController: mapController,
                     options: MapOptions(
+                      onMapReady: () {
+                        mapController.fitBounds(mapBounds);
+                      },
                       interactiveFlags: InteractiveFlag.none,
                       bounds: mapBounds,
-                      // center: mapBounds.center,
-                      // zoom: mapBounds,
-                      // TODO
-                      // allowPanningOnScrollingParent: false,
-                      // allowPanning: false,
                     ),
                     children: [
                       TileLayer(
