@@ -29,11 +29,14 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   late final AnimationController controller;
 
   bool showWaiting = false;
-
-  bool checked = false;
+  DateTime lastChecked = DateTime.fromMillisecondsSinceEpoch(0);
   bool failedPerms = false;
 
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
+
+  bool get checkedRecently => lastChecked.isAfter(DateTime.now().subtract(const Duration(seconds: 5)));
+
+  late final Timer showWaitingTimer;
 
   @override
   _LoadingScreenState();
@@ -43,7 +46,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     super.initState();
 
     // Enable Blinking text
-    Future.delayed(const Duration(seconds: 10), () => showWaiting = true);
+    showWaitingTimer = Timer(const Duration(seconds: 10), () => showWaiting = true);
 
     // Blinking text
     controller = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
@@ -63,7 +66,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   void getInitalLocation() {
     // get initial location
     debugPrint("Getting initial location from GPS");
-    _getCurrentPosition().then((location) {
+    _geolocatorPlatform.getCurrentPosition().then((location) {
       debugPrint("initial location: $location");
       Provider.of<MyTelemetry>(context, listen: false).init();
       Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
@@ -87,16 +90,16 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       Permission.photos.request();
     }
 
-    if (checked) {
+    if (checkedRecently) {
       return;
+    } else {
+      lastChecked = DateTime.now();
     }
-
-    Timer(const Duration(seconds: 5), () => checked = false);
-    checked = true;
 
     debugPrint("Checking location permissions...");
     final whenInUse = await Permission.locationWhenInUse.status;
     if (whenInUse.isPermanentlyDenied) {
+      debugPrint("Location was fully denied!");
       failedPerms = true;
       showDialog(
           context: context,
@@ -128,6 +131,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       // --- Check "always"
       final locAlways = await Permission.locationAlways.status;
       if (locAlways.isPermanentlyDenied) {
+        debugPrint("Location was fully denied!");
         failedPerms = true;
         showDialog(
             context: context,
@@ -147,7 +151,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                 ));
         return;
       } else if (!locAlways.isGranted) {
-        debugPrint("Location always was not granted!");
+        debugPrint("Location-always was not granted!");
         final status = await Permission.locationAlways.request();
         if (!status.isGranted) {
           failedPerms = true;
@@ -161,13 +165,10 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     getInitalLocation();
   }
 
-  Future<Position> _getCurrentPosition() async {
-    return await _geolocatorPlatform.getCurrentPosition();
-  }
-
   @override
   void dispose() {
     controller.dispose();
+    showWaitingTimer.cancel();
     super.dispose();
   }
 
@@ -194,12 +195,13 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
         1
       ], begin: Alignment.topLeft, end: Alignment.bottomRight, transform: GradientRotation(0))),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Container(),
           // --- Header Text
           Padding(
-            padding: const EdgeInsets.only(top: 80),
+            padding: const EdgeInsets.only(top: 60),
             child: SvgPicture.asset(
               "assets/images/xcnav.logo.type.svg",
               width: MediaQuery.of(context).size.width / 4,
@@ -215,7 +217,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                     style: TextStyle(fontSize: 30, color: animation.value),
                   );
                 }),
-          if (showWaiting && failedPerms && checked)
+          if (showWaiting && failedPerms && !checkedRecently)
             Text(
               "Check location permission${Platform.isIOS ? " is set to ALWAYS." : "."}",
               softWrap: true,
@@ -223,27 +225,33 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
               style: const TextStyle(color: Colors.redAccent, fontSize: 20),
             ),
           // --- Wings and Dashed lines
-          Padding(
-            padding: const EdgeInsets.only(bottom: 80),
-            child: Stack(clipBehavior: Clip.none, children: [
+          SizedBox(
+            // padding: const EdgeInsets.only(bottom: 80),
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height / 2.5,
+            child: Stack(fit: StackFit.expand, clipBehavior: Clip.hardEdge, children: [
               Positioned(
-                  left: MediaQuery.of(context).size.width * 0.155,
+                  left: MediaQuery.of(context).size.width * (0.155 + 0.13),
                   top: MediaQuery.of(context).size.width * 0.525,
                   child: const SizedBox(
                       width: 500, height: 650, child: DashedLine(Color.fromARGB(200, 255, 255, 255), 6))),
               Positioned(
-                  left: MediaQuery.of(context).size.width * 0.215,
+                  left: MediaQuery.of(context).size.width * (0.215 + 0.13),
                   top: MediaQuery.of(context).size.width * 0.235,
                   child: const SizedBox(width: 500, height: 600, child: DashedLine(Colors.red, 8))),
               Positioned(
-                  left: MediaQuery.of(context).size.width * 0.475,
+                  left: MediaQuery.of(context).size.width * (0.475 + 0.13),
                   top: MediaQuery.of(context).size.width * 0.275,
                   child: const SizedBox(
                       width: 500, height: 580, child: DashedLine(Color.fromARGB(200, 255, 255, 255), 6))),
-              SvgPicture.asset(
-                "assets/images/xcnav.logo.wings.foreground.svg",
-                width: MediaQuery.of(context).size.width / 1.5,
-                height: MediaQuery.of(context).size.width / 1.5,
+              Positioned(
+                left: MediaQuery.of(context).size.width * 0.13,
+                top: 0,
+                child: SvgPicture.asset(
+                  "assets/images/xcnav.logo.wings.foreground.svg",
+                  width: MediaQuery.of(context).size.width / 1.5,
+                  height: MediaQuery.of(context).size.width / 1.5,
+                ),
               ),
             ]),
           ),

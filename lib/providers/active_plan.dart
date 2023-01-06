@@ -1,4 +1,3 @@
-// ignore_for_file: curly_braces_in_flow_control_structures
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -163,16 +162,17 @@ class ActivePlan with ChangeNotifier {
 
     /// I tried some algorithms to replace this, but turns out this is simpler and more performant. \shrug
     int barbSpacing(int t) {
-      if (t < 5)
+      if (t < 5) {
         return 1;
-      else if (t < 10)
+      } else if (t < 10) {
         return 5;
-      else if (t < 50)
+      } else if (t < 50) {
         return 10;
-      else if (t < 100)
+      } else if (t < 100) {
         return 50;
-      else
+      } else {
         return 100;
+      }
     }
 
     // Dashes

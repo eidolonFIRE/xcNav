@@ -50,9 +50,9 @@ class Client with ChangeNotifier {
   int telemetrySkips = 0;
   int reconnectionWait = 0;
 
-  final BuildContext context;
+  final BuildContext globalContext;
 
-  Client(this.context) {
+  Client(this.globalContext) {
     debugPrint("Build Client");
     connect();
   }
@@ -104,14 +104,14 @@ class Client with ChangeNotifier {
           state = ClientState.disconnected;
         });
 
-        Profile profile = Provider.of<Profile>(context, listen: false);
+        Profile profile = Provider.of<Profile>(globalContext, listen: false);
         if (Profile.nameValidator(profile.name) == null) {
           authenticate(profile);
         }
 
         // Watch updates to Profile
-        Provider.of<Profile>(context, listen: false).addListener(() {
-          Profile profile = Provider.of<Profile>(context, listen: false);
+        Provider.of<Profile>(globalContext, listen: false).addListener(() {
+          Profile profile = Provider.of<Profile>(globalContext, listen: false);
           if (state == ClientState.connected) {
             authenticate(profile);
           } else if (state == ClientState.authenticated && profile.name != null) {
@@ -121,8 +121,8 @@ class Client with ChangeNotifier {
         });
 
         // Register Callbacks to waypoints
-        Provider.of<ActivePlan>(context, listen: false).onWaypointAction = waypointsUpdate;
-        Provider.of<ActivePlan>(context, listen: false).onSelectWaypoint = selectWaypoint;
+        Provider.of<ActivePlan>(globalContext, listen: false).onWaypointAction = waypointsUpdate;
+        Provider.of<ActivePlan>(globalContext, listen: false).onSelectWaypoint = selectWaypoint;
       }).onError((error, stackTrace) {
         debugPrint("Failed to connect! $error");
         state = ClientState.disconnected;
@@ -191,7 +191,7 @@ class Client with ChangeNotifier {
 
   void authenticate(Profile profile) {
     if (state != ClientState.authenticated) {
-      final settings = Provider.of<Settings>(context, listen: false);
+      final settings = Provider.of<Settings>(globalContext, listen: false);
       debugPrint("Authenticating) ${profile.name}, ${profile.id}");
       sendToAWS("authRequest", {
         "pilot": {
@@ -200,7 +200,7 @@ class Client with ChangeNotifier {
           "avatarHash": profile.avatarHash,
           "secretToken": profile.secretID,
         },
-        "group_id": Provider.of<Group>(context, listen: false).loadGroup(),
+        "group_id": Provider.of<Group>(globalContext, listen: false).loadGroup(),
         "tierHash": crypto.sha256.convert((settings.patreonEmail + settings.patreonName).codeUnits).toString(),
         "apiVersion": apiVersion,
       });
@@ -222,7 +222,7 @@ class Client with ChangeNotifier {
   }
 
   void sendchatMessage(String text, {bool? isEmergency}) {
-    Group group = Provider.of<Group>(context, listen: false);
+    Group group = Provider.of<Group>(globalContext, listen: false);
     sendToAWS("chatMessage", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
       "group_id": group.currentGroupID, // target group
@@ -233,7 +233,7 @@ class Client with ChangeNotifier {
   }
 
   // --- send our telemetry
-  void sendTelemetry(Geo geo, double fuel) {
+  void sendTelemetry(Geo geo) {
     if (state == ClientState.authenticated) {
       sendToAWS("pilotTelemetry", {
         "timestamp": geo.time,
@@ -277,20 +277,13 @@ class Client with ChangeNotifier {
     _joinGroup(reqGroupID);
   }
 
-  void leaveGroup() {
-    // This is just alias to joining an unknown group
-    Provider.of<Group>(context, listen: false).currentGroupID = null;
-    Provider.of<ChatMessages>(context, listen: false).leftGroup();
-    sendToAWS("joinGroupRequest", {"group_id": ""});
-  }
-
   void waypointsUpdate(
     WaypointAction action,
     Waypoint waypoint,
   ) {
     sendToAWS("waypointsUpdate", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
-      "hash": hashWaypointsData(Provider.of<ActivePlan>(context, listen: false).waypoints),
+      "hash": hashWaypointsData(Provider.of<ActivePlan>(globalContext, listen: false).waypoints),
       "action": action.index,
       "waypoint": waypoint.toJson(),
     });
@@ -299,7 +292,7 @@ class Client with ChangeNotifier {
   void pushWaypoints() {
     sendToAWS("waypointsSync", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
-      "waypoints": Map.fromEntries(Provider.of<ActivePlan>(context, listen: false)
+      "waypoints": Map.fromEntries(Provider.of<ActivePlan>(globalContext, listen: false)
           .waypoints
           .values
           .where((element) => !element.ephemeral)
@@ -309,7 +302,7 @@ class Client with ChangeNotifier {
 
   void selectWaypoint(WaypointID? waypointID) {
     sendToAWS("pilotSelectedWaypoint",
-        {"pilot_id": Provider.of<Profile>(context, listen: false).id, "waypoint_id": waypointID});
+        {"pilot_id": Provider.of<Profile>(globalContext, listen: false).id, "waypoint_id": waypointID});
   }
 
   // ############################################################################
@@ -320,10 +313,10 @@ class Client with ChangeNotifier {
 
   // --- new text message from server
   void handleChatMessage(Map<String, dynamic> msg) {
-    final group = Provider.of<Group>(context, listen: false);
+    final group = Provider.of<Group>(globalContext, listen: false);
     String? currentGroupID = group.currentGroupID;
     if (msg["group_id"] == currentGroupID) {
-      Provider.of<ChatMessages>(context, listen: false)
+      Provider.of<ChatMessages>(globalContext, listen: false)
           .processMessageFromServer(group.pilots[msg["pilot_id"]]?.name ?? "", msg);
     } else {
       // getting messages from the wrong group!
@@ -334,7 +327,7 @@ class Client with ChangeNotifier {
   //--- receive location of other pilots
   void handlePilotTelemetry(Map<String, dynamic> msg) {
     // if we know this pilot, update their telemetry
-    Group group = Provider.of<Group>(context, listen: false);
+    Group group = Provider.of<Group>(globalContext, listen: false);
     if (group.hasPilot(msg["pilot_id"])) {
       group.updatePilotTelemetry(msg["pilot_id"], msg["telemetry"], msg["timestamp"]);
     } else {
@@ -346,26 +339,26 @@ class Client with ChangeNotifier {
   // --- new Pilot to group
   void handlePilotJoinedGroup(Map<String, dynamic> msg) {
     Map<String, dynamic> pilot = msg["pilot"];
-    if (pilot["id"] != Provider.of<Profile>(context, listen: false).id) {
+    if (pilot["id"] != Provider.of<Profile>(globalContext, listen: false).id) {
       // update pilots with new info
-      Group group = Provider.of<Group>(context, listen: false);
+      Group group = Provider.of<Group>(globalContext, listen: false);
       group.processNewPilot(pilot);
     }
   }
 
   // --- Pilot left group
   void handlePilotLeftGroup(Map<String, dynamic> msg) {
-    if (msg["pilot_id"] == Provider.of<Profile>(context, listen: false).id) {
+    if (msg["pilot_id"] == Provider.of<Profile>(globalContext, listen: false).id) {
       // ignore if it's us
       return;
     }
-    Group group = Provider.of<Group>(context, listen: false);
+    Group group = Provider.of<Group>(globalContext, listen: false);
     group.removePilot(msg["pilot_id"]);
   }
 
   // --- Full waypoints sync
   void handleWaypointsSync(Map<String, dynamic> msg) {
-    ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
+    ActivePlan plan = Provider.of<ActivePlan>(globalContext, listen: false);
     plan.parseWaypointsSync(msg["waypoints"]);
   }
 
@@ -374,11 +367,11 @@ class Client with ChangeNotifier {
     // update the plan
     if (msg["action"] == WaypointAction.delete.index) {
       // Delete a waypoint
-      Provider.of<ActivePlan>(context, listen: false).backendRemoveWaypoint(msg["waypoint"]["id"]);
+      Provider.of<ActivePlan>(globalContext, listen: false).backendRemoveWaypoint(msg["waypoint"]["id"]);
     } else if (msg["action"] == WaypointAction.update.index) {
       // Make updates to a waypoint
       if (msg["waypoint"] != null) {
-        Provider.of<ActivePlan>(context, listen: false)
+        Provider.of<ActivePlan>(globalContext, listen: false)
             .updateWaypoint(Waypoint.fromJson(msg["waypoint"]), shouldCallback: false);
       }
     } else {
@@ -386,20 +379,20 @@ class Client with ChangeNotifier {
       return;
     }
 
-    String hash = hashWaypointsData(Provider.of<ActivePlan>(context, listen: false).waypoints);
+    String hash = hashWaypointsData(Provider.of<ActivePlan>(globalContext, listen: false).waypoints);
     if (hash != msg["hash"]) {
       // DE-SYNC ERROR
       // restore backup
       debugPrint("Group Waypoints Desync!  $hash  ${msg['hash']}");
 
       // we are out of sync!
-      requestGroupInfo(Provider.of<Group>(context, listen: false).currentGroupID);
+      requestGroupInfo(Provider.of<Group>(globalContext, listen: false).currentGroupID);
     }
   }
 
   // --- Process Pilot Waypoint selections
   void handlePilotSelectedWaypoint(Map<String, dynamic> msg) {
-    Group group = Provider.of<Group>(context, listen: false);
+    Group group = Provider.of<Group>(globalContext, listen: false);
 
     debugPrint("${msg["pilot_id"]} selected wp: ${msg["waypoint_id"]}");
     if (group.hasPilot(msg["pilot_id"])) {
@@ -425,12 +418,12 @@ class Client with ChangeNotifier {
         debugPrint("---/!\\--- Server is out of date!");
       }
 
-      Profile profile = Provider.of<Profile>(context, listen: false);
+      Profile profile = Provider.of<Profile>(globalContext, listen: false);
       profile.tier = msg["tier"];
       profile.updateID(msg["pilot_id"], msg["secretToken"]);
 
       // join the provided group
-      Group group = Provider.of<Group>(context, listen: false);
+      Group group = Provider.of<Group>(globalContext, listen: false);
       group.currentGroupID = msg["group_id"];
       requestGroupInfo(group.currentGroupID);
 
@@ -453,7 +446,7 @@ class Client with ChangeNotifier {
       debugPrint("Error getting group info ${msg['status']}");
     } else {
       // ignore if it's not a group I'm in
-      Group group = Provider.of<Group>(context, listen: false);
+      Group group = Provider.of<Group>(globalContext, listen: false);
       if (msg["group_id"] != group.currentGroupID) {
         debugPrint("Received info for another group.");
         return;
@@ -461,13 +454,13 @@ class Client with ChangeNotifier {
 
       // update pilots with new info
       msg["pilots"].forEach((jsonPilot) {
-        if (jsonPilot["id"] != Provider.of<Profile>(context, listen: false).id) {
+        if (jsonPilot["id"] != Provider.of<Profile>(globalContext, listen: false).id) {
           group.processNewPilot(jsonPilot);
         }
       });
 
       // refresh waypoints
-      ActivePlan plan = Provider.of<ActivePlan>(context, listen: false);
+      ActivePlan plan = Provider.of<ActivePlan>(globalContext, listen: false);
       if (msg["waypoints"] != null && msg["waypoints"].isNotEmpty) {
         plan.parseWaypointsSync(msg["waypoints"]);
       } else if (plan.waypoints.isNotEmpty) {
@@ -479,7 +472,7 @@ class Client with ChangeNotifier {
   }
 
   void handleJoinGroupResponse(Map<String, dynamic> msg) {
-    Group group = Provider.of<Group>(context, listen: false);
+    Group group = Provider.of<Group>(globalContext, listen: false);
     if (msg["status"] != ErrorCode.success.index) {
       // not a valid group
       if (msg["status"] == ErrorCode.invalidId.index) {

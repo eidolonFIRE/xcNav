@@ -13,14 +13,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/fake_path.dart';
 
 // --- Models
-import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
@@ -44,11 +42,17 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   BuildContext? globalContext;
 
+  // NOTE: fuel feature disabled for now
+
   /// Liters
-  double fuel = 0;
+  // double fuel = 0;
 
   /// Liter/Hour
-  double fuelBurnRate = 4;
+  // double fuelBurnRate = 4;
+
+  /// fuel save interval
+  // double? lastSavedFuelLevel;
+
   Geo geoPrev = Geo();
 
   List<Geo> recordGeo = [];
@@ -62,9 +66,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   bool inFlight = false;
   StreamController<FlightEvent> flightEvent = StreamController<FlightEvent>();
   StreamSubscription? _flightEventListener;
-
-  // fuel save interval
-  double? lastSavedFuelLevel;
 
   /// Latest Barometric Reading
   BarometerValue? baro;
@@ -92,7 +93,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _save();
+    //  NOTE: fuel feature disabled for now
+    // _save();
     timer?.cancel();
     _flightEventListener?.cancel();
     WidgetsBinding.instance.removeObserver(this);
@@ -100,7 +102,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   MyTelemetry() {
-    _load();
+    // NOTE: fuel feature disabled for now
+    // _load();
     WidgetsBinding.instance.addObserver(this);
 
     _startBaroService();
@@ -303,7 +306,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     if (!settings.groundMode || settings.groundModeTelemetry) {
       if (group.activePilots.isNotEmpty || client.telemetrySkips > 20) {
-        client.sendTelemetry(geo, fuel);
+        client.sendTelemetry(geo);
         client.telemetrySkips = 0;
       } else {
         client.telemetrySkips++;
@@ -324,20 +327,20 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  void _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    fuel = prefs.getDouble("me.fuel") ?? 0;
-    lastSavedFuelLevel = fuel;
-    fuelBurnRate = prefs.getDouble("me.fuelBurnRate") ?? 4;
-  }
+  // void _load() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   fuel = prefs.getDouble("me.fuel") ?? 0;
+  //   lastSavedFuelLevel = fuel;
+  //   fuelBurnRate = prefs.getDouble("me.fuelBurnRate") ?? 4;
+  // }
 
-  void _save() async {
-    debugPrint("Fuel Level Saved");
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setDouble("me.fuel", fuel);
-    prefs.setDouble("me.fuelBurnRate", fuelBurnRate);
-    lastSavedFuelLevel = fuel;
-  }
+  // void _save() async {
+  //   debugPrint("Fuel Level Saved");
+  //   final prefs = await SharedPreferences.getInstance();
+  //   prefs.setDouble("me.fuel", fuel);
+  //   prefs.setDouble("me.fuelBurnRate", fuelBurnRate);
+  //   lastSavedFuelLevel = fuel;
+  // }
 
   Future saveFlight() async {
     lastSavedLog = DateTime.now();
@@ -354,43 +357,49 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     http
         .get(Uri.parse("https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
         .then((responseXY) {
-      // nearest stations
-      var msgXY = jsonDecode(responseXY.body);
-      var x = msgXY["properties"]["gridX"];
-      var y = msgXY["properties"]["gridY"];
-      var gridId = msgXY["properties"]["gridId"];
+      if (responseXY.statusCode != 200) {
+        debugPrint("Failed to reach api.weather.gov");
+        // baroAmbient = BarometerValue(1013.25);
+      } else {
+        // nearest stations
+        var msgXY = jsonDecode(responseXY.body);
+        var x = msgXY["properties"]["gridX"];
+        var y = msgXY["properties"]["gridY"];
+        var gridId = msgXY["properties"]["gridId"];
 
-      http.get(Uri.parse("https://api.weather.gov/gridpoints/$gridId/$x,$y/stations")).then((responsePoint) async {
-        var msgPoint = jsonDecode(responsePoint.body);
-        // check each for pressure
-        stationFound = false;
+        http.get(Uri.parse("https://api.weather.gov/gridpoints/$gridId/$x,$y/stations")).then((responsePoint) async {
+          var msgPoint = jsonDecode(responsePoint.body);
+          // check each for pressure
+          stationFound = false;
 
-        if (msgPoint["observationStations"] != null) {
-          List<dynamic> stationList = msgPoint["observationStations"];
-          for (String each in stationList) {
-            if (stationFound) break;
-            await http.get(Uri.parse("$each/observations/latest")).then((responseStation) {
-              try {
-                var msgStation = jsonDecode(responseStation.body);
-                if (msgStation["properties"] != null && msgStation["properties"]["seaLevelPressure"]["value"] != null) {
-                  double pressure = msgStation["properties"]["barometricPressure"]["value"] / 100;
-                  debugPrint("Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
-                  baroAmbient = BarometerValue(pressure);
-                  baroAmbientRequested = false;
-                  stationFound = true;
+          if (msgPoint["observationStations"] != null) {
+            List<dynamic> stationList = msgPoint["observationStations"];
+            for (String each in stationList) {
+              if (stationFound) break;
+              await http.get(Uri.parse("$each/observations/latest")).then((responseStation) {
+                try {
+                  var msgStation = jsonDecode(responseStation.body);
+                  if (msgStation["properties"] != null &&
+                      msgStation["properties"]["seaLevelPressure"]["value"] != null) {
+                    double pressure = msgStation["properties"]["barometricPressure"]["value"] / 100;
+                    debugPrint("Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
+                    baroAmbient = BarometerValue(pressure);
+                    baroAmbientRequested = false;
+                    stationFound = true;
+                  }
+                } catch (e) {
+                  debugPrint("Failed to get station info. $e");
+                  debugPrint(Uri.parse("$each/observations/latest").toString());
+                  debugPrint(responseStation.body);
                 }
-              } catch (e) {
-                debugPrint("Failed to get station info. $e");
-                debugPrint(Uri.parse("$each/observations/latest").toString());
-                debugPrint(responseStation.body);
-              }
-            });
+              });
+            }
+          } else {
+            debugPrint("No stations found for point $gridId, $x, $y");
+            // debugPrint(responsePoint.body);
           }
-        } else {
-          debugPrint("No stations found for point $gridId, $x, $y");
-          // debugPrint(responsePoint.body);
-        }
-      });
+        });
+      }
     });
   }
 
@@ -465,7 +474,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     if (inFlight) {
       // --- burn fuel
-      fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev.time) / 3600000.0);
+      // NOTE: fuel feature disabled for now
+      // fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev.time) / 3600000.0);
 
       // --- Record path
       if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo.latlng) > 50)) {
@@ -486,34 +496,35 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
   }
 
-  void updateFuel(double delta) {
-    fuel = max(0, fuel + delta);
-    // every so often, save the fuel level in case the app crashes
-    if ((fuel - (lastSavedFuelLevel ?? fuel)).abs() > 0.2) _save();
-    notifyListeners();
-  }
+  // void updateFuel(double delta) {
+  //   fuel = max(0, fuel + delta);
+  //   // every so often, save the fuel level in case the app crashes
+  //   if ((fuel - (lastSavedFuelLevel ?? fuel)).abs() > 0.2) _save();
+  //   notifyListeners();
+  // }
 
-  void updateFuelBurnRate(double delta) {
-    fuelBurnRate = max(0.1, fuelBurnRate + delta);
-    _save();
-    notifyListeners();
-  }
+  // void updateFuelBurnRate(double delta) {
+  //   fuelBurnRate = max(0.1, fuelBurnRate + delta);
+  //   _save();
+  //   notifyListeners();
+  // }
 
-  Color fuelIndicatorColor(ETA next, ETA trip) {
-    double fuelTime = fuel / fuelBurnRate;
-    if (fuelTime > 0.0001 && inFlight && next.time != null) {
-      if (fuelTime < 0.25 || (fuelTime < next.time!.inMilliseconds.toDouble() / 3600000)) {
-        // Red at 15minutes of fuel left or can't make selected waypoint
-        return Colors.red.shade900;
-      } else if (fuelTime < trip.time!.inMilliseconds.toDouble() / 3600000) {
-        // Orange if not enough fuel to finish the plan
-        return Colors.amber.shade900;
-      }
-    }
-    return Colors.grey.shade900;
-  }
+  // Color fuelIndicatorColor(ETA next, ETA trip) {
+  //   double fuelTime = fuel / fuelBurnRate;
+  //   if (fuelTime > 0.0001 && inFlight && next.time != null) {
+  //     if (fuelTime < 0.25 || (fuelTime < next.time!.inMilliseconds.toDouble() / 3600000)) {
+  //       // Red at 15minutes of fuel left or can't make selected waypoint
+  //       return Colors.red.shade900;
+  //     } else if (fuelTime < trip.time!.inMilliseconds.toDouble() / 3600000) {
+  //       // Orange if not enough fuel to finish the plan
+  //       return Colors.amber.shade900;
+  //     }
+  //   }
+  //   return Colors.grey.shade900;
+  // }
 
-  Duration get fuelTimeRemaining => Duration(milliseconds: ((fuel / fuelBurnRate) * 3600000).ceil());
+  // NOTE: fuel feature disabled for now
+  // Duration get fuelTimeRemaining => Duration(milliseconds: ((fuel / fuelBurnRate) * 3600000).ceil());
 
   Polyline buildFlightTrace() {
     return Polyline(points: flightTrace, strokeWidth: 4, color: const Color.fromARGB(150, 255, 50, 50), isDotted: true);

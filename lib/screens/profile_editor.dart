@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -161,6 +160,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("Build /profileEditor");
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: isOptional,

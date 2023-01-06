@@ -9,12 +9,10 @@ class IconImageProvider extends ImageProvider<IconImageProvider> {
   final int size;
   final Color color;
 
-  IconImageProvider(this.icon,
-      {this.scale = 1.0, this.size = 48, this.color = Colors.white});
+  IconImageProvider(this.icon, {this.scale = 1.0, this.size = 48, this.color = Colors.white});
 
   @override
-  Future<IconImageProvider> obtainKey(ImageConfiguration configuration) =>
-      SynchronousFuture<IconImageProvider>(this);
+  Future<IconImageProvider> obtainKey(ImageConfiguration configuration) => SynchronousFuture<IconImageProvider>(this);
 
   @override
   ImageStreamCompleter load(IconImageProvider key, DecoderCallback decode) =>
@@ -45,16 +43,12 @@ class IconImageProvider extends ImageProvider<IconImageProvider> {
   bool operator ==(dynamic other) {
     if (other.runtimeType != runtimeType) return false;
     final IconImageProvider typedOther = other;
-    return icon == typedOther.icon &&
-        scale == typedOther.scale &&
-        size == typedOther.size &&
-        color == typedOther.color;
+    return icon == typedOther.icon && scale == typedOther.scale && size == typedOther.size && color == typedOther.color;
   }
 
   @override
-  int get hashCode => hashValues(icon.hashCode, scale, size, color);
+  int get hashCode => Object.hash(icon.hashCode, scale, size, color);
 
   @override
-  String toString() =>
-      '$runtimeType(${describeIdentity(icon)}, scale: $scale, size: $size, color: $color)';
+  String toString() => '$runtimeType(${describeIdentity(icon)}, scale: $scale, size: $size, color: $color)';
 }

@@ -29,16 +29,17 @@ class Settings with ChangeNotifier {
     "airspace": 1.0,
     "airports": 1.0,
   };
-  TileLayer getMapTileLayer(String name, {double? opacity}) {
-    TileProvider makeTileProvider(name) {
-      return FMTC.instance(name).getTileProvider(
-            FMTCTileProviderSettings(
-              behavior: CacheBehavior.cacheFirst,
-              cachedValidDuration: const Duration(days: 14),
-            ),
-          );
-    }
 
+  TileProvider? makeTileProvider(instanceName) {
+    return FMTC.instance(instanceName).getTileProvider(
+          FMTCTileProviderSettings(
+            behavior: CacheBehavior.cacheFirst,
+            cachedValidDuration: const Duration(days: 14),
+          ),
+        );
+  }
+
+  TileLayer getMapTileLayer(String name, {double? opacity}) {
     switch (name) {
       case "sectional":
         return TileLayer(

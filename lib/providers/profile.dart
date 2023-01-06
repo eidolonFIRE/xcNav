@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
-import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/secrets.dart';
 
 class Profile with ChangeNotifier {

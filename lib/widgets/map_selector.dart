@@ -49,6 +49,7 @@ class MapSelector extends StatelessWidget {
                               .sublist(layerIndex)
                               .map(
                                 (e) => SizedBox(
+                                    key: Key("mapSelector_${layerName}_${(e * 100).toInt()}"),
                                     width: 50,
                                     height: 40,
                                     child: Stack(

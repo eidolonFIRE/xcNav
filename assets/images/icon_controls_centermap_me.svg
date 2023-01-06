@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="50mm"
-   height="50mm"
-   viewBox="0 0 50 50"
+   width="120"
+   height="120"
+   viewBox="0 0 31.75 31.75"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
@@ -25,20 +25,24 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="5.6"
-     inkscape:cx="76.309008"
-     inkscape:cy="96.244434"
-     inkscape:document-units="mm"
+     inkscape:zoom="7.919596"
+     inkscape:cx="65.428923"
+     inkscape:cy="52.182547"
+     inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:window-width="2880"
      inkscape:window-height="1620"
      inkscape:window-x="812"
      inkscape:window-y="286"
-     inkscape:window-maximized="0">
+     inkscape:window-maximized="0"
+     units="px">
     <inkscape:grid
        type="xygrid"
-       id="grid815" />
+       id="grid815"
+       units="px"
+       spacingx="0.52916666"
+       spacingy="0.52916666" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -48,7 +52,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -56,10 +60,10 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-247)">
+     transform="translate(0,-265.25)">
     <path
-       style="fill:none;stroke:#000000;stroke-width:3.17499995;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:12;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
-       d="M 40.999999,287 25,282.00001 10,287 25,255 Z"
+       style="fill:none;stroke:#000000;stroke-width:2.38553858;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:12;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       d="M 27.89661,292.46821 15.875,288.71147 4.6047395,292.46821 15.875,268.425 Z"
        id="path4522"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccc" />

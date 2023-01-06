@@ -34,7 +34,7 @@ TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey.shade400, font
 class _MyHomePageState extends State<MyHomePage> {
   final viewMapKey = GlobalKey<ViewMapState>();
 
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey(debugLabel: "MainScaffold");
 
   PageController viewController = PageController(initialPage: 0);
   int viewPageIndex = 1;

@@ -26,7 +26,7 @@ class PlansViewer extends StatefulWidget {
 }
 
 class _PlansViewerState extends State<PlansViewer> {
-  void selectKmlImport(BuildContext context) async {
+  void selectKmlImport(BuildContext context, Plans plans) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ["kml"]);
 
     if (result != null) {
@@ -42,7 +42,7 @@ class _PlansViewerState extends State<PlansViewer> {
         var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
         // TODO: notify if broken file
         if (newPlan.goodFile) {
-          Provider.of<Plans>(context, listen: false).setPlan(newPlan);
+          plans.setPlan(newPlan);
         }
       });
     } else {
@@ -71,7 +71,9 @@ class _PlansViewerState extends State<PlansViewer> {
                 },
                 icon: const Icon(Icons.add)),
             IconButton(
-                iconSize: 30, onPressed: () => {selectKmlImport(context)}, icon: const Icon(Icons.file_upload_outlined))
+                iconSize: 30,
+                onPressed: () => {selectKmlImport(context, Provider.of<Plans>(context, listen: false))},
+                icon: const Icon(Icons.file_upload_outlined))
           ],
         ),
         body: plans.loadedPlans.isEmpty

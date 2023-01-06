@@ -90,14 +90,13 @@ void main() {
           )
         ],
         child: FocusDetector(
-            onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const MyApp())),
+            onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())),
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class XCNav extends StatelessWidget {
+  const XCNav({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     Wakelock.enable();

@@ -870,6 +870,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
               left: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : null,
               child: Consumer<Settings>(builder: (context, settings, _) {
                 return MapSelector(
+                    key: const Key("viewMap_mapSelector"),
                     isMapDialOpen: isMapDialOpen,
                     curLayer: settings.curMapTiles,
                     curOpacity: settings.mapOpacity(settings.curMapTiles),
