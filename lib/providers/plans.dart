@@ -17,7 +17,7 @@ class Plans with ChangeNotifier {
   Future setPlan(FlightPlan plan) {
     _loadedPlans[plan.name] = plan;
     notifyListeners();
-    return _savePlanToFile(plan.name);
+    return savePlanToFile(plan.name);
   }
 
   bool hasPlan(String name) {
@@ -84,7 +84,7 @@ class Plans with ChangeNotifier {
     final plan = _loadedPlans[oldName];
     if (plan != null) {
       plan.name = newName;
-      _savePlanToFile(oldName);
+      savePlanToFile(oldName);
       refreshPlansFromDirectory();
     } else {
       debugPrint("Warn: Tried to rename a plan that isn't loaded $oldName");
@@ -104,7 +104,7 @@ class Plans with ChangeNotifier {
     }
   }
 
-  Future _savePlanToFile(String name) {
+  Future savePlanToFile(String name) {
     final plan = _loadedPlans[name];
     if (plan != null) {
       Completer completer = Completer();

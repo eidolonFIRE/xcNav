@@ -152,20 +152,20 @@ class FlightPlan {
       });
     }
 
-    // try {
-    if (folders.isNotEmpty) {
-      for (final each in folders) {
-        scanElement(each);
+    try {
+      if (folders.isNotEmpty) {
+        for (final each in folders) {
+          scanElement(each);
+        }
+      } else {
+        // if no folders selected, scan whole document
+        scanElement(document);
       }
-    } else {
-      // if no folders selected, scan whole document
-      scanElement(document);
-    }
 
-    goodFile = true;
-    // } catch (e) {
-    //   debugPrint("Error loading kml file: ${e.toString()}");
-    //   goodFile = false;
-    // }
+      goodFile = true;
+    } catch (e) {
+      debugPrint("Error loading kml file: ${e.toString()}");
+      goodFile = false;
+    }
   }
 }

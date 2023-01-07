@@ -149,6 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Shadow(blurRadius: 60, color: Colors.black)
               ]),
               onTap: ((value) {
+                debugPrint("BottomNavigationBar.tap($value)");
                 if (value == 0) {
                   scaffoldKey.currentState?.openDrawer();
                   // Scaffold.of(context).openDrawer();

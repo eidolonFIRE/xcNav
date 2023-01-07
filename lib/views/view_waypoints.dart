@@ -52,7 +52,8 @@ class ViewWaypointsState extends State<ViewWaypoints> {
 
     int retval = 0;
     if (filterText.text.isNotEmpty) {
-      (weightedRatio(b.name.toLowerCase(), filterText.text) - weightedRatio(a.name.toLowerCase(), filterText.text)) *
+      retval += (weightedRatio(b.name.toLowerCase(), filterText.text) -
+              weightedRatio(a.name.toLowerCase(), filterText.text)) *
           textWeight;
     }
     retval += a.ephemeral ? emphemeralWeight : 0;
@@ -188,10 +189,11 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                       textAlignVertical: TextAlignVertical.bottom,
                       controller: filterText,
                       decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)), hintText: "text"),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)), hintText: "search"),
                       onChanged: (value) {
                         setState(() {
-                          debugPrint("FilterText ${filterText.text}");
+                          // (this will make the waypoint list re-sort)
+                          // debugPrint("FilterText ${filterText.text}");
                         });
                       },
                     ),
@@ -225,6 +227,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
 
                 // --- Menu
                 PopupMenuButton<String>(
+                    key: const Key("viewWaypoints_moreOptions"),
                     onSelected: (value) {
                       switch (value) {
                         case "library":
@@ -303,7 +306,6 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                 final items = activePlan.waypoints.values.toList();
                 items.sort(compareWaypoints);
                 return ListView.builder(
-                  // shrinkWrap: true,
                   // primary: true,
                   itemCount: items.length,
                   itemBuilder: (context, i) => Slidable(

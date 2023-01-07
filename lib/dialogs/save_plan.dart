@@ -36,7 +36,7 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
           controller: filename,
           autofocus: true,
           decoration: const InputDecoration(
-            hintText: "plan name",
+            hintText: "collection name",
             border: OutlineInputBorder(),
           ),
           style: const TextStyle(fontSize: 20),

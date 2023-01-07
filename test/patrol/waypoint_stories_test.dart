@@ -1,7 +1,10 @@
 import 'package:flutter/services.dart';
+import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 
@@ -13,6 +16,7 @@ import 'package:permission_handler_platform_interface/permission_handler_platfor
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/main.dart';
+import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/chat_messages.dart';
@@ -24,11 +28,13 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
+import 'package:xcnav/views/view_map.dart';
+import 'package:xcnav/views/view_waypoints.dart';
 
 import 'mock_providers.dart';
 
 void main() {
-  Widget makeApp(MockSettings settings) {
+  Widget makeApp(MockSettings settings, ActivePlan activePlan, MockPlans plans) {
     return MultiProvider(providers: [
       ChangeNotifierProvider(
         // ignore: unnecessary_cast
@@ -48,11 +54,12 @@ void main() {
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (_) => ActivePlan(),
+        create: (_) => activePlan,
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (_) => Plans(),
+        // ignore: unnecessary_cast
+        create: (_) => plans as Plans,
         lazy: false,
       ),
       ChangeNotifierProvider(
@@ -80,7 +87,7 @@ void main() {
   }
 
   patrolTest(
-    'Get to home screen',
+    'Create and delete a waypoint',
     ($) async {
       // --- Setup stubs and initial configs
       GeolocatorPlatform.instance = MockGeolocatorPlatform();
@@ -98,15 +105,42 @@ void main() {
         "profile.secretID": "1234abcd",
       });
       final settings = MockSettings();
+      final activePlan = ActivePlan();
+      final plans = MockPlans();
 
       // --- Build App
-      await $.pumpWidget(makeApp(settings));
+      await $.pumpWidget(makeApp(settings, activePlan, plans));
       await $.waitUntilExists($(Scaffold));
+
+      // --- Make a waypoint
+      await $(ViewMap).tester.tester.longPressAt(const Offset(400, 400));
+      await $.waitUntilVisible($(Dialog));
+      await $("Waypoint").tap(andSettle: false);
+      await $.waitUntilExists($(#editWaypointName));
+      await $(#editWaypointName).enterText("my test waypoint", andSettle: false);
+      await $("Add").tap(andSettle: false);
+
+      // --- Check waypoint exists
+      expect(activePlan.waypoints.length, 1);
+      expect(activePlan.waypoints.values.first.name, "my test waypoint");
+
+      // --- Delete the waypoint
+      final bottomBarRect = $.tester.getRect($(BottomNavigationBar));
+      await $.tester.tapAt(Offset(bottomBarRect.width * 3.5 / 5, bottomBarRect.top + bottomBarRect.height / 2));
+      await $.waitUntilVisible($(ViewWaypoints));
+      await $.tester.drag($(Slidable).$("my test waypoint"), const Offset(300, 0));
+      await $.pump(const Duration(seconds: 2));
+      await $(SlidableAction)
+          .which<SlidableAction>((widget) => widget.backgroundColor == Colors.red)
+          .tap(andSettle: false);
+
+      // --- Check waypoint deleted
+      expect(activePlan.waypoints.length, 0);
     },
   );
 
   patrolTest(
-    'Change base map in main view',
+    'Save waypoint to library',
     ($) async {
       // --- Setup stubs and initial configs
       GeolocatorPlatform.instance = MockGeolocatorPlatform();
@@ -124,26 +158,41 @@ void main() {
         "profile.secretID": "1234abcd",
       });
       final settings = MockSettings();
+      final activePlan = ActivePlan();
+      final plans = MockPlans();
 
       // --- Build App
-      await $.pumpWidget(makeApp(settings));
+      await $.pumpWidget(makeApp(settings, activePlan, plans));
       await $.waitUntilExists($(Scaffold));
 
-      // --- Default map layer
-      expect(settings.curMapTiles, "topo");
-      expect(settings.mapOpacity("topo"), 1);
+      // --- Inject a waypoint
+      activePlan.updateWaypoint(Waypoint(latlngs: [LatLng(10, 10)], name: "my test waypoint"));
 
-      // --- Select a different map
-      await $(#viewMap_mapSelector).tap(andSettle: false);
-      await $.waitUntilVisible($(SpeedDial));
-      await $(#mapSelector_satellite_50).tap(andSettle: false);
-
-      // (let the speeddial finish the animation)
+      // --- Save waypoint collection
+      final bottomBarRect = $.tester.getRect($(BottomNavigationBar));
+      await $.tester.tapAt(Offset(bottomBarRect.width * 3.5 / 5, bottomBarRect.top + bottomBarRect.height / 2));
+      await $.waitUntilVisible($(ViewWaypoints));
+      await $(#viewWaypoints_moreOptions).tap(andSettle: false);
+      await $("Save").tap(andSettle: false);
+      await $(TextFormField).enterText("my test collection", andSettle: false);
       await $.pump(const Duration(seconds: 2));
+      await $(AlertDialog).$("Save").tap(andSettle: false);
+      await $.pump(const Duration(seconds: 1));
+      await $.waitUntilVisible($("my test waypoint"));
 
-      // --- New map layer
-      expect(settings.curMapTiles, "satellite");
-      expect(settings.mapOpacity("satellite"), 0.5);
+      // --- Delete the waypoint
+      await $.tester.drag($(Slidable).$("my test waypoint"), const Offset(300, 0));
+      await $.pump(const Duration(seconds: 2));
+      await $(SlidableAction)
+          .which<SlidableAction>((widget) => widget.backgroundColor == Colors.red)
+          .tap(andSettle: false);
+
+      // --- Check waypoint deleted, and still in collection
+      expect(activePlan.waypoints.length, 0);
+      await $(#viewWaypoints_moreOptions).tap(andSettle: false);
+      await $("Library").tap(andSettle: false);
+      await $.waitUntilVisible($("my test collection"));
+      expect(plans.loadedPlans["my test collection"]?.waypoints.length, 1);
     },
   );
 }

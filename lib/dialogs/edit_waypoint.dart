@@ -89,6 +89,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                   child: Form(
                     key: formKey,
                     child: TextFormField(
+                      key: const Key("editWaypointName"),
                       controller: newWaypointName,
                       autofocus: true,
                       validator: (value) {

@@ -49,7 +49,7 @@ void tapPointDialog(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-// --- Add New Waypoint
+                // --- Add New Waypoint
                 ElevatedButton.icon(
                     label: const Text("Waypoint"),
                     onPressed: () {

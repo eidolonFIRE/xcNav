@@ -14,6 +14,7 @@ import 'package:permission_handler_platform_interface/permission_handler_platfor
 
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/client.dart';
+import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/settings.dart';
 
@@ -169,4 +170,11 @@ class MockClient extends Client {
 class MockSettings extends Settings {
   @override
   TileProvider? makeTileProvider(instanceName) => null;
+}
+
+class MockPlans extends Plans {
+  @override
+  Future savePlanToFile(String name) {
+    return Future.value(null);
+  }
 }
