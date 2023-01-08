@@ -270,6 +270,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     ),
                     children: [
                       settings.getMapTileLayer(settings.curMapTiles),
+
+                      // Airspace overlay
                       if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
                         settings.getMapTileLayer("airspace"),
                       if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
