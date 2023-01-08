@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
+import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/patreon.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/profile.dart';
@@ -187,15 +188,17 @@ class _MainMenuState extends State<MainMenu> {
           onTap: () => {Navigator.popAndPushNamed(context, "/checklist")},
         ),
 
-        ListTile(
-          minVerticalPadding: 20,
-          leading: const Icon(
-            Icons.cloudy_snowing,
-            size: 30,
+        // NOTE: Weather is only available in NorthAmerica until more weather sources can be added
+        if (localeZone == "NA")
+          ListTile(
+            minVerticalPadding: 20,
+            leading: const Icon(
+              Icons.cloudy_snowing,
+              size: 30,
+            ),
+            title: Text("Weather", style: Theme.of(context).textTheme.headline5),
+            onTap: () => {Navigator.popAndPushNamed(context, "/weather")},
           ),
-          title: Text("Weather", style: Theme.of(context).textTheme.headline5),
-          onTap: () => {Navigator.popAndPushNamed(context, "/weather")},
-        ),
 
         ListTile(
             minVerticalPadding: 20,
