@@ -239,8 +239,9 @@ class Settings with ChangeNotifier {
           speed: displayUnitsSpeed, vario: _displayUnitsVario, dist: _displayUnitsDist, fuel: _displayUnitsFuel);
 
       // --- UI
-      _northlockMap = prefs.getBool("settings.northlockMap") ?? false;
-      _northlockWind = prefs.getBool("settings.northlockWind") ?? false;
+      _showAirspaceOverlay = prefs.getBool("settings.showAirspaceOverlay") ?? true;
+      _northlockMap = prefs.getBool("settings.northlockMap") ?? true;
+      _northlockWind = prefs.getBool("settings.northlockWind") ?? true;
       _mapControlsRightSide = prefs.getBool("settings.mapControlsRightSide") ?? false;
       _showPilotNames = prefs.getBool("settings.showPilotNames") ?? false;
 

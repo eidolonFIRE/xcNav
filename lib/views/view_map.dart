@@ -11,6 +11,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
+import 'package:xcnav/endpoint.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -213,12 +214,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     debugPrint("onMapTap: $latlng");
     isMapDialOpen.value = false;
     if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
-      // --- Add waypoint in path
+      // Add waypoint in path
       polyEditor.add(editablePoints, latlng);
     } else if (focusMode == FocusMode.measurement) {
-      // setState(() {
-      //   measurementPolyline.points.add(latlng);
-      // });
+      // Add point to measurement
       measurementEditor.add(measurementPolyline.points, latlng);
     }
   }
@@ -276,6 +275,18 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         settings.getMapTileLayer("airspace"),
                       if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
                         settings.getMapTileLayer("airports"),
+
+                      // https://nowcoast.noaa.gov/help/#!section=map-service-list
+                      if (localeZone == "NA")
+                        TileLayer(
+                          backgroundColor: Colors.transparent,
+                          wmsOptions: WMSTileLayerOptions(
+                            layers: ["1"],
+                            baseUrl:
+                                "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
+                          ),
+                          opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.zoom : 0)) / 10.0)),
+                        ),
 
                       // Other Pilot path trace
                       PolylineLayer(
@@ -573,14 +584,31 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
                   Align(
                     alignment: Alignment.center,
-                    child: ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                            child: Container(
-                                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
-                                color: Colors.white30,
-                                child: const WaypointNavBar()))),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                            borderRadius: BorderRadius.circular(30),
+                            child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                child: Container(
+                                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
+                                    color: Colors.white30,
+                                    child: const WaypointNavBar()))),
+                        Positioned(
+                            top: 0,
+                            right: 0,
+                            child: InkWell(
+                              onTap: (() {
+                                Provider.of<ActivePlan>(context, listen: false).selectedWp = null;
+                              }),
+                              child: Icon(
+                                Icons.cancel,
+                                color: Colors.grey.withAlpha(180),
+                                size: 20,
+                              ),
+                            ))
+                      ],
+                    ),
                   ),
 
                 // --- Measurement (X)
