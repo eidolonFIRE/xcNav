@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 class MapButton extends StatelessWidget {
@@ -14,14 +16,17 @@ class MapButton extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: MaterialButton(
-          visualDensity: VisualDensity.compact,
-          onPressed: onPressed,
-          shape: RoundedRectangleBorder(
-            borderRadius: const BorderRadius.all(Radius.circular(30)),
-            side: BorderSide(color: selected ? Colors.black : Colors.black45, width: selected ? 3 : 1),
-          ),
-          child: child),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.all(Radius.circular(30)),
+        child: MaterialButton(
+            visualDensity: VisualDensity.compact,
+            onPressed: onPressed,
+            shape: RoundedRectangleBorder(
+              borderRadius: const BorderRadius.all(Radius.circular(30)),
+              side: BorderSide(color: selected ? Colors.black : Colors.black45, width: selected ? 3 : 1),
+            ),
+            child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1), child: child)),
+      ),
     );
   }
 }
