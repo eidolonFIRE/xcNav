@@ -140,16 +140,29 @@ class ActivePlan with ChangeNotifier {
     notifyListeners();
   }
 
-  List<Polyline> buildNextWpIndicator(Geo geo, double interval) {
+  /// Setting the `baseTiles` will change the style of the polylines to be best on that layer.
+  List<Polyline> buildNextWpIndicator(Geo geo, double interval, {String? baseTiles}) {
     final waypointETA = getSelectedWp()?.eta(geo, 1);
 
-    // Underlying grey line
     if (waypointETA != null) {
       final points = [geo.latlng] + getSelectedWp()!.latlngOriented.sublist(waypointETA.pathIntercept?.index ?? 0);
-      return [
-        Polyline(points: points, color: const Color.fromARGB(180, 255, 255, 0), strokeWidth: 20),
-        Polyline(points: points, color: Colors.black, strokeWidth: 4, isDotted: true),
-      ];
+      switch (baseTiles) {
+        case "sectional":
+          return [
+            Polyline(points: points, color: const Color.fromARGB(180, 255, 0, 255), strokeWidth: 20),
+            Polyline(points: points, color: Colors.black, strokeWidth: 4, isDotted: true),
+          ];
+        case "satellite":
+          return [
+            Polyline(points: points, color: Colors.white70, strokeWidth: 20),
+            Polyline(points: points, color: Colors.black, strokeWidth: 4, isDotted: true),
+          ];
+        default:
+          return [
+            Polyline(points: points, color: const Color.fromARGB(180, 255, 255, 0), strokeWidth: 20),
+            Polyline(points: points, color: Colors.black, strokeWidth: 4, isDotted: true),
+          ];
+      }
     }
 
     return [];

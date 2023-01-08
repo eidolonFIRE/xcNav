@@ -204,7 +204,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
             padding: const EdgeInsets.only(top: 60),
             child: SvgPicture.asset(
               "assets/images/xcnav.logo.type.svg",
-              width: MediaQuery.of(context).size.width / 4,
+              width: MediaQuery.of(context).size.width / 3.5,
               height: MediaQuery.of(context).size.width / 3,
             ),
           ),

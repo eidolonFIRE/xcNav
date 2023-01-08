@@ -304,7 +304,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             myTelemetry.geo,
                             (Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
                                 ? 1000
-                                : 1609.344)),
+                                : 1609.344),
+                            baseTiles: Provider.of<Settings>(context, listen: false).curMapTiles),
                       ),
 
                       // Waypoints: paths
