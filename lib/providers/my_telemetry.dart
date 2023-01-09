@@ -28,8 +28,14 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/secrets.dart';
+import 'package:xcnav/units.dart';
 
 enum FlightEventType { init, takeoff, land }
+
+/// Meters
+double densityAlt(BarometerValue ambientPressure, double ambientTemp) {
+  return 145442.16 * (1 - pow(17.326 * ambientPressure.inchOfMercury / (459.67 + ambientTemp), 0.235)) / meters2Feet;
+}
 
 class FlightEvent {
   final FlightEventType type;
@@ -74,6 +80,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Ambient barometric reading fetched from web API
   BarometerValue? baroAmbient;
   bool baroAmbientRequested = false;
+
+  /// Ambient Temp in F, according to weatherkit
   double? ambientTemperature;
 
   StreamSubscription<BarometerValue>? listenBaro;
@@ -364,8 +372,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       } else {
         final payload = jsonDecode(response.body);
         baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);
-        ambientTemperature = payload["currentWeather"]["temperature"];
-        debugPrint("Ambient pressure found: ${baroAmbient?.hectpascal}");
+        ambientTemperature = payload["currentWeather"]["temperature"] * 9 / 5 + 32;
+        debugPrint("Ambient pressure found: ${baroAmbient?.hectpascal} ( ${ambientTemperature}F )");
       }
       baroAmbientRequested = false;
     });

@@ -574,7 +574,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
           // --- Secondary column (default to right side)
           Padding(
-            padding: const EdgeInsets.only(bottom: 5),
+            padding: EdgeInsets.fromLTRB(Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : 80,
+                0, Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 80 : 10, 5),
             child: Column(
               verticalDirection: VerticalDirection.up,
               mainAxisAlignment: MainAxisAlignment.start,
@@ -582,32 +583,39 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
               children: [
                 // --- Current waypoint info
                 if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
-                  Align(
-                    alignment: Alignment.center,
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                            borderRadius: BorderRadius.circular(30),
-                            child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                child: Container(
-                                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
-                                    color: Colors.white30,
-                                    child: const WaypointNavBar()))),
-                        Positioned(
-                            top: 0,
-                            right: 0,
-                            child: InkWell(
-                              onTap: (() {
-                                Provider.of<ActivePlan>(context, listen: false).selectedWp = null;
-                              }),
-                              child: Icon(
-                                Icons.cancel,
-                                color: Colors.grey.withAlpha(180),
-                                size: 20,
-                              ),
-                            ))
-                      ],
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                        Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 80 : 10,
+                        0,
+                        Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : 80,
+                        0),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                              borderRadius: BorderRadius.circular(30),
+                              child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                  child: Container(
+                                      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
+                                      color: Colors.white30,
+                                      child: const WaypointNavBar()))),
+                          Positioned(
+                              top: 0,
+                              right: 0,
+                              child: InkWell(
+                                onTap: (() {
+                                  Provider.of<ActivePlan>(context, listen: false).selectedWp = null;
+                                }),
+                                child: Icon(
+                                  Icons.cancel,
+                                  color: Colors.grey.withAlpha(180),
+                                  size: 20,
+                                ),
+                              ))
+                        ],
+                      ),
                     ),
                   ),
 
@@ -642,121 +650,107 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                   ),
 
                 if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : 80,
-                        20,
-                        Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 80 : 10,
-                        10),
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Card(
-                            color: Colors.amber.shade400,
-                            child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text.rich(
-                                TextSpan(children: [
-                                  WidgetSpan(
-                                      child: Icon(
-                                    Icons.touch_app,
-                                    size: 18,
-                                    color: Colors.black,
-                                  )),
-                                  TextSpan(text: "Tap to add to path")
-                                ]),
-                                style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Card(
+                          color: Colors.amber.shade400,
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text.rich(
+                              TextSpan(children: [
+                                WidgetSpan(
+                                    child: Icon(
+                                  Icons.touch_app,
+                                  size: 18,
+                                  color: Colors.black,
+                                )),
+                                TextSpan(text: "Tap to add to path")
+                              ]),
+                              style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ),
+                        ),
+                        IconButton(
+                          iconSize: 40,
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.cancel,
+                            size: 40,
+                            color: Colors.red,
+                          ),
+                          onPressed: () => {setFocusMode(prevFocusMode)},
+                        ),
+                        if (editablePoints.length > 1)
                           IconButton(
-                            iconSize: 40,
                             padding: EdgeInsets.zero,
+                            iconSize: 40,
                             icon: const Icon(
-                              Icons.cancel,
+                              Icons.check_circle,
                               size: 40,
-                              color: Colors.red,
+                              color: Colors.green,
                             ),
-                            onPressed: () => {setFocusMode(prevFocusMode)},
+                            onPressed: () {
+                              // --- finish editing path
+                              var plan = Provider.of<ActivePlan>(context, listen: false);
+                              if (editingWp == null) {
+                                var temp = Waypoint(name: "", latlngs: editablePoints.toList());
+                                editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
+                                    ?.then((newWaypoint) {
+                                  if (newWaypoint != null) {
+                                    plan.updateWaypoint(newWaypoint);
+                                  }
+                                });
+                              } else {
+                                plan.moveWaypoint(editingWp!, editablePoints.toList());
+                                editingWp = null;
+                              }
+                              setFocusMode(prevFocusMode);
+                            },
                           ),
-                          if (editablePoints.length > 1)
-                            IconButton(
-                              padding: EdgeInsets.zero,
-                              iconSize: 40,
-                              icon: const Icon(
-                                Icons.check_circle,
-                                size: 40,
-                                color: Colors.green,
-                              ),
-                              onPressed: () {
-                                // --- finish editing path
-                                var plan = Provider.of<ActivePlan>(context, listen: false);
-                                if (editingWp == null) {
-                                  var temp = Waypoint(name: "", latlngs: editablePoints.toList());
-                                  editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
-                                      ?.then((newWaypoint) {
-                                    if (newWaypoint != null) {
-                                      plan.updateWaypoint(newWaypoint);
-                                    }
-                                  });
-                                } else {
-                                  plan.moveWaypoint(editingWp!, editablePoints.toList());
-                                  editingWp = null;
-                                }
-                                setFocusMode(prevFocusMode);
-                              },
-                            ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
 
                 // --- Chat bubbles
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                      Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 0 : 80,
-                      20,
-                      Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 80 : 0,
-                      10),
-                  child: Consumer<ChatMessages>(
-                    builder: (context, chat, child) {
-                      // get valid bubbles
-                      const numSeconds = 20;
-                      List<Message> bubbles = [];
-                      for (int i = chat.messages.length - 1; i >= 0; i--) {
-                        if (chat.messages[i].timestamp >
-                                max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
-                            chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
-                          bubbles.add(chat.messages[i]);
+                Consumer<ChatMessages>(
+                  builder: (context, chat, child) {
+                    // get valid bubbles
+                    const numSeconds = 20;
+                    List<Message> bubbles = [];
+                    for (int i = chat.messages.length - 1; i >= 0; i--) {
+                      if (chat.messages[i].timestamp >
+                              max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
+                          chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
+                        bubbles.add(chat.messages[i]);
 
-                          Timer(const Duration(seconds: numSeconds), () {
-                            // "self destruct" the message after several seconds by triggering a refresh
-                            chat.refresh();
-                          });
-                        } else {
-                          break;
-                        }
+                        Timer(const Duration(seconds: numSeconds), () {
+                          // "self destruct" the message after several seconds by triggering a refresh
+                          chat.refresh();
+                        });
+                      } else {
+                        break;
                       }
-                      return Column(
-                        verticalDirection: VerticalDirection.up,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: bubbles
-                            .map(
-                              (e) => ChatBubble(
-                                  false,
-                                  e.text,
-                                  AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20,
-                                      tier: Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.tier),
-                                  null,
-                                  e.timestamp),
-                            )
-                            .toList(),
-                      );
-                    },
-                  ),
+                    }
+                    return Column(
+                      verticalDirection: VerticalDirection.up,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: bubbles
+                          .map(
+                            (e) => ChatBubble(
+                                false,
+                                e.text,
+                                AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20,
+                                    tier: Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.tier),
+                                null,
+                                e.timestamp),
+                          )
+                          .toList(),
+                    );
+                  },
                 ),
               ],
             ),

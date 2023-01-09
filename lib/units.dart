@@ -236,7 +236,7 @@ String printDouble({required double value, required int digits, required int dec
   if (autoDecimalThresh != null && value.abs() < autoDecimalThresh) decimals++;
   final int mag = (pow(10, digits + decimals) - 1).round();
   final double decPwr = pow(10, decimals).toDouble();
-  return ((min(mag, max(-mag, value * decPwr))).round() / decPwr).toStringAsFixed(decimals);
+  return ((min(mag, max(-mag, value * decPwr))).round() / decPwr).toStringAsFixed(max(0, decimals));
 }
 
 String printDoubleLexical(
@@ -272,14 +272,12 @@ TextSpan richValue(UnitType type, double value,
   if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps ||
       type == UnitType.speed && _unitSpeed == DisplayUnitsVario.mps) decimals++;
 
+  double printValue = unitConverters[type]!(value);
+
   // Make the textspan
   return TextSpan(children: [
     TextSpan(
-        text: printDouble(
-            value: unitConverters[type]!(value),
-            digits: digits,
-            decimals: decimals,
-            autoDecimalThresh: autoDecimalThresh),
+        text: printDouble(value: printValue, digits: digits, decimals: decimals, autoDecimalThresh: autoDecimalThresh),
         style: valueStyle),
     TextSpan(text: getUnitStr(type), style: unitStyle),
   ]);

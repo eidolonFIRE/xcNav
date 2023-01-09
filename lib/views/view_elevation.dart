@@ -126,9 +126,31 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                   })
                 : const Text(
                     "On the ground...",
-                    style: TextStyle(fontStyle: FontStyle.italic),
+                    style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
                   ),
           );
+        }),
+
+        Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
+          if (!myTelemetry.inFlight && myTelemetry.baroAmbient != null && myTelemetry.ambientTemperature != null) {
+            return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(
+                "Density Altitude:",
+                style: Theme.of(context).textTheme.headline5,
+              ),
+              const SizedBox(
+                width: 20,
+              ),
+              Text.rich(richValue(
+                  UnitType.distFine, densityAlt(myTelemetry.baroAmbient!, myTelemetry.ambientTemperature!),
+                  digits: 6,
+                  decimals: -2,
+                  valueStyle: Theme.of(context).textTheme.headline4,
+                  unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)))
+            ]);
+          } else {
+            return Container();
+          }
         }),
 
         Container(
