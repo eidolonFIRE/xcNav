@@ -27,6 +27,7 @@ import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/wind.dart';
+import 'package:xcnav/secrets.dart';
 
 enum FlightEventType { init, takeoff, land }
 
@@ -73,7 +74,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Ambient barometric reading fetched from web API
   BarometerValue? baroAmbient;
   bool baroAmbientRequested = false;
-  bool stationFound = false;
+  double? ambientTemperature;
 
   StreamSubscription<BarometerValue>? listenBaro;
 
@@ -354,52 +355,19 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void fetchAmbPressure() {
-    http
-        .get(Uri.parse("https://api.weather.gov/points/${geo.lat.toStringAsFixed(2)},${geo.lng.toStringAsFixed(2)}"))
-        .then((responseXY) {
-      if (responseXY.statusCode != 200) {
-        debugPrint("Failed to reach api.weather.gov");
-        // baroAmbient = BarometerValue(1013.25);
+    http.get(
+        Uri.parse(
+            "https://weatherkit.apple.com/api/v1/weather/en_US/${geo.lat.toStringAsFixed(5)}/${geo.lng.toStringAsFixed(5)}?dataSets=currentWeather"),
+        headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
+      if (response.statusCode != 200) {
+        debugPrint("Failed to reach weatherkit resource! ${response.statusCode} : ${response.body}");
       } else {
-        // nearest stations
-        var msgXY = jsonDecode(responseXY.body);
-        var x = msgXY["properties"]["gridX"];
-        var y = msgXY["properties"]["gridY"];
-        var gridId = msgXY["properties"]["gridId"];
-
-        http.get(Uri.parse("https://api.weather.gov/gridpoints/$gridId/$x,$y/stations")).then((responsePoint) async {
-          var msgPoint = jsonDecode(responsePoint.body);
-          // check each for pressure
-          stationFound = false;
-
-          if (msgPoint["observationStations"] != null) {
-            List<dynamic> stationList = msgPoint["observationStations"];
-            for (String each in stationList) {
-              if (stationFound) break;
-              await http.get(Uri.parse("$each/observations/latest")).then((responseStation) {
-                try {
-                  var msgStation = jsonDecode(responseStation.body);
-                  if (msgStation["properties"] != null &&
-                      msgStation["properties"]["seaLevelPressure"]["value"] != null) {
-                    double pressure = msgStation["properties"]["barometricPressure"]["value"] / 100;
-                    debugPrint("Found Baro: $gridId, ${pressure.toStringAsFixed(2)}");
-                    baroAmbient = BarometerValue(pressure);
-                    baroAmbientRequested = false;
-                    stationFound = true;
-                  }
-                } catch (e) {
-                  debugPrint("Failed to get station info. $e");
-                  debugPrint(Uri.parse("$each/observations/latest").toString());
-                  debugPrint(responseStation.body);
-                }
-              });
-            }
-          } else {
-            debugPrint("No stations found for point $gridId, $x, $y");
-            // debugPrint(responsePoint.body);
-          }
-        });
+        final payload = jsonDecode(response.body);
+        baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);
+        ambientTemperature = payload["currentWeather"]["temperature"];
+        debugPrint("Ambient pressure found: ${baroAmbient?.hectpascal}");
       }
+      baroAmbientRequested = false;
     });
   }
 
