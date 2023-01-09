@@ -21,6 +21,6 @@ void selectEndpoint(LatLng latlng) {
   } else {
     // Default
     serverEndpoint = reflectorNorthAmerica;
-    localeZone = "NA";
+    // localeZone = "NA";
   }
 }
