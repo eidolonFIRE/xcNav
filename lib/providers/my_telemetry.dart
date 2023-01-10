@@ -433,8 +433,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (triggerHyst > 30000) {
         // Launched!
         inFlight = true;
-        // TODO: Use real timestamp search here (it's hardcoded to 3 seconds)
-        final launchIndex = max(0, recordGeo.length - (30 ~/ 3));
+        // scan backwards to find sample 30 seconds back
+        int launchIndex = recordGeo.length - 1;
+        while (launchIndex > 0 &&
+            recordGeo[launchIndex].time >
+                DateTime.now().millisecondsSinceEpoch - const Duration(seconds: 30).inMilliseconds) {
+          launchIndex--;
+        }
+
         launchGeo = recordGeo[launchIndex];
 
         takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);

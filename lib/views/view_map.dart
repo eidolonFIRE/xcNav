@@ -762,109 +762,112 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
             right: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : null,
             top: 10,
             bottom: 10,
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // --- Compass
-                  MapButton(
-                      size: 60,
-                      onPressed: () => {
-                            setState(
-                              () {
-                                northLock = !northLock;
-                                if (northLock) mapController.rotate(0);
-                              },
-                            )
-                          },
-                      selected: false,
-                      child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
-                        StreamBuilder(
-                            stream: mapController.mapEventStream,
-                            builder: (context, event) => Container(
-                                  transformAlignment: const Alignment(0, 0),
-                                  transform: mapReady
-                                      ? Matrix4.rotationZ(mapController.rotation * pi / 180)
-                                      : Matrix4.rotationZ(0),
-                                  child: northLock
-                                      ? SvgPicture.asset("assets/images/compass_north.svg", fit: BoxFit.none)
-                                      : SvgPicture.asset("assets/images/compass.svg", fit: BoxFit.cover),
-                                )),
-                      ])),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // --- Focus on Me
-                      MapButton(
-                        size: 60,
-                        selected: focusMode == FocusMode.me,
-                        child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
-                        onPressed: () => setFocusMode(FocusMode.me),
-                      ),
+            child: LayoutBuilder(builder: (context, constaints) {
+              final buttonSize = max(30, min(60, constaints.maxHeight / 8)).toDouble();
+              return Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- Compass
+                    MapButton(
+                        size: buttonSize,
+                        onPressed: () => {
+                              setState(
+                                () {
+                                  northLock = !northLock;
+                                  if (northLock) mapController.rotate(0);
+                                },
+                              )
+                            },
+                        selected: false,
+                        child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
+                          StreamBuilder(
+                              stream: mapController.mapEventStream,
+                              builder: (context, event) => Container(
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: mapReady
+                                        ? Matrix4.rotationZ(mapController.rotation * pi / 180)
+                                        : Matrix4.rotationZ(0),
+                                    child: northLock
+                                        ? SvgPicture.asset("assets/images/compass_north.svg", fit: BoxFit.none)
+                                        : SvgPicture.asset("assets/images/compass.svg", fit: BoxFit.cover),
+                                  )),
+                        ])),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // --- Focus on Me
+                        MapButton(
+                          size: buttonSize,
+                          selected: focusMode == FocusMode.me,
+                          child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                          onPressed: () => setFocusMode(FocusMode.me),
+                        ),
 
+                        //
+                        SizedBox(
+                            width: 2,
+                            height: buttonSize / 3,
+                            child: Container(
+                              color: Colors.black,
+                            )),
+                        // --- Focus on Group
+                        MapButton(
+                          size: buttonSize,
+                          selected: focusMode == FocusMode.group,
+                          onPressed: () => setFocusMode(FocusMode.group),
+                          child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                        ),
+                      ],
+                    ),
+                    Column(mainAxisSize: MainAxisSize.min, children: [
+                      // --- Zoom In (+)
+                      MapButton(
+                        size: buttonSize,
+                        selected: false,
+                        onPressed: () {
+                          mapController.move(mapController.center, mapController.zoom + 1);
+                          debugPrint("Map Zoom: ${mapController.zoom}");
+                          lastMapChange = DateTime.now();
+                        },
+                        child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
+                      ),
                       //
                       SizedBox(
                           width: 2,
-                          height: 20,
+                          height: buttonSize / 3,
                           child: Container(
                             color: Colors.black,
                           )),
-                      // --- Focus on Group
+                      // --- Zoom Out (-)
                       MapButton(
-                        size: 60,
-                        selected: focusMode == FocusMode.group,
-                        onPressed: () => setFocusMode(FocusMode.group),
-                        child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                        size: buttonSize,
+                        selected: false,
+                        onPressed: () {
+                          mapController.move(mapController.center, mapController.zoom - 1);
+                          debugPrint("Map Zoom: ${mapController.zoom}");
+                          lastMapChange = DateTime.now();
+                        },
+                        child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
                       ),
-                    ],
-                  ),
-                  Column(mainAxisSize: MainAxisSize.min, children: [
-                    // --- Zoom In (+)
-                    MapButton(
-                      size: 60,
-                      selected: false,
-                      onPressed: () {
-                        mapController.move(mapController.center, mapController.zoom + 1);
-                        debugPrint("Map Zoom: ${mapController.zoom}");
-                        lastMapChange = DateTime.now();
-                      },
-                      child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
-                    ),
-                    //
-                    SizedBox(
-                        width: 2,
-                        height: 20,
-                        child: Container(
-                          color: Colors.black,
-                        )),
-                    // --- Zoom Out (-)
-                    MapButton(
-                      size: 60,
-                      selected: false,
-                      onPressed: () {
-                        mapController.move(mapController.center, mapController.zoom - 1);
-                        debugPrint("Map Zoom: ${mapController.zoom}");
-                        lastMapChange = DateTime.now();
-                      },
-                      child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
-                    ),
-                  ]),
+                    ]),
 
-                  // --- Measurement
-                  MapButton(
-                    size: 60,
-                    onPressed: () {
-                      setFocusMode(FocusMode.measurement);
-                    },
-                    selected: false,
-                    child: const Icon(
-                      Icons.straighten,
-                      size: 30,
-                      color: Colors.black,
-                    ),
-                  )
-                ]),
+                    // --- Measurement
+                    MapButton(
+                      size: buttonSize,
+                      onPressed: () {
+                        setFocusMode(FocusMode.measurement);
+                      },
+                      selected: false,
+                      child: const Icon(
+                        Icons.straighten,
+                        size: 30,
+                        color: Colors.black,
+                      ),
+                    )
+                  ]);
+            }),
           ),
 
           // --- Connection status banner (along top of map)

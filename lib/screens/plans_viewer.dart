@@ -40,10 +40,7 @@ class _PlansViewerState extends State<PlansViewer> {
         final selectedFolderOptions = await selectKmlFolders(context, folderNames);
         final selectedFolders = folderNames.isNotEmpty ? selectedFolderOptions?.folders : null;
         var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
-        // TODO: notify if broken file
-        if (newPlan.goodFile) {
-          plans.setPlan(newPlan);
-        }
+        plans.setPlan(newPlan);
       });
     } else {
       // User canceled the picker

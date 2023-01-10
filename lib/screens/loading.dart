@@ -200,13 +200,10 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
         children: [
           Container(),
           // --- Header Text
-          Padding(
-            padding: const EdgeInsets.only(top: 60),
-            child: SvgPicture.asset(
-              "assets/images/xcnav.logo.type.svg",
-              width: MediaQuery.of(context).size.width / 3.5,
-              height: MediaQuery.of(context).size.width / 2.5,
-            ),
+          SvgPicture.asset(
+            "assets/images/xcnav.logo.type.svg",
+            width: MediaQuery.of(context).size.width / 3.5,
+            height: MediaQuery.of(context).size.height / 5,
           ),
           if (showWaiting)
             AnimatedBuilder(
@@ -214,7 +211,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                 builder: (context, child) {
                   return Text(
                     "- Waiting for GPS -",
-                    style: TextStyle(fontSize: 30, color: animation.value),
+                    style: TextStyle(fontSize: 24, color: animation.value),
                   );
                 }),
           if (showWaiting && failedPerms && !checkedRecently)
@@ -226,7 +223,6 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
             ),
           // --- Wings and Dashed lines
           SizedBox(
-            // padding: const EdgeInsets.only(bottom: 80),
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height / 2.5,
             child: Stack(fit: StackFit.expand, clipBehavior: Clip.hardEdge, children: [

@@ -432,7 +432,6 @@ class AudioCueService {
           if (clusterGroup.length < 3) {
             final vectors = clusterGroup.map((e) => pilotVectors[e]!);
             // Average the altitude and distance
-            // TODO: do some distance separation
             final double alt = vectors.map((e) => e.alt).reduce((a, b) => a + b) / clusterGroup.length;
             final double dist = vectors.map((e) => e.value).reduce((a, b) => a + b) / clusterGroup.length;
             // Find center of the cluster

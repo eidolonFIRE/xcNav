@@ -1,7 +1,5 @@
 import 'package:flutter/services.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
