@@ -136,13 +136,13 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
             return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Text(
                 "Density Altitude:",
-                style: Theme.of(context).textTheme.headline5,
+                style: Theme.of(context).textTheme.headline6,
               ),
               const SizedBox(
                 width: 20,
               ),
-              Text.rich(richValue(
-                  UnitType.distFine, densityAlt(myTelemetry.baroAmbient!, myTelemetry.ambientTemperature!),
+              Text.rich(richValue(UnitType.distFine,
+                  densityAlt(myTelemetry.baroAmbient!, myTelemetry.ambientTemperature!) + myTelemetry.geo.alt,
                   digits: 6,
                   decimals: -2,
                   valueStyle: Theme.of(context).textTheme.headline4,
