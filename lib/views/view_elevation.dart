@@ -141,8 +141,10 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
               const SizedBox(
                 width: 20,
               ),
-              Text.rich(richValue(UnitType.distFine,
-                  densityAlt(myTelemetry.baroAmbient!, myTelemetry.ambientTemperature!) + myTelemetry.geo.alt,
+              Text.rich(richValue(
+                  UnitType.distFine,
+                  densityAlt(myTelemetry.baroAmbient!, myTelemetry.ambientTemperature!) +
+                      (myTelemetry.geo.ground ?? myTelemetry.geo.alt),
                   digits: 6,
                   decimals: -2,
                   valueStyle: Theme.of(context).textTheme.headline4,
