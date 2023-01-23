@@ -86,8 +86,8 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
 
   void checkPermissions(BuildContext context) async {
     if (Platform.isIOS) {
-      Permission.camera.request();
-      Permission.photos.request();
+      await Permission.camera.request();
+      await Permission.photos.request();
     }
 
     if (checkedRecently) {

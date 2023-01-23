@@ -80,6 +80,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Ambient barometric reading fetched from web API
   BarometerValue? baroAmbient;
   bool baroAmbientRequested = false;
+  int baroAmbientRequestCount = 0;
 
   /// Ambient Temp in F, according to weatherkit
   double? ambientTemperature;
@@ -368,7 +369,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             "https://weatherkit.apple.com/api/v1/weather/en_US/${geo.lat.toStringAsFixed(5)}/${geo.lng.toStringAsFixed(5)}?dataSets=currentWeather"),
         headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
       if (response.statusCode != 200) {
-        debugPrint("Failed to reach weatherkit resource! ${response.statusCode} : ${response.body}");
+        baroAmbientRequestCount++;
+        debugPrint(
+            "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}");
       } else {
         final payload = jsonDecode(response.body);
         baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);
@@ -395,7 +398,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     recordGeo.add(geo);
 
     // fetch ambient baro from weather service
-    if (baroAmbient == null && !baroAmbientRequested) {
+    if (baroAmbient == null && !baroAmbientRequested && baroAmbientRequestCount < 10) {
       baroAmbientRequested = true;
       try {
         fetchAmbPressure();

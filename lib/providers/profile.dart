@@ -117,7 +117,7 @@ class Profile with ChangeNotifier {
 
   Future pushAvatar() async {
     return http
-        .post(Uri.parse(profileStoreUrl),
+        .post(Uri.parse("https://$profileStoreUrl"),
             headers: {"Content-Type": "application/json", "authorizationToken": profileStoreToken},
             body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
         .then((http.Response response) {

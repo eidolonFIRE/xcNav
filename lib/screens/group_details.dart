@@ -120,7 +120,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                             title: Padding(
                               padding: EdgeInsets.all(30.0),
                               child: Text(
-                                "wow, such empty",
+                                "group is empty",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
                               ),

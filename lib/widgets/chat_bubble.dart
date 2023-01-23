@@ -8,8 +8,10 @@ class ChatBubble extends StatelessWidget {
   final String text;
   final Widget user;
   final int? timestamp;
+  final double? maxWidth;
 
-  const ChatBubble(this.isMe, this.text, this.user, this.pilotName, this.timestamp, {Key? key}) : super(key: key);
+  const ChatBubble(this.isMe, this.text, this.user, this.pilotName, this.timestamp, {Key? key, this.maxWidth})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,8 @@ class ChatBubble extends StatelessWidget {
                 mainAxisSize: MainAxisSize.max,
                 children: [
                   ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: 30, maxWidth: MediaQuery.of(context).size.width - 100),
+                    constraints:
+                        BoxConstraints(minWidth: 30, maxWidth: maxWidth ?? (MediaQuery.of(context).size.width - 100)),
                     child: Card(
                       color: text.toLowerCase().startsWith("emergency:")
                           ? Colors.red

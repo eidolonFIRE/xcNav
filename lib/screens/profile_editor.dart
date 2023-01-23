@@ -212,7 +212,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ ]"))],
                       validator: Profile.nameValidator,
                       decoration: const InputDecoration(
-                        label: Text("Pilot Name"),
+                        label: Text("Display Name"),
                         border: OutlineInputBorder(),
                       ),
                       onChanged: (value) => setState(() {
