@@ -157,14 +157,14 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 style:
                     TextStyle(fontSize: 20, color: myTelemetry.baroFromWeatherkit ? Colors.lightGreen : Colors.white),
               ),
-              VerticalDivider(),
+              const VerticalDivider(),
               IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: () => {
                         setState(() {
                           myTelemetry.baroFromWeatherkit = false;
                           myTelemetry.baroAmbient =
-                              (myTelemetry.baroAmbient ?? BarometerValue.typical()) + BarometerValue(0.2);
+                              BarometerValue((myTelemetry.baroAmbient?.hectpascal ?? 1013.25) + 0.25);
                         })
                       },
                   icon: const Icon(
@@ -174,10 +174,11 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
               IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: () => {
-                        setState(
-                          () => myTelemetry.baroAmbient =
-                              (myTelemetry.baroAmbient ?? BarometerValue.typical()) - BarometerValue(0.2),
-                        )
+                        setState(() {
+                          myTelemetry.baroFromWeatherkit = false;
+                          myTelemetry.baroAmbient =
+                              BarometerValue((myTelemetry.baroAmbient?.hectpascal ?? 1013.25) + 0.25);
+                        })
                       },
                   icon: const Icon(
                     Icons.remove_circle,
