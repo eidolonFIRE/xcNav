@@ -81,6 +81,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   BarometerValue? baroAmbient;
   bool baroAmbientRequested = false;
   int baroAmbientRequestCount = 0;
+  bool baroFromWeatherkit = false;
 
   /// Ambient Temp in F, according to weatherkit
   double? ambientTemperature;
@@ -364,22 +365,26 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void fetchAmbPressure() {
-    http.get(
-        Uri.parse(
-            "https://weatherkit.apple.com/api/v1/weather/en_US/${geo.lat.toStringAsFixed(5)}/${geo.lng.toStringAsFixed(5)}?dataSets=currentWeather"),
-        headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
-      if (response.statusCode != 200) {
-        baroAmbientRequestCount++;
-        debugPrint(
-            "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}");
-      } else {
-        final payload = jsonDecode(response.body);
-        baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);
-        ambientTemperature = payload["currentWeather"]["temperature"] * 9 / 5 + 32;
-        debugPrint("Ambient pressure found: ${baroAmbient?.hectpascal} ( ${ambientTemperature}F )");
-      }
-      baroAmbientRequested = false;
-    });
+    if (!baroAmbientRequested) {
+      baroAmbientRequested = true;
+      http.get(
+          Uri.parse(
+              "https://weatherkit.apple.com/api/v1/weather/en_US/${geo.lat.toStringAsFixed(5)}/${geo.lng.toStringAsFixed(5)}?dataSets=currentWeather"),
+          headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
+        if (response.statusCode != 200) {
+          baroAmbientRequestCount++;
+          debugPrint(
+              "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}");
+        } else {
+          final payload = jsonDecode(response.body);
+          baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);
+          ambientTemperature = payload["currentWeather"]["temperature"] * 9 / 5 + 32;
+          debugPrint("Ambient pressure found: ${baroAmbient?.hectpascal} ( ${ambientTemperature}F )");
+          baroFromWeatherkit = true;
+        }
+        baroAmbientRequested = false;
+      });
+    }
   }
 
   void updateGeo(Position position, {bool bypassRecording = false}) async {
@@ -398,8 +403,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     recordGeo.add(geo);
 
     // fetch ambient baro from weather service
-    if (baroAmbient == null && !baroAmbientRequested && baroAmbientRequestCount < 10) {
-      baroAmbientRequested = true;
+    if (baroAmbient == null && baroAmbientRequestCount < 10) {
       try {
         fetchAmbPressure();
       } catch (e) {
