@@ -177,7 +177,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                         setState(() {
                           myTelemetry.baroFromWeatherkit = false;
                           myTelemetry.baroAmbient =
-                              BarometerValue((myTelemetry.baroAmbient?.hectpascal ?? 1013.25) + 0.25);
+                              BarometerValue((myTelemetry.baroAmbient?.hectpascal ?? 1013.25) - 0.25);
                         })
                       },
                   icon: const Icon(
