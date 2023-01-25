@@ -116,6 +116,7 @@ class Settings with ChangeNotifier {
   bool _showPilotNames = false;
   bool _northlockMap = false;
   bool _northlockWind = false;
+  bool _showWeatherOverlay = true;
   bool _showAirspaceOverlay = true;
 
   // --- Units
@@ -239,6 +240,7 @@ class Settings with ChangeNotifier {
           speed: displayUnitsSpeed, vario: _displayUnitsVario, dist: _displayUnitsDist, fuel: _displayUnitsFuel);
 
       // --- UI
+      _showWeatherOverlay = prefs.getBool("settings.showWeatherOverlay") ?? true;
       _showAirspaceOverlay = prefs.getBool("settings.showAirspaceOverlay") ?? true;
       _northlockMap = prefs.getBool("settings.northlockMap") ?? true;
       _northlockWind = prefs.getBool("settings.northlockWind") ?? true;
@@ -281,6 +283,15 @@ class Settings with ChangeNotifier {
     _northlockWind = value;
     SharedPreferences.getInstance().then((prefs) {
       prefs.setBool("settings.northlockWind", _northlockWind);
+    });
+    notifyListeners();
+  }
+
+  bool get showWeatherOverlay => _showWeatherOverlay;
+  set showWeatherOverlay(bool value) {
+    _showWeatherOverlay = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.showWeatherOverlay", _showWeatherOverlay);
     });
     notifyListeners();
   }

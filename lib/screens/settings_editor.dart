@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:email_validator/email_validator.dart';
+import 'package:xcnav/endpoint.dart';
 
 // Providers
 import 'package:xcnav/providers/profile.dart';
@@ -127,6 +128,13 @@ class _SettingsEditorState extends State<SettingsEditor> {
                             DropdownMenuItem(value: "AGL", child: Text("AGL")),
                             DropdownMenuItem(value: "MSL", child: Text("MSL")),
                           ])),
+                  if (localeZone == "NA")
+                    SettingsTile.switchTile(
+                      title: const Text("Hide Weather Overlay"),
+                      leading: const Icon(Icons.cloud),
+                      onToggle: (value) => {settings.showWeatherOverlay = !value},
+                      initialValue: !settings.showWeatherOverlay,
+                    ),
                   SettingsTile.switchTile(
                     title: const Text("Hide Airspace Overlay"),
                     leading: SvgPicture.asset(

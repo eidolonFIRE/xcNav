@@ -277,7 +277,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         settings.getMapTileLayer("airports"),
 
                       // https://nowcoast.noaa.gov/help/#!section=map-service-list
-                      if (localeZone == "NA")
+                      if (localeZone == "NA" && settings.showWeatherOverlay)
                         TileLayer(
                           backgroundColor: Colors.transparent,
                           wmsOptions: WMSTileLayerOptions(

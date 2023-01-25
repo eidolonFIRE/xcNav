@@ -70,7 +70,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   // in-flight hysterisis
   int triggerHyst = 0;
-  bool inFlight = false;
+  bool _inFlight = false;
   StreamController<FlightEvent> flightEvent = StreamController<FlightEvent>();
   StreamSubscription? _flightEventListener;
 
@@ -353,15 +353,57 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   //   lastSavedFuelLevel = fuel;
   // }
 
+  bool get inFlight => _inFlight;
+
+  void startFlight() {
+    debugPrint("Flight started");
+    _inFlight = true;
+
+    // scan backwards to find sample 30 seconds back
+    int launchIndex = recordGeo.length - 1;
+    while (launchIndex > 0 &&
+        recordGeo[launchIndex].time >
+            DateTime.now().millisecondsSinceEpoch - const Duration(seconds: 30).inMilliseconds) {
+      launchIndex--;
+    }
+
+    launchGeo = recordGeo[launchIndex];
+
+    takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
+    debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
+
+    flightEvent.add(FlightEvent(
+        type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
+
+    // clear the log
+    recordGeo.removeRange(0, launchIndex);
+
+    notifyListeners();
+  }
+
+  void stopFlight({bypassRecording = false}) {
+    _inFlight = false;
+    debugPrint("Flight Ended");
+    flightEvent.add(FlightEvent(
+        type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
+    // Save current flight to log
+    if (!bypassRecording) {
+      saveFlight();
+    }
+
+    notifyListeners();
+  }
+
   Future saveFlight() async {
-    lastSavedLog = DateTime.now();
-    Directory tempDir = await getApplicationDocumentsDirectory();
-    File logFile = File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
-    debugPrint("Writing ${logFile.uri} with ${recordGeo.length} samples");
-    // TODO: save out the current flight plan as well!
-    await logFile
-        .create(recursive: true)
-        .then((value) => logFile.writeAsString(jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
+    if (recordGeo.length > 10) {
+      lastSavedLog = DateTime.now();
+      Directory tempDir = await getApplicationDocumentsDirectory();
+      File logFile = File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
+      debugPrint("Writing ${logFile.uri} with ${recordGeo.length} samples");
+      await logFile
+          .create(recursive: true)
+          .then((value) => logFile.writeAsString(jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
+    }
   }
 
   void fetchAmbPressure() {
@@ -421,14 +463,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
       if (triggerHyst > 60000) {
         // Landed!
-        inFlight = false;
-        debugPrint("Flight Ended");
-        flightEvent.add(FlightEvent(
-            type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
-        // Save current flight to log
-        if (!bypassRecording) {
-          saveFlight();
-        }
+        stopFlight(bypassRecording: bypassRecording);
       }
     } else {
       // Is moving a normal speed and above the ground?
@@ -439,25 +474,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
       if (triggerHyst > 30000) {
         // Launched!
-        inFlight = true;
-        // scan backwards to find sample 30 seconds back
-        int launchIndex = recordGeo.length - 1;
-        while (launchIndex > 0 &&
-            recordGeo[launchIndex].time >
-                DateTime.now().millisecondsSinceEpoch - const Duration(seconds: 30).inMilliseconds) {
-          launchIndex--;
-        }
-
-        launchGeo = recordGeo[launchIndex];
-
-        takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
-        debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
-
-        flightEvent.add(FlightEvent(
-            type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
-
-        // clear the log
-        recordGeo.removeRange(0, launchIndex);
+        startFlight();
       }
     }
 

@@ -109,29 +109,46 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
         children: [
           // --- Flight Timer
           ListTile(
-            leading: const Icon(Icons.timer_outlined),
-            title: myTelemetry.takeOff != null
-                ? Builder(builder: (context) {
-                    int remMin =
-                        ((DateTime.now().millisecondsSinceEpoch - myTelemetry.takeOff!.millisecondsSinceEpoch) / 60000)
-                            .ceil();
-                    String value = (remMin >= 60) ? (remMin / 60).toStringAsFixed(1) : remMin.toString();
-                    String unit = (remMin >= 60) ? " hr" : " min";
-                    return Text.rich(TextSpan(children: [
-                      const TextSpan(text: "Launched   ", style: TextStyle(color: Colors.grey)),
-                      TextSpan(
-                          text: DateFormat("h:mm a").format(myTelemetry.takeOff!),
-                          style: Theme.of(context).textTheme.headline5),
-                      const TextSpan(text: " ,    ", style: TextStyle(color: Colors.grey)),
-                      TextSpan(text: value, style: Theme.of(context).textTheme.headline5),
-                      TextSpan(text: unit, style: Theme.of(context).textTheme.headline6),
-                      const TextSpan(text: "  ago.", style: TextStyle(color: Colors.grey)),
-                    ]));
-                  })
+            leading: const Icon(
+              Icons.timer_outlined,
+              size: 24,
+            ),
+            title: (myTelemetry.takeOff != null && myTelemetry.inFlight)
+                ? Text.rich(
+                    TextSpan(children: [
+                      richHrMin(
+                          duration: DateTime.now().difference(myTelemetry.takeOff!),
+                          valueStyle: const TextStyle(fontSize: 30),
+                          unitStyle: const TextStyle(fontSize: 20, color: Colors.grey),
+                          longUnits: true)
+                    ]),
+                    textAlign: TextAlign.center,
+                  )
                 : const Text(
-                    "Flight timer stopped.",
+                    "Flight Timer Stopped",
                     style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                    textAlign: TextAlign.center,
                   ),
+            trailing: IconButton(
+              icon: myTelemetry.inFlight
+                  ? const Icon(Icons.stop, color: Colors.red)
+                  : const Icon(
+                      Icons.play_arrow,
+                      color: Colors.lightGreen,
+                    ),
+              onPressed: (() {
+                if (myTelemetry.inFlight) {
+                  myTelemetry.stopFlight();
+                } else {
+                  myTelemetry.startFlight();
+                }
+              }),
+            ),
+          ),
+
+          Divider(
+            height: 0,
+            color: Colors.grey.shade900,
           ),
 
           // --- Barometer control
@@ -157,7 +174,9 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 style:
                     TextStyle(fontSize: 20, color: myTelemetry.baroFromWeatherkit ? Colors.lightGreen : Colors.white),
               ),
-              const VerticalDivider(),
+              VerticalDivider(
+                color: Colors.grey.shade900,
+              ),
               IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: () => {
@@ -187,28 +206,33 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
             ]),
           ),
 
-          if (!myTelemetry.inFlight && myTelemetry.baroAmbient != null && myTelemetry.ambientTemperature != null)
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(
-                "Density Altitude:",
-                style: Theme.of(context).textTheme.headline6,
-              ),
-              const SizedBox(
-                width: 20,
-              ),
-              Text.rich(richValue(
-                  UnitType.distFine,
-                  densityAlt(myTelemetry.baroAmbient!, myTelemetry.ambientTemperature!) +
-                      (myTelemetry.geo.ground ?? myTelemetry.geo.alt),
-                  digits: 6,
-                  decimals: -2,
-                  valueStyle: Theme.of(context).textTheme.headline4,
-                  unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)))
-            ]),
-
-          Container(
-            height: 40,
+          Divider(
+            height: 0,
+            color: Colors.grey.shade900,
           ),
+
+          // --- Density Altitude
+          if (!myTelemetry.inFlight && myTelemetry.baroAmbient != null && myTelemetry.ambientTemperature != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(
+                  "Density Altitude:",
+                  style: Theme.of(context).textTheme.headline6,
+                ),
+                const SizedBox(
+                  width: 20,
+                ),
+                Text.rich(richValue(
+                    UnitType.distFine,
+                    densityAlt(myTelemetry.baroAmbient!, myTelemetry.ambientTemperature!) +
+                        (myTelemetry.geo.ground ?? myTelemetry.geo.alt),
+                    digits: 6,
+                    decimals: -2,
+                    valueStyle: Theme.of(context).textTheme.headline4,
+                    unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)))
+              ]),
+            ),
 
           // --- Elevation Plot
           if (myTelemetry.recordGeo.length > 1)
