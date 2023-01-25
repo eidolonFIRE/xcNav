@@ -104,7 +104,6 @@ class XCNav extends StatelessWidget {
     configLocalNotification();
 
     ttsService = TtsService();
-    ttsService.init();
 
     Provider.of<MyTelemetry>(context, listen: false).globalContext = context;
 

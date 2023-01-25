@@ -31,7 +31,7 @@ late TtsService ttsService;
 
 /// Singleton for queueing up messages to speak to users
 class TtsService {
-  late final FlutterTts instance;
+  FlutterTts? instance;
   TtsState _state = TtsState.stopped;
   int currentPriority = 10;
 
@@ -45,10 +45,27 @@ class TtsService {
     }
   }
 
-  void init() {
+  Future init() async {
     instance = FlutterTts();
 
-    instance.awaitSpeakCompletion(true);
+    if (Platform.isIOS) {
+      await instance!.setSharedInstance(true);
+      await instance!.setIosAudioCategory(
+          IosTextToSpeechAudioCategory.playback,
+          [
+            // IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+            // IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+            // IosTextToSpeechAudioCategoryOptions.allowAirPlay,
+            IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+            IosTextToSpeechAudioCategoryOptions.duckOthers,
+            // IosTextToSpeechAudioCategoryOptions.interruptSpokenAudioAndMixWithOthers
+          ],
+          IosTextToSpeechAudioMode.spokenAudio);
+    }
+
+    // instance.getDefaultEngine.then((value) => instance.setEngine(value));
+    // instance.getEngines.then((value) => debugPrint("Engines: $value"));
+    await instance!.awaitSpeakCompletion(true);
     // instance.setStartHandler(() {
     //   _state = TtsState.playing;
     // });
@@ -56,51 +73,45 @@ class TtsService {
     // Any time the messages stop, try playing the next one.
     // instance.setCompletionHandler(waitAndTryNext);
     // instance.setCancelHandler(waitAndTryNext);
-    instance.setErrorHandler((_) => _waitAndTryNext());
-
-    if (Platform.isIOS) {
-      instance.setSharedInstance(true);
-
-      instance.setIosAudioCategory(
-          IosTextToSpeechAudioCategory.playback,
-          [
-            IosTextToSpeechAudioCategoryOptions.allowBluetooth,
-            IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
-            IosTextToSpeechAudioCategoryOptions.mixWithOthers,
-            IosTextToSpeechAudioCategoryOptions.duckOthers
-          ],
-          IosTextToSpeechAudioMode.spokenAudio);
-    }
+    instance!.setErrorHandler((_) => _waitAndTryNext());
   }
 
   void speakNextInQueue() {
     // _state = TtsState.playing;
     // debugPrint("Speak next in queue");
-    if (msgQueue.isNotEmpty) {
-      final msg = msgQueue.removeFirst();
 
-      if (msg.expires == null || msg.expires!.isAfter(DateTime.now())) {
-        instance.setVolume(msg.volume ?? 1.0);
-        debugPrint("Speak: \"${msg.text}\"");
-        _state = TtsState.playing;
-        currentPriority = msg.priority;
-        instance.speak(msg.text).then((_) => _waitAndTryNext());
+    if (instance != null) {
+      if (msgQueue.isNotEmpty) {
+        final msg = msgQueue.removeFirst();
+
+        if (msg.expires == null || msg.expires!.isAfter(DateTime.now())) {
+          instance!.setVolume(msg.volume ?? 1.0);
+          debugPrint("Speak: \"${msg.text}\"");
+          _state = TtsState.playing;
+          currentPriority = msg.priority;
+          instance!.speak(msg.text).then((_) => _waitAndTryNext());
+        } else {
+          // Msg was expired, try again
+          speakNextInQueue();
+        }
       } else {
-        // Msg was expired, try again
-        speakNextInQueue();
+        // debugPrint("Speak queue is empty");
+        _state = TtsState.stopped;
       }
-    } else {
-      // debugPrint("Speak queue is empty");
-      _state = TtsState.stopped;
     }
   }
 
   /// Queue up a message to be spoken
-  void speak(AudioMessage msg) {
+  void speak(AudioMessage msg) async {
+    if (instance == null) {
+      debugPrint("Initializing TTS engine...");
+      await init();
+    }
+
     if (msg.priority == 0) {
       msgQueue.addFirst(msg);
       if (currentPriority != 0) {
-        instance.stop().then((value) => speakNextInQueue());
+        instance!.stop().then((value) => speakNextInQueue());
       }
     } else {
       // insertion
