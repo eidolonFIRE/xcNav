@@ -128,6 +128,7 @@ class Sounding {
   SoundingSample sampleBaro(double baroAlt) {
     // debugPrint("Searching for baro: $baroAlt");
     if (baroAlt < data.first.baroAlt) return data.first;
+    if (baroAlt > data.last.baroAlt) return data.last;
 
     final index = min(data.length - 2,
         bisect<double>(data.map((e) => e.baroAlt).toList(), baroAlt, compare: (a, b) => (a - b).toInt()) - 1);

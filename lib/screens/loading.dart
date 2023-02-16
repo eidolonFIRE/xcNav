@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:xcnav/dialogs/request_location_always.dart';
 import 'package:xcnav/endpoint.dart';
 
 // providers
@@ -101,22 +102,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     if (whenInUse.isPermanentlyDenied) {
       debugPrint("Location was fully denied!");
       failedPerms = true;
-      showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-                content: Text(Platform.isIOS
-                    ? "Please set location permission to \"always\""
-                    : "Please enable location permission"),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.check, color: Colors.lightGreen),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      openAppSettings();
-                    },
-                  )
-                ],
-              ));
+      showDialog(context: context, builder: (context) => const RequestLocationAlways());
       return;
     } else if (whenInUse.isDenied) {
       debugPrint("Location whenInUse was not granted!");
@@ -133,22 +119,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       if (locAlways.isPermanentlyDenied) {
         debugPrint("Location was fully denied!");
         failedPerms = true;
-        showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-                  content: Text(Platform.isIOS
-                      ? "Please set location permission to \"always\""
-                      : "Please enable location permission"),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.check, color: Colors.lightGreen),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        openAppSettings();
-                      },
-                    )
-                  ],
-                ));
+        showDialog(context: context, builder: (context) => const RequestLocationAlways());
         return;
       } else if (!locAlways.isGranted) {
         debugPrint("Location-always was not granted!");
