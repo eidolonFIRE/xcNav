@@ -90,6 +90,28 @@ class _SettingsEditorState extends State<SettingsEditor> {
                   leading: const Icon(Icons.trending_up),
                 ),
               ]),
+
+              // --- General Options
+              SettingsSection(
+                title: const Text("General"),
+                tiles: [
+                  SettingsTile.switchTile(
+                    initialValue: settings.autoStartStopFlight,
+                    onToggle: (value) => settings.autoStartStopFlight = value,
+                    title: const Text("Auto Start/Stop Flight"),
+                    leading: const Icon(Icons.play_arrow),
+                  ),
+                  SettingsTile.switchTile(
+                    initialValue: settings.groundMode,
+                    onToggle: (value) => settings.groundMode = value,
+                    title: const Text("Ground Support Mode"),
+                    leading: const Icon(Icons.directions_car),
+                    // description:
+                    //     const Text("Alters UI and doesn't record track."),
+                  ),
+                ],
+              ),
+
               // --- UI options
               SettingsSection(
                 title: const Text("UI Options"),
@@ -109,14 +131,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     leading: const Icon(Icons.abc),
                     // description: const Text(
                     //     "Move map control buttons to the right side."),
-                  ),
-                  SettingsTile.switchTile(
-                    initialValue: settings.groundMode,
-                    onToggle: (value) => settings.groundMode = value,
-                    title: const Text("Ground Support Mode"),
-                    leading: const Icon(Icons.directions_car),
-                    // description:
-                    //     const Text("Alters UI and doesn't record track."),
                   ),
                   SettingsTile.navigation(
                       title: const Text("Primary Altimeter"),

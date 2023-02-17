@@ -107,52 +107,9 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
       return Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // --- Flight Timer
-          ListTile(
-            leading: const Icon(
-              Icons.timer_outlined,
-              size: 24,
-            ),
-            title: (myTelemetry.takeOff != null && myTelemetry.inFlight)
-                ? Text.rich(
-                    TextSpan(children: [
-                      richHrMin(
-                          duration: DateTime.now().difference(myTelemetry.takeOff!),
-                          valueStyle: const TextStyle(fontSize: 30),
-                          unitStyle: const TextStyle(fontSize: 20, color: Colors.grey),
-                          longUnits: true)
-                    ]),
-                    textAlign: TextAlign.center,
-                  )
-                : const Text(
-                    "Flight Timer Stopped",
-                    style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-            trailing: IconButton(
-              icon: myTelemetry.inFlight
-                  ? const Icon(Icons.stop, color: Colors.red)
-                  : const Icon(
-                      Icons.play_arrow,
-                      color: Colors.lightGreen,
-                    ),
-              onPressed: (() {
-                if (myTelemetry.inFlight) {
-                  myTelemetry.stopFlight();
-                } else {
-                  myTelemetry.startFlight();
-                }
-              }),
-            ),
-          ),
-
-          Divider(
-            height: 0,
-            color: Colors.grey.shade900,
-          ),
-
           // --- Barometer control
           ListTile(
+            minVerticalPadding: 20,
             visualDensity: VisualDensity.compact,
             // leading: const Icon(Icons.thermostat),
             title: const Text("Ambient Pressure"),
@@ -188,7 +145,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                       },
                   icon: const Icon(
                     Icons.add_circle,
-                    size: 18,
+                    size: 20,
                   )),
               IconButton(
                   visualDensity: VisualDensity.compact,
@@ -201,7 +158,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                       },
                   icon: const Icon(
                     Icons.remove_circle,
-                    size: 18,
+                    size: 20,
                   )),
             ]),
           ),

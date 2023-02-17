@@ -7,7 +7,9 @@ import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
 import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/patreon.dart';
 import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 
 class MainMenu extends StatefulWidget {
@@ -75,6 +77,48 @@ class _MainMenuState extends State<MainMenu> {
                   Positioned(top: 10, right: 10, child: tierBadge(Provider.of<Profile>(context, listen: false).tier)),
               ])),
         ),
+
+        // --- Flight Timer
+        Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
+          return ListTile(
+            leading: const Icon(
+              Icons.timer_outlined,
+              size: 30,
+            ),
+            title: (myTelemetry.takeOff != null && myTelemetry.inFlight)
+                ? Text.rich(
+                    TextSpan(children: [
+                      richHrMin(
+                          duration: DateTime.now().difference(myTelemetry.takeOff!),
+                          valueStyle: Theme.of(context).textTheme.headline5,
+                          unitStyle: Theme.of(context).textTheme.headline6?.copyWith(color: Colors.grey),
+                          longUnits: true)
+                    ]),
+                    textAlign: TextAlign.center,
+                  )
+                : const Text(
+                    "Flight Timer Stopped",
+                    style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+            trailing: IconButton(
+              iconSize: 30,
+              icon: myTelemetry.inFlight
+                  ? const Icon(Icons.stop_circle, color: Colors.red)
+                  : const Icon(
+                      Icons.play_circle,
+                      color: Colors.lightGreen,
+                    ),
+              onPressed: (() {
+                if (myTelemetry.inFlight) {
+                  myTelemetry.stopFlight();
+                } else {
+                  myTelemetry.startFlight();
+                }
+              }),
+            ),
+          );
+        }),
 
         // --- ADSB
         ListTile(

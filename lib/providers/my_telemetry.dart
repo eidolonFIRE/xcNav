@@ -454,27 +454,29 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     // --- In-Flight detector
-    if (inFlight) {
-      // Is moving slowly near the ground?
-      if (geo.spdSmooth < 3.0 && geo.varioSmooth.abs() < 1.0 && geo.alt - (geo.ground ?? geo.alt) < 30) {
-        triggerHyst += geo.time - geoPrev.time;
+    if (globalContext != null && Provider.of<Settings>(globalContext!, listen: false).autoStartStopFlight) {
+      if (inFlight) {
+        // Is moving slowly near the ground?
+        if (geo.spdSmooth < 3.0 && geo.varioSmooth.abs() < 1.0 && geo.alt - (geo.ground ?? geo.alt) < 30) {
+          triggerHyst += geo.time - geoPrev.time;
+        } else {
+          triggerHyst = 0;
+        }
+        if (triggerHyst > 60000) {
+          // Landed!
+          stopFlight(bypassRecording: bypassRecording);
+        }
       } else {
-        triggerHyst = 0;
-      }
-      if (triggerHyst > 60000) {
-        // Landed!
-        stopFlight(bypassRecording: bypassRecording);
-      }
-    } else {
-      // Is moving a normal speed and above the ground?
-      if (4.0 < geo.spd && geo.spd < 25 && geo.alt - (geo.ground ?? 0) > 30) {
-        triggerHyst += geo.time - geoPrev.time;
-      } else {
-        triggerHyst = 0;
-      }
-      if (triggerHyst > 30000) {
-        // Launched!
-        startFlight();
+        // Is moving a normal speed and above the ground?
+        if (4.0 < geo.spd && geo.spd < 25 && geo.alt - (geo.ground ?? 0) > 30) {
+          triggerHyst += geo.time - geoPrev.time;
+        } else {
+          triggerHyst = 0;
+        }
+        if (triggerHyst > 30000) {
+          // Launched!
+          startFlight();
+        }
       }
     }
 

@@ -13,13 +13,6 @@ import 'package:xcnav/secrets.dart';
 import 'package:xcnav/units.dart';
 
 class Settings with ChangeNotifier {
-  // --- Modes
-  bool _groundMode = false;
-  bool _groundModeTelemetry = false;
-
-  // --- Debug Tools
-  bool _spoofLocation = false;
-
   // --- Map TileProviders
   String _curMapTiles = "topo";
   final Map<String, double> _mapOpacity = {
@@ -111,6 +104,13 @@ class Settings with ChangeNotifier {
     )
   };
 
+  // --- Modes
+  bool _groundMode = false;
+  bool _groundModeTelemetry = false;
+
+  // --- Debug Tools
+  bool _spoofLocation = false;
+
   // --- UI
   bool _mapControlsRightSide = false;
   bool _showPilotNames = false;
@@ -141,6 +141,7 @@ class Settings with ChangeNotifier {
   String _patreonEmail = "";
 
   // --- Misc
+  bool _autoStartStopFlight = true;
   bool _chatTts = false;
   String _altInstr = "MSL";
 
@@ -263,6 +264,7 @@ class Settings with ChangeNotifier {
       _patreonEmail = prefs.getString("settings.patreonEmail") ?? "";
 
       // --- Misc
+      _autoStartStopFlight = prefs.getBool("settings.autoStartStopFlight") ?? true;
       _chatTts = prefs.getBool("settings.chatTts") ?? false;
       _altInstr = prefs.getString("settings.altInstr") ?? "MSL";
     });
@@ -438,6 +440,15 @@ class Settings with ChangeNotifier {
   }
 
   // --- Misc
+  bool get autoStartStopFlight => _autoStartStopFlight;
+  set autoStartStopFlight(bool value) {
+    _autoStartStopFlight = value;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool("settings.autoStartStopFlight", _autoStartStopFlight);
+    });
+    notifyListeners();
+  }
+
   bool get chatTts => _chatTts;
   set chatTts(bool value) {
     _chatTts = value;
