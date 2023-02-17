@@ -43,6 +43,7 @@ void showWindDialog(BuildContext context) {
                         const Icon(
                           Icons.flight,
                           size: 35,
+                          color: Colors.red,
                         ),
                         Text.rich(wind.result != null
                             ? richValue(UnitType.speed, wind.result!.airspeed,
@@ -53,10 +54,7 @@ void showWindDialog(BuildContext context) {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        const Icon(
-                          Icons.air,
-                          size: 35,
-                        ),
+                        const Icon(Icons.air, size: 35, color: Colors.blue),
                         Text.rich(
                           wind.result != null
                               ? richValue(UnitType.speed, wind.result!.windSpd,
@@ -86,7 +84,7 @@ void showWindDialog(BuildContext context) {
                                 children: const [
                                   Padding(
                                     padding: EdgeInsets.all(10.0),
-                                    child: Text("Slowly Turn 1/4 Circle", style: TextStyle(fontSize: 18)),
+                                    child: Text("Slowly Turn ¼ Circle", style: TextStyle(fontSize: 18)),
                                   ),
                                   CircularProgressIndicator.adaptive(
                                     strokeWidth: 3,

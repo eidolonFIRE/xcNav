@@ -26,7 +26,7 @@ class Wind with ChangeNotifier {
   WindSolveResult? _result;
   WindSolveResult? get result => _result;
 
-  static const maxSampleAge = Duration(minutes: 3);
+  static const maxSampleAge = Duration(minutes: 15);
 
   static double remainingHeadway(double theta, double mySpd, double wSpd) =>
       sqrt(pow(mySpd, 2) - pow(wSpd * sin(theta), 2)) - cos(theta) * wSpd;
@@ -47,10 +47,10 @@ class Wind with ChangeNotifier {
 
     if (samples.length > 4) {
       // Check sampled field-of-view is sufficient for confidence
-      var prev = samples.first.hdg;
-      var left = prev;
-      var right = prev;
-      for (var each in samples) {
+      double prev = samples.first.hdg;
+      double left = prev;
+      double right = prev;
+      for (Vector each in samples) {
         final cur = prev + deltaHdg(each.hdg, prev);
 
         left = min(left, cur);
@@ -60,7 +60,7 @@ class Wind with ChangeNotifier {
       final fov = right - left;
       // debugPrint("FOV: $fov  (${samples.length} samples)");
 
-      if ((samples.length >= 14 && fov > pi / 4) || fov > pi / 2) solve(samples);
+      if (fov > pi / 2) solve(samples);
     } else {
       _result = null;
       notifyListeners();

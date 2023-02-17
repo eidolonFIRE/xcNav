@@ -9,7 +9,8 @@ import 'package:flutter/services.dart';
 ui.Image? _arrow;
 
 class WindPlotPainter extends CustomPainter {
-  late final Paint _paint;
+  late final Paint _paintSample;
+  late final Paint _paintSampleTail;
   final List<double> dataX;
   final List<double> dataY;
   final double maxValue;
@@ -26,8 +27,11 @@ class WindPlotPainter extends CustomPainter {
 
   WindPlotPainter(
       double width, this.dataX, this.dataY, this.maxValue, this.circleCenter, this.circleRadius, this.northlock) {
-    _paint = Paint()..color = Colors.red;
-    _paint.style = PaintingStyle.fill;
+    _paintSample = Paint()
+      ..color = Colors.red
+      ..style = PaintingStyle.fill;
+
+    _paintSampleTail = Paint()..strokeWidth = 3;
 
     _paintGrid = Paint()
       ..color = Colors.grey.shade600
@@ -87,8 +91,24 @@ class WindPlotPainter extends CustomPainter {
     canvas.drawCircle(cCenter, circleRadius * maxSize / maxValue, circlePaint);
 
     // Paint samples
+    _paintSampleTail.shader = ui.Gradient.radial(center, size.width / 2, [
+      Colors.red.withAlpha(0),
+      Colors.red.withAlpha(5),
+      Colors.red.withAlpha(20),
+      Colors.red.withAlpha(50),
+      Colors.red.withAlpha(255),
+    ], [
+      0,
+      0.25,
+      0.5,
+      0.75,
+      1
+    ]);
     for (int i = 0; i < dataX.length; i++) {
-      canvas.drawCircle(Offset(dataX[i], dataY[i]) * maxSize / maxValue + center, 3, _paint);
+      final pointOffset = Offset(dataX[i], dataY[i]) * maxSize / maxValue + center;
+      canvas.drawCircle(pointOffset, 2, _paintSample);
+      // canvas.drawLine(pointOffset * 0.5 + center * 0.5, pointOffset, _paintSampleTail);
+      canvas.drawLine(center, pointOffset, _paintSampleTail);
     }
 
     // Wind barb
@@ -116,7 +136,7 @@ class WindPlotPainter extends CustomPainter {
 
     final lastPoint = Offset(dataX.last, dataY.last);
     final lastPointScaled = lastPoint * maxSize / maxValue + center;
-    canvas.drawLine(center, lastPointScaled, _mePaint);
+    // canvas.drawLine(center, lastPointScaled, _mePaint);
     if (_arrow != null) {
       canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
       canvas.rotate(lastPoint.direction + pi / 2);
