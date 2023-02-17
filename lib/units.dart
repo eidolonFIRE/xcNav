@@ -240,7 +240,7 @@ String printDouble({required double value, required int digits, required int dec
 }
 
 String printDoubleLexical(
-    {required double value, double halfThreshold = 10, double quarterThreshold = 2, double eighthThreshold = 1}) {
+    {required double value, double halfThreshold = 10, double quarterThreshold = 2, double eighthThreshold = 0.5}) {
   if (!value.isFinite) return "";
 
   if (value < eighthThreshold) {
