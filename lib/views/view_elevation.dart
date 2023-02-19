@@ -205,18 +205,23 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                           final oldestTimestamp = lookBehind != null
                               ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.geo.time).subtract(lookBehind!)
                               : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time);
-                          return CustomPaint(
-                            painter: ElevationPlotPainter(
-                                myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30)),
-                                groundSamples.data ?? [],
-                                Provider.of<Settings>(context, listen: false).displayUnitsDist ==
-                                        DisplayUnitsDist.metric
-                                    ? 100
-                                    : 152.4,
-                                distScale,
-                                waypoint: activePlan.getSelectedWp(),
-                                waypointETA: waypointETA),
-                          );
+
+                          if (groundSamples.connectionState == ConnectionState.done) {
+                            return CustomPaint(
+                              painter: ElevationPlotPainter(
+                                  myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30)),
+                                  groundSamples.data ?? [],
+                                  Provider.of<Settings>(context, listen: false).displayUnitsDist ==
+                                          DisplayUnitsDist.metric
+                                      ? 100
+                                      : 152.4,
+                                  distScale,
+                                  waypoint: activePlan.getSelectedWp(),
+                                  waypointETA: waypointETA),
+                            );
+                          } else {
+                            return Center(child: SizedBox(width: 60, height: 60, child: CircularProgressIndicator()));
+                          }
                         })),
               ),
             ),

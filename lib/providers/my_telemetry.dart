@@ -548,9 +548,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (interval == null) {
       return recordGeo.sublist(bisectIndex);
     } else {
-      final int desiredCardinality =
+      final int desiredCardinality = max(
+          1,
           ((recordGeo.last.time - max(recordGeo.first.time, oldest.millisecondsSinceEpoch)) / interval.inMilliseconds)
-              .ceil();
+              .ceil());
       final startingCard = recordGeo.length - bisectIndex;
       // debugPrint("recordGeo sample ratio: 1:${(startingCard / desiredCardinality).round()} (desired $desiredCardinality)");
       List<Geo> retval = [];
