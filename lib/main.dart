@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -130,6 +132,10 @@ class XCNav extends StatelessWidget {
     return MaterialApp(
       title: 'xcNav',
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => MediaQuery(
+          // Limit how big system text modifier can be
+          data: MediaQuery.of(context).copyWith(textScaleFactor: min(1.5, MediaQuery.of(context).textScaleFactor)),
+          child: child!),
       darkTheme: ThemeData(
         fontFamily: "roboto-condensed",
         // appBarTheme: AppBarTheme(backgroundColor: primaryDarkColor),
