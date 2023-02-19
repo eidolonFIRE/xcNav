@@ -46,8 +46,6 @@ class FlightLogSummary extends StatelessWidget {
                             final String newpath = '${(await getTemporaryDirectory()).path}/$filename';
                             await File(outFile.path).copy(newpath);
                             result = await OpenFile.open(newpath);
-                          } else {
-                            OpenFile.open(outFile.path);
                           }
                         },
                         icon: const Icon(Icons.launch),
