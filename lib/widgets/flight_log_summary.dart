@@ -1,8 +1,8 @@
 import 'dart:io';
+import 'package:better_open_file/better_open_file.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:xcnav/models/flight_log.dart';
@@ -32,13 +32,27 @@ class FlightLogSummary extends StatelessWidget {
               context: context,
               builder: (context) => AlertDialog(
                     title: const Text("File Exported to:"),
-                    content: GestureDetector(
-                        onTap: () => OpenFilex.open(outFile.path),
-                        child: Text(
-                          outFile.path,
-                          style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
-                        )),
+                    content: Text(
+                      outFile.path,
+                    ),
                     actions: [
+                      IconButton(
+                        onPressed: () async {
+                          var result = await OpenFile.open(outFile.path);
+                          debugPrint(result.message);
+                          // NOTE: Workaround for "high risk" android permission missing
+                          if (result.message.toUpperCase().contains('MANAGE_EXTERNAL_STORAGE')) {
+                            final filename = outFile.path.split('/').last;
+                            final String newpath = '${(await getTemporaryDirectory()).path}/$filename';
+                            await File(outFile.path).copy(newpath);
+                            result = await OpenFile.open(newpath);
+                          } else {
+                            OpenFile.open(outFile.path);
+                          }
+                        },
+                        icon: const Icon(Icons.launch),
+                        color: Colors.blue,
+                      ),
                       IconButton(
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(

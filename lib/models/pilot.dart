@@ -10,7 +10,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image/image.dart' as img;
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
@@ -81,31 +80,6 @@ class Pilot {
     }
   }
 
-  void _updateColor(Uint8List bytes) {
-    img.Image? image = img.decodeJpg(bytes.toList());
-
-    if (image != null) {
-      // Update color from avatar
-      int redBucket = 0;
-      int greenBucket = 0;
-      int blueBucket = 0;
-      int pixelCount = 100;
-
-      for (int y = 0; y < image.height; y++) {
-        for (int x = 0; x < image.width; x++) {
-          int c = image.getPixel(x, y);
-
-          pixelCount++;
-          redBucket += img.getRed(c);
-          greenBucket += img.getGreen(c);
-          blueBucket += img.getBlue(c);
-        }
-      }
-
-      color = Color.fromRGBO(redBucket ~/ pixelCount, greenBucket ~/ pixelCount, blueBucket ~/ pixelCount, 1);
-    }
-  }
-
   void _loadAvatar() async {
     if (avatarHash != null && avatarHash != "") {
       // - Check if we have locally cached file matching pilot_id
@@ -121,7 +95,6 @@ class Pilot {
           // cache hit
           debugPrint("Loaded avatar $id.jpg from local cache");
           avatar = Image.memory(loadedBytes);
-          _updateColor(loadedBytes);
         } else {
           debugPrint("Tried to load avatar from file but hash didn't match.");
           _fetchAvatorFromS3();
@@ -145,7 +118,6 @@ class Pilot {
         if (value != null) {
           Uint8List bytes = base64Decode(value["avatar"]);
           avatar = Image.memory(bytes);
-          _updateColor(bytes);
 
           // save file to the temp file
           fileAvatar.create(recursive: true).then((value) {
