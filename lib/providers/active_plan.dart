@@ -68,7 +68,9 @@ class ActivePlan with ChangeNotifier {
     if (items != null) {
       for (String wpUnparsed in items) {
         final wp = Waypoint.fromJson(jsonDecode(wpUnparsed));
-        waypoints[wp.id] = wp;
+        if (wp.validate()) {
+          waypoints[wp.id] = wp;
+        }
       }
     }
   }
@@ -90,7 +92,9 @@ class ActivePlan with ChangeNotifier {
     // add back each waypoint
     for (dynamic each in planData.values) {
       final wp = Waypoint.fromJson(each);
-      waypoints[wp.id] = wp;
+      if (wp.validate()) {
+        waypoints[wp.id] = wp;
+      }
     }
     notifyListeners();
   }

@@ -186,10 +186,11 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                       autofocus: false,
                       focusNode: textFocusNode,
                       style: const TextStyle(fontSize: 20),
-                      textAlignVertical: TextAlignVertical.bottom,
                       controller: filterText,
                       decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)), hintText: "search"),
+                          contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                          hintText: "search"),
                       onChanged: (value) {
                         setState(() {
                           // (this will make the waypoint list re-sort)

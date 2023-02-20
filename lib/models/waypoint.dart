@@ -112,6 +112,18 @@ class Waypoint {
     }
   }
 
+  bool validate() {
+    for (final each in latlng) {
+      if (each.latitude.abs() > 90) {
+        return false;
+      }
+      if (each.longitude.abs() > 180) {
+        return false;
+      }
+    }
+    return latlng.isNotEmpty && name.isNotEmpty;
+  }
+
   WaypointID makeId() {
     return DateTime.now().millisecondsSinceEpoch.toRadixString(36) + hashCode.toRadixString(36);
   }

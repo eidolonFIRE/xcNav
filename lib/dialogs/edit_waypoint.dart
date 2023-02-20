@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
 // --- Models
 import 'package:xcnav/models/waypoint.dart';
@@ -15,6 +16,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
     {bool isPath = false, bool isNew = false}) {
   newWaypointName.value = TextEditingValue(text: waypoint.name);
   var formKey = GlobalKey<FormState>();
+  List<LatLng> tempLatlngs = waypoint.latlng.toList();
   return showDialog<Waypoint?>(
       context: context,
       builder: (context) {
@@ -136,14 +138,15 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                       child: LatLngEditor(
                         initialLatlngs: waypoint.latlng,
                         onLatLngs: (latlngs) {
-                          waypoint.latlng = latlngs;
+                          tempLatlngs = latlngs;
                         },
                       )),
                 ),
               ],
             ),
+            actionsAlignment: MainAxisAlignment.spaceAround,
             actions: [
-              TextButton.icon(
+              ElevatedButton.icon(
                   label: const Text("Cancel"),
                   onPressed: () => {Navigator.pop(context)},
                   icon: const Icon(
@@ -151,14 +154,14 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                     size: 20,
                     color: Colors.red,
                   )),
-              TextButton.icon(
+              ElevatedButton.icon(
                   label: Text(isNew ? "Add" : "Update"),
                   onPressed: () {
                     if ((formKey.currentState?.validate() ?? false) && (waypoint.latlng.isNotEmpty)) {
                       var newWaypoint = Waypoint(
                           newId: waypoint.id,
                           name: newWaypointName.text,
-                          latlngs: waypoint.latlng,
+                          latlngs: tempLatlngs,
                           icon: selectedIcon,
                           color: selectedColor.value);
 

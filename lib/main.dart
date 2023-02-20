@@ -154,16 +154,16 @@ class XCNav extends StatelessWidget {
               fontSize: 30,
               color: Colors.white,
             )),
+        dialogTheme: DialogTheme(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
             side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.black)),
-            backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.black38),
+            backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.black12),
             minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
             padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(12)),
-            // shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
-            //   return RoundedRectangleBorder(
-            //       borderRadius: BorderRadius.circular(20));
-            // }),
+            shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
+              return RoundedRectangleBorder(borderRadius: BorderRadius.circular(10));
+            }),
             textStyle: MaterialStateProperty.resolveWith<TextStyle>(
                 (states) => const TextStyle(color: Colors.white, fontSize: 22)),
           ),

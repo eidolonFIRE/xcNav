@@ -6,8 +6,8 @@ import 'package:xcnav/views/view_map.dart';
 import 'package:xcnav/widgets/latlng_editor.dart';
 
 void tapPointDialog(
-    BuildContext context, LatLng latlng, Function setFocusMode, void Function(Waypoint newWaypoint) onAddWaypoint) {
-  var latlngs = [latlng];
+    BuildContext context, LatLng tapPoint, Function setFocusMode, void Function(Waypoint newWaypoint) onAddWaypoint) {
+  LatLng? latlng = tapPoint;
   showDialog(
     context: context,
     builder: (context) {
@@ -15,22 +15,25 @@ void tapPointDialog(
         content:
             // --- latlng
             LatLngEditor(
-          initialLatlngs: latlngs,
+          initialLatlngs: [tapPoint],
           onLatLngs: ((newLatlngs) {
-            latlngs = newLatlngs;
+            latlng = newLatlngs.first;
           }),
         ),
+        actionsAlignment: MainAxisAlignment.spaceAround,
         actions: [
           // --- Add New Waypoint
           ElevatedButton.icon(
               label: const Text("Waypoint"),
               onPressed: () {
                 Navigator.pop(context);
-                editWaypoint(context, Waypoint(name: "", latlngs: latlngs), isNew: true)?.then((newWaypoint) {
-                  if (newWaypoint != null) {
-                    onAddWaypoint(newWaypoint);
-                  }
-                });
+                if (latlng != null) {
+                  editWaypoint(context, Waypoint(name: "", latlngs: [latlng!]), isNew: true)?.then((newWaypoint) {
+                    if (newWaypoint != null) {
+                      onAddWaypoint(newWaypoint);
+                    }
+                  });
+                }
               },
               icon: const ImageIcon(
                 AssetImage("assets/images/add_waypoint_pin.png"),
