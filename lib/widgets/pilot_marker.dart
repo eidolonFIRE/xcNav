@@ -70,6 +70,7 @@ class PilotMarker extends StatelessWidget {
       /// --- Show name
       if (pilot.avatar == null || settings.showPilotNames)
         Container(
+          width: 0,
           transform: Matrix4.translationValues(offsetInfo + 5, 18, 0),
           child: Text(
             pilot.name,
