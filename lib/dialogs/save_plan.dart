@@ -52,8 +52,9 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
           onEditingComplete: () => onDone(context),
         ),
       ),
+      actionsAlignment: MainAxisAlignment.spaceAround,
       actions: [
-        TextButton.icon(
+        ElevatedButton.icon(
             label: Text(isSavingFirst ? "No" : "Cancel"),
             onPressed: () => {Navigator.pop(context, false)},
             icon: const Icon(
@@ -61,7 +62,7 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
               size: 20,
               color: Colors.red,
             )),
-        TextButton.icon(
+        ElevatedButton.icon(
             label: const Text("Save"),
             onPressed: () => onDone(context),
             icon: const Icon(
