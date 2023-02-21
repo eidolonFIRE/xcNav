@@ -356,42 +356,46 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   bool get inFlight => _inFlight;
 
   void startFlight() {
-    debugPrint("Flight started");
-    _inFlight = true;
+    if (!_inFlight) {
+      debugPrint("Flight started");
+      _inFlight = true;
 
-    // scan backwards to find sample 30 seconds back
-    int launchIndex = recordGeo.length - 1;
-    while (launchIndex > 0 &&
-        recordGeo[launchIndex].time >
-            DateTime.now().millisecondsSinceEpoch - const Duration(seconds: 30).inMilliseconds) {
-      launchIndex--;
+      // scan backwards to find sample 30 seconds back
+      int launchIndex = recordGeo.length - 1;
+      while (launchIndex > 0 &&
+          recordGeo[launchIndex].time >
+              DateTime.now().millisecondsSinceEpoch - const Duration(seconds: 30).inMilliseconds) {
+        launchIndex--;
+      }
+
+      launchGeo = recordGeo[launchIndex];
+
+      takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
+      debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
+
+      flightEvent.add(FlightEvent(
+          type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
+
+      // clear the log
+      recordGeo.removeRange(0, launchIndex);
+
+      notifyListeners();
     }
-
-    launchGeo = recordGeo[launchIndex];
-
-    takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
-    debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
-
-    flightEvent.add(FlightEvent(
-        type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
-
-    // clear the log
-    recordGeo.removeRange(0, launchIndex);
-
-    notifyListeners();
   }
 
   void stopFlight({bypassRecording = false}) {
-    _inFlight = false;
-    debugPrint("Flight Ended");
-    flightEvent.add(FlightEvent(
-        type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
-    // Save current flight to log
-    if (!bypassRecording) {
-      saveFlight();
-    }
+    if (_inFlight) {
+      _inFlight = false;
+      debugPrint("Flight Ended");
+      flightEvent.add(FlightEvent(
+          type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
+      // Save current flight to log
+      if (!bypassRecording) {
+        saveFlight();
+      }
 
-    notifyListeners();
+      notifyListeners();
+    }
   }
 
   Future saveFlight() async {
@@ -400,9 +404,17 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       Directory tempDir = await getApplicationDocumentsDirectory();
       File logFile = File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
       debugPrint("Writing ${logFile.uri} with ${recordGeo.length} samples");
-      await logFile
-          .create(recursive: true)
-          .then((value) => logFile.writeAsString(jsonEncode({"samples": recordGeo.map((e) => e.toJson()).toList()})));
+      await logFile.create(recursive: true).then((value) => logFile.writeAsString(jsonEncode({
+            "samples": recordGeo.map((e) => e.toJson()).toList(),
+            "waypoints": globalContext != null
+                ? Provider.of<ActivePlan>(globalContext!, listen: false)
+                    .waypoints
+                    .values
+                    .where((element) => (!element.ephemeral && element.validate()))
+                    .map((e) => e.toJson())
+                    .toList()
+                : []
+          })));
     }
   }
 

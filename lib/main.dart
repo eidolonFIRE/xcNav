@@ -158,7 +158,7 @@ class XCNav extends StatelessWidget {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
             side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.black)),
-            backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.black12),
+            backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.grey.shade900),
             minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
             padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(12)),
             shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {

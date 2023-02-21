@@ -86,15 +86,18 @@ class _MainMenuState extends State<MainMenu> {
               size: 30,
             ),
             title: (myTelemetry.takeOff != null && myTelemetry.inFlight)
-                ? Text.rich(
-                    TextSpan(children: [
-                      richHrMin(
-                          duration: DateTime.now().difference(myTelemetry.takeOff!),
-                          valueStyle: Theme.of(context).textTheme.headline5,
-                          unitStyle: Theme.of(context).textTheme.headline6?.copyWith(color: Colors.grey),
-                          longUnits: true)
-                    ]),
-                    textAlign: TextAlign.center,
+                ? Card(
+                    color: Colors.grey.shade900,
+                    child: Text.rich(
+                      TextSpan(children: [
+                        richHrMin(
+                            duration: DateTime.now().difference(myTelemetry.takeOff!),
+                            valueStyle: Theme.of(context).textTheme.headline5,
+                            unitStyle: Theme.of(context).textTheme.headline6?.copyWith(color: Colors.grey),
+                            longUnits: true)
+                      ]),
+                      textAlign: TextAlign.center,
+                    ),
                   )
                 : const Text(
                     "Flight Timer Stopped",

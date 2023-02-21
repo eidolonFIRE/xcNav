@@ -4,22 +4,77 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 import 'package:xcnav/models/flight_log.dart';
+import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/map_marker.dart';
 
 class FlightLogSummary extends StatelessWidget {
   final FlightLog log;
   final Function onDelete;
-  late final LatLngBounds mapBounds;
+  late final LatLngBounds? mapBounds;
 
   final dateFormat = DateFormat("h:mm a");
   static const unitStyle = TextStyle(color: Colors.grey, fontSize: 12);
 
   FlightLogSummary(this.log, this.onDelete, {Key? key}) : super(key: key) {
-    mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList());
-    mapBounds.pad(0.2);
-    debugPrint("Built log: ${log.filename}");
+    if (log.goodFile) {
+      mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList());
+      for (final each in log.waypoints) {
+        mapBounds!.extendBounds(LatLngBounds.fromPoints(each.latlng));
+      }
+      mapBounds!.pad(0.2);
+    }
+    debugPrint("Built log: ${log.filename} ${log.goodFile ? "" : "--BAD"}");
+  }
+
+  /// Recover waypoints from log and put them into a new flight plan.
+  void restoreWaypoints(BuildContext context) {
+    final String planName = "Flight: ${log.title}";
+
+    final newPlan = FlightPlan(planName);
+    for (final wp in log.waypoints) {
+      newPlan.waypoints[wp.id] = wp;
+    }
+
+    Provider.of<Plans>(context, listen: false).setPlan(newPlan);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Exported to library under:",
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  "\"${newPlan.name}\"",
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                icon: const Icon(
+                  Icons.check,
+                  size: 20,
+                  color: Colors.lightGreen,
+                ))
+          ],
+        );
+      },
+    );
   }
 
   void exportLog(BuildContext context, String fileType) {
@@ -107,22 +162,30 @@ class FlightLogSummary extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            mainAxisSize: MainAxisSize.max,
+            // mainAxisSize: MainAxisSize.max,
             children: [
               // --- Title
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Text(
-                  log.title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headline6!
-                      .merge(TextStyle(color: log.goodFile ? Colors.white : Colors.red)),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    log.title,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 4,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline6!
+                        .merge(TextStyle(color: log.goodFile ? Colors.white : Colors.red)),
+                  ),
                 ),
               ),
               PopupMenuButton(
                   onSelected: (value) {
                     switch (value) {
+                      case "restore_waypoints":
+                        restoreWaypoints(context);
+                        break;
+
                       case "export_kml":
                         exportLog(context, "kml");
                         break;
@@ -137,6 +200,9 @@ class FlightLogSummary extends StatelessWidget {
                     }
                   },
                   itemBuilder: (context) => const <PopupMenuEntry<String>>[
+                        PopupMenuItem(
+                            value: "restore_waypoints",
+                            child: ListTile(leading: Icon(Icons.place, size: 28), title: Text("Recover Waypoints"))),
                         PopupMenuItem(
                             enabled: false,
                             child: Padding(
@@ -181,160 +247,185 @@ class FlightLogSummary extends StatelessWidget {
                       ])
             ],
           ),
-          const Divider(height: 10),
-          Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              // --- Preview Image
-              SizedBox(
-                width: MediaQuery.of(context).size.width / 2.5,
-                height: MediaQuery.of(context).size.width / 2.5,
-                child: FlutterMap(
-                    mapController: mapController,
-                    options: MapOptions(
-                      onMapReady: () {
-                        mapController.fitBounds(mapBounds);
-                      },
-                      interactiveFlags: InteractiveFlag.none,
-                      bounds: mapBounds,
-                    ),
-                    children: [
-                      TileLayer(
-                        // urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                        // subdomains: ['a', 'b', 'c'],
-                        urlTemplate:
-                            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                        // tileSize: 512,
-                        // zoomOffset: -1,
+          if (log.goodFile) const Divider(height: 10),
+          if (log.goodFile)
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                // --- Preview Image
+                SizedBox(
+                  width: MediaQuery.of(context).size.width / 2.5,
+                  height: MediaQuery.of(context).size.width / 2.5,
+                  child: FlutterMap(
+                      mapController: mapController,
+                      options: MapOptions(
+                        onMapReady: () {
+                          if (mapBounds != null) {
+                            mapController.fitBounds(mapBounds!);
+                          }
+                        },
+                        interactiveFlags: InteractiveFlag.none,
+                        // bounds: mapBounds,
                       ),
-                      PolylineLayer(polylines: [
-                        Polyline(
-                            points: log.samples.map((e) => e.latlng).toList(),
-                            strokeWidth: 3,
-                            color: Colors.red,
-                            isDotted: false)
-                      ]),
-                    ]),
-              ),
-
-              // --- Info
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Table(
-                    columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
-                    children: [
-                      TableRow(children: [
-                        TableCell(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 14),
-                            child: Text.rich(
-                              TextSpan(children: [
-                                const WidgetSpan(
-                                    child: Icon(
-                                  Icons.flight_takeoff,
-                                  size: 18,
-                                )),
-                                TextSpan(
-                                    text:
-                                        "  ${dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time))}"),
-                              ]),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
                         ),
-                        TableCell(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 14),
-                            child: Text.rich(
-                              TextSpan(children: [
-                                const WidgetSpan(child: Icon(Icons.flight_land, size: 18)),
-                                TextSpan(
-                                  text:
-                                      "  ${dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.last.time))}",
-                                )
-                              ]),
-                              textAlign: TextAlign.center,
+
+                        // --- Waypoints: paths
+                        PolylineLayer(
+                          polylineCulling: true,
+                          polylines: log.waypoints
+                              .where((value) => value.latlng.length > 1)
+                              .map((e) => Polyline(points: e.latlng, strokeWidth: 3.0, color: e.getColor()))
+                              .toList(),
+                        ),
+
+                        // --- Waypoints: pin markers
+                        MarkerLayer(
+                          markers: log.waypoints
+                              .where((element) => element.latlng.length == 1)
+                              .map((e) => Marker(
+                                  point: e.latlng[0],
+                                  height: 60 * 0.5,
+                                  width: 40 * 0.5,
+                                  builder: (context) => Container(
+                                      transformAlignment: const Alignment(0, 0),
+                                      transform: Matrix4.translationValues(0, -30 * 0.5, 0),
+                                      child: MapMarker(e, 60 * 0.5))))
+                              .toList(),
+                        ),
+
+                        // --- Log Line
+                        PolylineLayer(polylines: [
+                          Polyline(
+                              points: log.samples.map((e) => e.latlng).toList(),
+                              strokeWidth: 3,
+                              color: Colors.red,
+                              isDotted: true)
+                        ]),
+                      ]),
+                ),
+
+                // --- Info
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Table(
+                      columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
+                      children: [
+                        TableRow(children: [
+                          TableCell(
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: Text.rich(
+                                TextSpan(children: [
+                                  const WidgetSpan(
+                                      child: Icon(
+                                    Icons.flight_takeoff,
+                                    size: 18,
+                                  )),
+                                  TextSpan(
+                                      text:
+                                          "  ${dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time))}"),
+                                ]),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
-                        )
-                      ]),
-                      TableRow(children: [
-                        const TableCell(child: Text("Duration")),
-                        TableCell(
-                            child: log.durationTime != null
-                                ? Text.rich(
-                                    richHrMin(
-                                        duration: log.durationTime,
-                                        longUnits: true,
-                                        valueStyle: Theme.of(context).textTheme.bodyMedium!,
-                                        unitStyle: unitStyle),
-                                    textAlign: TextAlign.end)
-                                : const Text(
-                                    "?",
-                                    textAlign: TextAlign.end,
-                                  ))
-                      ]),
-                      TableRow(children: [
-                        const TableCell(child: Text("Distance")),
-                        TableCell(
-                            child: log.durationDist != null
-                                ? Text.rich(
-                                    richValue(UnitType.distCoarse, log.durationDist!,
-                                        decimals: 1, unitStyle: unitStyle),
-                                    textAlign: TextAlign.end,
+                          TableCell(
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: Text.rich(
+                                TextSpan(children: [
+                                  const WidgetSpan(child: Icon(Icons.flight_land, size: 18)),
+                                  TextSpan(
+                                    text:
+                                        "  ${dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.last.time))}",
                                   )
-                                : const Text(
-                                    "?",
-                                    textAlign: TextAlign.end,
-                                  )),
-                      ]),
-                      TableRow(children: [
-                        const TableCell(child: Text("Avg Speed")),
-                        TableCell(
-                            child: log.meanSpd != null
-                                ? Text.rich(
-                                    richValue(UnitType.speed, log.meanSpd!, decimals: 1, unitStyle: unitStyle),
-                                    textAlign: TextAlign.end,
-                                  )
-                                : const Text(
-                                    "?",
-                                    textAlign: TextAlign.end,
-                                  )),
-                      ]),
-                      TableRow(children: [
-                        const TableCell(child: Text("Max Altitude")),
-                        TableCell(
-                            child: log.maxAlt != null
-                                ? Text.rich(
-                                    richValue(UnitType.distFine, log.maxAlt!, decimals: 1, unitStyle: unitStyle),
-                                    textAlign: TextAlign.end,
-                                  )
-                                : const Text(
-                                    "?",
-                                    textAlign: TextAlign.end,
-                                  )),
-                      ]),
-                      TableRow(children: [
-                        const TableCell(child: Text("Best 1min Climb")),
-                        TableCell(
-                            child: log.bestClimb != null
-                                ? Text.rich(
-                                    richValue(UnitType.vario, log.bestClimb!, decimals: 1, unitStyle: unitStyle),
-                                    textAlign: TextAlign.end,
-                                  )
-                                : const Text(
-                                    "?",
-                                    textAlign: TextAlign.end,
-                                  )),
-                      ]),
-                      // const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
-                    ],
+                                ]),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          )
+                        ]),
+                        TableRow(children: [
+                          const TableCell(child: Text("Duration")),
+                          TableCell(
+                              child: log.durationTime != null
+                                  ? Text.rich(
+                                      richHrMin(
+                                          duration: log.durationTime,
+                                          longUnits: true,
+                                          valueStyle: Theme.of(context).textTheme.bodyMedium!,
+                                          unitStyle: unitStyle),
+                                      textAlign: TextAlign.end)
+                                  : const Text(
+                                      "?",
+                                      textAlign: TextAlign.end,
+                                    ))
+                        ]),
+                        TableRow(children: [
+                          const TableCell(child: Text("Distance")),
+                          TableCell(
+                              child: log.durationDist != null
+                                  ? Text.rich(
+                                      richValue(UnitType.distCoarse, log.durationDist!,
+                                          decimals: 1, unitStyle: unitStyle),
+                                      textAlign: TextAlign.end,
+                                    )
+                                  : const Text(
+                                      "?",
+                                      textAlign: TextAlign.end,
+                                    )),
+                        ]),
+                        TableRow(children: [
+                          const TableCell(child: Text("Avg Speed")),
+                          TableCell(
+                              child: log.meanSpd != null
+                                  ? Text.rich(
+                                      richValue(UnitType.speed, log.meanSpd!, decimals: 1, unitStyle: unitStyle),
+                                      textAlign: TextAlign.end,
+                                    )
+                                  : const Text(
+                                      "?",
+                                      textAlign: TextAlign.end,
+                                    )),
+                        ]),
+                        TableRow(children: [
+                          const TableCell(child: Text("Max Altitude")),
+                          TableCell(
+                              child: log.maxAlt != null
+                                  ? Text.rich(
+                                      richValue(UnitType.distFine, log.maxAlt!, decimals: 1, unitStyle: unitStyle),
+                                      textAlign: TextAlign.end,
+                                    )
+                                  : const Text(
+                                      "?",
+                                      textAlign: TextAlign.end,
+                                    )),
+                        ]),
+                        TableRow(children: [
+                          const TableCell(child: Text("Best 1min Climb")),
+                          TableCell(
+                              child: log.bestClimb != null
+                                  ? Text.rich(
+                                      richValue(UnitType.vario, log.bestClimb!, decimals: 1, unitStyle: unitStyle),
+                                      textAlign: TextAlign.end,
+                                    )
+                                  : const Text(
+                                      "?",
+                                      textAlign: TextAlign.end,
+                                    )),
+                        ]),
+                        // const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ]),
       ),
     );

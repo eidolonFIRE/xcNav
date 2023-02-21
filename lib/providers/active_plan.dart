@@ -77,8 +77,12 @@ class ActivePlan with ChangeNotifier {
 
   void save() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList("flightPlan.waypoints",
-        waypoints.values.where((element) => !element.ephemeral).map((e) => e.toString()).toList());
+    await prefs.setStringList(
+        "flightPlan.waypoints",
+        waypoints.values
+            .where((element) => (!element.ephemeral && element.validate()))
+            .map((e) => e.toString())
+            .toList());
   }
 
   void clearAllWayponits() {

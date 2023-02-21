@@ -1,18 +1,19 @@
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/waypoint.dart';
 import 'package:xml/xml.dart';
 
 class FlightLog {
   late final String _filename;
   late List<Geo> samples;
+  late final List<Waypoint> waypoints;
   late final bool goodFile;
-
-  static var calc = const Distance(roundResult: false);
 
   late String title;
   Duration? durationTime;
@@ -32,12 +33,18 @@ class FlightLog {
 
   get filename => _filename;
 
-  FlightLog.fromJson(String filename, dynamic data) {
+  FlightLog.fromJson(String filename, Map<String, dynamic> data) {
     _filename = filename;
+
+    debugPrint("Loading: $filename");
 
     try {
       List<dynamic> dataSamples = data["samples"];
       samples = dataSamples.map((e) => Geo.fromJson(e)).toList();
+
+      if (samples.isEmpty) {
+        throw "No samples in log";
+      }
 
       var date = DateTime.fromMillisecondsSinceEpoch(samples.first.time);
       title = DateFormat("MMM d - yyyy").format(date);
@@ -50,9 +57,17 @@ class FlightLog {
         durationDist = durationDist! + samples[i].distanceTo(samples[i + 1]);
       }
 
-      maxAlt = samples.reduce((a, b) => a.alt > b.alt ? a : b).alt;
+      if (samples.length > 1) {
+        maxAlt = samples.reduce((a, b) => a.alt > b.alt ? a : b).alt;
+      } else {
+        maxAlt = samples.first.alt;
+      }
 
-      meanSpd = durationDist! / durationTime!.inSeconds;
+      if (durationTime != null && durationTime!.inMilliseconds > 0) {
+        meanSpd = durationDist! / durationTime!.inSeconds;
+      } else {
+        meanSpd = 0;
+      }
 
       // --- Sliding window search for bestClimb
       int left = 0;
@@ -78,10 +93,21 @@ class FlightLog {
         left++;
       }
 
+      // --- Try load waypoints
+      if (data.containsKey("waypoints")) {
+        waypoints = (data["waypoints"] as List<dynamic>)
+            .map((each) => Waypoint.fromJson(each))
+            .where((element) => element.validate())
+            .toList();
+      } else {
+        waypoints = [];
+      }
+
       goodFile = true;
     } catch (e) {
+      debugPrint("Error Loading Flight Log: $e");
       samples = [];
-      title = "Broken File!";
+      title = "Broken File! $filename";
       goodFile = false;
     }
   }
@@ -119,7 +145,6 @@ class FlightLog {
     List<String> styles = [];
     for (int i = 0; i < numStyles; i++) {
       final String lineColor = "ff${colorWheel(-i / (max(1, numStyles - 1)) * 2 / 3 + 1 / 3)}";
-
       styles.add("""<Style id="style$i">
     <LineStyle>
     <color>$lineColor</color>
@@ -133,6 +158,7 @@ class FlightLog {
     }
 
     List<String> linestrings = [];
+    List<String> waypointStrings = [];
 
     // assemble kml point list
     List<String> points = samples.map((p) => "${p.lng},${p.lat},${p.alt}").toList();
@@ -152,11 +178,50 @@ class FlightLog {
     </LineString>
     </Placemark>""");
 
+    // waypoints - Points
+    for (final waypoint in waypoints.where((element) => element.latlng.length == 1)) {
+      waypointStrings.add("""<Placemark>
+    <name>${waypoint.name}</name>
+    <Point>
+      <coordinates>${waypoint.latlng.first.longitude},${waypoint.latlng.first.latitude},0</coordinates>
+    </Point>
+    </Placemark>""");
+    }
+
+    // waypoints - Paths
+    for (final waypoint in waypoints.where((element) => element.latlng.length > 1)) {
+      final String lineColor = "${waypoint.color?.toRadixString(16).padLeft(6, "0") ?? 0}";
+      styles.add("""<Style id="style_path_${waypoint.name}"> 
+    <LineStyle>
+    <color>$lineColor</color>
+    <width>3</width>
+    </LineStyle>
+    <PolyStyle>
+    <color>$polyColor</color>
+    <outline>0</outline>
+    </PolyStyle>
+    </Style>""");
+
+      waypointStrings.add("""<Placemark>
+    <name>${waypoint.name}</name>
+    <styleUrl>#style_path_${waypoint.name}</styleUrl>
+    <LineString>
+    <extrude>1</extrude>
+    <tessellate>1</tessellate>
+    <altitudeMode>clampToGround</altitudeMode>
+    <coordinates>
+    ${waypoint.latlng.map((p) => "${p.longitude},${p.latitude},0").toList().join("\n")}
+    </coordinates>
+    </LineString>
+    </Placemark>""");
+    }
+
     return """<?xml version="1.0"?>
     <kml xmlns="http://www.opengis.net/kml/2.2">
     <Document>
     ${styles.join("\n")}
     ${linestrings.join("\n")}
+    ${waypointStrings.join("\n")}
     </Document>
     </kml>""";
   }

@@ -98,7 +98,7 @@ class Waypoint {
   // ignore: hash_and_equals
   bool operator ==(other) => other is Waypoint && other.id == id;
 
-  Waypoint.fromJson(json) {
+  Waypoint.fromJson(Map<String, dynamic> json) {
     ephemeral = false;
     id = json["id"] ?? makeId();
     name = json["name"];
