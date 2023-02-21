@@ -51,8 +51,21 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
       for (var each in files) {
         var completer = Completer();
         completers.add(completer);
+
         File.fromUri(each.uri).readAsString().then((value) {
-          logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
+          try {
+            logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
+            // completer.complete();
+          } catch (error, stack) {
+            if (logs.containsKey(each.uri.path)) {
+              logs[each.uri.path]!.goodFile = false;
+            } else {
+              // This is reached if the error happens during json parsing
+              // Create a "bad file" entry so user can opt to remove it
+              logs[each.uri.path] = FlightLog.fromJson(each.uri.path, {});
+            }
+            debugPrint("Caught log loading errer on file ${each.uri}: $error $stack");
+          }
           completer.complete();
         });
       }

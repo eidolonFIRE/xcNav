@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/flight_plan.dart';
-import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/map_marker.dart';
@@ -171,7 +170,7 @@ class FlightLogSummary extends StatelessWidget {
                   child: Text(
                     log.title,
                     overflow: TextOverflow.ellipsis,
-                    maxLines: 4,
+                    maxLines: 6,
                     style: Theme.of(context)
                         .textTheme
                         .headline6!
