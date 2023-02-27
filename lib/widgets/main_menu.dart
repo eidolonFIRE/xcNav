@@ -105,7 +105,7 @@ class _MainMenuState extends State<MainMenu> {
                     textAlign: TextAlign.center,
                   ),
             trailing: IconButton(
-              iconSize: 30,
+              iconSize: 40,
               icon: myTelemetry.inFlight
                   ? const Icon(Icons.stop_circle, color: Colors.red)
                   : const Icon(

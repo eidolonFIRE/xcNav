@@ -124,7 +124,8 @@ class Profile with ChangeNotifier {
       final int statusCode = response.statusCode;
 
       if (statusCode < 200 || statusCode > 400) {
-        throw Exception("Error while pushing avatar: $statusCode");
+        // throw Exception("Error while pushing avatar: $statusCode");
+        debugPrint("Error while pushing avatar: $statusCode");
       }
       return response.body;
     });

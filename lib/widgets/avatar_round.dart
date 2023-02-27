@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:xcnav/patreon.dart';
 
 class AvatarRound extends StatelessWidget {
-  final Image? avatar;
+  final Widget? avatar;
   final double radius;
   final String? tier;
 
