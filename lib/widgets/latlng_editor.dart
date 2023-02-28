@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
 
 class LatLngEditor extends StatelessWidget {
-  static final reMatchAll = RegExp(r"^([\s]*([-\d]+\.?[\d]*)[\s]*,[\s]*([-\d]+\.?[\d]*);?[\s]*)+$");
-  static final reMatchEach = RegExp(r"([-\d]+\.?[\d]*)[\s]*,[\s]*([-\d]+\.?[\d]*)");
+  static final reMatchAll = RegExp(r"^([\s]*(-?[\d]+\.?[\d]*)[\s]*,[\s]*(-?[\d]+\.?[\d]*);?[\s]*)+$");
+  static final reMatchEach = RegExp(r"(-?[\d]+\.?[\d]*)[\s]*,[\s]*(-?[\d]+\.?[\d]*)");
   final TextEditingController controller = TextEditingController();
   final formKeyLatlng = GlobalKey<FormState>();
   final void Function(List<LatLng> latlngs) onLatLngs;
