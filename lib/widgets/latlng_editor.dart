@@ -34,6 +34,7 @@ class LatLngEditor extends StatelessWidget {
         key: formKeyLatlng,
         autovalidateMode: AutovalidateMode.always,
         child: TextFormField(
+          key: const Key("textFormField_latlng"),
           maxLines: 1,
           onChanged: tryUpdate,
           onSaved: tryUpdate,
