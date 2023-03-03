@@ -15,7 +15,7 @@ import 'package:xcnav/providers/plans.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 
 // --- Misc
 import 'package:xcnav/dialogs/edit_waypoint.dart';

@@ -12,7 +12,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 
 void showPilotInfo(BuildContext context, String pilotId) {
   // var group = Provider.of<Group>(context, listen: false);
@@ -191,7 +191,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
                                           child: Container(
                                             transform: Matrix4.translationValues(0, 2, 0),
                                             child: SizedBox(
-                                                width: 26 * 2 / 3, height: 26, child: MapMarker(selectedWp!, 24)),
+                                                width: 26 * 2 / 3, height: 26, child: WaypointMarker(selectedWp!, 24)),
                                           ),
                                         ),
                                         const TextSpan(text: "  "),

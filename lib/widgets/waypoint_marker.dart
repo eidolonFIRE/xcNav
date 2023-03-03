@@ -66,11 +66,11 @@ var colorOptions = {
   "purple": Colors.purple.shade600,
 };
 
-class MapMarker extends StatelessWidget {
+class WaypointMarker extends StatelessWidget {
   final Waypoint waypoint;
   final double size;
 
-  const MapMarker(this.waypoint, this.size, {Key? key}) : super(key: key);
+  const WaypointMarker(this.waypoint, this.size, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

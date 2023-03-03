@@ -4,7 +4,7 @@ import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class WaypointNavBar extends StatelessWidget {
   const WaypointNavBar({Key? key}) : super(key: key);

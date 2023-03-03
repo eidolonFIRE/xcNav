@@ -11,7 +11,7 @@ import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class FlightLogSummary extends StatelessWidget {
   final FlightLog log;
@@ -290,7 +290,7 @@ class FlightLogSummary extends StatelessWidget {
                                   builder: (context) => Container(
                                       transformAlignment: const Alignment(0, 0),
                                       transform: Matrix4.translationValues(0, -30 * 0.5, 0),
-                                      child: MapMarker(e, 60 * 0.5))))
+                                      child: WaypointMarker(e, 60 * 0.5))))
                               .toList(),
                         ),
 

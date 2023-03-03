@@ -9,7 +9,7 @@ import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 
 /// Elevation Sample for a given LatLng coordinate
 class ElevSample {

@@ -27,7 +27,7 @@ import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/chat_bubble.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xcnav/widgets/map_selector.dart';
 import 'package:xcnav/widgets/measurement_markers.dart';
 import 'package:xcnav/widgets/pilot_marker.dart';
@@ -384,7 +384,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   builder: (context) => Container(
                                       transformAlignment: const Alignment(0, 0),
                                       transform: Matrix4.translationValues(0, -30 * 0.8, 0),
-                                      child: MapMarker(e, 60 * 0.8)))
+                                      child: WaypointMarker(e, 60 * 0.8)))
                               : null)
                           .whereNotNull()
                           .toList(),

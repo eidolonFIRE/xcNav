@@ -19,7 +19,7 @@ import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/tappable_polyline.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
 
 class PlanCard extends StatefulWidget {
@@ -348,7 +348,7 @@ class _PlanCardState extends State<PlanCard> {
                                           transform: Matrix4.translationValues(0, isChecked ? (-15 * 4 / 3) : -15, 0),
                                           child: GestureDetector(
                                               onTap: () => setState(() => toggleItem(e.id)),
-                                              child: MapMarker(e, isChecked ? 40 : 30))));
+                                              child: WaypointMarker(e, isChecked ? 40 : 30))));
                                 } else {
                                   return null;
                                 }

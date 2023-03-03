@@ -8,7 +8,7 @@ import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/widgets/latlng_editor.dart';
 
 // --- Widgets
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 
 final TextEditingController newWaypointName = TextEditingController();
 

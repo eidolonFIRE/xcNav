@@ -16,7 +16,7 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class ViewElevation extends StatefulWidget {
   const ViewElevation({Key? key}) : super(key: key);
@@ -279,7 +279,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                               height: 32,
                               child: selectedWp.isPath
                                   ? SvgPicture.asset("assets/images/path.svg", color: selectedWp.getColor())
-                                  : MapMarker(selectedWp, 30),
+                                  : WaypointMarker(selectedWp, 30),
                             );
                           default:
                             return Container();

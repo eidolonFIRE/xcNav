@@ -20,7 +20,7 @@ import 'package:xcnav/widgets/map_selector.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 
 // --- Misc
 import 'package:xcnav/dialogs/edit_waypoint.dart';
@@ -246,7 +246,7 @@ class _PlanEditorState extends State<PlanEditor> {
                                             plan!.waypoints[e.id]?.latlng = [p1];
                                           });
                                         },
-                                        builder: (context) => MapMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)))
+                                        builder: (context) => WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)))
                                     : null)
                                 .whereNotNull()
                                 .toList()),

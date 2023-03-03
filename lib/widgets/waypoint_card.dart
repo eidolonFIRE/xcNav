@@ -11,7 +11,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
-import 'package:xcnav/widgets/map_marker.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class WaypointCard extends StatefulWidget {
   const WaypointCard({
