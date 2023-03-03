@@ -7,6 +7,9 @@ import 'package:path_provider/path_provider.dart';
 
 // Models
 import 'package:xcnav/models/flight_log.dart';
+import 'package:xcnav/widgets/basic_log_aggregate.dart';
+import 'package:xcnav/widgets/chart_log_aggregate.dart';
+import 'package:xcnav/widgets/chart_log_duration_hist.dart';
 
 // Widgets
 import 'package:xcnav/widgets/flight_log_summary.dart';
@@ -18,19 +21,75 @@ class FlightLogViewer extends StatefulWidget {
   State<FlightLogViewer> createState() => _FlightLogViewerState();
 }
 
-class _FlightLogViewerState extends State<FlightLogViewer> {
+enum SliceSize {
+  month,
+  year,
+  all,
+}
+
+const Map<SliceSize, String> sliceStr = {
+  SliceSize.month: "Past Month",
+  SliceSize.year: "Past Year",
+  SliceSize.all: "All Time",
+};
+
+class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderStateMixin {
   Map<String, FlightLog> logs = {};
+  late Iterable<FlightLog> logsSlice;
+  SliceSize sliceSize = SliceSize.all;
+
   bool loaded = false;
+
+  late final TabController mainTabController;
 
   @override
   void initState() {
     super.initState();
+    logsSlice = logs.values;
+    mainTabController = TabController(length: 2, vsync: this);
     refreshLogsFromDirectory();
+
+    // // --- Generate fake logs for debugging
+    // final rand = Random();
+    // for (int t = 0; t < 50; t++) {
+    //   debugPrint("Gen fake log: $t");
+    //   final startTime = DateTime.now().subtract(Duration(days: rand.nextInt(600), hours: rand.nextInt(24)));
+    //   logs["$t"] = FlightLog.fromJson("$t", {
+    //     "samples": [
+    //       Geo.fromJson({
+    //         "lat": 1,
+    //         "lng": 1,
+    //         "alt": 1,
+    //         "time": startTime.millisecondsSinceEpoch,
+    //         "hdg": 0,
+    //         "spd": 0,
+    //         "vario": 0
+    //       }).toJson(),
+    //       Geo.fromJson({
+    //         "lat": 1,
+    //         "lng": 2,
+    //         "alt": 1,
+    //         "time": startTime
+    //             .add(Duration(minutes: (60 + pow(rand.nextDouble(), 1.2) * (rand.nextInt(2) * 2 - 1) * 50).round()))
+    //             .millisecondsSinceEpoch,
+    //         "hdg": 0,
+    //         "spd": 0,
+    //         "vario": 0
+    //       }).toJson()
+    //     ]
+    //   });
+    // }
+    // Timer(Duration(seconds: 1), (() {
+    //   setState(() {
+    //     loaded = true;
+    //   });
+    // }));
   }
 
   @override
   void dispose() {
     super.dispose();
+    mainTabController.dispose();
   }
 
   void refreshLogsFromDirectory() async {
@@ -80,23 +139,167 @@ class _FlightLogViewerState extends State<FlightLogViewer> {
     }
   }
 
+  void refreshSlice(SliceSize newSliceSize) {
+    sliceSize = newSliceSize;
+    switch (sliceSize) {
+      case SliceSize.all:
+        logsSlice = logs.values.where((element) => element.goodFile);
+        break;
+      case SliceSize.year:
+        logsSlice = logs.values.where((element) =>
+            element.goodFile && element.startTime.isAfter(DateTime.now().subtract(const Duration(days: 365))));
+        break;
+      case SliceSize.month:
+        logsSlice = logs.values.where((element) =>
+            element.goodFile && element.startTime.isAfter(DateTime.now().subtract(const Duration(days: 30))));
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var keys = logs.keys.toList();
     keys.sort((a, b) => b.compareTo(a));
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "Flight Logs  (${keys.length})",
+        title: const Text(
+          "Flight Logs",
         ),
+        bottom: TabBar(controller: mainTabController, tabs: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Padding(
+                padding: EdgeInsets.all(12.0),
+                child: Icon(Icons.list),
+              ),
+              Text("Entries")
+            ],
+          ),
+          Row(mainAxisSize: MainAxisSize.min, children: const [
+            Padding(
+              padding: EdgeInsets.all(12.0),
+              child: Icon(Icons.insights),
+            ),
+            Text("Stats")
+          ]),
+        ]),
       ),
       body: !loaded
           ? const Center(
               child: CircularProgressIndicator.adaptive(),
             )
-          : ListView.builder(
-              itemCount: keys.length,
-              itemBuilder: (context, index) => FlightLogSummary(logs[keys[index]]!, refreshLogsFromDirectory),
+          : TabBarView(
+              physics: const NeverScrollableScrollPhysics(),
+              controller: mainTabController,
+              children: [
+                // --- Each
+                ListView.builder(
+                  itemCount: keys.length,
+                  itemBuilder: (context, index) => FlightLogSummary(logs[keys[index]]!, refreshLogsFromDirectory),
+                ),
+
+                // --- Stats
+                if (logsSlice.isNotEmpty)
+                  ListView(
+                    children: [
+                      // --- Slice Selector
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ToggleButtons(
+                            borderRadius: BorderRadius.circular(20),
+                            constraints:
+                                BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
+                            isSelected: SliceSize.values.map((e) => e == sliceSize).toList(),
+                            onPressed: (index) {
+                              setState(() {
+                                refreshSlice(SliceSize.values.toList()[index]);
+                              });
+                            },
+                            children: SliceSize.values
+                                .map((key) => Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Text(sliceStr[key] ?? ""),
+                                    ))
+                                .toList(),
+                          ),
+                        ),
+                      ),
+
+                      Container(
+                        height: 10,
+                      ),
+
+                      // --- Basic Aggregate
+                      Text(
+                        "Summary",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headline6,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Card(
+                          color: Colors.grey.shade800,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: BasicLogAggregate(logs: logsSlice),
+                          ),
+                        ),
+                      ),
+
+                      Container(
+                        height: 10,
+                      ),
+
+                      // --- Hist
+                      Text(
+                        "Flight Duration (histogram)",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headline6,
+                      ),
+                      SizedBox(
+                        // width: MediaQuery.of(context).size.width,
+                        height: 200,
+                        child: ClipRect(
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 20),
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: ChartLogDurationHist(
+                                logs: logsSlice,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Container(
+                        height: 10,
+                      ),
+
+                      // --- Monthly Aggregate
+                      // if (sliceSize.index > SliceSize.month.index)
+                      Text(
+                        "Monthly Totals",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headline6,
+                      ),
+                      // if (sliceSize.index > SliceSize.month.index)
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        height: 200,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: ChartLogAggregate(
+                            logs: logsSlice,
+                            mode: ChartLogAggregateMode.year,
+                          ),
+                        ),
+                      )
+                    ],
+                  )
+              ],
             ),
     );
   }

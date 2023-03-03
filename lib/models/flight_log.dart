@@ -16,22 +16,25 @@ class FlightLog {
   late final bool goodFile;
 
   late String title;
-  Duration? durationTime;
+  late Duration durationTime;
 
   /// Meters
-  double? durationDist;
+  late double durationDist;
 
   /// Meters
-  double? maxAlt;
+  late double maxAlt;
 
   /// Fastest climb sustained for 1min
   /// `m/s`
-  double? bestClimb;
+  late double bestClimb;
 
   /// `m/s`
-  double? meanSpd;
+  late double meanSpd;
 
   get filename => _filename;
+
+  DateTime get startTime => DateTime.fromMillisecondsSinceEpoch(samples.first.time);
+  DateTime get endTime => DateTime.fromMillisecondsSinceEpoch(samples.last.time);
 
   FlightLog.fromJson(String filename, Map<String, dynamic> data) {
     _filename = filename;
@@ -54,7 +57,7 @@ class FlightLog {
 
       durationDist = 0;
       for (int i = 0; i < samples.length - 1; i++) {
-        durationDist = durationDist! + samples[i].distanceTo(samples[i + 1]);
+        durationDist = durationDist + samples[i].distanceTo(samples[i + 1]);
       }
 
       if (samples.length > 1) {
@@ -63,8 +66,8 @@ class FlightLog {
         maxAlt = samples.first.alt;
       }
 
-      if (durationTime != null && durationTime!.inMilliseconds > 0) {
-        meanSpd = durationDist! / durationTime!.inSeconds;
+      if (durationTime.inMilliseconds > 0) {
+        meanSpd = durationDist / durationTime.inSeconds;
       } else {
         meanSpd = 0;
       }
@@ -72,6 +75,7 @@ class FlightLog {
       // --- Sliding window search for bestClimb
       int left = 0;
       int right = 0;
+      bestClimb = 0;
       while (left < samples.length) {
         // grow window
         while (right < samples.length &&
@@ -80,12 +84,13 @@ class FlightLog {
         }
 
         if (right >= samples.length - 1) {
+          // Not enough samples to get a best 1min climb
           break;
         }
 
         // check max
         double newClimb = (samples[right].alt - samples[left].alt) / (samples[right].time - samples[left].time) * 1000;
-        if (newClimb > (bestClimb ?? 0)) {
+        if (newClimb > bestClimb) {
           bestClimb = newClimb;
         }
 

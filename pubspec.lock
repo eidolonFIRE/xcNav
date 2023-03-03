@@ -92,20 +92,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.2.1"
-  charts_common:
-    dependency: transitive
-    description:
-      name: charts_common
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.12.0"
-  charts_flutter:
-    dependency: "direct main"
-    description:
-      name: charts_flutter
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.12.0"
   clock:
     dependency: transitive
     description:
@@ -190,6 +176,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.17"
+  equatable:
+    dependency: transitive
+    description:
+      name: equatable
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.5"
   fake_async:
     dependency: transitive
     description:
@@ -225,6 +218,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.1"
+  fl_chart:
+    dependency: "direct main"
+    description:
+      name: fl_chart
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.61.0"
   flutter:
     dependency: "direct main"
     description: flutter

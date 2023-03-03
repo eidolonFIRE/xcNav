@@ -23,7 +23,6 @@ class WindPlotPainter extends CustomPainter {
   late final bool northlock;
 
   late final Paint _barbPaint;
-  late final Paint _mePaint;
 
   WindPlotPainter(
       double width, this.dataX, this.dataY, this.maxValue, this.circleCenter, this.circleRadius, this.northlock) {
@@ -46,12 +45,6 @@ class WindPlotPainter extends CustomPainter {
       ..color = Colors.blue
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    _mePaint = Paint()
-      ..color = Colors.red
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     if (_arrow == null) {
@@ -136,7 +129,6 @@ class WindPlotPainter extends CustomPainter {
 
     final lastPoint = Offset(dataX.last, dataY.last);
     final lastPointScaled = lastPoint * maxSize / maxValue + center;
-    // canvas.drawLine(center, lastPointScaled, _mePaint);
     if (_arrow != null) {
       canvas.translate(lastPointScaled.dx, lastPointScaled.dy);
       canvas.rotate(lastPoint.direction + pi / 2);

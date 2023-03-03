@@ -2,10 +2,8 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
@@ -220,7 +218,8 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                                   waypointETA: waypointETA),
                             );
                           } else {
-                            return Center(child: SizedBox(width: 60, height: 60, child: CircularProgressIndicator()));
+                            return const Center(
+                                child: SizedBox(width: 60, height: 60, child: CircularProgressIndicator()));
                           }
                         })),
               ),

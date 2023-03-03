@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/plans.dart';
+import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/map_marker.dart';
 
@@ -267,10 +268,7 @@ class FlightLogSummary extends StatelessWidget {
                         // bounds: mapBounds,
                       ),
                       children: [
-                        TileLayer(
-                          urlTemplate:
-                              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-                        ),
+                        Provider.of<Settings>(context, listen: false).getMapTileLayer("topo"),
 
                         // --- Waypoints: paths
                         PolylineLayer(
@@ -325,9 +323,7 @@ class FlightLogSummary extends StatelessWidget {
                                     Icons.flight_takeoff,
                                     size: 18,
                                   )),
-                                  TextSpan(
-                                      text:
-                                          "  ${dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time))}"),
+                                  TextSpan(text: "  ${dateFormat.format(log.startTime)}"),
                                 ]),
                                 textAlign: TextAlign.center,
                               ),
@@ -340,8 +336,7 @@ class FlightLogSummary extends StatelessWidget {
                                 TextSpan(children: [
                                   const WidgetSpan(child: Icon(Icons.flight_land, size: 18)),
                                   TextSpan(
-                                    text:
-                                        "  ${dateFormat.format(DateTime.fromMillisecondsSinceEpoch(log.samples.last.time))}",
+                                    text: "  ${dateFormat.format(log.endTime)}",
                                   )
                                 ]),
                                 textAlign: TextAlign.center,
@@ -352,71 +347,45 @@ class FlightLogSummary extends StatelessWidget {
                         TableRow(children: [
                           const TableCell(child: Text("Duration")),
                           TableCell(
-                              child: log.durationTime != null
-                                  ? Text.rich(
-                                      richHrMin(
-                                          duration: log.durationTime,
-                                          longUnits: true,
-                                          valueStyle: Theme.of(context).textTheme.bodyMedium!,
-                                          unitStyle: unitStyle),
-                                      textAlign: TextAlign.end)
-                                  : const Text(
-                                      "?",
-                                      textAlign: TextAlign.end,
-                                    ))
+                              child: Text.rich(
+                                  richHrMin(
+                                      duration: log.durationTime,
+                                      longUnits: true,
+                                      valueStyle: Theme.of(context).textTheme.bodyMedium!,
+                                      unitStyle: unitStyle),
+                                  textAlign: TextAlign.end))
                         ]),
                         TableRow(children: [
                           const TableCell(child: Text("Distance")),
                           TableCell(
-                              child: log.durationDist != null
-                                  ? Text.rich(
-                                      richValue(UnitType.distCoarse, log.durationDist!,
-                                          decimals: 1, unitStyle: unitStyle),
-                                      textAlign: TextAlign.end,
-                                    )
-                                  : const Text(
-                                      "?",
-                                      textAlign: TextAlign.end,
-                                    )),
+                              child: Text.rich(
+                            richValue(UnitType.distCoarse, log.durationDist, decimals: 1, unitStyle: unitStyle),
+                            textAlign: TextAlign.end,
+                          )),
                         ]),
                         TableRow(children: [
                           const TableCell(child: Text("Avg Speed")),
                           TableCell(
-                              child: log.meanSpd != null
-                                  ? Text.rich(
-                                      richValue(UnitType.speed, log.meanSpd!, decimals: 1, unitStyle: unitStyle),
-                                      textAlign: TextAlign.end,
-                                    )
-                                  : const Text(
-                                      "?",
-                                      textAlign: TextAlign.end,
-                                    )),
+                              child: Text.rich(
+                            richValue(UnitType.speed, log.meanSpd, decimals: 1, unitStyle: unitStyle),
+                            textAlign: TextAlign.end,
+                          )),
                         ]),
                         TableRow(children: [
                           const TableCell(child: Text("Max Altitude")),
                           TableCell(
-                              child: log.maxAlt != null
-                                  ? Text.rich(
-                                      richValue(UnitType.distFine, log.maxAlt!, decimals: 1, unitStyle: unitStyle),
-                                      textAlign: TextAlign.end,
-                                    )
-                                  : const Text(
-                                      "?",
-                                      textAlign: TextAlign.end,
-                                    )),
+                              child: Text.rich(
+                            richValue(UnitType.distFine, log.maxAlt, decimals: 1, unitStyle: unitStyle),
+                            textAlign: TextAlign.end,
+                          )),
                         ]),
                         TableRow(children: [
                           const TableCell(child: Text("Best 1min Climb")),
                           TableCell(
-                              child: log.bestClimb != null
-                                  ? Text.rich(
-                                      richValue(UnitType.vario, log.bestClimb!, decimals: 1, unitStyle: unitStyle),
-                                      textAlign: TextAlign.end,
-                                    )
-                                  : const Text(
-                                      "?",
-                                      textAlign: TextAlign.end,
-                                    )),
+                              child: Text.rich(
+                            richValue(UnitType.vario, log.bestClimb, decimals: 1, unitStyle: unitStyle),
+                            textAlign: TextAlign.end,
+                          )),
                         ]),
                         // const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
                       ],
