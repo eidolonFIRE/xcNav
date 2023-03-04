@@ -7,7 +7,7 @@ import 'package:xcnav/widgets/latlng_editor.dart';
 
 void tapPointDialog(
     BuildContext context, LatLng tapPoint, Function setFocusMode, void Function(Waypoint newWaypoint) onAddWaypoint) {
-  LatLng? latlng = tapPoint;
+  List<LatLng> latlngs = [tapPoint];
   showDialog(
     context: context,
     builder: (context) {
@@ -17,7 +17,7 @@ void tapPointDialog(
             LatLngEditor(
           initialLatlngs: [tapPoint],
           onLatLngs: ((newLatlngs) {
-            latlng = newLatlngs.first;
+            latlngs = newLatlngs;
           }),
         ),
         actionsAlignment: MainAxisAlignment.spaceAround,
@@ -26,9 +26,9 @@ void tapPointDialog(
           ElevatedButton.icon(
               label: const Text("Waypoint"),
               onPressed: () {
-                Navigator.pop(context);
-                if (latlng != null) {
-                  editWaypoint(context, Waypoint(name: "", latlngs: [latlng!]), isNew: true)?.then((newWaypoint) {
+                if (latlngs.isNotEmpty) {
+                  Navigator.pop(context);
+                  editWaypoint(context, Waypoint(name: "", latlngs: latlngs), isNew: true)?.then((newWaypoint) {
                     if (newWaypoint != null) {
                       onAddWaypoint(newWaypoint);
                     }

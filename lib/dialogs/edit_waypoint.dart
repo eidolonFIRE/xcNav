@@ -157,7 +157,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
               ElevatedButton.icon(
                   label: Text(isNew ? "Add" : "Update"),
                   onPressed: () {
-                    if ((formKey.currentState?.validate() ?? false) && (waypoint.latlng.isNotEmpty)) {
+                    if ((formKey.currentState?.validate() ?? false) && (tempLatlngs.isNotEmpty)) {
                       var newWaypoint = Waypoint(
                           newId: waypoint.id,
                           name: newWaypointName.text,

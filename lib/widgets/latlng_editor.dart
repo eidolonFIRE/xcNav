@@ -25,6 +25,9 @@ class LatLngEditor extends StatelessWidget {
           .allMatches(controller.text)
           .map((e) => LatLng(double.parse(e.group(1)!), double.parse(e.group(2)!)))
           .toList());
+    } else {
+      // Failed
+      onLatLngs([]);
     }
   }
 
