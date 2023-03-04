@@ -401,6 +401,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               //   debugPrint("Context Menu for Waypoint ${e.name}");
                               // },
                               builder: (context) => GestureDetector(
+                                    onTap: () => plan.selectedWp = e.id,
                                     onLongPress: () {
                                       setState(() {
                                         editingWp = e.id;
