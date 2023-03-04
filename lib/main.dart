@@ -165,7 +165,7 @@ class XCNav extends StatelessWidget {
               return RoundedRectangleBorder(borderRadius: BorderRadius.circular(10));
             }),
             textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                (states) => const TextStyle(color: Colors.white, fontSize: 22)),
+                (states) => const TextStyle(color: Colors.white, fontSize: 20)),
           ),
 
           // child: ElevatedButton(onPressed: () {}, child: Text('label')),
@@ -175,7 +175,7 @@ class XCNav extends StatelessWidget {
           style: ButtonStyle(
             foregroundColor: MaterialStateProperty.all(Colors.white),
             textStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                (states) => const TextStyle(color: Colors.white, fontSize: 24)),
+                (states) => const TextStyle(color: Colors.white, fontSize: 20)),
           ),
 
           // child: ElevatedButton(onPressed: () {}, child: Text('label')),

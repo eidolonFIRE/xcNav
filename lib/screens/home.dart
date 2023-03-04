@@ -62,7 +62,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     Provider.of<MyTelemetry>(context, listen: false).addListener(() {
       if (viewMapKey.currentState?.mapReady ?? false) {
-        viewMapKey.currentState?.refreshMapView();
+        if (viewMapKey.currentState?.isDragging ?? false) {
+          // Update skipped because user is dragging something on the map
+        } else {
+          viewMapKey.currentState?.refreshMapView();
+        }
       }
     });
   }

@@ -75,6 +75,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   FocusMode prevFocusMode = FocusMode.me;
   bool northLock = true;
 
+  /// User is dragging something on the map layer (for less than 30 seconds)
+  bool get isDragging => dragStart != null && dragStart!.isAfter(DateTime.now().subtract(const Duration(seconds: 30)));
+  DateTime? dragStart;
+
   WaypointID? editingWp;
   late PolyEditor polyEditor;
 
@@ -213,6 +217,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   void onMapTap(BuildContext context, LatLng latlng) {
     debugPrint("onMapTap: $latlng");
     isMapDialOpen.value = false;
+    final plan = Provider.of<ActivePlan>(context, listen: false);
+    if (editingWp != null && plan.waypoints.containsKey(editingWp) && plan.waypoints[editingWp]!.latlng.length == 1) {
+      setState(() {
+        editingWp = null;
+      });
+    }
     if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) {
       // Add waypoint in path
       polyEditor.add(editablePoints, latlng);
@@ -239,8 +249,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     return Container(
       color: Colors.white,
       child: Stack(alignment: Alignment.center, children: [
-        Consumer3<MyTelemetry, Settings, ActivePlan>(
-            builder: (context, myTelemetry, settings, plan, child) => FlutterMap(
+        // NOTE: MyTelemetry is not part of this consumer because refreshMapView is already called elsewhere on MyTelemetry changes
+        Consumer2<Settings, ActivePlan>(
+            builder: (context, settings, plan, child) => FlutterMap(
                   key: mapKey,
                   mapController: mapController,
                   options: MapOptions(
@@ -251,7 +262,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       });
                     },
                     interactiveFlags: InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
-                    center: myTelemetry.geo.latlng,
+                    center: Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
                     zoom: 12.0,
                     onTap: (tapPosition, point) => onMapTap(context, point),
                     onLongPress: (tapPosition, point) => onMapLongPress(context, point),
@@ -295,13 +306,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             .toList()),
 
                     // Flight Log
-                    PolylineLayer(polylines: [myTelemetry.buildFlightTrace()]),
+                    PolylineLayer(polylines: [Provider.of<MyTelemetry>(context, listen: false).buildFlightTrace()]),
 
                     // ADSB Proximity
                     if (Provider.of<ADSB>(context, listen: false).enabled)
                       CircleLayer(circles: [
                         CircleMarker(
-                            point: myTelemetry.geo.latlng,
+                            point: Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
                             color: Colors.transparent,
                             borderStrokeWidth: 1,
                             borderColor: Colors.black54,
@@ -312,7 +323,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     // Next waypoint: path
                     PolylineLayer(
                       polylines: plan.buildNextWpIndicator(
-                          myTelemetry.geo,
+                          Provider.of<MyTelemetry>(context, listen: false).geo,
                           (Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
                               ? 1000
                               : 1609.344),
@@ -349,7 +360,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     MarkerLayer(
                         markers: plan
                             .buildNextWpBarbs(
-                                myTelemetry.geo,
+                                Provider.of<MyTelemetry>(context, listen: false).geo,
                                 (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
                                         DisplayUnitsDist.metric
                                     ? 1000
@@ -366,29 +377,126 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     )))
                             .toList()),
 
-                    // Waypoints: pin markers
-                    DragMarkers(
+                    // Waypoint markers
+                    MarkerLayer(
                       markers: plan.waypoints.values
-                          .map((e) => e.latlng.length == 1
-                              ? DragMarker(
-                                  point: e.latlng[0],
-                                  height: 60 * 0.8,
-                                  width: 40 * 0.8,
-                                  updateMapNearEdge: true,
-                                  useLongPress: true,
-                                  onTap: (_) => plan.selectedWp = e.id,
-                                  onLongDragEnd: (p0, p1) => {
-                                        plan.moveWaypoint(e.id, [p1])
-                                      },
-                                  rotateMarker: true,
-                                  builder: (context) => Container(
-                                      transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.translationValues(0, -30 * 0.8, 0),
-                                      child: WaypointMarker(e, 60 * 0.8)))
-                              : null)
-                          .whereNotNull()
+                          .where((e) => e.latlng.length == 1 && e.id != editingWp)
+                          .map((e) => Marker(
+                              point: e.latlng[0],
+                              height: 60 * 0.8,
+                              width: 40 * 0.8,
+                              rotate: true,
+                              anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
+                              rotateOrigin: const Offset(0, 30 * 0.8),
+                              // NOTE: regular waypoints are no longer draggable. But, this is how it was done before.
+                              // updateMapNearEdge: true,
+                              // useLongPress: true,
+                              // onTap: (_) => plan.selectedWp = e.id,
+                              // onLongDragEnd: (p0, p1) => {
+                              //       plan.moveWaypoint(e.id, [p1])
+                              //     },
+                              // rotateMarker: true,
+                              // onLongPress: (_) {
+                              //   editingWp = e.id;
+                              //   debugPrint("Context Menu for Waypoint ${e.name}");
+                              // },
+                              builder: (context) => GestureDetector(
+                                    onLongPress: () {
+                                      setState(() {
+                                        editingWp = e.id;
+                                      });
+                                    },
+                                    child: WaypointMarker(e, 60 * 0.8),
+                                  )))
                           .toList(),
                     ),
+
+                    // --- Draggable waypoints
+                    if (editingWp != null &&
+                        plan.waypoints.containsKey(editingWp) &&
+                        plan.waypoints[editingWp]!.latlng.length == 1)
+                      DragMarkers(markers: [
+                        DragMarker(
+                            point: plan.waypoints[editingWp]!.latlng.first,
+                            height: 60 * 0.8,
+                            width: 40 * 0.8,
+                            updateMapNearEdge: true,
+                            // useLongPress: true,
+                            onTap: (_) => plan.selectedWp = editingWp,
+                            onDragEnd: (p0, p1) {
+                              plan.moveWaypoint(editingWp!, [p1]);
+                              dragStart = null;
+                            },
+                            onDragStart: (p0, p1) {
+                              setState(() {
+                                dragStart = DateTime.now();
+                              });
+                            },
+                            rotateMarker: true,
+                            builder: (context) => Stack(
+                                  children: [
+                                    Container(
+                                        transformAlignment: const Alignment(0, 0),
+                                        transform: Matrix4.translationValues(0, -30 * 0.8, 0),
+                                        child: WaypointMarker(plan.waypoints[editingWp]!, 60 * 0.8)),
+                                    Container(
+                                        transformAlignment: const Alignment(0, 0),
+                                        transform: Matrix4.translationValues(4, 14 * 0.8, 0),
+                                        child: const Icon(
+                                          Icons.open_with,
+                                          color: Colors.black,
+                                        )),
+                                  ],
+                                ))
+                      ]),
+
+                    // --- draggable waypoint mode buttons
+                    if (editingWp != null &&
+                        plan.waypoints.containsKey(editingWp) &&
+                        !plan.waypoints[editingWp]!.isPath)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                              rotate: true,
+                              height: 220,
+                              point: plan.waypoints[editingWp]!.latlng.first,
+                              builder: (context) => Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        height: 120,
+                                      ),
+                                      FloatingActionButton.small(
+                                        heroTag: "editWaypoint",
+                                        backgroundColor: Colors.lightBlue,
+                                        onPressed: () {
+                                          editWaypoint(context, plan.waypoints[editingWp]!,
+                                                  isNew: focusMode == FocusMode.addPath,
+                                                  isPath: plan.waypoints[editingWp]!.isPath)
+                                              ?.then((newWaypoint) {
+                                            if (newWaypoint != null) {
+                                              plan.updateWaypoint(newWaypoint);
+                                            }
+                                          });
+                                          editingWp = null;
+                                        },
+                                        child: const Icon(Icons.edit),
+                                      ),
+                                      FloatingActionButton.small(
+                                        heroTag: "deleteWaypoint",
+                                        backgroundColor: Colors.red,
+                                        onPressed: () {
+                                          setState(() {
+                                            plan.removeWaypoint(editingWp!);
+                                            editingWp = null;
+                                          });
+                                        },
+                                        child: const Icon(Icons.delete),
+                                      ),
+                                    ],
+                                  ))
+                        ],
+                      ),
 
                     // GA planes (ADSB IN)
                     if (Provider.of<ADSB>(context, listen: false).enabled)
@@ -405,14 +513,15 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     transformAlignment: const Alignment(0, 0),
                                     transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
                                     child: Opacity(
-                                      opacity: getGAtransparency(e.alt - myTelemetry.geo.alt),
+                                      opacity: getGAtransparency(
+                                          e.alt - Provider.of<MyTelemetry>(context, listen: false).geo.alt),
                                       child: Stack(
                                         children: [
                                           /// --- GA icon
                                           Container(
                                             transformAlignment: const Alignment(0, 0),
                                             transform: Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
-                                            child: e.getIcon(myTelemetry.geo),
+                                            child: e.getIcon(Provider.of<MyTelemetry>(context, listen: false).geo),
                                           ),
 
                                           /// --- Relative Altitude
@@ -423,14 +532,21 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                                 TextSpan(children: [
                                                   WidgetSpan(
                                                     child: Icon(
-                                                      (e.alt - myTelemetry.geo.alt) > 0
+                                                      (e.alt -
+                                                                  Provider.of<MyTelemetry>(context, listen: false)
+                                                                      .geo
+                                                                      .alt) >
+                                                              0
                                                           ? Icons.keyboard_arrow_up
                                                           : Icons.keyboard_arrow_down,
                                                       color: Colors.black,
                                                       size: 21,
                                                     ),
                                                   ),
-                                                  richValue(UnitType.distFine, (e.alt - myTelemetry.geo.alt).abs(),
+                                                  richValue(
+                                                      UnitType.distFine,
+                                                      (e.alt - Provider.of<MyTelemetry>(context, listen: false).geo.alt)
+                                                          .abs(),
                                                       digits: 5,
                                                       valueStyle: const TextStyle(color: Colors.black),
                                                       unitStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
@@ -464,7 +580,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     pilot,
                                     20,
                                     hdg: pilot.geo!.hdg + mapController.rotation * pi / 180,
-                                    relAlt: pilot.geo!.alt - myTelemetry.geo.alt,
+                                    relAlt: pilot.geo!.alt - Provider.of<MyTelemetry>(context, listen: false).geo.alt,
                                   ))))
                           .toList(),
                     ),
@@ -475,10 +591,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         Marker(
                           width: 50.0,
                           height: 50.0,
-                          point: myTelemetry.geo.latlng,
+                          point: Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
                           builder: (ctx) => Container(
                             transformAlignment: const Alignment(0, 0),
-                            transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
+                            transform: Matrix4.rotationZ(Provider.of<MyTelemetry>(context, listen: false).geo.hdg),
                             child: Image.asset("assets/images/red_arrow.png"),
                           ),
                         ),
