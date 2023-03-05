@@ -159,7 +159,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
   @override
   Widget build(BuildContext context) {
     var keys = logs.keys.toList();
-    keys.sort((a, b) => logs[b]!.compareTo(logs[a]!));
+    keys.sort((a, b) => logs[a]!.compareTo(logs[b]!));
     return Scaffold(
       appBar: AppBar(
         title: const Text(
