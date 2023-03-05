@@ -122,7 +122,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
               // Create a "bad file" entry so user can opt to remove it
               logs[each.uri.path] = FlightLog.fromJson(each.uri.path, {});
             }
-            debugPrint("Caught log loading errer on file ${each.uri}: $error $stack");
+            debugPrint("Caught log loading error on file ${each.uri}: $error $stack");
           }
           completer.complete();
         });
@@ -159,7 +159,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
   @override
   Widget build(BuildContext context) {
     var keys = logs.keys.toList();
-    keys.sort((a, b) => logs[b]!.startTime.compareTo(logs[a]!.startTime));
+    keys.sort((a, b) => logs[b]!.compareTo(logs[a]!));
     return Scaffold(
       appBar: AppBar(
         title: const Text(

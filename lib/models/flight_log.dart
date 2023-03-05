@@ -31,10 +31,18 @@ class FlightLog {
   /// `m/s`
   late double meanSpd;
 
-  get filename => _filename;
+  String get filename => _filename;
 
   DateTime get startTime => DateTime.fromMillisecondsSinceEpoch(samples.first.time);
   DateTime get endTime => DateTime.fromMillisecondsSinceEpoch(samples.last.time);
+
+  int compareTo(FlightLog other) {
+    if (goodFile && other.goodFile) {
+      return other.startTime.compareTo(startTime);
+    } else {
+      return other.filename.compareTo(filename);
+    }
+  }
 
   FlightLog.fromJson(String filename, Map<String, dynamic> data) {
     _filename = filename;

@@ -70,8 +70,6 @@ PODS:
     - SwiftNIOSSL (< 3.0.0, >= 2.14.0)
     - SwiftNIOTransportServices (< 2.0.0, >= 1.11.1)
     - SwiftProtobuf (< 2.0.0, >= 1.19.0)
-  - image_crop (0.0.1):
-    - Flutter
   - image_picker_ios (0.0.1):
     - Flutter
   - integration_test (0.0.1):
@@ -265,7 +263,6 @@ DEPENDENCIES:
   - flutter_tts (from `.symlinks/plugins/flutter_tts/ios`)
   - fullscreen (from `.symlinks/plugins/fullscreen/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
-  - image_crop (from `.symlinks/plugins/image_crop/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - move_to_background (from `.symlinks/plugins/move_to_background/ios`)
@@ -335,8 +332,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/fullscreen/ios"
   geolocator_apple:
     :path: ".symlinks/plugins/geolocator_apple/ios"
-  image_crop:
-    :path: ".symlinks/plugins/image_crop/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   integration_test:
@@ -386,7 +381,6 @@ SPEC CHECKSUMS:
   fullscreen: d93e707e6b36120f20e64e2f814ee0726164e70b
   geolocator_apple: cc556e6844d508c95df1e87e3ea6fa4e58c50401
   gRPC-Swift: 74adcaaa62ac5e0a018938840328cb1fdfb09e7b
-  image_crop: e0a67085d3ebf3cf46ca46d61c53a082507b0bc3
   image_picker_ios: b786a5dcf033a8336a657191401bfdf12017dabb
   integration_test: a1e7d09bd98eca2fc37aefd79d4f41ad37bdbbe5
   libwebp: 98a37e597e40bfdb4c911fc98f2c53d0b12d05fc
