@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:bisection/bisect.dart';
 import 'package:collection/collection.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -8,39 +9,78 @@ import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/units.dart';
 
 class LogStatHist {
-  int dur = 0;
-  int dist = 0;
+  Duration x;
+  int y = 0;
+
+  LogStatHist(this.x);
 }
 
 class ChartLogDurationHist extends StatelessWidget {
-  ChartLogDurationHist({Key? key, required this.logs}) : super(key: key);
-
   final Iterable<FlightLog> logs;
-  final Map<int, LogStatHist> totals = {};
+  final List<LogStatHist> totals = [];
+  late final Duration longest;
+  final Duration baseScale = const Duration(minutes: 5);
 
-  int roundDuration(Duration input, Duration size) {
-    return (input.inSeconds / size.inSeconds).round();
+  ChartLogDurationHist({Key? key, required this.logs}) : super(key: key) {
+    longest = maxBy<Duration, int>(logs.map((e) => e.durationTime), (e) => e.inSeconds) ?? const Duration(hours: 1);
+    // bucketSizeDur = Duration(minutes: max(5, min(15, 5 * (1 / logs.length * longest.inMinutes).ceil())));
+    buildTotals(logs.map((e) => e.durationTime));
   }
 
-  void buildTotals(Duration longest, Duration bucketSizeDur) {
-    totals.clear();
-    for (int t = 0; t <= longest.inSeconds / bucketSizeDur.inSeconds + 1; t++) {
-      totals[t] = LogStatHist();
+  int toIndex(Duration value) {
+    // find segment
+    final int insertIndex = bisect_left(totals.map((e) => e.x).toList(), value);
+    if (insertIndex <= 0) {
+      return 0;
+    } else if (insertIndex >= totals.length) {
+      // overflow
+      return totals.length;
+    } else {
+      // snap to nearest
+      return (value - totals[insertIndex - 1].x < totals[insertIndex].x - value) ? insertIndex - 1 : insertIndex;
     }
-    for (final each in logs) {
-      int index = roundDuration(each.durationTime, bucketSizeDur);
-      if (totals.containsKey(index)) {
-        totals[index]!.dur++;
+  }
+
+  Duration nextInterval(int index) {
+    /// I tried some algorithms to replace this, but turns out this is simpler and more performant. \shrug
+    int interval(int t) {
+      if (t < 4) {
+        return 10;
+      } else if (t < 10) {
+        return 15;
+      } else {
+        return 30;
+      }
+    }
+
+    if (index == 0) {
+      return const Duration();
+    } else {
+      return totals[index - 1].x + Duration(minutes: interval(index));
+    }
+  }
+
+  void buildTotals(Iterable<Duration> data) {
+    totals.add(LogStatHist(nextInterval(totals.length)));
+
+    for (final each in data) {
+      int index = toIndex(each);
+      while (index >= totals.length) {
+        // build out more indeces
+        totals.add(LogStatHist(nextInterval(totals.length)));
+        index = toIndex(each);
+      }
+
+      if (totals.length > index) {
+        totals[index].y++;
+      } else {
+        debugPrint("OVERFLOW!");
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    Duration longest =
-        maxBy<Duration, int>(logs.map((e) => e.durationTime), (e) => e.inSeconds) ?? const Duration(hours: 1);
-    Duration bucketSizeDur = Duration(minutes: max(5, min(15, 5 * (1 / logs.length * longest.inMinutes).ceil())));
-    buildTotals(longest, bucketSizeDur);
     return LineChart(
       LineChartData(
         gridData: FlGridData(verticalInterval: 1),
@@ -50,13 +90,9 @@ class ChartLogDurationHist extends StatelessWidget {
               barWidth: 4,
               isCurved: true,
               preventCurveOverShooting: true,
-              // preventCurveOvershootingThreshold: 0,
               dotData: FlDotData(show: false),
               color: Colors.blue,
-              spots: totals
-                  .map((key, value) => MapEntry(key, FlSpot(key.toDouble(), value.dur.toDouble())))
-                  .values
-                  .toList())
+              spots: totals.mapIndexed((index, value) => FlSpot(index.toDouble(), value.y.toDouble())).toList())
         ],
         titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -72,7 +108,7 @@ class ChartLogDurationHist extends StatelessWidget {
                       child: Text.rich(
                         TextSpan(children: [
                           richHrMin(
-                              duration: Duration(seconds: (value * bucketSizeDur.inSeconds).round()),
+                              duration: totals[value.round()].x,
                               unitStyle: Theme.of(context)
                                   .textTheme
                                   .bodyMedium!
@@ -93,7 +129,9 @@ class ChartLogDurationHist extends StatelessWidget {
                 ),
                 sideTitles: SideTitles(
                     getTitlesWidget: (value, meta) => SideTitleWidget(
-                        axisSide: meta.axisSide, space: 4, child: Text("${(value / logs.length * 100).round()}%")),
+                        axisSide: meta.axisSide,
+                        space: 4,
+                        child: Text("${(value / max(1, logs.length) * 100).round()}%")),
                     showTitles: true,
                     reservedSize: 30))),
       ),

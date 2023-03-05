@@ -37,7 +37,8 @@ class Profile with ChangeNotifier {
     secretID = prefs.getString("profile.secretID");
     tier = prefs.getString("profile.tier");
 
-    _avatarRaw = base64Decode(prefs.getString("profile.avatar") ?? "");
+    final loadedAvatarStr = prefs.getString("profile.avatar");
+    _avatarRaw = loadedAvatarStr != null ? base64Decode(loadedAvatarStr) : null;
     if (_avatarRaw != null) {
       avatar = Image.memory(_avatarRaw!);
     } else {

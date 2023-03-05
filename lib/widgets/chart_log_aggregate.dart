@@ -90,7 +90,7 @@ class ChartLogAggregate extends StatelessWidget {
                 key,
                 BarChartGroupData(x: key, barRods: [
                   BarChartRodData(toY: totals[key]!.numFlights.toDouble(), color: Colors.blue),
-                  BarChartRodData(toY: totals[key]!.sumDuration.inMinutes / 60, color: Colors.amber)
+                  BarChartRodData(toY: (totals[key]!.sumDuration.inMinutes / 60 * 10).round() / 10, color: Colors.amber)
                 ])))
             .values
             .toList(),

@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
 // Models
 import 'package:xcnav/models/flight_log.dart';
+import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/widgets/basic_log_aggregate.dart';
 import 'package:xcnav/widgets/chart_log_aggregate.dart';
 import 'package:xcnav/widgets/chart_log_duration_hist.dart';
@@ -45,11 +47,10 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
   @override
   void initState() {
     super.initState();
-    logsSlice = logs.values;
     mainTabController = TabController(length: 2, vsync: this);
     refreshLogsFromDirectory();
 
-    // // --- Generate fake logs for debugging
+    // --- Generate fake logs for debugging
     // final rand = Random();
     // for (int t = 0; t < 50; t++) {
     //   debugPrint("Gen fake log: $t");
@@ -79,11 +80,9 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
     //     ]
     //   });
     // }
-    // Timer(Duration(seconds: 1), (() {
-    //   setState(() {
-    //     loaded = true;
-    //   });
-    // }));
+
+    // loaded = true;
+    // refreshSlice(sliceSize);
   }
 
   @override
@@ -132,6 +131,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
       Future.wait(completers.map((e) => e.future).toList()).then((value) {
         setState(() {
           loaded = true;
+          refreshSlice(sliceSize);
         });
       });
     } else {
@@ -159,7 +159,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
   @override
   Widget build(BuildContext context) {
     var keys = logs.keys.toList();
-    keys.sort((a, b) => b.compareTo(a));
+    keys.sort((a, b) => logs[b]!.startTime.compareTo(logs[a]!.startTime));
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -185,122 +185,125 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
           ]),
         ]),
       ),
-      body: !loaded
-          ? const Center(
-              child: CircularProgressIndicator.adaptive(),
-            )
-          : TabBarView(
-              physics: const NeverScrollableScrollPhysics(),
-              controller: mainTabController,
-              children: [
-                // --- Each
-                ListView.builder(
+      body: TabBarView(
+        physics: const NeverScrollableScrollPhysics(),
+        controller: mainTabController,
+        children: [
+          // --- Each
+          !loaded
+              ? const Center(
+                  child: CircularProgressIndicator.adaptive(),
+                )
+              : ListView.builder(
                   itemCount: keys.length,
                   itemBuilder: (context, index) => FlightLogSummary(logs[keys[index]]!, refreshLogsFromDirectory),
                 ),
 
-                // --- Stats
-                if (logsSlice.isNotEmpty)
-                  ListView(
-                    children: [
-                      // --- Slice Selector
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ToggleButtons(
-                            borderRadius: BorderRadius.circular(20),
-                            constraints:
-                                BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
-                            isSelected: SliceSize.values.map((e) => e == sliceSize).toList(),
-                            onPressed: (index) {
-                              setState(() {
-                                refreshSlice(SliceSize.values.toList()[index]);
-                              });
-                            },
-                            children: SliceSize.values
-                                .map((key) => Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Text(sliceStr[key] ?? ""),
-                                    ))
-                                .toList(),
-                          ),
+          // --- Stats
+          !loaded
+              ? const Center(
+                  child: CircularProgressIndicator.adaptive(),
+                )
+              : ListView(
+                  children: [
+                    // --- Slice Selector
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ToggleButtons(
+                          borderRadius: BorderRadius.circular(20),
+                          constraints:
+                              BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
+                          isSelected: SliceSize.values.map((e) => e == sliceSize).toList(),
+                          onPressed: (index) {
+                            setState(() {
+                              refreshSlice(SliceSize.values.toList()[index]);
+                            });
+                          },
+                          children: SliceSize.values
+                              .map((key) => Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Text(sliceStr[key] ?? ""),
+                                  ))
+                              .toList(),
                         ),
                       ),
+                    ),
 
-                      Container(
-                        height: 10,
-                      ),
+                    Container(
+                      height: 10,
+                    ),
 
-                      // --- Basic Aggregate
-                      Text(
-                        "Summary",
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headline6,
+                    // --- Basic Aggregate
+                    Text(
+                      "Summary",
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Card(
+                        color: Colors.grey.shade800,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: BasicLogAggregate(logs: logsSlice),
+                        ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Card(
-                          color: Colors.grey.shade800,
+                    ),
+
+                    Container(
+                      height: 10,
+                    ),
+
+                    // --- Hist
+                    Text(
+                      "Flight Duration (histogram)",
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                    SizedBox(
+                      // width: MediaQuery.of(context).size.width,
+                      height: 200,
+                      child: ClipRect(
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 20, top: 4),
                           child: Padding(
                             padding: const EdgeInsets.all(10.0),
-                            child: BasicLogAggregate(logs: logsSlice),
-                          ),
-                        ),
-                      ),
-
-                      Container(
-                        height: 10,
-                      ),
-
-                      // --- Hist
-                      Text(
-                        "Flight Duration (histogram)",
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headline6,
-                      ),
-                      SizedBox(
-                        // width: MediaQuery.of(context).size.width,
-                        height: 200,
-                        child: ClipRect(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 20),
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: ChartLogDurationHist(
-                                logs: logsSlice,
-                              ),
+                            child: ChartLogDurationHist(
+                              logs: logsSlice,
                             ),
                           ),
                         ),
                       ),
+                    ),
 
-                      Container(
-                        height: 10,
-                      ),
+                    Container(
+                      height: 10,
+                    ),
 
-                      // --- Monthly Aggregate
-                      // if (sliceSize.index > SliceSize.month.index)
-                      Text(
-                        "Monthly Totals",
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headline6,
-                      ),
-                      // if (sliceSize.index > SliceSize.month.index)
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: 200,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: ChartLogAggregate(
-                            logs: logsSlice,
-                            mode: ChartLogAggregateMode.year,
-                          ),
+                    // --- Monthly Aggregate
+                    // if (sliceSize.index > SliceSize.month.index)
+                    Text(
+                      "Monthly Totals",
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                    // if (sliceSize.index > SliceSize.month.index)
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: 200,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: ChartLogAggregate(
+                          logs: logsSlice,
+                          mode: ChartLogAggregateMode.year,
                         ),
-                      )
-                    ],
-                  )
-              ],
-            ),
+                      ),
+                    )
+                  ],
+                )
+        ],
+      ),
     );
   }
 }

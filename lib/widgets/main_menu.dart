@@ -179,8 +179,7 @@ class _MainMenuState extends State<MainMenu> {
               borderWidth: 2,
               selectedBorderColor: Colors.lightBlueAccent,
               selectedColor: Colors.lightBlueAccent,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 30),
+              constraints: const BoxConstraints.expand(width: 40, height: 40),
               borderRadius: const BorderRadius.all(Radius.circular(10)),
               isSelected: AudioCueService.modeOptions.values.map((e) => e == audioCueService.mode).toList(),
               onPressed: (index) {

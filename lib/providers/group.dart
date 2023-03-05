@@ -98,6 +98,8 @@ class Group with ChangeNotifier {
         });
 
         debugPrint("Loaded ${pastGroups.length} past groups.");
+
+        _savePastGroups();
       }
     });
   }

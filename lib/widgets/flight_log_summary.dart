@@ -199,17 +199,18 @@ class FlightLogSummary extends StatelessWidget {
                         break;
                     }
                   },
-                  itemBuilder: (context) => const <PopupMenuEntry<String>>[
-                        PopupMenuItem(
-                            value: "restore_waypoints",
-                            child: ListTile(leading: Icon(Icons.place, size: 28), title: Text("Recover Waypoints"))),
-                        PopupMenuItem(
+                  itemBuilder: (context) => <PopupMenuEntry<String>>[
+                        if (log.waypoints.isNotEmpty)
+                          const PopupMenuItem(
+                              value: "restore_waypoints",
+                              child: ListTile(leading: Icon(Icons.place, size: 28), title: Text("Recover Waypoints"))),
+                        const PopupMenuItem(
                             enabled: false,
                             child: Padding(
                               padding: EdgeInsets.only(left: 16),
                               child: Text("Export Options:"),
                             )),
-                        PopupMenuItem(
+                        const PopupMenuItem(
                             value: "export_kml",
                             child: ListTile(
                               leading: Icon(
@@ -221,7 +222,7 @@ class FlightLogSummary extends StatelessWidget {
                                 TextSpan(text: "(Google Earth)", style: TextStyle(fontSize: 20, color: Colors.grey))
                               ])),
                             )),
-                        PopupMenuItem(
+                        const PopupMenuItem(
                             value: "export_gpx",
                             child: ListTile(
                               leading: Icon(
@@ -233,8 +234,8 @@ class FlightLogSummary extends StatelessWidget {
                                 TextSpan(text: "(Ayvri.com)", style: TextStyle(fontSize: 20, color: Colors.grey))
                               ])),
                             )),
-                        PopupMenuDivider(),
-                        PopupMenuItem(
+                        const PopupMenuDivider(),
+                        const PopupMenuItem(
                             value: "delete",
                             child: ListTile(
                               leading: Icon(

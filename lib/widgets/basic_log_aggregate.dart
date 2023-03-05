@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/units.dart';
@@ -9,6 +11,8 @@ class BasicLogAggregate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final totalDist = logs.map((e) => e.durationDist).fold<double>(0, (a, b) => a + b);
+    final totalDur = logs.map((e) => e.durationTime).fold<Duration>(const Duration(), (a, b) => a + b);
     return DefaultTextStyle(
       style: Theme.of(context).textTheme.bodyMedium!,
       textAlign: TextAlign.right,
@@ -31,14 +35,10 @@ class BasicLogAggregate extends StatelessWidget {
           )),
           TableCell(child: Text("${logs.length}", style: const TextStyle(color: Colors.blue))),
           TableCell(
-              child: Text.rich(
-                  TextSpan(children: [
-                    richValue(UnitType.distCoarse, logs.map((e) => e.durationDist).reduce((a, b) => a + b),
-                        digits: 8, decimals: 1)
-                  ]),
+              child: Text.rich(TextSpan(children: [richValue(UnitType.distCoarse, totalDist, digits: 8, decimals: 1)]),
                   style: const TextStyle(color: Colors.lightGreen))),
           TableCell(
-              child: Text("${logs.map((e) => e.durationTime).reduce((a, b) => a + b).inHours} hr",
+              child: Text("${(totalDur.inMinutes / 60).toStringAsFixed(1)} hr",
                   style: const TextStyle(color: Colors.amber))),
         ]),
 
@@ -53,14 +53,12 @@ class BasicLogAggregate extends StatelessWidget {
           TableCell(
               child: Text.rich(
                   TextSpan(children: [
-                    richValue(
-                        UnitType.distCoarse, logs.map((e) => e.durationDist).reduce((a, b) => a + b) / logs.length,
-                        digits: 8, decimals: 1)
+                    richValue(UnitType.distCoarse, totalDist / max(1, logs.length), digits: 8, decimals: 1)
                   ]),
                   style: const TextStyle(color: Colors.lightGreen))),
           TableCell(
               child: Text(
-            "${(logs.map((e) => e.durationTime).reduce((a, b) => a + b).inHours / logs.length).toStringAsFixed(1)} hr",
+            "${(totalDur.inHours / max(1, logs.length)).toStringAsFixed(1)} hr",
             style: const TextStyle(color: Colors.amber),
           )),
         ]),
