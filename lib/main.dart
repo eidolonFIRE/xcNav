@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
 
@@ -43,57 +44,61 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
-  runApp(
-    MultiProvider(
-        providers: [
-          ChangeNotifierProvider(
-            create: (_) => Settings(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => MyTelemetry(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (context) => Weather(context),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (context) => Wind(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => ActivePlan(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Plans(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Profile(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Group(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => ChatMessages(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (context) => ADSB(context),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (BuildContext context) => Client(context),
-            lazy: false,
-          )
-        ],
-        child: FocusDetector(
-            onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())),
-  );
+  SharedPreferences.getInstance().then((prefs) {
+    settingsMgr = SettingsMgr(prefs);
+  }).then((value) {
+    runApp(
+      MultiProvider(
+          providers: [
+            ChangeNotifierProvider(
+              create: (_) => Settings(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => MyTelemetry(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (context) => Weather(context),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (context) => Wind(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => ActivePlan(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => Plans(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => Profile(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => Group(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => ChatMessages(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (context) => ADSB(context),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (BuildContext context) => Client(context),
+              lazy: false,
+            )
+          ],
+          child: FocusDetector(
+              onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())),
+    );
+  });
 }
 
 class XCNav extends StatelessWidget {
@@ -148,12 +153,14 @@ class XCNav extends StatelessWidget {
         brightness: Brightness.dark,
         bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
-        textTheme: const TextTheme(
-            headline4: TextStyle(color: Colors.white),
-            button: TextStyle(
-              fontSize: 30,
-              color: Colors.white,
-            )),
+        textTheme: TextTheme(
+          headline4: TextStyle(color: Colors.white),
+          bodyText1: TextStyle(fontSize: 20),
+          // button: TextStyle(
+          //   fontSize: 20,
+          //   color: Colors.white,
+          // )
+        ),
         dialogTheme: DialogTheme(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(

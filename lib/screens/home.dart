@@ -87,10 +87,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text("Share Position"),
-                    Switch(
-                        value: Provider.of<Settings>(context).groundModeTelemetry,
-                        onChanged: (value) =>
-                            Provider.of<Settings>(context, listen: false).groundModeTelemetry = value),
+                    ValueListenableBuilder(
+                        valueListenable: settingsMgr.groundModeTelem.listenable,
+                        builder: (context, value, _) {
+                          return Switch.adaptive(
+                              value: value as bool, onChanged: (value) => settingsMgr.groundModeTelem.value = value);
+                        }),
                   ],
                 ),
               ))
@@ -124,7 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
           automaticallyImplyLeading: false,
           leadingWidth: 35,
           toolbarHeight: 90,
-          title: Provider.of<Settings>(context).groundMode ? groundControlBar(context) : topInstruments(context),
+          title: settingsMgr.groundMode.value ? groundControlBar(context) : topInstruments(context),
           // actions: [IconButton(onPressed: () {}, icon: Icon(Icons.timer_outlined))],
         ),
         // --- Main Menu

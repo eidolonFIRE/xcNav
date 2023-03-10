@@ -322,11 +322,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                     // Next waypoint: path
                     PolylineLayer(
-                      polylines: plan.buildNextWpIndicator(
-                          Provider.of<MyTelemetry>(context, listen: false).geo,
-                          (Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
-                              ? 1000
-                              : 1609.344),
+                      polylines: plan.buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: false).geo,
+                          (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
                           baseTiles: Provider.of<Settings>(context, listen: false).curMapTiles),
                     ),
 
@@ -359,12 +356,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     // Next waypoint: barbs
                     MarkerLayer(
                         markers: plan
-                            .buildNextWpBarbs(
-                                Provider.of<MyTelemetry>(context, listen: false).geo,
-                                (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
-                                        DisplayUnitsDist.metric
-                                    ? 1000
-                                    : 1609.344))
+                            .buildNextWpBarbs(Provider.of<MyTelemetry>(context, listen: false).geo,
+                                (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344))
                             .map((e) => Marker(
                                 point: e.latlng,
                                 width: 20,

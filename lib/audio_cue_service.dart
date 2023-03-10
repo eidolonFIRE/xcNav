@@ -149,7 +149,7 @@ class AudioCueService {
     // --- My Telemetry
     if (mode != null && (config["My Telemetry"] ?? false)) {
       // --- Altitude
-      final altPrecision = (precisionLUT["alt"][settings.displayUnitsDist][mode] as int).toDouble();
+      final altPrecision = (precisionLUT["alt"][settingsMgr.displayUnitDist.value][mode] as int).toDouble();
       // Value is transformed into display units before quantizing.
       // Triggers yes if:
       // 1: we don't have a previous value
@@ -171,7 +171,7 @@ class AudioCueService {
       }
 
       // --- Speed
-      final spdPrecision = (precisionLUT["spd"][settings.displayUnitsSpeed][mode] as int).toDouble();
+      final spdPrecision = (precisionLUT["spd"][settingsMgr.displayUnitSpeed.value][mode] as int).toDouble();
       if (lastSpd == null ||
           DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(maxInterval)) ||
           (DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(minInterval)) &&
@@ -274,7 +274,7 @@ class AudioCueService {
     final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
 
     final hdgPrecision = precisionLUT["hdg"][mode] * 3;
-    final distPrecision = precisionLUT["dist"][settings.displayUnitsDist][mode];
+    final distPrecision = precisionLUT["dist"][settingsMgr.displayUnitDist.value][mode];
 
     // 1: we haven't done so yet
     // 2: max interval reached

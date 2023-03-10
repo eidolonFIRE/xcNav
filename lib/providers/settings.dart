@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -12,6 +13,245 @@ import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/secrets.dart';
 import 'package:xcnav/units.dart';
 
+/// Holds and stores an individual setting.
+class SettingConfig<T> {
+  final SharedPreferences _prefsInstance;
+
+  /// This id will be used as the save path in `sharedPreferences`
+  final String id;
+  final String catagory;
+  final String title;
+  final String? description;
+  final Icon? icon;
+
+  late ValueNotifier<T> _value;
+  T defaultValue;
+
+  ValueListenable get listenable => _value;
+
+  T get value {
+    return _value.value ?? defaultValue;
+  }
+
+  set value(T newValue) {
+    _value.value = newValue;
+    debugPrint("$id = $newValue");
+    if (value is Enum) {
+      // Handle enum type
+      _prefsInstance.setInt("settings.$id", (value as Enum).index);
+      debugPrint("Set enum type ${(value as Enum).index}");
+    } else {
+      switch (T) {
+        case List<String>:
+          _prefsInstance.setStringList("settings.$id", newValue as List<String>);
+          break;
+        case String:
+          _prefsInstance.setString("settings.$id", newValue as String);
+          break;
+        case bool:
+          _prefsInstance.setBool("settings.$id", newValue as bool);
+          break;
+        case double:
+          _prefsInstance.setDouble("settings.$id", newValue as double);
+          break;
+        case int:
+          _prefsInstance.setInt("settings.$id", newValue as int);
+          break;
+      }
+    }
+  }
+
+  SettingConfig(SettingsMgr mgr, this._prefsInstance, this.catagory, this.id, this.defaultValue,
+      {required this.title, this.description, this.icon, bool hidden = false}) {
+    if (defaultValue is Enum) {
+      // Handle enum type
+      int? loadedInt = _prefsInstance.getInt("settings.$id");
+      if (loadedInt == null) {
+        _value = ValueNotifier<T>(defaultValue);
+      } else {
+        switch (T) {
+          case DisplayUnitsDist:
+            _value = ValueNotifier<T>(DisplayUnitsDist.values[loadedInt] as T);
+            break;
+        }
+      }
+    } else {
+      switch (T) {
+        case List<String>:
+          _value =
+              ValueNotifier<T>((_prefsInstance.getStringList("settings.$id") ?? defaultValue as List<String>) as T);
+          break;
+        case String:
+          _value = ValueNotifier<T>((_prefsInstance.getString("settings.$id") ?? defaultValue as String) as T);
+          break;
+        case bool:
+          _value = ValueNotifier<T>((_prefsInstance.getBool("settings.$id") ?? defaultValue as bool) as T);
+          break;
+        case double:
+          _value = ValueNotifier<T>((_prefsInstance.getDouble("settings.$id") ?? defaultValue as double) as T);
+          break;
+        case int:
+          _value = ValueNotifier<T>((_prefsInstance.getInt("settings.$id") ?? defaultValue as int) as T);
+          break;
+        default:
+          throw "Unsupported Settings Type($T) !";
+      }
+    }
+
+    // Register with manager
+    if (!hidden) {
+      mgr.settings.putIfAbsent(catagory, () => []);
+      mgr.settings[catagory]!.add(SettingMgrItem(config: this));
+      if (mgr.ids.contains(id)) {
+        throw "Settings Manager already has id $id !";
+      } else {
+        mgr.ids.add(id);
+      }
+    }
+  }
+}
+
+class SettingAction {
+  final String catagory;
+  String title;
+  final String? description;
+  final Icon? actionIcon;
+
+  Function() callback;
+
+  SettingAction(SettingsMgr mgr, this.catagory, this.callback,
+      {required this.title, this.description, this.actionIcon}) {
+    // Register with manager
+    mgr.settings.putIfAbsent(catagory, () => []);
+    mgr.settings[catagory]!.add(SettingMgrItem(action: this));
+  }
+}
+
+class SettingMgrItem {
+  final SettingConfig? config;
+  final SettingAction? action;
+
+  bool get isConfig => config != null;
+  bool get isAction => action != null;
+
+  // --- pass-through fields
+  String get catagory => config?.catagory ?? action?.catagory ?? "";
+  String get title => config?.title ?? action?.title ?? "";
+  String? get description => config?.description ?? action?.description;
+
+  SettingMgrItem({this.config, this.action}) {
+    if (config != null && action != null) {
+      throw "Cannot set both config and action in SettingMgrItem";
+    }
+    if (config == null && action == null) {
+      throw "Must set either config or action in SettingMgrItem";
+    }
+  }
+}
+
+/// Manages global instances of `Setting`s
+class SettingsMgr {
+  /// Flat look-up list of settings
+  Set ids = {};
+
+  /// Look-up list of settings by catagory
+  Map<String, List<SettingMgrItem>> settings = {};
+
+  // --- General
+  late final SettingConfig<bool> groundMode;
+  late final SettingConfig<bool> groundModeTelem;
+
+  // --- Display Units
+  late final SettingConfig<DisplayUnitsDist> displayUnitDist;
+  late final SettingConfig<DisplayUnitsSpeed> displayUnitSpeed;
+  late final SettingConfig<DisplayUnitsVario> displayUnitVario;
+  late final SettingConfig<DisplayUnitsFuel> displayUnitFuel;
+
+  // --- Debug Tools
+  late final SettingConfig<bool> spoofLocation;
+  late final SettingAction clearMapCache;
+
+  SettingsMgr(SharedPreferences prefs) {
+    // --- General
+    groundMode = SettingConfig(this, prefs, "General", "groundMode", false,
+        title: "Ground Support Mode",
+        icon: const Icon(Icons.directions_car),
+        description: "Alters UI and doesn't record track.");
+    groundModeTelem = SettingConfig(this, prefs, "General", "groundModeTelem", false,
+        title: "Ground Mode Telemetry",
+        icon: const Icon(Icons.minor_crash),
+        description: "Transmit telemetry while in ground support mode.",
+        hidden: true);
+
+    // --- Display Units
+    displayUnitDist = SettingConfig(this, prefs, "Display Units", "settings.displayUnitDist", DisplayUnitsDist.imperial,
+        title: "Distance", icon: const Icon(Icons.architecture));
+    displayUnitSpeed = SettingConfig(this, prefs, "Display Units", "settings.displayUnitSpeed", DisplayUnitsSpeed.mph,
+        title: "Speed", icon: const Icon(Icons.timer));
+    displayUnitVario = SettingConfig(this, prefs, "Display Units", "settings.displayUnitVario", DisplayUnitsVario.fpm,
+        title: "Vario", icon: const Icon(Icons.trending_up));
+    displayUnitFuel = SettingConfig(this, prefs, "Display Units", "settings.displayUnitFuel", DisplayUnitsFuel.liter,
+        title: "Fuel", icon: const Icon(Icons.local_gas_station));
+
+    displayUnitDist.listenable.addListener(() {
+      configUnits(dist: displayUnitDist.value);
+    });
+    displayUnitSpeed.listenable.addListener(() {
+      configUnits(speed: displayUnitSpeed.value);
+    });
+    displayUnitVario.listenable.addListener(() {
+      configUnits(vario: displayUnitVario.value);
+    });
+    displayUnitFuel.listenable.addListener(() {
+      configUnits(fuel: displayUnitFuel.value);
+    });
+
+    configUnits(
+        speed: displayUnitSpeed.value,
+        vario: displayUnitVario.value,
+        dist: displayUnitDist.value,
+        fuel: displayUnitFuel.value);
+
+    // --- Debug Tools
+    spoofLocation = SettingConfig(this, prefs, "Debug Tools", "spoofLocation", false,
+        title: "Spoof Location",
+        icon: const Icon(
+          Icons.location_off,
+          color: Colors.red,
+        ),
+        description: "Useful for test driving while on the ground.");
+    clearMapCache = SettingAction(this, "Debug Tools", () {},
+        title: "Clear Map Cache",
+        actionIcon: const Icon(
+          Icons.delete,
+          color: Colors.red,
+        ));
+  }
+}
+
+/// Singleton
+late final SettingsMgr settingsMgr;
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 class Settings with ChangeNotifier {
   // --- Map TileProviders
   String _curMapTiles = "topo";
@@ -105,8 +345,8 @@ class Settings with ChangeNotifier {
   };
 
   // --- Modes
-  bool _groundMode = false;
-  bool _groundModeTelemetry = false;
+  // bool _groundMode = false;
+  // bool _groundModeTelemetry = false;
 
   // --- Debug Tools
   bool _spoofLocation = false;
@@ -120,10 +360,10 @@ class Settings with ChangeNotifier {
   bool _showAirspaceOverlay = true;
 
   // --- Units
-  var _displayUnitsSpeed = DisplayUnitsSpeed.mph;
-  var _displayUnitsVario = DisplayUnitsVario.fpm;
-  var _displayUnitsDist = DisplayUnitsDist.imperial;
-  var _displayUnitsFuel = DisplayUnitsFuel.liter;
+  // var _displayUnitsSpeed = DisplayUnitsSpeed.mph;
+  // var _displayUnitsVario = DisplayUnitsVario.fpm;
+  // var _displayUnitsDist = DisplayUnitsDist.imperial;
+  // var _displayUnitsFuel = DisplayUnitsFuel.liter;
 
   // --- ADSB
   final Map<String, ProximityConfig> proximityProfileOptions = {
@@ -232,13 +472,16 @@ class Settings with ChangeNotifier {
   _loadSettings() {
     SharedPreferences.getInstance().then((prefs) {
       // --- Units
-      _displayUnitsSpeed = DisplayUnitsSpeed.values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
-      _displayUnitsVario = DisplayUnitsVario.values[prefs.getInt("settings.displayUnitsVario") ?? 0];
-      _displayUnitsDist = DisplayUnitsDist.values[prefs.getInt("settings.displayUnitsDist") ?? 0];
-      _displayUnitsFuel = DisplayUnitsFuel.values[prefs.getInt("settings.displayUnitsFuel") ?? 0];
+      // _displayUnitsSpeed = DisplayUnitsSpeed.values[prefs.getInt("settings.displayUnitsSpeed") ?? 0];
+      // _displayUnitsVario = DisplayUnitsVario.values[prefs.getInt("settings.displayUnitsVario") ?? 0];
+      // _displayUnitsDist = DisplayUnitsDist.values[prefs.getInt("settings.displayUnitsDist") ?? 0];
+      // _displayUnitsFuel = DisplayUnitsFuel.values[prefs.getInt("settings.displayUnitsFuel") ?? 0];
 
-      configUnits(
-          speed: displayUnitsSpeed, vario: _displayUnitsVario, dist: _displayUnitsDist, fuel: _displayUnitsFuel);
+      // configUnits(
+      //     speed: displayUnitsSpeed,
+      //     vario: _displayUnitsVario,
+      //     dist: settingsMgr.displayUnitDist.value,
+      //     fuel: _displayUnitsFuel);
 
       // --- UI
       _showWeatherOverlay = prefs.getBool("settings.showWeatherOverlay") ?? true;
@@ -248,8 +491,8 @@ class Settings with ChangeNotifier {
       _mapControlsRightSide = prefs.getBool("settings.mapControlsRightSide") ?? false;
       _showPilotNames = prefs.getBool("settings.showPilotNames") ?? false;
 
-      _groundMode = prefs.getBool("settings.groundMode") ?? false;
-      _groundModeTelemetry = prefs.getBool("settings.groundModeTelemetry") ?? false;
+      // _groundMode = prefs.getBool("settings.groundMode") ?? false;
+      // _groundModeTelemetry = prefs.getBool("settings.groundModeTelemetry") ?? false;
 
       _curMapTiles = prefs.getString("settings.curMapTiles") ?? mapTileThumbnails.keys.first;
       for (String name in _mapOpacity.keys) {
@@ -327,46 +570,46 @@ class Settings with ChangeNotifier {
     notifyListeners();
   }
 
-  // --- displayUnits
-  DisplayUnitsSpeed get displayUnitsSpeed => _displayUnitsSpeed;
-  set displayUnitsSpeed(DisplayUnitsSpeed value) {
-    _displayUnitsSpeed = value;
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setInt("settings.displayUnitsSpeed", _displayUnitsSpeed.index);
-    });
-    configUnits(speed: _displayUnitsSpeed);
-    notifyListeners();
-  }
+  // // --- displayUnits
+  // DisplayUnitsSpeed get displayUnitsSpeed => _displayUnitsSpeed;
+  // set displayUnitsSpeed(DisplayUnitsSpeed value) {
+  //   _displayUnitsSpeed = value;
+  //   SharedPreferences.getInstance().then((prefs) {
+  //     prefs.setInt("settings.displayUnitsSpeed", _displayUnitsSpeed.index);
+  //   });
+  //   configUnits(speed: _displayUnitsSpeed);
+  //   notifyListeners();
+  // }
 
-  DisplayUnitsVario get displayUnitsVario => _displayUnitsVario;
-  set displayUnitsVario(DisplayUnitsVario value) {
-    _displayUnitsVario = value;
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setInt("settings.displayUnitsVario", _displayUnitsVario.index);
-    });
-    configUnits(vario: _displayUnitsVario);
-    notifyListeners();
-  }
+  // DisplayUnitsVario get displayUnitsVario => _displayUnitsVario;
+  // set displayUnitsVario(DisplayUnitsVario value) {
+  //   _displayUnitsVario = value;
+  //   SharedPreferences.getInstance().then((prefs) {
+  //     prefs.setInt("settings.displayUnitsVario", _displayUnitsVario.index);
+  //   });
+  //   configUnits(vario: _displayUnitsVario);
+  //   notifyListeners();
+  // }
 
-  DisplayUnitsDist get displayUnitsDist => _displayUnitsDist;
-  set displayUnitsDist(DisplayUnitsDist value) {
-    _displayUnitsDist = value;
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setInt("settings.displayUnitsDist", _displayUnitsDist.index);
-    });
-    configUnits(dist: _displayUnitsDist);
-    notifyListeners();
-  }
+  // DisplayUnitsDist get displayUnitsDist => _displayUnitsDist;
+  // set displayUnitsDist(DisplayUnitsDist value) {
+  //   _displayUnitsDist = value;
+  //   SharedPreferences.getInstance().then((prefs) {
+  //     prefs.setInt("settings.displayUnitsDist", _displayUnitsDist.index);
+  //   });
+  //   configUnits(dist: _displayUnitsDist);
+  //   notifyListeners();
+  // }
 
-  DisplayUnitsFuel get displayUnitsFuel => _displayUnitsFuel;
-  set displayUnitsFuel(DisplayUnitsFuel value) {
-    _displayUnitsFuel = value;
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setInt("settings.displayUnitsFuel", _displayUnitsFuel.index);
-    });
-    configUnits(fuel: _displayUnitsFuel);
-    notifyListeners();
-  }
+  // DisplayUnitsFuel get displayUnitsFuel => _displayUnitsFuel;
+  // set displayUnitsFuel(DisplayUnitsFuel value) {
+  //   _displayUnitsFuel = value;
+  //   SharedPreferences.getInstance().then((prefs) {
+  //     prefs.setInt("settings.displayUnitsFuel", _displayUnitsFuel.index);
+  //   });
+  //   configUnits(fuel: _displayUnitsFuel);
+  //   notifyListeners();
+  // }
 
   bool get spoofLocation => _spoofLocation;
   set spoofLocation(bool value) {
@@ -374,23 +617,23 @@ class Settings with ChangeNotifier {
     notifyListeners();
   }
 
-  bool get groundMode => _groundMode;
-  set groundMode(bool value) {
-    _groundMode = value;
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setBool("settings.groundMode", _groundMode);
-    });
-    notifyListeners();
-  }
+  // bool get groundMode => _groundMode;
+  // set groundMode(bool value) {
+  //   _groundMode = value;
+  //   SharedPreferences.getInstance().then((prefs) {
+  //     prefs.setBool("settings.groundMode", _groundMode);
+  //   });
+  //   notifyListeners();
+  // }
 
-  bool get groundModeTelemetry => _groundModeTelemetry;
-  set groundModeTelemetry(bool value) {
-    _groundModeTelemetry = value;
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setBool("settings.groundModeTelemetry", _groundModeTelemetry);
-    });
-    notifyListeners();
-  }
+  // bool get groundModeTelemetry => _groundModeTelemetry;
+  // set groundModeTelemetry(bool value) {
+  //   _groundModeTelemetry = value;
+  //   SharedPreferences.getInstance().then((prefs) {
+  //     prefs.setBool("settings.groundModeTelemetry", _groundModeTelemetry);
+  //   });
+  //   notifyListeners();
+  // }
 
   // --- ADSB
   void selectProximityConfig(String name) {

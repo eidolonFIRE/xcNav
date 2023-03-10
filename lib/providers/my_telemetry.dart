@@ -312,10 +312,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     // debugPrint("geoUpdate (${position.timestamp}): ${position.altitude}, ${position.latitude} x ${position.longitude}");
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
-      updateGeo(position, bypassRecording: settings.groundMode || bypassRecording);
+      updateGeo(position, bypassRecording: settingsMgr.groundMode.value || bypassRecording);
     }
 
-    if (!settings.groundMode || settings.groundModeTelemetry) {
+    if (!settingsMgr.groundMode.value || settingsMgr.groundModeTelem.value) {
       if (group.activePilots.isNotEmpty || client.telemetrySkips > 20) {
         client.sendTelemetry(geo);
         client.telemetrySkips = 0;
