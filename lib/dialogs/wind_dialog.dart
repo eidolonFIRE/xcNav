@@ -68,91 +68,94 @@ void showWindDialog(BuildContext context) {
               ),
 
               /// --- Wind Readings Polar Chart
-              Card(
-                color: Colors.black26,
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width - 180,
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        wind.result == null
-                            ? Center(
-                                child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Padding(
-                                    padding: EdgeInsets.all(10.0),
-                                    child: Text("Slowly Turn ¼ Circle", style: TextStyle(fontSize: 18)),
-                                  ),
-                                  CircularProgressIndicator.adaptive(
-                                    strokeWidth: 3,
-                                  )
-                                ],
-                              ))
-                            : ClipRect(
-                                child: CustomPaint(
-                                  painter: WindPlotPainter(
-                                      3,
-                                      wind.result!.samplesX,
-                                      wind.result!.samplesY,
-                                      wind.result!.maxSpd * 1.1,
-                                      wind.result!.circleCenter,
-                                      wind.result!.airspeed,
-                                      settingsMgr.northlockWind.value),
-                                ),
-                              ),
-                        Positioned(
-                          left: 4,
-                          top: 4,
-                          child: MapButton(
-                            size: 40,
-                            onPressed: () => {settingsMgr.northlockWind.value = !settingsMgr.northlockWind.value},
-                            selected: false,
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              transformAlignment: const Alignment(0, 0),
-                              transform: Matrix4.rotationZ(settingsMgr.northlockWind.value
-                                  ? 0
-                                  : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
-                              child: settingsMgr.northlockWind.value
-                                  ? SvgPicture.asset(
-                                      "assets/images/compass_north.svg",
-                                      // fit: BoxFit.none,
-                                      color: Colors.white,
-                                    )
-                                  : Transform.scale(
-                                      scale: 1.4,
-                                      child: SvgPicture.asset(
-                                        "assets/images/compass.svg",
-                                        // fit: BoxFit.none,
+              ValueListenableBuilder<bool>(
+                  valueListenable: settingsMgr.northlockWind.listenable,
+                  builder: (context, northlockWind, _) {
+                    return Card(
+                      color: Colors.black26,
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width - 180,
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              wind.result == null
+                                  ? Center(
+                                      child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Padding(
+                                          padding: EdgeInsets.all(10.0),
+                                          child: Text("Slowly Turn ¼ Circle", style: TextStyle(fontSize: 18)),
+                                        ),
+                                        CircularProgressIndicator.adaptive(
+                                          strokeWidth: 3,
+                                        )
+                                      ],
+                                    ))
+                                  : ClipRect(
+                                      child: CustomPaint(
+                                        painter: WindPlotPainter(
+                                            3,
+                                            wind.result!.samplesX,
+                                            wind.result!.samplesY,
+                                            wind.result!.maxSpd * 1.1,
+                                            wind.result!.circleCenter,
+                                            wind.result!.airspeed,
+                                            northlockWind),
                                       ),
                                     ),
-                            ),
+                              Positioned(
+                                left: 4,
+                                top: 4,
+                                child: MapButton(
+                                  size: 40,
+                                  onPressed: () => {settingsMgr.northlockWind.value = !northlockWind},
+                                  selected: false,
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: Matrix4.rotationZ(
+                                        northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
+                                    child: northlockWind
+                                        ? SvgPicture.asset(
+                                            "assets/images/compass_north.svg",
+                                            // fit: BoxFit.none,
+                                            color: Colors.white,
+                                          )
+                                        : Transform.scale(
+                                            scale: 1.4,
+                                            child: SvgPicture.asset(
+                                              "assets/images/compass.svg",
+                                              // fit: BoxFit.none,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: MapButton(
+                                  size: 40,
+                                  onPressed: () {
+                                    if (wind.samples.length > 10) {
+                                      wind.samples.removeRange(0, wind.samples.length - 10);
+                                      wind.clearResult();
+                                    }
+                                  },
+                                  selected: false,
+                                  child: const Icon(Icons.refresh),
+                                ),
+                              )
+                            ],
                           ),
                         ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: MapButton(
-                            size: 40,
-                            onPressed: () {
-                              if (wind.samples.length > 10) {
-                                wind.samples.removeRange(0, wind.samples.length - 10);
-                                wind.clearResult();
-                              }
-                            },
-                            selected: false,
-                            child: const Icon(Icons.refresh),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-              )
+                      ),
+                    );
+                  })
             ],
           ),
         ),

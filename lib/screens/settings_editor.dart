@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
@@ -32,9 +33,11 @@ class _SettingsEditorState extends State<SettingsEditor> {
   Widget build(BuildContext context) {
     // --- Future Builders
     getMapTileCacheSize().then((value) {
-      setState(() {
-        settingsMgr.clearMapCache.title = "Clear Map Cache ($value)";
-      });
+      if (mounted) {
+        setState(() {
+          settingsMgr.clearMapCache.title = "Clear Map Cache ($value)";
+        });
+      }
     });
 
     // --- Hookup actions
@@ -134,37 +137,33 @@ class _SettingsEditorState extends State<SettingsEditor> {
       showDialog(
           context: context,
           builder: ((context) {
-            final nameFormKey = GlobalKey<FormState>();
-            final emailFormKey = GlobalKey<FormState>();
-            final nameController = TextEditingController();
-            final emailController = TextEditingController();
+            final formKey = GlobalKey<FormState>();
+            final nameController = TextEditingController(text: settingsMgr.patreonName.value);
+            final emailController = TextEditingController(text: settingsMgr.patreonEmail.value);
 
             /// --- Patreon Info
             return AlertDialog(
               content: Form(
-                  child: Column(children: [
-                TextFormField(
-                    key: nameFormKey,
-                    controller: nameController,
-                    initialValue: settingsMgr.patreonName.value,
-                    validator: (value) {
-                      if (value != null) {
-                        if (value.trim().isEmpty) return "Must not be empty";
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      label: Text("Name on Account"),
-                    )),
-                TextFormField(
-                  key: emailFormKey,
-                  controller: emailController,
-                  initialValue: settingsMgr.patreonEmail.value,
-                  validator: (value) =>
-                      EmailValidator.validate(value ?? "") || value == "" ? null : "Not a valid email",
-                  decoration: const InputDecoration(label: Text("Email")),
-                ),
-              ])),
+                  key: formKey,
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    TextFormField(
+                        controller: nameController,
+                        // validator: (value) {
+                        //   if (value != null) {
+                        //     if (value.trim().isEmpty) return "Must not be empty";
+                        //   }
+                        //   return null;
+                        // },
+                        decoration: const InputDecoration(
+                          label: Text("Name on Account"),
+                        )),
+                    TextFormField(
+                      controller: emailController,
+                      validator: (value) =>
+                          EmailValidator.validate(value ?? "") || value == "" ? null : "Not a valid email",
+                      decoration: const InputDecoration(label: Text("Email")),
+                    ),
+                  ])),
               actions: [
                 IconButton(
                     onPressed: () => {showPatreonInfoDialog(context)},
@@ -178,11 +177,10 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     )),
                 IconButton(
                     onPressed: () {
-                      if (nameFormKey.currentState?.validate() ?? false) {
+                      if (formKey.currentState?.validate() ?? false) {
                         settingsMgr.patreonName.value = nameController.text;
-                      }
-                      if (emailFormKey.currentState?.validate() ?? false) {
                         settingsMgr.patreonEmail.value = emailController.text;
+                        Navigator.pop(context);
                       }
                     },
                     icon: const Icon(
@@ -200,157 +198,162 @@ class _SettingsEditorState extends State<SettingsEditor> {
         ),
         body: Column(
           children: [
-            TextField(
-              autofocus: false,
-              // focusNode: textFocusNode,
-              style: const TextStyle(fontSize: 20),
-              controller: filterText,
-              decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-                  hintText: "search"),
-              onChanged: (value) {
-                setState(() {});
-              },
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                autofocus: false,
+                // focusNode: textFocusNode,
+                style: const TextStyle(fontSize: 20),
+                controller: filterText,
+                decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                    hintText: "search"),
+                onChanged: (value) {
+                  if (mounted) {
+                    setState(() {});
+                  }
+                },
+              ),
             ),
-            const Divider(),
             Expanded(
               child: ListView(
                   children: settingsMgr.settings
-                      .map((key, catagory) => MapEntry(
-                          key,
-                          // Catagory
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(left: 20, top: 20),
-                                child: Text(
-                                  key,
-                                  style: const TextStyle(color: Colors.grey),
+                      .map((key, catagory) => MapEntry(key,
+                              // Catagory
+                              Builder(builder: (context) {
+                            final List<Widget> items = catagory
+                                .where((element) =>
+                                    filterText.text.isEmpty ||
+                                    weightedRatio("${element.catagory.toLowerCase()} ${element.title.toLowerCase()}",
+                                            filterText.text.toLowerCase()) >
+                                        min(90, filterText.text.length * 15))
+                                .map((e) => e.isConfig
+                                    // --- Config
+                                    ? ValueListenableBuilder(
+                                        valueListenable: e.config!.listenable,
+                                        builder: (context, value, _) {
+                                          Widget? trailing;
+                                          // Select trailing
+                                          switch (e.config!.value.runtimeType) {
+                                            case bool:
+                                              trailing = Switch.adaptive(
+                                                  value: value as bool, onChanged: (value) => e.config!.value = value);
+                                              break;
+                                            // TODO: generalize this. Blocker is getting enum.values from generic
+                                            case DisplayUnitsDist:
+                                              trailing = DropdownButton<DisplayUnitsDist>(
+                                                  onChanged: (value) =>
+                                                      {e.config!.value = value ?? e.config!.defaultValue},
+                                                  value: e.config!.value,
+                                                  items: const [
+                                                    DropdownMenuItem(
+                                                        value: DisplayUnitsDist.imperial, child: Text("Imperial")),
+                                                    DropdownMenuItem(
+                                                        value: DisplayUnitsDist.metric, child: Text("Metric")),
+                                                  ]);
+                                              break;
+                                            case DisplayUnitsSpeed:
+                                              trailing = DropdownButton<DisplayUnitsSpeed>(
+                                                  onChanged: (value) =>
+                                                      {e.config!.value = value ?? e.config!.defaultValue},
+                                                  value: e.config!.value,
+                                                  items: const [
+                                                    DropdownMenuItem(value: DisplayUnitsSpeed.mph, child: Text("mph")),
+                                                    DropdownMenuItem(value: DisplayUnitsSpeed.kph, child: Text("kph")),
+                                                    DropdownMenuItem(value: DisplayUnitsSpeed.kts, child: Text("kts")),
+                                                    DropdownMenuItem(value: DisplayUnitsSpeed.mps, child: Text("m/s")),
+                                                  ]);
+                                              break;
+                                            case DisplayUnitsVario:
+                                              trailing = DropdownButton<DisplayUnitsVario>(
+                                                  onChanged: (value) =>
+                                                      {e.config!.value = value ?? e.config!.defaultValue},
+                                                  value: e.config!.value,
+                                                  items: const [
+                                                    DropdownMenuItem(value: DisplayUnitsVario.fpm, child: Text("ft/m")),
+                                                    DropdownMenuItem(value: DisplayUnitsVario.mps, child: Text("m/s")),
+                                                  ]);
+                                              break;
+                                            case DisplayUnitsFuel:
+                                              trailing = DropdownButton<DisplayUnitsFuel>(
+                                                  onChanged: (value) =>
+                                                      {e.config!.value = value ?? e.config!.defaultValue},
+                                                  value: e.config!.value,
+                                                  items: const [
+                                                    DropdownMenuItem(value: DisplayUnitsFuel.liter, child: Text("L")),
+                                                    DropdownMenuItem(value: DisplayUnitsFuel.gal, child: Text("Gal")),
+                                                  ]);
+                                              break;
+                                            case AltimeterMode:
+                                              trailing = DropdownButton<AltimeterMode>(
+                                                  onChanged: (value) =>
+                                                      {e.config!.value = value ?? e.config!.defaultValue},
+                                                  value: e.config!.value,
+                                                  items: const [
+                                                    DropdownMenuItem(value: AltimeterMode.agl, child: Text("AGL")),
+                                                    DropdownMenuItem(value: AltimeterMode.msl, child: Text("MSL")),
+                                                  ]);
+                                              break;
+                                            case ProximitySize:
+                                              trailing = DropdownButton<ProximitySize>(
+                                                  onChanged: (value) =>
+                                                      {e.config!.value = value ?? e.config!.defaultValue},
+                                                  value: e.config!.value,
+                                                  items: ProximitySize.values
+                                                      .map((e) => DropdownMenuItem(
+                                                          value: e, child: Text(e.toString().split(".").last)))
+                                                      .toList());
+                                              break;
+                                            default:
+                                              trailing = Text(
+                                                  "${e.config!.id} Unsupported Type ${e.config!.value.runtimeType}");
+                                          }
+                                          // Build each
+                                          return ListTile(
+                                            leading: e.config!.icon,
+                                            title: Text(
+                                              e.title,
+                                              style: Theme.of(context).textTheme.bodyText1,
+                                            ),
+                                            trailing: trailing,
+                                          );
+                                        })
+                                    // --- Actions
+                                    : ListTile(
+                                        title: Text(
+                                          e.title,
+                                          style: Theme.of(context).textTheme.bodyText1,
+                                        ),
+                                        trailing: IconButton(
+                                            icon: e.action!.actionIcon ?? const Icon(Icons.navigate_next),
+                                            onPressed: e.action!.callback),
+                                      ))
+                                .toList();
+                            if (items.isEmpty) return Container();
+
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 20, top: 20),
+                                  child: Text(
+                                    key,
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
                                 ),
-                              ),
-                              Card(
-                                shape:
-                                    const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                                color: Colors.grey.shade900,
-                                margin: const EdgeInsets.all(8),
-                                child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: ListTile.divideTiles(
-                                        context: context,
-                                        tiles: catagory
-                                            .where((element) =>
-                                                filterText.text.isEmpty ||
-                                                weightedRatio(element.title, filterText.text) > 70)
-                                            .map((e) => e.isConfig
-                                                // --- Config
-                                                ? ValueListenableBuilder(
-                                                    valueListenable: e.config!.listenable,
-                                                    builder: (context, value, _) {
-                                                      Widget? trailing;
-                                                      // Select trailing
-                                                      switch (e.config!.value.runtimeType) {
-                                                        case bool:
-                                                          trailing = Switch.adaptive(
-                                                              value: value as bool,
-                                                              onChanged: (value) => e.config!.value = value);
-                                                          break;
-                                                        // TODO: generalize this. Blocker is getting enum.values from generic
-                                                        case DisplayUnitsDist:
-                                                          trailing = DropdownButton<DisplayUnitsDist>(
-                                                              onChanged: (value) =>
-                                                                  {e.config!.value = value ?? e.config!.defaultValue},
-                                                              value: e.config!.value,
-                                                              items: const [
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsDist.imperial,
-                                                                    child: Text("Imperial")),
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsDist.metric,
-                                                                    child: Text("Metric")),
-                                                              ]);
-                                                          break;
-                                                        case DisplayUnitsSpeed:
-                                                          trailing = DropdownButton<DisplayUnitsSpeed>(
-                                                              onChanged: (value) =>
-                                                                  {e.config!.value = value ?? e.config!.defaultValue},
-                                                              value: e.config!.value,
-                                                              items: const [
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsSpeed.mph, child: Text("mph")),
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsSpeed.kph, child: Text("kph")),
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsSpeed.kts, child: Text("kts")),
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsSpeed.mps, child: Text("m/s")),
-                                                              ]);
-                                                          break;
-                                                        case DisplayUnitsVario:
-                                                          trailing = DropdownButton<DisplayUnitsVario>(
-                                                              onChanged: (value) =>
-                                                                  {e.config!.value = value ?? e.config!.defaultValue},
-                                                              value: e.config!.value,
-                                                              items: const [
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsVario.fpm, child: Text("ft/m")),
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsVario.mps, child: Text("m/s")),
-                                                              ]);
-                                                          break;
-                                                        case DisplayUnitsFuel:
-                                                          trailing = DropdownButton<DisplayUnitsFuel>(
-                                                              onChanged: (value) =>
-                                                                  {e.config!.value = value ?? e.config!.defaultValue},
-                                                              value: e.config!.value,
-                                                              items: const [
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsFuel.liter, child: Text("L")),
-                                                                DropdownMenuItem(
-                                                                    value: DisplayUnitsFuel.gal, child: Text("Gal")),
-                                                              ]);
-                                                          break;
-                                                        case AltimeterMode:
-                                                          trailing = DropdownButton<AltimeterMode>(
-                                                              onChanged: (value) =>
-                                                                  {e.config!.value = value ?? e.config!.defaultValue},
-                                                              value: e.config!.value,
-                                                              items: const [
-                                                                DropdownMenuItem(
-                                                                    value: AltimeterMode.agl, child: Text("AGL")),
-                                                                DropdownMenuItem(
-                                                                    value: AltimeterMode.msl, child: Text("MSL")),
-                                                              ]);
-                                                          break;
-                                                        default:
-                                                          trailing = Text(
-                                                              "${e.config!.id} Unsupported Type ${e.config!.value.runtimeType}");
-                                                      }
-                                                      // Build each
-                                                      return ListTile(
-                                                        leading: e.config!.icon,
-                                                        title: Text(
-                                                          e.title,
-                                                          style: Theme.of(context).textTheme.bodyText1,
-                                                        ),
-                                                        trailing: trailing,
-                                                      );
-                                                    })
-                                                // --- Actions
-                                                : ListTile(
-                                                    title: Text(
-                                                      e.title,
-                                                      style: Theme.of(context).textTheme.bodyText1,
-                                                    ),
-                                                    trailing: IconButton(
-                                                        icon: e.action!.actionIcon ?? const Icon(Icons.navigate_next),
-                                                        onPressed: e.action!.callback),
-                                                  ))).toList()),
-                              ),
-                            ],
-                          )))
+                                Card(
+                                    shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(Radius.circular(12))),
+                                    color: Colors.grey.shade900,
+                                    margin: const EdgeInsets.all(8),
+                                    child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: ListTile.divideTiles(context: context, tiles: items).toList())),
+                              ],
+                            );
+                          })))
                       .values
                       .toList()),
             ),

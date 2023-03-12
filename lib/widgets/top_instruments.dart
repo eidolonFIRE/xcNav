@@ -36,77 +36,81 @@ Widget topInstruments(BuildContext context) {
 
           // --- Windicator
           Consumer<Wind>(
-              builder: (context, wind, _) => GestureDetector(
-                  onTap: () {
-                    showWindDialog(context);
-                  },
-                  child: SizedBox(
-                    width: 90,
-                    height: 90,
-                    child: Card(
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            left: 4,
-                            top: 4,
-                            child: Container(
-                              width: 15,
-                              height: 15,
-                              transformAlignment: const Alignment(0, 0),
-                              transform: Matrix4.rotationZ(settingsMgr.northlockWind.value
-                                  ? 0
-                                  : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
-                              child: settingsMgr.northlockWind.value
-                                  ? SvgPicture.asset(
-                                      "assets/images/compass_north.svg",
-                                      // fit: BoxFit.none,
-                                      color: Colors.white,
-                                    )
-                                  : Transform.scale(
-                                      scale: 1.4,
-                                      child: SvgPicture.asset(
-                                        "assets/images/compass.svg",
-                                        // fit: BoxFit.none,
-                                      ),
-                                    ),
+              builder: (context, wind, _) => ValueListenableBuilder<bool>(
+                  valueListenable: settingsMgr.northlockWind.listenable,
+                  builder: (context, northlockWind, _) {
+                    return GestureDetector(
+                        onTap: () {
+                          showWindDialog(context);
+                        },
+                        child: SizedBox(
+                          width: 90,
+                          height: 90,
+                          child: Card(
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                  left: 4,
+                                  top: 4,
+                                  child: Container(
+                                    width: 15,
+                                    height: 15,
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: Matrix4.rotationZ(
+                                        northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
+                                    child: northlockWind
+                                        ? SvgPicture.asset(
+                                            "assets/images/compass_north.svg",
+                                            // fit: BoxFit.none,
+                                            color: Colors.white,
+                                          )
+                                        : Transform.scale(
+                                            scale: 1.4,
+                                            child: SvgPicture.asset(
+                                              "assets/images/compass.svg",
+                                              // fit: BoxFit.none,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                                // Wind direction indicator
+                                if (wind.result != null)
+                                  Align(
+                                      alignment: Alignment.topCenter,
+                                      child: Container(
+                                        transformAlignment: const Alignment(0, 0),
+                                        transform: Matrix4.rotationZ(
+                                            wind.result!.windHdg + (northlockWind ? 0 : -myTelemetry.geo.hdg)),
+                                        child: SvgPicture.asset(
+                                          "assets/images/arrow.svg",
+                                          width: 80,
+                                          height: 80,
+                                        ),
+                                      )),
+                                if (wind.result != null)
+                                  Align(
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        printDouble(
+                                            value: unitConverters[UnitType.speed]!(wind.result!.windSpd),
+                                            digits: 2,
+                                            decimals: 0),
+                                        style: const TextStyle(
+                                            color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                                      )),
+                                if (wind.result == null)
+                                  const Center(
+                                      child: Text(
+                                    "?",
+                                    style: TextStyle(color: Colors.grey, fontSize: 20),
+                                  ))
+                              ],
                             ),
                           ),
-                          // Wind direction indicator
-                          if (wind.result != null)
-                            Align(
-                                alignment: Alignment.topCenter,
-                                child: Container(
-                                  transformAlignment: const Alignment(0, 0),
-                                  transform: Matrix4.rotationZ(wind.result!.windHdg +
-                                      (settingsMgr.northlockWind.value ? 0 : -myTelemetry.geo.hdg)),
-                                  child: SvgPicture.asset(
-                                    "assets/images/arrow.svg",
-                                    width: 80,
-                                    height: 80,
-                                  ),
-                                )),
-                          if (wind.result != null)
-                            Align(
-                                alignment: Alignment.center,
-                                child: Text(
-                                  printDouble(
-                                      value: unitConverters[UnitType.speed]!(wind.result!.windSpd),
-                                      digits: 2,
-                                      decimals: 0),
-                                  style:
-                                      const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
-                                )),
-                          if (wind.result == null)
-                            const Center(
-                                child: Text(
-                              "?",
-                              style: TextStyle(color: Colors.grey, fontSize: 20),
-                            ))
-                        ],
-                      ),
-                    ),
-                  ))),
+                        ));
+                  })),
 
+          // --- Altimeter stack
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: ValueListenableBuilder<AltimeterMode>(
