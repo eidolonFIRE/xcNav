@@ -1,13 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
-import 'package:settings_ui/settings_ui.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:email_validator/email_validator.dart';
-import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/map_service.dart';
 
 // Providers
@@ -18,6 +15,7 @@ import 'package:xcnav/providers/adsb.dart';
 //
 import 'package:xcnav/units.dart';
 import 'package:xcnav/dialogs/patreon_info.dart';
+import 'package:xcnav/widgets/altimeter.dart';
 
 class SettingsEditor extends StatefulWidget {
   const SettingsEditor({Key? key}) : super(key: key);
@@ -28,8 +26,6 @@ class SettingsEditor extends StatefulWidget {
 
 class _SettingsEditorState extends State<SettingsEditor> {
   final TextEditingController searchInput = TextEditingController();
-  var emailFormKey = GlobalKey<FormState>();
-
   final filterText = TextEditingController();
 
   @override
@@ -50,6 +46,152 @@ class _SettingsEditorState extends State<SettingsEditor> {
 
     settingsMgr.adsbTestAudio.callback = () {
       Provider.of<ADSB>(context, listen: false).testWarning();
+    };
+
+    settingsMgr.clearAvatarCache.callback = () {
+      showDialog(
+          context: context,
+          builder: (BuildContext ctx) {
+            return AlertDialog(
+              title: const Text('Please Confirm'),
+              content: const Text('Are you sure you want to clear all cached avatars?'),
+              actions: [
+                // The "Yes" button
+                TextButton.icon(
+                    onPressed: () {
+                      // // Clear Profile
+                      // Provider.of<Profile>(context, listen: false).eraseIdentity();
+
+                      // // Remove Avatar saved file
+                      // path_provider.getTemporaryDirectory().then((tempDir) {
+                      //   var outfile = File(tempDir.path + "/avatar.jpg");
+                      //   outfile.exists().then((value) => {if (value) outfile.delete()});
+                      // });
+                      path_provider.getTemporaryDirectory().then((tempDir) {
+                        var fileAvatar = Directory("${tempDir.path}/avatars/");
+                        fileAvatar.delete(recursive: true);
+                      });
+
+                      // Close the dialog
+                      Navigator.of(context).pop();
+                    },
+                    icon: const Icon(
+                      Icons.delete_forever,
+                      color: Colors.red,
+                    ),
+                    label: const Text('Yes')),
+                TextButton(
+                    onPressed: () {
+                      // Close the dialog
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('No'))
+              ],
+            );
+          });
+    };
+
+    settingsMgr.eraseIdentity.callback = () {
+      showDialog(
+          context: context,
+          builder: (BuildContext ctx) {
+            return AlertDialog(
+              title: const Text('Please Confirm'),
+              content: const Text('Are you sure you want to clear your Identity?'),
+              actions: [
+                // The "Yes" button
+                TextButton.icon(
+                    onPressed: () {
+                      // Clear Profile
+                      Provider.of<Profile>(context, listen: false).eraseIdentity();
+
+                      // Remove Avatar saved file
+                      path_provider.getTemporaryDirectory().then((tempDir) {
+                        var outfile = File("${tempDir.path}/avatar.jpg");
+                        outfile.exists().then((value) => {if (value) outfile.delete()});
+                      });
+
+                      // Close the dialog
+                      Navigator.of(context).pop();
+                    },
+                    icon: const Icon(
+                      Icons.delete_forever,
+                      color: Colors.red,
+                    ),
+                    label: const Text('Yes')),
+                TextButton(
+                    onPressed: () {
+                      // Close the dialog
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('No'))
+              ],
+            );
+          });
+    };
+
+    settingsMgr.editPatreonInfo.callback = () {
+      showDialog(
+          context: context,
+          builder: ((context) {
+            final nameFormKey = GlobalKey<FormState>();
+            final emailFormKey = GlobalKey<FormState>();
+            final nameController = TextEditingController();
+            final emailController = TextEditingController();
+
+            /// --- Patreon Info
+            return AlertDialog(
+              content: Form(
+                  child: Column(children: [
+                TextFormField(
+                    key: nameFormKey,
+                    controller: nameController,
+                    initialValue: settingsMgr.patreonName.value,
+                    validator: (value) {
+                      if (value != null) {
+                        if (value.trim().isEmpty) return "Must not be empty";
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      label: Text("Name on Account"),
+                    )),
+                TextFormField(
+                  key: emailFormKey,
+                  controller: emailController,
+                  initialValue: settingsMgr.patreonEmail.value,
+                  validator: (value) =>
+                      EmailValidator.validate(value ?? "") || value == "" ? null : "Not a valid email",
+                  decoration: const InputDecoration(label: Text("Email")),
+                ),
+              ])),
+              actions: [
+                IconButton(
+                    onPressed: () => {showPatreonInfoDialog(context)},
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    iconSize: 20,
+                    icon: const Icon(
+                      Icons.help,
+                      size: 20,
+                      color: Colors.lightBlue,
+                    )),
+                IconButton(
+                    onPressed: () {
+                      if (nameFormKey.currentState?.validate() ?? false) {
+                        settingsMgr.patreonName.value = nameController.text;
+                      }
+                      if (emailFormKey.currentState?.validate() ?? false) {
+                        settingsMgr.patreonEmail.value = emailController.text;
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.check,
+                      color: Colors.green,
+                    ))
+              ],
+            );
+          }));
     };
 
     return Scaffold(
@@ -77,7 +219,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
                   children: settingsMgr.settings
                       .map((key, catagory) => MapEntry(
                           key,
-
                           // Catagory
                           Column(
                             mainAxisSize: MainAxisSize.min,
@@ -171,6 +312,18 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                                     value: DisplayUnitsFuel.gal, child: Text("Gal")),
                                                               ]);
                                                           break;
+                                                        case AltimeterMode:
+                                                          trailing = DropdownButton<AltimeterMode>(
+                                                              onChanged: (value) =>
+                                                                  {e.config!.value = value ?? e.config!.defaultValue},
+                                                              value: e.config!.value,
+                                                              items: const [
+                                                                DropdownMenuItem(
+                                                                    value: AltimeterMode.agl, child: Text("AGL")),
+                                                                DropdownMenuItem(
+                                                                    value: AltimeterMode.msl, child: Text("MSL")),
+                                                              ]);
+                                                          break;
                                                         default:
                                                           trailing = Text(
                                                               "${e.config!.id} Unsupported Type ${e.config!.value.runtimeType}");
@@ -202,360 +355,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
                       .toList()),
             ),
           ],
-        )
-
-        // SettingsList(
-        //   darkTheme: SettingsThemeData(
-        //       settingsListBackground: Theme.of(context).backgroundColor,
-        //       settingsSectionBackground: Colors.grey.shade900),
-        //   platform: DevicePlatform.iOS,
-        //   sections: [
-        //     // --- Display Units
-        //     SettingsSection(title: const Text("Display Units"), tiles: [
-        //       SettingsTile.navigation(
-        //         title: const Text("Fuel"),
-        //         trailing: DropdownButton<DisplayUnitsFuel>(
-        //             onChanged: (value) => {settings.displayUnitsFuel = value ?? DisplayUnitsFuel.liter},
-        //             value: settings.displayUnitsFuel,
-        //             items: const [
-        //               DropdownMenuItem(value: DisplayUnitsFuel.liter, child: Text("L")),
-        //               DropdownMenuItem(value: DisplayUnitsFuel.gal, child: Text("Gal")),
-        //             ]),
-        //         leading: const Icon(Icons.local_gas_station),
-        //       ),
-        //       SettingsTile.navigation(
-        //         title: const Text("Distance"),
-        //         trailing: DropdownButton<DisplayUnitsDist>(
-        //             onChanged: (value) => {settings.displayUnitsDist = value ?? DisplayUnitsDist.imperial},
-        //             value: settings.displayUnitsDist,
-        //             items: const [
-        //               DropdownMenuItem(value: DisplayUnitsDist.imperial, child: Text("Imperial")),
-        //               DropdownMenuItem(value: DisplayUnitsDist.metric, child: Text("Metric")),
-        //             ]),
-        //         leading: const Icon(Icons.architecture),
-        //       ),
-        //       SettingsTile.navigation(
-        //         title: const Text("Speed"),
-        //         trailing: DropdownButton<DisplayUnitsSpeed>(
-        //             onChanged: (value) => {settings.displayUnitsSpeed = value ?? DisplayUnitsSpeed.mph},
-        //             value: settings.displayUnitsSpeed,
-        //             items: const [
-        //               DropdownMenuItem(value: DisplayUnitsSpeed.mph, child: Text("mph")),
-        //               DropdownMenuItem(value: DisplayUnitsSpeed.kph, child: Text("kph")),
-        //               DropdownMenuItem(value: DisplayUnitsSpeed.kts, child: Text("kts")),
-        //               DropdownMenuItem(value: DisplayUnitsSpeed.mps, child: Text("m/s")),
-        //             ]),
-        //         leading: const Icon(Icons.timer),
-        //       ),
-        //       SettingsTile.navigation(
-        //         title: const Text("Vario"),
-        //         trailing: DropdownButton<DisplayUnitsVario>(
-        //             onChanged: (value) => {settings.displayUnitsVario = value ?? DisplayUnitsVario.fpm},
-        //             value: settings.displayUnitsVario,
-        //             items: const [
-        // DropdownMenuItem(value: DisplayUnitsVario.fpm, child: Text("ft/m")),
-        // DropdownMenuItem(value: DisplayUnitsVario.mps, child: Text("m/s")),
-        //             ]),
-        //         leading: const Icon(Icons.trending_up),
-        //       ),
-        //     ]),
-
-        //     // --- General Options
-        //     SettingsSection(
-        //       title: const Text("General"),
-        //       tiles: [
-        //         SettingsTile.switchTile(
-        //           initialValue: settings.autoStartStopFlight,
-        //           onToggle: (value) => settings.autoStartStopFlight = value,
-        //           title: const Text("Auto Start/Stop Flight"),
-        //           leading: const Icon(Icons.play_arrow),
-        //         ),
-        //         SettingsTile.switchTile(
-        //           initialValue: settingsMgr.groundMode.value,
-        //           onToggle: (value) => settingsMgr.groundMode.value = value,
-        //           title: const Text("Ground Support Mode"),
-        //           leading: const Icon(Icons.directions_car),
-        //           // description:
-        //           //     const Text("Alters UI and doesn't record track."),
-        //         ),
-        //       ],
-        //     ),
-
-        //     // --- UI options
-        //     SettingsSection(
-        //       title: const Text("UI Options"),
-        //       tiles: [
-        //         SettingsTile.switchTile(
-        //           initialValue: settings.mapControlsRightSide,
-        //           onToggle: (value) => settings.mapControlsRightSide = value,
-        //           title: const Text("Right-handed UI"),
-        //           leading: const Icon(Icons.swap_horiz),
-        //           // description: const Text(
-        //           //     "Move map control buttons to the right side."),
-        //         ),
-        //         SettingsTile.switchTile(
-        //           initialValue: settings.showPilotNames,
-        //           onToggle: (value) => settings.showPilotNames = value,
-        //           title: const Text("Always Show Pilot Names"),
-        //           leading: const Icon(Icons.abc),
-        //           // description: const Text(
-        //           //     "Move map control buttons to the right side."),
-        //         ),
-        //         SettingsTile.navigation(
-        //             title: const Text("Primary Altimeter"),
-        //             leading: const Icon(Icons.vertical_align_top),
-        //             trailing: DropdownButton<String>(
-        //                 onChanged: (value) => {settings.altInstr = value ?? "MSL"},
-        //                 value: settings.altInstr,
-        //                 items: const [
-        //                   DropdownMenuItem(value: "AGL", child: Text("AGL")),
-        //                   DropdownMenuItem(value: "MSL", child: Text("MSL")),
-        //                 ])),
-        //         if (localeZone == "NA")
-        //           SettingsTile.switchTile(
-        //             title: const Text("Hide Weather Overlay"),
-        //             leading: const Icon(Icons.cloud),
-        //             onToggle: (value) => {settings.showWeatherOverlay = !value},
-        //             initialValue: !settings.showWeatherOverlay,
-        //           ),
-        //         SettingsTile.switchTile(
-        //           title: const Text("Hide Airspace Overlay"),
-        //           leading: SvgPicture.asset(
-        //             "assets/images/airspace.svg",
-        //             color: Colors.grey.shade400,
-        //           ),
-        //           onToggle: (value) => {settings.showAirspaceOverlay = !value},
-        //           initialValue: !settings.showAirspaceOverlay,
-        //         )
-        //       ],
-        //     ),
-        //     // --- ADSB options
-        //     SettingsSection(title: const Text("ADSB"), tiles: [
-        //       SettingsTile.navigation(
-        //         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        //           const Text("Proximity Profile"),
-        //           // const Divider(),
-        //           Text(
-        //             settings.proximityProfile.toMultilineString(settings),
-        //             style: const TextStyle(fontSize: 12, color: Colors.white60),
-        //           )
-        //         ]),
-        //         leading: const Icon(Icons.radar),
-        //         trailing: DropdownButton<String>(
-        //           onChanged: (value) {
-        //             settings.selectProximityConfig(value ?? "Medium");
-        //           },
-        //           value: settings.proximityProfileName,
-        //           items: settings.proximityProfileOptions.entries
-        //               .map((each) => DropdownMenuItem(value: each.key, child: Text(each.key)))
-        //               .toList(),
-        //         ),
-        //       ),
-        //       // --- Test Audio
-        //       SettingsTile.navigation(
-        //         title: const Text("Test Warning Audio"),
-        //         // leading: const Icon(Icons.volume_up),
-        //         onPressed: (event) => {Provider.of<ADSB>(context, listen: false).testWarning()},
-        //         trailing: const Icon(Icons.volume_up),
-        //       ),
-        //     ]),
-
-        //     /// --- Patreon Info
-        //     SettingsSection(
-        //         title: Row(
-        //           mainAxisSize: MainAxisSize.min,
-        //           children: [
-        //             const Text("Patreon Identity"),
-        //             IconButton(
-        //                 onPressed: () => {showPatreonInfoDialog(context)},
-        //                 padding: EdgeInsets.zero,
-        //                 visualDensity: VisualDensity.compact,
-        //                 iconSize: 20,
-        //                 icon: const Icon(
-        //                   Icons.help,
-        //                   size: 20,
-        //                   color: Colors.lightBlue,
-        //                 ))
-        //           ],
-        //         ),
-        //         tiles: [
-        //           SettingsTile.navigation(
-        //             title: TextFormField(
-        //                 initialValue: settings.patreonName,
-        //                 decoration: const InputDecoration(label: Text("First Name")),
-        //                 onChanged: (value) {
-        //                   settings.patreonName = value;
-        //                 }),
-        //             trailing: Container(),
-        //           ),
-        //           SettingsTile.navigation(
-        //             title: Form(
-        //               key: emailFormKey,
-        //               child: TextFormField(
-        //                 initialValue: settings.patreonEmail,
-        //                 validator: (value) =>
-        //                     EmailValidator.validate(value ?? "") || value == "" ? null : "Not a valid email",
-        //                 decoration: const InputDecoration(label: Text("Email")),
-        //                 onChanged: (value) {
-        //                   if (emailFormKey.currentState?.validate() ?? false) {
-        //                     settings.patreonEmail = value;
-        //                   }
-        //                 },
-        //               ),
-        //             ),
-        //             trailing: Container(),
-        //           ),
-        //         ]),
-
-        //     // --- Map Cache
-        //     SettingsSection(title: const Text("Map Cache"), tiles: <SettingsTile>[
-        //       SettingsTile.navigation(
-        //         title: FutureBuilder<String>(
-        //             future: settings.getMapTileCacheSize(),
-        //             initialData: "?",
-        //             builder: (context, value) {
-        //               return Text("Empty Cache  ( ${value.data} )");
-        //             }),
-        //         trailing: const Icon(Icons.delete, color: Colors.red),
-        //         onPressed: (_) {
-        //           setState(() {
-        //             settings.emptyMapTileCache();
-        //             // settings.purgeMapTileCache();
-        //           });
-        //         },
-        //       )
-        //     ]),
-
-        //     // --- Debug Tools
-        //     SettingsSection(
-        //         title: const Text(
-        //           "Debug Tools",
-        //           style: TextStyle(color: Colors.red),
-        //         ),
-        //         tiles: <SettingsTile>[
-        //           // --- Toggle: Location Spoofing
-        //           SettingsTile.switchTile(
-        //             initialValue: settings.spoofLocation,
-        //             title: const Text("Spoof Location"),
-        //             leading: const Icon(
-        //               Icons.location_off,
-        //               color: Colors.red,
-        //             ),
-        //             onToggle: (value) => {settings.spoofLocation = value},
-        //           ),
-        //           // // --- Clear path
-        //           // SettingsTile.navigation(
-        //           //   title: const Text("Clear Current Flight"),
-        //           //   leading: const Icon(
-        //           //     Icons.delete_sweep,
-        //           //     color: Colors.red,
-        //           //   ),
-        //           //   onPressed: (_) {
-        //           //     Provider.of<MyTelemetry>(context, listen: false).recordGeo.clear();
-        //           //     Provider.of<MyTelemetry>(context, listen: false).flightTrace.clear();
-        //           //   },
-        //           // ),
-        //           // --- Erase Identity
-        //           SettingsTile.navigation(
-        //             title: const Text("Clear Identity"),
-        //             // description: const Text(
-        //             //     "This will reset your pilot ID and profile!"),
-        //             leading: const Icon(
-        //               Icons.badge,
-        //               color: Colors.red,
-        //             ),
-        //             onPressed: (value) => {
-        //               showDialog(
-        //                   context: context,
-        //                   builder: (BuildContext ctx) {
-        //                     return AlertDialog(
-        //                       title: const Text('Please Confirm'),
-        //                       content: const Text('Are you sure you want to clear your Identity?'),
-        //                       actions: [
-        //                         // The "Yes" button
-        //                         TextButton.icon(
-        //                             onPressed: () {
-        //                               // Clear Profile
-        //                               Provider.of<Profile>(context, listen: false).eraseIdentity();
-
-        //                               // Remove Avatar saved file
-        //                               path_provider.getTemporaryDirectory().then((tempDir) {
-        //                                 var outfile = File("${tempDir.path}/avatar.jpg");
-        //                                 outfile.exists().then((value) => {if (value) outfile.delete()});
-        //                               });
-
-        //                               // Close the dialog
-        //                               Navigator.of(context).pop();
-        //                             },
-        //                             icon: const Icon(
-        //                               Icons.delete_forever,
-        //                               color: Colors.red,
-        //                             ),
-        //                             label: const Text('Yes')),
-        //                         TextButton(
-        //                             onPressed: () {
-        //                               // Close the dialog
-        //                               Navigator.of(context).pop();
-        //                             },
-        //                             child: const Text('No'))
-        //                       ],
-        //                     );
-        //                   }),
-        //             },
-        //           ),
-        //           // --- Erase all cached avatars
-        //           SettingsTile.navigation(
-        //             title: const Text("Clear cached avatars"),
-        //             leading: const Icon(
-        //               Icons.account_circle,
-        //               color: Colors.red,
-        //             ),
-        //             onPressed: (value) => {
-        //               showDialog(
-        //                   context: context,
-        //                   builder: (BuildContext ctx) {
-        //                     return AlertDialog(
-        //                       title: const Text('Please Confirm'),
-        //                       content: const Text('Are you sure you want to clear all cached avatars?'),
-        //                       actions: [
-        //                         // The "Yes" button
-        //                         TextButton.icon(
-        //                             onPressed: () {
-        //                               // // Clear Profile
-        //                               // Provider.of<Profile>(context, listen: false).eraseIdentity();
-
-        //                               // // Remove Avatar saved file
-        //                               // path_provider.getTemporaryDirectory().then((tempDir) {
-        //                               //   var outfile = File(tempDir.path + "/avatar.jpg");
-        //                               //   outfile.exists().then((value) => {if (value) outfile.delete()});
-        //                               // });
-        //                               path_provider.getTemporaryDirectory().then((tempDir) {
-        //                                 var fileAvatar = Directory("${tempDir.path}/avatars/");
-        //                                 fileAvatar.delete(recursive: true);
-        //                               });
-
-        //                               // Close the dialog
-        //                               Navigator.of(context).pop();
-        //                             },
-        //                             icon: const Icon(
-        //                               Icons.delete_forever,
-        //                               color: Colors.red,
-        //                             ),
-        //                             label: const Text('Yes')),
-        //                         TextButton(
-        //                             onPressed: () {
-        //                               // Close the dialog
-        //                               Navigator.of(context).pop();
-        //                             },
-        //                             child: const Text('No'))
-        //                       ],
-        //                     );
-        //                   }),
-        //             },
-        //           ),
-        //         ]),
-        //   ],
-        // )
-        );
+        ));
   }
 }

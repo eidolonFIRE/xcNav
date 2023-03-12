@@ -7,14 +7,12 @@ import 'package:latlong2/latlong.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:provider/provider.dart';
-import 'package:xcnav/map_service.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/widgets/map_selector.dart';
@@ -28,6 +26,7 @@ import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/views/view_map.dart';
 import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
+import 'package:xcnav/map_service.dart';
 
 class PlanEditor extends StatefulWidget {
   const PlanEditor({Key? key}) : super(key: key);

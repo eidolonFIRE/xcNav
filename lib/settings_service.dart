@@ -177,10 +177,13 @@ class SettingsMgr {
   // --- Misc
   late final SettingConfig<ProximitySize> adsbProximitySize;
   late final SettingAction adsbTestAudio;
+  late final SettingAction editPatreonInfo;
 
   // --- Debug Tools
   late final SettingConfig<bool> spoofLocation;
   late final SettingAction clearMapCache;
+  late final SettingAction clearAvatarCache;
+  late final SettingAction eraseIdentity;
 
   // --- Hidden
   late final SettingConfig<bool> chatTTS;
@@ -260,6 +263,7 @@ class SettingsMgr {
         title: "ADSB Proximity Profile", icon: const Icon(Icons.radar));
     adsbTestAudio =
         SettingAction(this, "Misc", () => null, title: "Test Audio", actionIcon: const Icon(Icons.volume_up));
+    editPatreonInfo = SettingAction(this, "Misc", () => null, title: "Edit Patreon Info");
 
     // --- Debug Tools
     spoofLocation = SettingConfig(this, prefs, "Debug Tools", "spoofLocation", false,
@@ -273,6 +277,18 @@ class SettingsMgr {
         title: "Clear Map Cache",
         actionIcon: const Icon(
           Icons.delete,
+          color: Colors.red,
+        ));
+    clearAvatarCache = SettingAction(this, "Debug Tools", () => null,
+        title: "Clear Cached Avatars",
+        actionIcon: const Icon(
+          Icons.account_circle,
+          color: Colors.red,
+        ));
+    eraseIdentity = SettingAction(this, "Debug Tools", () => null,
+        title: "Erase Identity",
+        actionIcon: const Icon(
+          Icons.badge,
           color: Colors.red,
         ));
 

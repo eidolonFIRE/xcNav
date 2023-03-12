@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 // --- Dialogs
 import 'package:xcnav/dialogs/edit_plan_name.dart';
 import 'package:xcnav/dialogs/save_plan.dart';
-import 'package:xcnav/map_service.dart';
 
 // --- Providers
 import 'package:xcnav/providers/active_plan.dart';
@@ -18,8 +17,8 @@ import 'package:xcnav/providers/plans.dart';
 // --- Misc
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/flight_plan.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tappable_polyline.dart';
+import 'package:xcnav/map_service.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
 

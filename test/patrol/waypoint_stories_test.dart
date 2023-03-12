@@ -14,7 +14,6 @@ import 'package:permission_handler_platform_interface/permission_handler_platfor
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/main.dart';
-import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';

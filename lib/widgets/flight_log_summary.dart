@@ -5,12 +5,11 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:xcnav/map_service.dart';
 
+import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 

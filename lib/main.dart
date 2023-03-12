@@ -6,8 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
-import 'package:xcnav/dem_service.dart';
-import 'package:xcnav/map_service.dart';
 
 // providers
 import 'package:xcnav/providers/adsb.dart';
@@ -41,6 +39,7 @@ import 'package:xcnav/screens/weather_viewer.dart';
 import 'package:xcnav/notifications.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/map_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
