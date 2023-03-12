@@ -13,7 +13,6 @@ import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/widgets/map_selector.dart';
@@ -27,6 +26,7 @@ import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/views/view_map.dart';
 import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
+import 'package:xcnav/map_service.dart';
 
 class PlanEditor extends StatefulWidget {
   const PlanEditor({Key? key}) : super(key: key);
@@ -49,7 +49,7 @@ class _PlanEditorState extends State<PlanEditor> {
 
   FocusMode focusMode = FocusMode.unlocked;
 
-  String mapTileName = "topo";
+  MapTileSrc mapTileSrc = MapTileSrc.topo;
   double mapOpacity = 1.0;
 
   bool mapReady = false;
@@ -197,11 +197,9 @@ class _PlanEditorState extends State<PlanEditor> {
                         onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                       ),
                       children: [
-                        Provider.of<Settings>(context, listen: false).getMapTileLayer(mapTileName, opacity: mapOpacity),
-                        if (mapTileName != "sectional")
-                          Provider.of<Settings>(context, listen: false).getMapTileLayer("airspace"),
-                        if (mapTileName != "sectional")
-                          Provider.of<Settings>(context, listen: false).getMapTileLayer("airports"),
+                        getMapTileLayer(mapTileSrc, mapOpacity),
+                        if (mapTileSrc != MapTileSrc.sectional) getMapTileLayer(MapTileSrc.airspace, 1),
+                        if (mapTileSrc != MapTileSrc.sectional) getMapTileLayer(MapTileSrc.airports, 1),
 
                         // Flight plan markers
                         TappablePolylineLayer(
@@ -291,35 +289,15 @@ class _PlanEditorState extends State<PlanEditor> {
                             height: 40,
                             child: MapSelector(
                               isMapDialOpen: isMapDialOpen,
-                              curLayer: mapTileName,
+                              curLayer: mapTileSrc,
                               curOpacity: mapOpacity,
                               onChanged: ((layerName, opacity) {
                                 setState(() {
-                                  mapTileName = layerName;
+                                  mapTileSrc = layerName;
                                   mapOpacity = opacity;
                                 });
                               }),
-                            )
-                            // ToggleButtons(
-                            //   isSelected: Settings.mapTileThumbnails.keys.map((e) => e == mapTileName).toList(),
-                            //   borderRadius: const BorderRadius.all(Radius.circular(10)),
-                            //   borderWidth: 3,
-                            //   borderColor: Colors.black,
-                            //   selectedBorderColor: Colors.blue,
-                            //   onPressed: (index) {
-                            //     setState(() {
-                            //       mapTileName = Settings.mapTileThumbnails.keys.toList()[index];
-                            //     });
-                            //   },
-                            //   children: Settings.mapTileThumbnails.values
-                            //       .map((e) => SizedBox(
-                            //             width: MediaQuery.of(context).size.width / 7,
-                            //             // height: 50,
-                            //             child: e,
-                            //           ))
-                            //       .toList(),
-                            // ),
-                            ),
+                            )),
                       ))
                 ] +
                 ((focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)

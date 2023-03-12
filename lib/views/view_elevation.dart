@@ -13,7 +13,7 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
@@ -55,9 +55,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
         ? lookAhead
         : ((waypointETA != null && waypointETA?.distance != null)
             ? min(200000, waypointETA!.distance * 1.2)
-            : (Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
-                ? 10000.0
-                : 8046.72));
+            : (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 10000.0 : 8046.72));
     final sampleInterval = max(100, forecastDist / 30).ceil();
 
     Completer<List<ElevSample?>> samplesCompleter = Completer();
@@ -92,7 +90,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
     final activePlan = Provider.of<ActivePlan>(context, listen: false);
 
     // --- Build view options
-    final isMetric = Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric;
+    final isMetric = settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric;
     List<dynamic> lookAheadOptions = [
       isMetric ? 10000 : 8046.72, // 5mi
       isMetric ? 20000 : 16093.44, // 10mi
@@ -209,10 +207,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                               painter: ElevationPlotPainter(
                                   myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30)),
                                   groundSamples.data ?? [],
-                                  Provider.of<Settings>(context, listen: false).displayUnitsDist ==
-                                          DisplayUnitsDist.metric
-                                      ? 100
-                                      : 152.4,
+                                  settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 100 : 152.4,
                                   distScale,
                                   waypoint: activePlan.getSelectedWp(),
                                   waypointETA: waypointETA),

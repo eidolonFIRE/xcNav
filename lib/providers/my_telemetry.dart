@@ -25,7 +25,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/secrets.dart';
 import 'package:xcnav/units.dart';
@@ -145,11 +145,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       },
     );
 
-    final settings = Provider.of<Settings>(globalContext!, listen: false);
     final activePlan = Provider.of<ActivePlan>(globalContext!, listen: false);
     _setupServiceStatusStream(globalContext!);
-    settings.addListener(() {
-      if (settings.spoofLocation) {
+    settingsMgr.spoofLocation.listenable.addListener(() {
+      if (settingsMgr.spoofLocation.value) {
         if (timer == null) {
           // --- Spoof Location / Disable Baro
           listenBaro?.cancel();
@@ -304,7 +303,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   /// Do all the things with a GPS update
   void handleGeoUpdate(BuildContext context, Position position, {bool bypassRecording = false}) {
-    final settings = Provider.of<Settings>(context, listen: false);
     final client = Provider.of<Client>(context, listen: false);
     final group = Provider.of<Group>(context, listen: false);
     final adsb = Provider.of<ADSB>(context, listen: false);
@@ -312,10 +310,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     // debugPrint("geoUpdate (${position.timestamp}): ${position.altitude}, ${position.latitude} x ${position.longitude}");
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
-      updateGeo(position, bypassRecording: settings.groundMode || bypassRecording);
+      updateGeo(position, bypassRecording: settingsMgr.groundMode.value || bypassRecording);
     }
 
-    if (!settings.groundMode || settings.groundModeTelemetry) {
+    if (!settingsMgr.groundMode.value || settingsMgr.groundModeTelem.value) {
       if (group.activePilots.isNotEmpty || client.telemetrySkips > 20) {
         client.sendTelemetry(geo);
         client.telemetrySkips = 0;
@@ -466,7 +464,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     // --- In-Flight detector
-    if (globalContext != null && Provider.of<Settings>(globalContext!, listen: false).autoStartStopFlight) {
+    if (globalContext != null && settingsMgr.autoRecordFlight.value) {
       if (inFlight) {
         // Is moving slowly near the ground?
         if (geo.spdSmooth < 3.0 && geo.varioSmooth.abs() < 1.0 && geo.alt - (geo.ground ?? geo.alt) < 30) {

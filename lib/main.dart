@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
 
@@ -14,7 +15,7 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
@@ -38,62 +39,64 @@ import 'package:xcnav/screens/weather_viewer.dart';
 import 'package:xcnav/notifications.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/map_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
-  runApp(
-    MultiProvider(
-        providers: [
-          ChangeNotifierProvider(
-            create: (_) => Settings(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => MyTelemetry(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (context) => Weather(context),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (context) => Wind(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => ActivePlan(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Plans(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Profile(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Group(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => ChatMessages(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (context) => ADSB(context),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (BuildContext context) => Client(context),
-            lazy: false,
-          )
-        ],
-        child: FocusDetector(
-            onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())),
-  );
+  SharedPreferences.getInstance().then((prefs) {
+    settingsMgr = SettingsMgr(prefs);
+    initMapCache();
+  }).then((value) {
+    runApp(
+      MultiProvider(
+          providers: [
+            ChangeNotifierProvider(
+              create: (_) => MyTelemetry(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (context) => Weather(context),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (context) => Wind(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => ActivePlan(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => Plans(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => Profile(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => Group(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (_) => ChatMessages(),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (context) => ADSB(context),
+              lazy: false,
+            ),
+            ChangeNotifierProvider(
+              create: (BuildContext context) => Client(context),
+              lazy: false,
+            )
+          ],
+          child: FocusDetector(
+              onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())),
+    );
+  });
 }
 
 class XCNav extends StatelessWidget {
@@ -116,7 +119,6 @@ class XCNav extends StatelessWidget {
     // --- Setup Audio Cue Service
     audioCueService = AudioCueService(
       ttsService: ttsService,
-      settings: Provider.of<Settings>(context, listen: false),
       group: Provider.of<Group>(context, listen: false),
       activePlan: Provider.of<ActivePlan>(context, listen: false),
     );
@@ -149,11 +151,13 @@ class XCNav extends StatelessWidget {
         bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
         textTheme: const TextTheme(
-            headline4: TextStyle(color: Colors.white),
-            button: TextStyle(
-              fontSize: 30,
-              color: Colors.white,
-            )),
+          headline4: TextStyle(color: Colors.white),
+          bodyText1: TextStyle(fontSize: 20),
+          // button: TextStyle(
+          //   fontSize: 20,
+          //   color: Colors.white,
+          // )
+        ),
         dialogTheme: DialogTheme(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(

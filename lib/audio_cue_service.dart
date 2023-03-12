@@ -8,7 +8,7 @@ import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
 
@@ -26,7 +26,6 @@ late AudioCueService audioCueService;
 
 class AudioCueService {
   late final TtsService ttsService;
-  late final Settings settings;
   late final Group group;
   late final ActivePlan activePlan;
 
@@ -111,7 +110,6 @@ class AudioCueService {
 
   AudioCueService({
     required this.ttsService,
-    required this.settings,
     required this.group,
     required this.activePlan,
   }) {
@@ -149,7 +147,7 @@ class AudioCueService {
     // --- My Telemetry
     if (mode != null && (config["My Telemetry"] ?? false)) {
       // --- Altitude
-      final altPrecision = (precisionLUT["alt"][settings.displayUnitsDist][mode] as int).toDouble();
+      final altPrecision = (precisionLUT["alt"][settingsMgr.displayUnitDist.value][mode] as int).toDouble();
       // Value is transformed into display units before quantizing.
       // Triggers yes if:
       // 1: we don't have a previous value
@@ -171,7 +169,7 @@ class AudioCueService {
       }
 
       // --- Speed
-      final spdPrecision = (precisionLUT["spd"][settings.displayUnitsSpeed][mode] as int).toDouble();
+      final spdPrecision = (precisionLUT["spd"][settingsMgr.displayUnitSpeed.value][mode] as int).toDouble();
       if (lastSpd == null ||
           DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(maxInterval)) ||
           (DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(minInterval)) &&
@@ -244,7 +242,7 @@ class AudioCueService {
   }
 
   void cueChatMessage(Message msg) {
-    if (settings.chatTts) {
+    if (settingsMgr.chatTTS.value) {
       if (lastChat == null || lastChat!.value != msg.pilotId + msg.text) {
         // --- Read chat messages
         final pilotName = group.pilots[msg.pilotId]?.name;
@@ -274,7 +272,7 @@ class AudioCueService {
     final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
 
     final hdgPrecision = precisionLUT["hdg"][mode] * 3;
-    final distPrecision = precisionLUT["dist"][settings.displayUnitsDist][mode];
+    final distPrecision = precisionLUT["dist"][settingsMgr.displayUnitDist.value][mode];
 
     // 1: we haven't done so yet
     // 2: max interval reached

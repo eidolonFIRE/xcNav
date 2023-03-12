@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/map_service.dart';
 
 class MapSelector extends StatelessWidget {
   static const opacityLevels = [0.2, 0.5, 1.0];
-  final String curLayer;
+  final MapTileSrc curLayer;
   final double curOpacity;
-  final Function(String layerName, double opacity) onChanged;
+  final Function(MapTileSrc tileSrc, double opacity) onChanged;
 
   const MapSelector({
     required this.curLayer,
@@ -32,8 +32,8 @@ class MapSelector extends StatelessWidget {
         openCloseDial: isMapDialOpen,
         children:
             // - Sectional / Satellite
-            ["sectional", "satellite", "topo"]
-                .mapIndexed((layerIndex, layerName) => SpeedDialChild(
+            [MapTileSrc.sectional, MapTileSrc.satellite, MapTileSrc.topo]
+                .mapIndexed((layerIndex, tileSrc) => SpeedDialChild(
                         labelWidget: SizedBox(
                       height: 40,
                       child: ToggleButtons(
@@ -42,14 +42,14 @@ class MapSelector extends StatelessWidget {
                           borderWidth: 1,
                           borderColor: Colors.black45,
                           onPressed: ((index) {
-                            onChanged(layerName, opacityLevels.sublist(layerIndex)[index]);
+                            onChanged(tileSrc, opacityLevels.sublist(layerIndex)[index]);
                             isMapDialOpen.value = false;
                           }),
                           children: opacityLevels
                               .sublist(layerIndex)
                               .map(
                                 (e) => SizedBox(
-                                    key: Key("mapSelector_${layerName}_${(e * 100).toInt()}"),
+                                    key: Key("mapSelector_${tileSrc.toString().split(".").last}_${(e * 100).toInt()}"),
                                     width: 50,
                                     height: 40,
                                     child: Stack(
@@ -58,8 +58,8 @@ class MapSelector extends StatelessWidget {
                                         Container(
                                           color: Colors.white,
                                         ),
-                                        Opacity(opacity: e, child: Settings.mapTileThumbnails[layerName]),
-                                        if (curLayer == layerName && curOpacity == e)
+                                        Opacity(opacity: e, child: mapTileThumbnails[tileSrc]),
+                                        if (curLayer == tileSrc && curOpacity == e)
                                           const Icon(
                                             Icons.check_circle,
                                             color: Colors.black,

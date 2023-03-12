@@ -12,6 +12,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:xcnav/endpoint.dart';
+import 'package:xcnav/map_service.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -20,7 +21,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat_messages.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/adsb.dart';
 
 // widgets
@@ -250,8 +251,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       color: Colors.white,
       child: Stack(alignment: Alignment.center, children: [
         // NOTE: MyTelemetry is not part of this consumer because refreshMapView is already called elsewhere on MyTelemetry changes
-        Consumer2<Settings, ActivePlan>(
-            builder: (context, settings, plan, child) => FlutterMap(
+        Consumer<ActivePlan>(
+            builder: (context, plan, child) => FlutterMap(
                   key: mapKey,
                   mapController: mapController,
                   options: MapOptions(
@@ -277,16 +278,18 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     },
                   ),
                   children: [
-                    settings.getMapTileLayer(settings.curMapTiles),
+                    getMapTileLayer(settingsMgr.mainMapTileSrc.value, settingsMgr.mainMapOpacity.value),
 
                     // Airspace overlay
-                    if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
-                      settings.getMapTileLayer("airspace"),
-                    if (settings.showAirspaceOverlay && settings.curMapTiles != "sectional")
-                      settings.getMapTileLayer("airports"),
+                    if (settingsMgr.showAirspaceOverlay.value &&
+                        settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
+                      getMapTileLayer(MapTileSrc.airspace, 1),
+                    if (settingsMgr.showAirspaceOverlay.value &&
+                        settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
+                      getMapTileLayer(MapTileSrc.airports, 1),
 
                     // https://nowcoast.noaa.gov/help/#!section=map-service-list
-                    if (localeZone == "NA" && settings.showWeatherOverlay)
+                    if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
                       TileLayer(
                         backgroundColor: Colors.transparent,
                         wmsOptions: WMSTileLayerOptions(
@@ -316,18 +319,15 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             color: Colors.transparent,
                             borderStrokeWidth: 1,
                             borderColor: Colors.black54,
-                            radius: settings.proximityProfile.horizontalDist,
+                            radius: proximityProfileOptions[settingsMgr.adsbProximitySize.value]!.horizontalDist,
                             useRadiusInMeter: true)
                       ]),
 
                     // Next waypoint: path
                     PolylineLayer(
-                      polylines: plan.buildNextWpIndicator(
-                          Provider.of<MyTelemetry>(context, listen: false).geo,
-                          (Provider.of<Settings>(context, listen: false).displayUnitsDist == DisplayUnitsDist.metric
-                              ? 1000
-                              : 1609.344),
-                          baseTiles: Provider.of<Settings>(context, listen: false).curMapTiles),
+                      polylines: plan.buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: false).geo,
+                          (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
+                          baseTiles: settingsMgr.mainMapTileSrc.value),
                     ),
 
                     // Waypoints: paths
@@ -359,12 +359,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     // Next waypoint: barbs
                     MarkerLayer(
                         markers: plan
-                            .buildNextWpBarbs(
-                                Provider.of<MyTelemetry>(context, listen: false).geo,
-                                (Provider.of<Settings>(context, listen: false).displayUnitsDist ==
-                                        DisplayUnitsDist.metric
-                                    ? 1000
-                                    : 1609.344))
+                            .buildNextWpBarbs(Provider.of<MyTelemetry>(context, listen: false).geo,
+                                (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344))
                             .map((e) => Marker(
                                 point: e.latlng,
                                 width: 20,
@@ -688,8 +684,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
         // --- Secondary column (default to right side)
         Padding(
-          padding: EdgeInsets.fromLTRB(Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : 80, 0,
-              Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 80 : 10, 5),
+          padding: EdgeInsets.fromLTRB(
+              settingsMgr.mapControlsRightSide.value ? 10 : 80, 0, settingsMgr.mapControlsRightSide.value ? 80 : 10, 5),
           child: Column(
             verticalDirection: VerticalDirection.up,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -698,11 +694,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
               // --- Current waypoint info
               if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
                 Padding(
-                  padding: EdgeInsets.fromLTRB(
-                      Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 80 : 10,
-                      0,
-                      Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : 80,
-                      0),
+                  padding: EdgeInsets.fromLTRB(settingsMgr.mapControlsRightSide.value ? 80 : 10, 0,
+                      settingsMgr.mapControlsRightSide.value ? 10 : 80, 0),
                   child: Align(
                     alignment: Alignment.center,
                     child: Stack(
@@ -874,8 +867,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
         // --- Map View Buttons
         Positioned(
-          left: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? null : 10,
-          right: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : null,
+          left: settingsMgr.mapControlsRightSide.value ? null : 10,
+          right: settingsMgr.mapControlsRightSide.value ? 10 : null,
           top: 10,
           bottom: 10,
           child: LayoutBuilder(builder: (context, constaints) {
@@ -1010,19 +1003,19 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         // --- Toggle map layer
         Positioned(
             top: 10,
-            right: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? null : 10,
-            left: Provider.of<Settings>(context, listen: false).mapControlsRightSide ? 10 : null,
-            child: Consumer<Settings>(builder: (context, settings, _) {
-              return MapSelector(
-                  key: const Key("viewMap_mapSelector"),
-                  isMapDialOpen: isMapDialOpen,
-                  curLayer: settings.curMapTiles,
-                  curOpacity: settings.mapOpacity(settings.curMapTiles),
-                  onChanged: (layer, opacity) {
-                    settings.curMapTiles = layer;
-                    settings.setMapOpacity(layer, opacity);
+            right: settingsMgr.mapControlsRightSide.value ? null : 10,
+            left: settingsMgr.mapControlsRightSide.value ? 10 : null,
+            child: MapSelector(
+                key: const Key("viewMap_mapSelector"),
+                isMapDialOpen: isMapDialOpen,
+                curLayer: settingsMgr.mainMapTileSrc.value,
+                curOpacity: settingsMgr.mainMapOpacity.value,
+                onChanged: (layer, opacity) {
+                  setState(() {
+                    settingsMgr.mainMapTileSrc.value = layer;
+                    settingsMgr.mainMapOpacity.value = opacity;
                   });
-            }))
+                }))
       ]),
     );
   }

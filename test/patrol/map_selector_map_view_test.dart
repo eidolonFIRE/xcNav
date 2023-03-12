@@ -21,20 +21,20 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
+import 'package:xcnav/map_service.dart';
+import 'package:xcnav/settings_service.dart';
 
 import 'mock_providers.dart';
 
 void main() {
-  Widget makeApp(MockSettings settings) {
+  SharedPreferences.getInstance().then((prefs) {
+    settingsMgr = SettingsMgr(prefs);
+  });
+
+  Widget makeApp() {
     return MultiProvider(providers: [
-      ChangeNotifierProvider(
-        // ignore: unnecessary_cast
-        create: (_) => settings as Settings,
-        lazy: false,
-      ),
       ChangeNotifierProvider(
         create: (_) => MyTelemetry(),
         lazy: false,
@@ -97,10 +97,9 @@ void main() {
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
       });
-      final settings = MockSettings();
 
       // --- Build App
-      await $.pumpWidget(makeApp(settings));
+      await $.pumpWidget(makeApp());
       await $.waitUntilExists($(Scaffold));
     },
   );
@@ -123,15 +122,14 @@ void main() {
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
       });
-      final settings = MockSettings();
 
       // --- Build App
-      await $.pumpWidget(makeApp(settings));
+      await $.pumpWidget(makeApp());
       await $.waitUntilExists($(Scaffold));
 
       // --- Default map layer
-      expect(settings.curMapTiles, "topo");
-      expect(settings.mapOpacity("topo"), 1);
+      expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.topo);
+      expect(settingsMgr.mainMapOpacity.value, 1);
 
       // --- Select a different map
       await $(#viewMap_mapSelector).tap(andSettle: false);
@@ -142,8 +140,8 @@ void main() {
       await $.pump(const Duration(seconds: 2));
 
       // --- New map layer
-      expect(settings.curMapTiles, "satellite");
-      expect(settings.mapOpacity("satellite"), 0.5);
+      expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.satellite);
+      expect(settingsMgr.mainMapOpacity.value, 0.5);
     },
   );
 }

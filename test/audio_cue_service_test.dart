@@ -10,7 +10,7 @@ import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tts_service.dart';
 
 class MockFlutterTts extends Mock implements FlutterTts {
@@ -48,23 +48,24 @@ void main() {
   late AudioCueService cueService;
   late TtsService ttsService;
   late MockFlutterTts flutterTts;
-  late Settings settings;
+
+  SharedPreferences.getInstance().then((prefs) {
+    settingsMgr = SettingsMgr(prefs);
+  });
 
   // Common Setup
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({"audio_cues_mode": 1});
 
     ttsService = TtsService();
     flutterTts = MockFlutterTts();
-    settings = Settings();
-    settings.chatTts = true;
+    settingsMgr.chatTTS.value = true;
     ttsService.instance = flutterTts;
     // First "init" message is just to plug the queue so it waits for the tick to fire
     ttsService.speak(AudioMessage("init"));
 
     cueService = AudioCueService(
       ttsService: ttsService,
-      settings: settings,
       group: MockGroup(),
       activePlan: ActivePlan(),
     );

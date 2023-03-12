@@ -7,7 +7,6 @@ import 'package:xcnav/patreon.dart';
 // Providers
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/settings.dart';
 
 // Models
 import 'package:xcnav/units.dart';
@@ -66,8 +65,8 @@ class _GroupDetailsState extends State<GroupDetails> {
               ))
         ],
       ),
-      body: Consumer2<Group, Settings>(
-          builder: (context, group, settings, child) => ListView(
+      body: Consumer<Group>(
+          builder: (context, group, child) => ListView(
               children: (group.pilots.isNotEmpty
                       ? group.pilots.values
                           .map((p) => ListTile(
