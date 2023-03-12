@@ -21,20 +21,19 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
 
 import 'mock_providers.dart';
 
 void main() {
-  Widget makeApp(MockSettings settings, ActivePlan activePlan, MockPlans plans, Completer<MockClient> client) {
+  SharedPreferences.getInstance().then((prefs) {
+    settingsMgr = SettingsMgr(prefs);
+  });
+
+  Widget makeApp(ActivePlan activePlan, MockPlans plans, Completer<MockClient> client) {
     return MultiProvider(providers: [
-      ChangeNotifierProvider(
-        // ignore: unnecessary_cast
-        create: (_) => settings as Settings,
-        lazy: false,
-      ),
       ChangeNotifierProvider(
         create: (_) => MyTelemetry(),
         lazy: false,
@@ -102,13 +101,12 @@ void main() {
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
       });
-      final settings = MockSettings();
       final activePlan = ActivePlan();
       final plans = MockPlans();
       final clientCompleter = Completer<MockClient>();
 
       // --- Build App
-      await $.pumpWidget(makeApp(settings, activePlan, plans, clientCompleter));
+      await $.pumpWidget(makeApp(activePlan, plans, clientCompleter));
       await $.waitUntilExists($(Scaffold));
 
       final client = await clientCompleter.future;

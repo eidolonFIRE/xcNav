@@ -2,11 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/pilot_info.dart';
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/patreon.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 
@@ -20,7 +19,6 @@ class PilotMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var settings = Provider.of<Settings>(context, listen: false);
     final offsetInfo = (max(0, sin(hdg ?? 0)) * radius / 2 + radius * 2).toDouble();
     return Stack(fit: StackFit.loose, children: [
       // Relative Altitude Indicator
@@ -68,7 +66,7 @@ class PilotMarker extends StatelessWidget {
             )),
 
       /// --- Show name
-      if (pilot.avatar == null || settings.showPilotNames)
+      if (pilot.avatar == null || settingsMgr.showPilotNames.value)
         Container(
           width: 0,
           transform: Matrix4.translationValues(offsetInfo + 5, 18, 0),

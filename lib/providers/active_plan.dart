@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/map_service.dart';
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
@@ -149,18 +150,18 @@ class ActivePlan with ChangeNotifier {
   }
 
   /// Setting the `baseTiles` will change the style of the polylines to be best on that layer.
-  List<Polyline> buildNextWpIndicator(Geo geo, double interval, {String? baseTiles}) {
+  List<Polyline> buildNextWpIndicator(Geo geo, double interval, {MapTileSrc? baseTiles}) {
     final waypointETA = getSelectedWp()?.eta(geo, 1);
 
     if (waypointETA != null) {
       final points = [geo.latlng] + getSelectedWp()!.latlngOriented.sublist(waypointETA.pathIntercept?.index ?? 0);
       switch (baseTiles) {
-        case "sectional":
+        case MapTileSrc.sectional:
           return [
             Polyline(points: points, color: const Color.fromARGB(180, 255, 0, 255), strokeWidth: 20),
             Polyline(points: points, color: Colors.black, strokeWidth: 4, isDotted: true),
           ];
-        case "satellite":
+        case MapTileSrc.satellite:
           return [
             Polyline(points: points, color: Colors.white70, strokeWidth: 20),
             Polyline(points: points, color: Colors.black, strokeWidth: 4, isDotted: true),

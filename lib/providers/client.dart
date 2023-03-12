@@ -19,7 +19,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 
 enum ClientState {
   disconnected,
@@ -191,7 +191,6 @@ class Client with ChangeNotifier {
 
   void authenticate(Profile profile) {
     if (state != ClientState.authenticated) {
-      final settings = Provider.of<Settings>(globalContext, listen: false);
       debugPrint("Authenticating) ${profile.name}, ${profile.id}");
       sendToAWS("authRequest", {
         "pilot": {
@@ -201,7 +200,9 @@ class Client with ChangeNotifier {
           "secretToken": profile.secretID,
         },
         "group_id": Provider.of<Group>(globalContext, listen: false).loadGroup(),
-        "tierHash": crypto.sha256.convert((settings.patreonEmail + settings.patreonName).codeUnits).toString(),
+        "tierHash": crypto.sha256
+            .convert((settingsMgr.patreonEmail.value + settingsMgr.patreonName.value).codeUnits)
+            .toString(),
         "apiVersion": apiVersion,
       });
     } else {

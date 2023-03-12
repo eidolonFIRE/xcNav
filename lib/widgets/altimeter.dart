@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:xcnav/units.dart';
 
+enum AltimeterMode { agl, msl }
+
 class AltimeterBadge extends StatelessWidget {
   final double size;
   final String text;

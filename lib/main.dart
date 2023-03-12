@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
+import 'package:xcnav/dem_service.dart';
+import 'package:xcnav/map_service.dart';
 
 // providers
 import 'package:xcnav/providers/adsb.dart';
@@ -15,7 +17,7 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
@@ -46,14 +48,11 @@ void main() {
 
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
+    initMapCache();
   }).then((value) {
     runApp(
       MultiProvider(
           providers: [
-            ChangeNotifierProvider(
-              create: (_) => Settings(),
-              lazy: false,
-            ),
             ChangeNotifierProvider(
               create: (_) => MyTelemetry(),
               lazy: false,
@@ -121,7 +120,6 @@ class XCNav extends StatelessWidget {
     // --- Setup Audio Cue Service
     audioCueService = AudioCueService(
       ttsService: ttsService,
-      settings: Provider.of<Settings>(context, listen: false),
       group: Provider.of<Group>(context, listen: false),
       activePlan: Provider.of<ActivePlan>(context, listen: false),
     );
@@ -153,7 +151,7 @@ class XCNav extends StatelessWidget {
         brightness: Brightness.dark,
         bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
-        textTheme: TextTheme(
+        textTheme: const TextTheme(
           headline4: TextStyle(color: Colors.white),
           bodyText1: TextStyle(fontSize: 20),
           // button: TextStyle(

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/chat_messages.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 
 // Views
 import 'package:xcnav/views/view_chat.dart';

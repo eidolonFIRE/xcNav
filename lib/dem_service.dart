@@ -12,7 +12,7 @@ TileLayer? _demTileLayer;
 
 // Digital Elevation Map - service
 
-void initDemCache() async {
+Future initDemCache() async {
   // init elevation map (dem = digital elevation map)
   final StoreDirectory demStore = FMTC.instance("dem");
   await demStore.manage.createAsync();

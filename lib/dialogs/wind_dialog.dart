@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/map_button.dart';
@@ -14,8 +14,8 @@ void showWindDialog(BuildContext context) {
 
   showDialog(
     context: context,
-    builder: (context) => Consumer2<Wind, Settings>(
-      builder: (context, wind, settings, child) => Dialog(
+    builder: (context) => Consumer<Wind>(
+      builder: (context, wind, child) => Dialog(
         insetPadding: const EdgeInsets.only(top: 100, left: 10, right: 10),
         alignment: Alignment.topCenter,
         child: IntrinsicHeight(
@@ -100,7 +100,7 @@ void showWindDialog(BuildContext context) {
                                       wind.result!.maxSpd * 1.1,
                                       wind.result!.circleCenter,
                                       wind.result!.airspeed,
-                                      settings.northlockWind),
+                                      settingsMgr.northlockWind.value),
                                 ),
                               ),
                         Positioned(
@@ -108,15 +108,16 @@ void showWindDialog(BuildContext context) {
                           top: 4,
                           child: MapButton(
                             size: 40,
-                            onPressed: () => {settings.northlockWind = !settings.northlockWind},
+                            onPressed: () => {settingsMgr.northlockWind.value = !settingsMgr.northlockWind.value},
                             selected: false,
                             child: Container(
                               width: 40,
                               height: 40,
                               transformAlignment: const Alignment(0, 0),
-                              transform: Matrix4.rotationZ(
-                                  settings.northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
-                              child: settings.northlockWind
+                              transform: Matrix4.rotationZ(settingsMgr.northlockWind.value
+                                  ? 0
+                                  : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
+                              child: settingsMgr.northlockWind.value
                                   ? SvgPicture.asset(
                                       "assets/images/compass_north.svg",
                                       // fit: BoxFit.none,

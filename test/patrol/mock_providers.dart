@@ -1,4 +1,3 @@
-import 'package:flutter_map/plugin_api.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +15,6 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/providers/settings.dart';
 
 Position get mockPosition => Position(
     latitude: 37,
@@ -165,11 +163,6 @@ class MockClient extends Client {
     Provider.of<ActivePlan>(globalContext, listen: false).onWaypointAction = waypointsUpdate;
     Provider.of<ActivePlan>(globalContext, listen: false).onSelectWaypoint = selectWaypoint;
   }
-}
-
-class MockSettings extends Settings {
-  @override
-  TileProvider? makeTileProvider(instanceName) => null;
 }
 
 class MockPlans extends Plans {

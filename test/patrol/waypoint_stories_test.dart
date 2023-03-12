@@ -14,6 +14,7 @@ import 'package:permission_handler_platform_interface/permission_handler_platfor
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/main.dart';
+import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';
@@ -23,22 +24,21 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/providers/settings.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/views/view_map.dart';
 import 'package:xcnav/views/view_waypoints.dart';
 
 import 'mock_providers.dart';
 
 void main() {
-  Widget makeApp(MockSettings settings, ActivePlan activePlan, MockPlans plans) {
+  SharedPreferences.getInstance().then((prefs) {
+    settingsMgr = SettingsMgr(prefs);
+  });
+
+  Widget makeApp(ActivePlan activePlan, MockPlans plans) {
     return MultiProvider(providers: [
-      ChangeNotifierProvider(
-        // ignore: unnecessary_cast
-        create: (_) => settings as Settings,
-        lazy: false,
-      ),
       ChangeNotifierProvider(
         create: (_) => MyTelemetry(),
         lazy: false,
@@ -102,12 +102,11 @@ void main() {
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
       });
-      final settings = MockSettings();
       final activePlan = ActivePlan();
       final plans = MockPlans();
 
       // --- Build App
-      await $.pumpWidget(makeApp(settings, activePlan, plans));
+      await $.pumpWidget(makeApp(activePlan, plans));
       await $.waitUntilExists($(Scaffold));
 
       // --- Make a waypoint
@@ -155,12 +154,11 @@ void main() {
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
       });
-      final settings = MockSettings();
       final activePlan = ActivePlan();
       final plans = MockPlans();
 
       // --- Build App
-      await $.pumpWidget(makeApp(settings, activePlan, plans));
+      await $.pumpWidget(makeApp(activePlan, plans));
       await $.waitUntilExists($(Scaffold));
 
       // --- Inject a waypoint

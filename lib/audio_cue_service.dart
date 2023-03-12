@@ -8,7 +8,7 @@ import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
 
@@ -26,7 +26,6 @@ late AudioCueService audioCueService;
 
 class AudioCueService {
   late final TtsService ttsService;
-  late final Settings settings;
   late final Group group;
   late final ActivePlan activePlan;
 
@@ -111,7 +110,6 @@ class AudioCueService {
 
   AudioCueService({
     required this.ttsService,
-    required this.settings,
     required this.group,
     required this.activePlan,
   }) {
@@ -244,7 +242,7 @@ class AudioCueService {
   }
 
   void cueChatMessage(Message msg) {
-    if (settings.chatTts) {
+    if (settingsMgr.chatTTS.value) {
       if (lastChat == null || lastChat!.value != msg.pilotId + msg.text) {
         // --- Read chat messages
         final pilotName = group.pilots[msg.pilotId]?.name;

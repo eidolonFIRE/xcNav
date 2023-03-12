@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:xcnav/dialogs/wind_dialog.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
@@ -18,9 +18,8 @@ Widget topInstruments(BuildContext context) {
     padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
     child: Container(
       color: Theme.of(context).backgroundColor,
-      child: Consumer2<MyTelemetry, Settings>(
-        builder: (context, myTelemetry, settings, child) =>
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      child: Consumer<MyTelemetry>(
+        builder: (context, myTelemetry, child) => Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           // const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
 
           // --- Speedometer
@@ -54,9 +53,10 @@ Widget topInstruments(BuildContext context) {
                               width: 15,
                               height: 15,
                               transformAlignment: const Alignment(0, 0),
-                              transform: Matrix4.rotationZ(
-                                  settings.northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
-                              child: settings.northlockWind
+                              transform: Matrix4.rotationZ(settingsMgr.northlockWind.value
+                                  ? 0
+                                  : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
+                              child: settingsMgr.northlockWind.value
                                   ? SvgPicture.asset(
                                       "assets/images/compass_north.svg",
                                       // fit: BoxFit.none,
@@ -77,8 +77,8 @@ Widget topInstruments(BuildContext context) {
                                 alignment: Alignment.topCenter,
                                 child: Container(
                                   transformAlignment: const Alignment(0, 0),
-                                  transform: Matrix4.rotationZ(
-                                      wind.result!.windHdg + (settings.northlockWind ? 0 : -myTelemetry.geo.hdg)),
+                                  transform: Matrix4.rotationZ(wind.result!.windHdg +
+                                      (settingsMgr.northlockWind.value ? 0 : -myTelemetry.geo.hdg)),
                                   child: SvgPicture.asset(
                                     "assets/images/arrow.svg",
                                     width: 80,
@@ -109,38 +109,41 @@ Widget topInstruments(BuildContext context) {
 
           Padding(
             padding: const EdgeInsets.only(right: 10),
-            child: Consumer<Settings>(builder: (context, settings, _) {
-              return GestureDetector(
-                onDoubleTap: () {
-                  if (settings.altInstr != "MSL") {
-                    settings.altInstr = "MSL";
-                  } else {
-                    settings.altInstr = "AGL";
-                  }
-                },
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  verticalDirection: settings.altInstr == "MSL" ? VerticalDirection.down : VerticalDirection.up,
-                  children: [
-                    Altimeter(
-                      myTelemetry.geo.alt,
-                      valueStyle: settings.altInstr == "MSL" ? upperStyle : lowerStyle,
-                      unitStyle: unitStyle,
-                      unitTag: "MSL",
-                      isPrimary: settings.altInstr == "MSL",
+            child: ValueListenableBuilder<AltimeterMode>(
+                valueListenable: settingsMgr.primaryAltimeter.listenable,
+                builder: (context, primaryAltimeter, _) {
+                  return GestureDetector(
+                    onDoubleTap: () {
+                      if (primaryAltimeter != AltimeterMode.msl) {
+                        settingsMgr.primaryAltimeter.value = AltimeterMode.msl;
+                      } else {
+                        settingsMgr.primaryAltimeter.value = AltimeterMode.agl;
+                      }
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      verticalDirection:
+                          primaryAltimeter == AltimeterMode.msl ? VerticalDirection.down : VerticalDirection.up,
+                      children: [
+                        Altimeter(
+                          myTelemetry.geo.alt,
+                          valueStyle: primaryAltimeter == AltimeterMode.msl ? upperStyle : lowerStyle,
+                          unitStyle: unitStyle,
+                          unitTag: "MSL",
+                          isPrimary: primaryAltimeter == AltimeterMode.msl,
+                        ),
+                        Altimeter(
+                          myTelemetry.geo.ground != null ? myTelemetry.geo.alt - myTelemetry.geo.ground! : null,
+                          valueStyle: primaryAltimeter == AltimeterMode.agl ? upperStyle : lowerStyle,
+                          unitStyle: unitStyle,
+                          unitTag: "AGL",
+                          isPrimary: primaryAltimeter == AltimeterMode.agl,
+                        )
+                      ],
                     ),
-                    Altimeter(
-                      myTelemetry.geo.ground != null ? myTelemetry.geo.alt - myTelemetry.geo.ground! : null,
-                      valueStyle: settings.altInstr == "AGL" ? upperStyle : lowerStyle,
-                      unitStyle: unitStyle,
-                      unitTag: "AGL",
-                      isPrimary: settings.altInstr == "AGL",
-                    )
-                  ],
-                ),
-              );
-            }),
+                  );
+                }),
           ),
         ]),
       ),

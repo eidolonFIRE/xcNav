@@ -13,7 +13,7 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';

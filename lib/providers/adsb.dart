@@ -13,14 +13,28 @@ import 'package:usb_serial/usb_serial.dart';
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/geo.dart';
 
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
 
 import 'package:xcnav/models/gdl90.dart' as gdl90;
 import 'package:xcnav/models/mavlink.dart' as mavlink;
 
-enum TtsState { playing, stopped }
+enum ProximitySize {
+  off,
+  small,
+  medium,
+  large,
+  xlarge,
+}
+
+final Map<ProximitySize, ProximityConfig> proximityProfileOptions = {
+  ProximitySize.off: ProximityConfig(vertical: 0, horizontalDist: 0, horizontalTime: 0),
+  ProximitySize.small: ProximityConfig(vertical: 200, horizontalDist: 600, horizontalTime: 30),
+  ProximitySize.medium: ProximityConfig(vertical: 400, horizontalDist: 1200, horizontalTime: 45),
+  ProximitySize.large: ProximityConfig(vertical: 800, horizontalDist: 2000, horizontalTime: 60),
+  ProximitySize.xlarge: ProximityConfig(vertical: 1200, horizontalDist: 3000, horizontalTime: 90),
+};
 
 class ProximityConfig {
   final double vertical;
@@ -30,7 +44,7 @@ class ProximityConfig {
   /// Units in meters and seconds
   ProximityConfig({required this.vertical, required this.horizontalDist, required this.horizontalTime});
 
-  String toMultilineString(Settings settings) {
+  String toMultilineString() {
     return "Vertical: ${(unitConverters[UnitType.distFine]!(vertical) / 50).ceil() * 50}${getUnitStr(UnitType.distFine)}\n"
         "Horiz Dist: ${(unitConverters[UnitType.distFine]!(horizontalDist) / 100).ceil() * 100}${getUnitStr(UnitType.distFine)}\n"
         "Horiz Time: ${horizontalTime.toStringAsFixed(0)} sec";
@@ -215,7 +229,7 @@ class ADSB with ChangeNotifier {
   }
 
   void checkProximity(Geo observer) {
-    ProximityConfig config = Provider.of<Settings>(context, listen: false).proximityProfile;
+    ProximityConfig config = proximityProfileOptions[settingsMgr.adsbProximitySize.value]!;
 
     for (GA each in planes.values) {
       final double dist = latlngCalc.distance(each.latlng, observer.latlng);
@@ -241,7 +255,7 @@ class ADSB with ChangeNotifier {
   }
 
   void testWarning() {
-    ProximityConfig config = Provider.of<Settings>(context, listen: false).proximityProfile;
+    ProximityConfig config = proximityProfileOptions[settingsMgr.adsbProximitySize.value]!;
     var rand = Random(DateTime.now().millisecondsSinceEpoch);
     var observer = LatLng(0, 0);
 

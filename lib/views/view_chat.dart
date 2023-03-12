@@ -10,7 +10,7 @@ import 'package:xcnav/providers/profile.dart';
 // Models
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
-import 'package:xcnav/providers/settings.dart';
+import 'package:xcnav/settings_service.dart';
 
 // Widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -123,19 +123,20 @@ class ViewChatState extends State<ViewChat> {
               }),
 
               // --- Text to Speak toggle
-              Consumer<Settings>(
-                  builder: (context, settings, child) => Positioned(
+              ValueListenableBuilder<bool>(
+                  valueListenable: settingsMgr.chatTTS.listenable,
+                  builder: (context, chatTTS, _) => Positioned(
                         left: 8,
                         top: 8,
                         child: FloatingActionButton(
                           backgroundColor:
-                              settings.chatTts ? Colors.greenAccent.withAlpha(200) : Colors.red.shade900.withAlpha(100),
+                              chatTTS ? Colors.greenAccent.withAlpha(200) : Colors.red.shade900.withAlpha(100),
                           child: Icon(
-                            settings.chatTts ? Icons.volume_up : Icons.volume_off,
+                            chatTTS ? Icons.volume_up : Icons.volume_off,
                             color: Colors.black,
                             size: 30,
                           ),
-                          onPressed: () => settings.chatTts = !settings.chatTts,
+                          onPressed: () => settingsMgr.chatTTS.value = !chatTTS,
                         ),
                       )),
 
