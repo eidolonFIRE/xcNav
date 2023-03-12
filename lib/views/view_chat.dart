@@ -122,7 +122,7 @@ class ViewChatState extends State<ViewChat> {
                     });
               }),
 
-              // --- Text to Speak toggle
+              // --- Text to Speech toggle
               ValueListenableBuilder<bool>(
                   valueListenable: settingsMgr.chatTTS.listenable,
                   builder: (context, chatTTS, _) => Positioned(
