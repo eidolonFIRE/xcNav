@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/secrets.dart';
+import 'package:xcnav/util.dart';
 
 class Pilot {
   // basic info
@@ -39,9 +40,9 @@ class Pilot {
   }
 
   Pilot.fromJson(Map<String, dynamic> json) {
-    id = json["id"];
+    id = parseAsString(json["id"])!;
     name = json["name"];
-    avatarHash = json["avatarHash"];
+    avatarHash = parseAsString(json["avatarHash"]);
     tier = json["tier"];
     _loadAvatar();
   }

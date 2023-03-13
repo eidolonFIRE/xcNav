@@ -20,6 +20,7 @@ import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/settings_service.dart';
+import 'package:xcnav/util.dart';
 
 enum ClientState {
   disconnected,
@@ -316,12 +317,13 @@ class Client with ChangeNotifier {
   void handleChatMessage(Map<String, dynamic> msg) {
     final group = Provider.of<Group>(globalContext, listen: false);
     String? currentGroupID = group.currentGroupID;
-    if (msg["group_id"] == currentGroupID) {
+    final groupId = parseAsString(msg["group_id"]);
+    if (groupId == currentGroupID) {
       Provider.of<ChatMessages>(globalContext, listen: false)
-          .processMessageFromServer(group.pilots[msg["pilot_id"]]?.name ?? "", msg);
+          .processMessageFromServer(group.pilots[parseAsString(msg["pilot_id"])]?.name ?? "", msg);
     } else {
       // getting messages from the wrong group!
-      debugPrint("Wrong group ID! $currentGroupID, ${msg["group_id"]}");
+      debugPrint("Wrong group ID! $currentGroupID, $groupId");
     }
   }
 
@@ -329,10 +331,11 @@ class Client with ChangeNotifier {
   void handlePilotTelemetry(Map<String, dynamic> msg) {
     // if we know this pilot, update their telemetry
     Group group = Provider.of<Group>(globalContext, listen: false);
-    if (group.hasPilot(msg["pilot_id"])) {
-      group.updatePilotTelemetry(msg["pilot_id"], msg["telemetry"], msg["timestamp"]);
+    final pilotId = parseAsString(msg["pilot_id"]);
+    if (pilotId != null && group.hasPilot(pilotId)) {
+      group.updatePilotTelemetry(pilotId, msg["telemetry"], msg["timestamp"]);
     } else {
-      debugPrint("Unrecognized local pilot ${msg["pilot_id"]}");
+      debugPrint("Unrecognized local pilot $pilotId");
       requestGroupInfo(group.currentGroupID);
     }
   }
@@ -340,21 +343,23 @@ class Client with ChangeNotifier {
   // --- new Pilot to group
   void handlePilotJoinedGroup(Map<String, dynamic> msg) {
     Map<String, dynamic> pilot = msg["pilot"];
-    if (pilot["id"] != Provider.of<Profile>(globalContext, listen: false).id) {
+    final pilotId = parseAsString(pilot["id"]);
+    if (pilotId != null && pilotId != Provider.of<Profile>(globalContext, listen: false).id) {
       // update pilots with new info
       Group group = Provider.of<Group>(globalContext, listen: false);
-      group.processNewPilot(pilot);
+      group.processNewPilot(pilotId, pilot);
     }
   }
 
   // --- Pilot left group
   void handlePilotLeftGroup(Map<String, dynamic> msg) {
-    if (msg["pilot_id"] == Provider.of<Profile>(globalContext, listen: false).id) {
+    final pilotId = parseAsString(msg["pilot_id"]);
+    if (pilotId == Provider.of<Profile>(globalContext, listen: false).id) {
       // ignore if it's us
       return;
     }
     Group group = Provider.of<Group>(globalContext, listen: false);
-    group.removePilot(msg["pilot_id"]);
+    group.removePilot(pilotId);
   }
 
   // --- Full waypoints sync
@@ -368,7 +373,8 @@ class Client with ChangeNotifier {
     // update the plan
     if (msg["action"] == WaypointAction.delete.index) {
       // Delete a waypoint
-      Provider.of<ActivePlan>(globalContext, listen: false).backendRemoveWaypoint(msg["waypoint"]["id"]);
+      final waypointId = parseAsString(msg["waypoint"]["id"]);
+      if (waypointId != null) Provider.of<ActivePlan>(globalContext, listen: false).backendRemoveWaypoint(waypointId);
     } else if (msg["action"] == WaypointAction.update.index) {
       // Make updates to a waypoint
       if (msg["waypoint"] != null) {
@@ -394,13 +400,17 @@ class Client with ChangeNotifier {
   // --- Process Pilot Waypoint selections
   void handlePilotSelectedWaypoint(Map<String, dynamic> msg) {
     Group group = Provider.of<Group>(globalContext, listen: false);
+    final pilotId = parseAsString(msg["pilot_id"]);
+    final waypointId = parseAsString(msg["waypoint_id"]);
 
-    debugPrint("${msg["pilot_id"]} selected wp: ${msg["waypoint_id"]}");
-    if (group.hasPilot(msg["pilot_id"])) {
-      group.pilotSelectedWaypoint(msg["pilot_id"], msg["waypoint_id"]);
-    } else {
-      // we don't have this pilot?
-      requestGroupInfo(group.currentGroupID);
+    debugPrint("$pilotId selected wp: $waypointId");
+    if (pilotId != null) {
+      if (group.hasPilot(pilotId)) {
+        group.pilotSelectedWaypoint(pilotId, waypointId);
+      } else {
+        // we don't have this pilot?
+        requestGroupInfo(group.currentGroupID);
+      }
     }
   }
 
@@ -421,17 +431,22 @@ class Client with ChangeNotifier {
 
       Profile profile = Provider.of<Profile>(globalContext, listen: false);
       profile.tier = msg["tier"];
-      profile.updateID(msg["pilot_id"], msg["secretToken"]);
+      final pilotId = parseAsString(msg["pilot_id"]);
+      if (pilotId != null) {
+        profile.updateID(pilotId, msg["secretToken"]);
 
-      // join the provided group
-      Group group = Provider.of<Group>(globalContext, listen: false);
-      group.currentGroupID = msg["group_id"];
-      requestGroupInfo(group.currentGroupID);
+        // join the provided group
+        Group group = Provider.of<Group>(globalContext, listen: false);
+        group.currentGroupID = parseAsString(msg["group_id"]);
+        requestGroupInfo(group.currentGroupID);
 
-      // update profile
-      if (msg["pilotMetaHash"] != profile.hash) {
-        debugPrint("Server had outdate profile meta. (${msg["pilotMetaHash"]} != ${profile.hash})");
-        pushProfile(profile);
+        // update profile
+        if (msg["pilotMetaHash"] != profile.hash) {
+          debugPrint("Server had outdate profile meta. (${msg["pilotMetaHash"]} != ${profile.hash})");
+          pushProfile(profile);
+        }
+      } else {
+        debugPrint("Error: failed to parse pilot_id");
       }
     }
   }
@@ -455,8 +470,9 @@ class Client with ChangeNotifier {
 
       // update pilots with new info
       msg["pilots"].forEach((jsonPilot) {
-        if (jsonPilot["id"] != Provider.of<Profile>(globalContext, listen: false).id) {
-          group.processNewPilot(jsonPilot);
+        final pilotId = parseAsString(msg["id"]);
+        if (pilotId != null && pilotId != Provider.of<Profile>(globalContext, listen: false).id) {
+          group.processNewPilot(pilotId, jsonPilot);
         }
       });
 
@@ -474,19 +490,20 @@ class Client with ChangeNotifier {
 
   void handleJoinGroupResponse(Map<String, dynamic> msg) {
     Group group = Provider.of<Group>(globalContext, listen: false);
+    final groupId = parseAsString(msg["group_id"]);
     if (msg["status"] != ErrorCode.success.index) {
       // not a valid group
       if (msg["status"] == ErrorCode.invalidId.index) {
-        debugPrint("Attempted to join invalid group ${msg["group_id"]}");
-      } else if (msg["status"] == ErrorCode.noop.index && msg["group_id"] == group.currentGroupID) {
+        debugPrint("Attempted to join invalid group $groupId");
+      } else if (msg["status"] == ErrorCode.noop.index && groupId == group.currentGroupID) {
         // we were already in this group... update anyway
-        group.currentGroupID = msg["group_id"];
+        group.currentGroupID = groupId;
       } else {
         debugPrint("Error joining group ${msg['status']}");
       }
     } else {
       // successfully joined group
-      group.currentGroupID = msg["group_id"];
+      group.currentGroupID = groupId;
       requestGroupInfo(group.currentGroupID);
     }
   }

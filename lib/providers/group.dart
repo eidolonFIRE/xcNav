@@ -118,8 +118,8 @@ class Group with ChangeNotifier {
   }
 
   /// Add or Replace local pilot instance
-  void processNewPilot(dynamic p) async {
-    pilots[p["id"]] = Pilot.fromJson(p);
+  void processNewPilot(String id, dynamic p) async {
+    pilots[id] = Pilot.fromJson(p);
     _appendToPastGroups();
     notifyListeners();
   }

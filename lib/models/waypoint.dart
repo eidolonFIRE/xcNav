@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/util.dart';
 
 enum WaypointAction {
   none,
@@ -100,7 +101,7 @@ class Waypoint {
 
   Waypoint.fromJson(Map<String, dynamic> json) {
     ephemeral = false;
-    id = json["id"] ?? makeId();
+    id = parseAsString(json["id"]) ?? makeId();
     name = json["name"];
     _icon = json["icon"];
     color = json["color"];
