@@ -263,8 +263,8 @@ class SettingsMgr {
         title: "Vario", icon: const Icon(Icons.trending_up));
 
     // NOTE: hide this for now
-    // displayUnitFuel = SettingConfig(this, prefs, "Display Units", "displayUnitFuel", DisplayUnitsFuel.liter,
-    //     title: "Fuel", icon: const Icon(Icons.local_gas_station));
+    displayUnitFuel = SettingConfig(this, prefs, "Display Units", "displayUnitFuel", DisplayUnitsFuel.liter,
+        title: "Fuel", icon: const Icon(Icons.local_gas_station), hidden: true);
 
     displayUnitDist.listenable.addListener(() {
       configUnits(dist: displayUnitDist.value);
