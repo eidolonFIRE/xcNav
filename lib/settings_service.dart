@@ -30,7 +30,7 @@ class SettingConfig<T> {
 
   set value(T newValue) {
     _value.value = newValue;
-    debugPrint("$id = $newValue");
+    if (id == "") return;
     if (value is Enum) {
       // Handle enum type
       _prefsInstance.setInt("settings.$id", (value as Enum).index);
@@ -59,62 +59,66 @@ class SettingConfig<T> {
   SettingConfig(SettingsMgr mgr, this._prefsInstance, this.catagory, this.id, this.defaultValue,
       {required this.title, this.description, this.icon, bool hidden = false}) {
     if (id.startsWith("settings.")) {
-      throw "Setting ID will automatically start with \"settings.\"";
+      throw "Setting ID automatically starts with \"settings.\"";
     }
 
-    if (defaultValue is Enum) {
-      // Handle enum type
-      int? loadedInt = _prefsInstance.getInt("settings.$id");
-      if (loadedInt == null) {
-        _value = ValueNotifier<T>(defaultValue);
+    if (id == "") {
+      _value = ValueNotifier<T>(defaultValue);
+    } else {
+      if (defaultValue is Enum) {
+        // Handle enum type
+        int? loadedInt = _prefsInstance.getInt("settings.$id");
+        if (loadedInt == null) {
+          _value = ValueNotifier<T>(defaultValue);
+        } else {
+          switch (T) {
+            // NOTE: Need to add each supporte enum here
+            case DisplayUnitsDist:
+              _value = ValueNotifier<T>(DisplayUnitsDist.values[loadedInt] as T);
+              break;
+            case DisplayUnitsSpeed:
+              _value = ValueNotifier<T>(DisplayUnitsSpeed.values[loadedInt] as T);
+              break;
+            case DisplayUnitsVario:
+              _value = ValueNotifier<T>(DisplayUnitsVario.values[loadedInt] as T);
+              break;
+            case DisplayUnitsFuel:
+              _value = ValueNotifier<T>(DisplayUnitsFuel.values[loadedInt] as T);
+              break;
+            case AltimeterMode:
+              _value = ValueNotifier<T>(AltimeterMode.values[loadedInt] as T);
+              break;
+            case ProximitySize:
+              _value = ValueNotifier<T>(ProximitySize.values[loadedInt] as T);
+              break;
+            case MapTileSrc:
+              _value = ValueNotifier<T>(MapTileSrc.values[loadedInt] as T);
+              break;
+            default:
+              throw "Unrecognized enum class ${T.toString()}";
+          }
+        }
       } else {
         switch (T) {
-          // NOTE: Need to add each supporte enum here
-          case DisplayUnitsDist:
-            _value = ValueNotifier<T>(DisplayUnitsDist.values[loadedInt] as T);
+          case List<String>:
+            _value =
+                ValueNotifier<T>((_prefsInstance.getStringList("settings.$id") ?? defaultValue as List<String>) as T);
             break;
-          case DisplayUnitsSpeed:
-            _value = ValueNotifier<T>(DisplayUnitsSpeed.values[loadedInt] as T);
+          case String:
+            _value = ValueNotifier<T>((_prefsInstance.getString("settings.$id") ?? defaultValue as String) as T);
             break;
-          case DisplayUnitsVario:
-            _value = ValueNotifier<T>(DisplayUnitsVario.values[loadedInt] as T);
+          case bool:
+            _value = ValueNotifier<T>((_prefsInstance.getBool("settings.$id") ?? defaultValue as bool) as T);
             break;
-          case DisplayUnitsFuel:
-            _value = ValueNotifier<T>(DisplayUnitsFuel.values[loadedInt] as T);
+          case double:
+            _value = ValueNotifier<T>((_prefsInstance.getDouble("settings.$id") ?? defaultValue as double) as T);
             break;
-          case AltimeterMode:
-            _value = ValueNotifier<T>(AltimeterMode.values[loadedInt] as T);
-            break;
-          case ProximitySize:
-            _value = ValueNotifier<T>(ProximitySize.values[loadedInt] as T);
-            break;
-          case MapTileSrc:
-            _value = ValueNotifier<T>(MapTileSrc.values[loadedInt] as T);
+          case int:
+            _value = ValueNotifier<T>((_prefsInstance.getInt("settings.$id") ?? defaultValue as int) as T);
             break;
           default:
-            throw "Unrecognized enum class ${T.toString()}";
+            throw "Unsupported Settings Type($T) !";
         }
-      }
-    } else {
-      switch (T) {
-        case List<String>:
-          _value =
-              ValueNotifier<T>((_prefsInstance.getStringList("settings.$id") ?? defaultValue as List<String>) as T);
-          break;
-        case String:
-          _value = ValueNotifier<T>((_prefsInstance.getString("settings.$id") ?? defaultValue as String) as T);
-          break;
-        case bool:
-          _value = ValueNotifier<T>((_prefsInstance.getBool("settings.$id") ?? defaultValue as bool) as T);
-          break;
-        case double:
-          _value = ValueNotifier<T>((_prefsInstance.getDouble("settings.$id") ?? defaultValue as double) as T);
-          break;
-        case int:
-          _value = ValueNotifier<T>((_prefsInstance.getInt("settings.$id") ?? defaultValue as int) as T);
-          break;
-        default:
-          throw "Unsupported Settings Type($T) !";
       }
     }
 
@@ -257,8 +261,10 @@ class SettingsMgr {
         title: "Speed", icon: const Icon(Icons.timer));
     displayUnitVario = SettingConfig(this, prefs, "Display Units", "displayUnitVario", DisplayUnitsVario.fpm,
         title: "Vario", icon: const Icon(Icons.trending_up));
-    displayUnitFuel = SettingConfig(this, prefs, "Display Units", "displayUnitFuel", DisplayUnitsFuel.liter,
-        title: "Fuel", icon: const Icon(Icons.local_gas_station));
+
+    // NOTE: hide this for now
+    // displayUnitFuel = SettingConfig(this, prefs, "Display Units", "displayUnitFuel", DisplayUnitsFuel.liter,
+    //     title: "Fuel", icon: const Icon(Icons.local_gas_station));
 
     displayUnitDist.listenable.addListener(() {
       configUnits(dist: displayUnitDist.value);
@@ -287,7 +293,7 @@ class SettingsMgr {
     editPatreonInfo = SettingAction(this, "Misc", () => null, title: "Edit Patreon Info");
 
     // --- Debug Tools
-    spoofLocation = SettingConfig(this, prefs, "Debug Tools", "spoofLocation", false,
+    spoofLocation = SettingConfig(this, prefs, "Debug Tools", "", false,
         title: "Spoof Location",
         icon: const Icon(
           Icons.location_off,
@@ -297,7 +303,7 @@ class SettingsMgr {
     clearMapCache = SettingAction(this, "Debug Tools", () {},
         title: "Clear Map Cache",
         actionIcon: const Icon(
-          Icons.delete,
+          Icons.map,
           color: Colors.red,
         ));
     clearAvatarCache = SettingAction(this, "Debug Tools", () => null,

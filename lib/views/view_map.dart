@@ -79,6 +79,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   /// User is dragging something on the map layer (for less than 30 seconds)
   bool get isDragging => dragStart != null && dragStart!.isAfter(DateTime.now().subtract(const Duration(seconds: 30)));
   DateTime? dragStart;
+  LatLng? draggingLatLng;
 
   WaypointID? editingWp;
   late PolyEditor polyEditor;
@@ -325,7 +326,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                     // Next waypoint: path
                     PolylineLayer(
-                      polylines: plan.buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: false).geo,
+                      polylines: plan.buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: true).geo,
                           (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
                           baseTiles: settingsMgr.mainMapTileSrc.value),
                     ),
@@ -359,7 +360,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     // Next waypoint: barbs
                     MarkerLayer(
                         markers: plan
-                            .buildNextWpBarbs(Provider.of<MyTelemetry>(context, listen: false).geo,
+                            .buildNextWpBarbs(Provider.of<MyTelemetry>(context, listen: true).geo,
                                 (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344))
                             .map((e) => Marker(
                                 point: e.latlng,
@@ -414,7 +415,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         plan.waypoints[editingWp]!.latlng.length == 1)
                       DragMarkers(markers: [
                         DragMarker(
-                            point: plan.waypoints[editingWp]!.latlng.first,
+                            point: draggingLatLng ?? plan.waypoints[editingWp]!.latlng.first,
                             height: 60 * 0.8,
                             width: 40 * 0.8,
                             updateMapNearEdge: true,
@@ -424,8 +425,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               plan.moveWaypoint(editingWp!, [p1]);
                               dragStart = null;
                             },
+                            onDragUpdate: (_, p1) {
+                              draggingLatLng = p1;
+                            },
                             onDragStart: (p0, p1) {
                               setState(() {
+                                draggingLatLng = p1;
                                 dragStart = DateTime.now();
                               });
                             },
@@ -583,20 +588,22 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     ),
 
                     // "ME" Live Location Marker
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          width: 50.0,
-                          height: 50.0,
-                          point: Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
-                          builder: (ctx) => Container(
-                            transformAlignment: const Alignment(0, 0),
-                            transform: Matrix4.rotationZ(Provider.of<MyTelemetry>(context, listen: false).geo.hdg),
-                            child: Image.asset("assets/images/red_arrow.png"),
+                    Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
+                      return MarkerLayer(
+                        markers: [
+                          Marker(
+                            width: 50.0,
+                            height: 50.0,
+                            point: myTelemetry.geo.latlng,
+                            builder: (ctx) => Container(
+                              transformAlignment: const Alignment(0, 0),
+                              transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
+                              child: Image.asset("assets/images/red_arrow.png"),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      );
+                    }),
 
                     // Measurement Polyline
                     if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
@@ -706,7 +713,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
                                 child: Container(
                                     constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
-                                    color: Colors.white30,
+                                    color: Colors.white38,
                                     child: const WaypointNavBar()))),
                         Positioned(
                             top: 0,

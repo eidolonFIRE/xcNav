@@ -169,13 +169,12 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     onPressed: () => {showPatreonInfoDialog(context)},
                     padding: EdgeInsets.zero,
                     visualDensity: VisualDensity.compact,
-                    iconSize: 20,
+                    iconSize: 30,
                     icon: const Icon(
                       Icons.help,
-                      size: 20,
                       color: Colors.lightBlue,
                     )),
-                IconButton(
+                ElevatedButton.icon(
                     onPressed: () {
                       if (formKey.currentState?.validate() ?? false) {
                         settingsMgr.patreonName.value = nameController.text;
@@ -183,6 +182,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                         Navigator.pop(context);
                       }
                     },
+                    label: const Text("Save"),
                     icon: const Icon(
                       Icons.check,
                       color: Colors.green,
@@ -220,8 +220,9 @@ class _SettingsEditorState extends State<SettingsEditor> {
               child: ListView(
                   children: settingsMgr.settings
                       .map((key, catagory) => MapEntry(key,
-                              // Catagory
+                              // --- Catagory
                               Builder(builder: (context) {
+                            // TODO: This is very low performance because the builder gets hit every re-draw.
                             final List<Widget> items = catagory
                                 .where((element) =>
                                     filterText.text.isEmpty ||
