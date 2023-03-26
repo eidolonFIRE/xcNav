@@ -115,13 +115,9 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
             logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
             // completer.complete();
           } catch (error, stack) {
-            if (logs.containsKey(each.uri.path)) {
-              logs[each.uri.path]!.goodFile = false;
-            } else {
-              // This is reached if the error happens during json parsing
-              // Create a "bad file" entry so user can opt to remove it
-              logs[each.uri.path] = FlightLog.fromJson(each.uri.path, {});
-            }
+            // This is reached if the error happens during json parsing
+            // Create a "bad file" entry so user can opt to remove it
+            logs[each.uri.path] = FlightLog.fromJson(each.path, {}, rawJson: value);
             debugPrint("Caught log loading error on file ${each.uri}: $error $stack");
           }
           completer.complete();

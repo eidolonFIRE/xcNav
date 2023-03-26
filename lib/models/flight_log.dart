@@ -14,6 +14,7 @@ class FlightLog {
   late List<Geo> samples;
   late final List<Waypoint> waypoints;
   late final bool goodFile;
+  late final String? rawJson;
 
   late String title;
   late Duration durationTime;
@@ -44,7 +45,7 @@ class FlightLog {
     }
   }
 
-  FlightLog.fromJson(String filename, Map<String, dynamic> data) {
+  FlightLog.fromJson(String filename, Map<String, dynamic> data, {this.rawJson}) {
     _filename = filename;
 
     debugPrint("Loading: $filename");
@@ -120,6 +121,7 @@ class FlightLog {
     } catch (e) {
       debugPrint("Error Loading Flight Log: $e");
       samples = [];
+      waypoints = [];
       title = "Broken File! $filename";
       goodFile = false;
     }

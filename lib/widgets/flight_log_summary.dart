@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+// ignore: depend_on_referenced_packages
+import 'package:path/path.dart' as p;
 
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
@@ -78,12 +80,18 @@ class FlightLogSummary extends StatelessWidget {
   }
 
   void exportLog(BuildContext context, String fileType) {
-    final filename = DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
+    String filename = "";
+    if (log.samples.isNotEmpty) {
+      filename = DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
+    } else {
+      filename = p.basenameWithoutExtension(log.filename);
+    }
     (Platform.isIOS ? getApplicationDocumentsDirectory() : Future(() => Directory('/storage/emulated/0/Documents')))
         .then((Directory path) {
       var outFile = File("${path.path}/xcNav_$fileType/$filename.$fileType");
-      outFile.create(recursive: true).then(
-          (value) => value.writeAsString(fileType == "kml" ? log.toKML() : log.toGPX()).then((value) => showDialog(
+      outFile.create(recursive: true).then((value) => value
+          .writeAsString(fileType == "json" ? (log.rawJson ?? "") : (fileType == "kml" ? log.toKML() : log.toGPX()))
+          .then((value) => showDialog(
               context: context,
               builder: (context) => AlertDialog(
                     title: const Text("File Exported to:"),
@@ -91,27 +99,32 @@ class FlightLogSummary extends StatelessWidget {
                       outFile.path,
                     ),
                     actions: [
-                      IconButton(
+                      ElevatedButton.icon(
+                        label: const Text("Open"),
                         onPressed: () async {
                           var result = await OpenFile.open(outFile.path);
                           debugPrint(result.message);
                           // NOTE: Workaround for "high risk" android permission missing
                           if (result.message.toUpperCase().contains('MANAGE_EXTERNAL_STORAGE')) {
-                            final filename = outFile.path.split('/').last;
+                            debugPrint("Workaround to MANAGE_EXTERNAL_STORAGE... using temp directory");
+                            final filename = p.basename(outFile.path);
                             final String newpath = '${(await getTemporaryDirectory()).path}/$filename';
                             await File(outFile.path).copy(newpath);
                             result = await OpenFile.open(newpath);
                           }
                         },
-                        icon: const Icon(Icons.launch),
-                        color: Colors.blue,
+                        icon: const Icon(
+                          Icons.launch,
+                          color: Colors.blue,
+                        ),
                       ),
-                      IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(
-                            Icons.check,
-                            color: Colors.green,
-                          ))
+                      // ElevatedButton.icon(
+                      //     label: const Text("ok"),
+                      //     onPressed: () => Navigator.pop(context),
+                      //     icon: const Icon(
+                      //       Icons.check,
+                      //       color: Colors.green,
+                      //     ))
                     ],
                   ))));
     });
@@ -194,6 +207,10 @@ class FlightLogSummary extends StatelessWidget {
                         exportLog(context, "gpx");
                         break;
 
+                      case "export_json":
+                        exportLog(context, "json");
+                        break;
+
                       case "delete":
                         deleteLog(context);
                         break;
@@ -210,28 +227,42 @@ class FlightLogSummary extends StatelessWidget {
                               padding: EdgeInsets.only(left: 16),
                               child: Text("Export Options:"),
                             )),
+                        if (log.goodFile)
+                          const PopupMenuItem(
+                              value: "export_kml",
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.file_download,
+                                  size: 28,
+                                ),
+                                title: Text.rich(TextSpan(children: [
+                                  TextSpan(text: "KML ", style: TextStyle(fontSize: 20)),
+                                  TextSpan(text: "(Google Earth)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                                ])),
+                              )),
+                        if (log.goodFile)
+                          const PopupMenuItem(
+                              value: "export_gpx",
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.file_download,
+                                  size: 28,
+                                ),
+                                title: Text.rich(TextSpan(children: [
+                                  TextSpan(text: "GPX ", style: TextStyle(fontSize: 20)),
+                                  TextSpan(text: "(Ayvri.com)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                                ])),
+                              )),
                         const PopupMenuItem(
-                            value: "export_kml",
+                            value: "export_json",
                             child: ListTile(
                               leading: Icon(
                                 Icons.file_download,
                                 size: 28,
                               ),
                               title: Text.rich(TextSpan(children: [
-                                TextSpan(text: "KML ", style: TextStyle(fontSize: 20)),
-                                TextSpan(text: "(Google Earth)", style: TextStyle(fontSize: 20, color: Colors.grey))
-                              ])),
-                            )),
-                        const PopupMenuItem(
-                            value: "export_gpx",
-                            child: ListTile(
-                              leading: Icon(
-                                Icons.file_download,
-                                size: 28,
-                              ),
-                              title: Text.rich(TextSpan(children: [
-                                TextSpan(text: "GPX ", style: TextStyle(fontSize: 20)),
-                                TextSpan(text: "(Ayvri.com)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                                TextSpan(text: "Json ", style: TextStyle(fontSize: 20)),
+                                TextSpan(text: "(raw file)", style: TextStyle(fontSize: 20, color: Colors.grey))
                               ])),
                             )),
                         const PopupMenuDivider(),
