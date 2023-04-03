@@ -4,10 +4,12 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
@@ -31,11 +33,12 @@ class ElevationPlotPainter extends CustomPainter {
   late final Paint _paintGrid;
   late final Paint _paintVarioTrend;
   late final Paint _paintPath;
+  late final Paint _paintCard;
 
   final List<Geo> geoData;
   final List<ElevSample?> groundData;
 
-  final double vertGridRes;
+  late final double vertGridRes;
   final double distScale;
 
   final Waypoint? waypoint;
@@ -43,8 +46,15 @@ class ElevationPlotPainter extends CustomPainter {
 
   DrawableRoot? svgPin;
 
-  ElevationPlotPainter(this.geoData, this.groundData, this.vertGridRes, this.distScale,
-      {this.waypoint, this.waypointETA}) {
+  final bool showPilotIcon;
+
+  /// Label the timestamp of a geoData sample
+  final int? labelIndex;
+
+  ElevationPlotPainter(this.geoData, this.groundData, this.distScale,
+      {this.waypoint, this.waypointETA, this.showPilotIcon = true, this.labelIndex}) {
+    vertGridRes = settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 100 : 152.4;
+
     _paintGround = Paint()
       ..color = Colors.orange.shade800
       ..style = PaintingStyle.fill;
@@ -77,6 +87,10 @@ class ElevationPlotPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 8;
+
+    _paintCard = Paint()
+      ..color = Colors.grey.shade800
+      ..style = PaintingStyle.fill;
 
     if (waypoint != null) {
       void setSvgPin() {
@@ -128,29 +142,24 @@ class ElevationPlotPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // debugPrint("PAINT ELEVATION PLOT");
 
+    final futureGround = groundData.where((element) => element != null).map((e) => e!.elev);
+
     // --- Common misc.
-    final double maxElev = ((max(
-                        geoData.map((e) => e.alt).reduce((a, b) => a > b ? a : b),
-                        groundData
-                            .where((element) => element != null)
-                            .map((e) => e!.elev)
-                            .reduce((a, b) => a > b ? a : b)) +
+    final double maxElev = ((max(geoData.map((e) => e.alt).reduce((a, b) => a > b ? a : b),
+                        (futureGround.isNotEmpty ? futureGround.reduce(max) : 0)) +
                     vertGridRes / 2) /
                 vertGridRes)
             .ceil() *
         vertGridRes;
 
+    final Iterable<double> historyGroundData =
+        geoData.map((e) => e.ground).where((element) => element != null).cast<double>();
+
     final double minElev = ((min(
-                        geoData
-                                .map((e) => e.ground)
-                                .where((element) => element != null)
-                                .reduce((a, b) => a! < b! ? a : b) ??
-                            0,
-                        groundData
-                                .where((element) => element != null)
-                                .reduce((a, b) => a!.elev < b!.elev ? a : b)
-                                ?.elev ??
-                            0) -
+                        historyGroundData.length > 1
+                            ? historyGroundData.reduce(min)
+                            : (historyGroundData.length == 1 ? historyGroundData.first : 0),
+                        (futureGround.isNotEmpty ? futureGround.reduce(min) : 0)) -
                     vertGridRes / 2) /
                 vertGridRes)
             .floor() *
@@ -161,7 +170,7 @@ class ElevationPlotPainter extends CustomPainter {
       return size.height - size.height * (value - minElev) / rangeElev;
     }
 
-    final double farthestDist = groundData.last?.dist ?? 0;
+    final double farthestDist = groundData.isNotEmpty ? groundData.last?.dist ?? 0 : 0;
     final rangeX = geoData.last.time - geoData.first.time + farthestDist;
 
     double scaleX(int value) {
@@ -232,6 +241,32 @@ class ElevationPlotPainter extends CustomPainter {
       }
     }
 
+    // --- Draw Sample Label
+    if (labelIndex != null) {
+      final t = geoData[labelIndex!].time;
+      final x = scaleX(t);
+
+      // Line
+      canvas.drawLine(Offset(x, scaleY(geoData[labelIndex!].alt)), Offset(x, 0), _paintVarioTrend);
+
+      // Text
+      TextSpan span = TextSpan(
+          style: const TextStyle(color: Colors.white),
+          text: intl.DateFormat("h:mm a").format(DateTime.fromMillisecondsSinceEpoch(t)));
+      TextPainter tp = TextPainter(text: span, textAlign: TextAlign.center, textDirection: TextDirection.ltr);
+      tp.layout();
+
+      final xDynamic = x - (labelIndex! > geoData.length / 2 ? tp.width + 4 : -4);
+
+      // Background card
+      canvas.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromLTWH(xDynamic - 4, 0, tp.width + 8, tp.height + 8), const Radius.circular(10)),
+          _paintCard);
+
+      tp.paint(canvas, Offset(xDynamic, 4));
+    }
+
     // --- Draw Waypoint
     if (waypoint != null && svgPin != null && waypointETA?.time != null) {
       if (waypoint!.isPath) {
@@ -280,7 +315,7 @@ class ElevationPlotPainter extends CustomPainter {
     }
 
     // --- Draw Pilot Icon
-    if (_arrow != null) {
+    if (_arrow != null && showPilotIcon) {
       canvas.translate(base.dx, base.dy);
       canvas.rotate(slope.direction + pi / 2);
       canvas.drawImageRect(_arrow!, const Rect.fromLTWH(0, 0, 113, 130),
@@ -290,19 +325,20 @@ class ElevationPlotPainter extends CustomPainter {
     }
 
     // --- Draw Vario
-    TextPainter tp = TextPainter(
-        text: richValue(UnitType.vario, geoData.last.varioSmooth,
-            valueStyle: const TextStyle(fontSize: 30),
-            unitStyle: const TextStyle(fontSize: 14, color: Colors.grey, fontStyle: FontStyle.italic)),
-        textAlign: TextAlign.right,
-        textDirection: TextDirection.ltr);
-    tp.layout(minWidth: 60);
-    tp.paint(canvas, Offset(scaleX(geoData.last.time) - 20, scaleY(geoData.last.alt) + 20));
+    if (showPilotIcon) {
+      TextPainter tp = TextPainter(
+          text: richValue(UnitType.vario, geoData.last.varioSmooth,
+              valueStyle: const TextStyle(fontSize: 30),
+              unitStyle: const TextStyle(fontSize: 14, color: Colors.grey, fontStyle: FontStyle.italic)),
+          textAlign: TextAlign.right,
+          textDirection: TextDirection.ltr);
+      tp.layout(minWidth: 60);
+      tp.paint(canvas, Offset(scaleX(geoData.last.time) - 20, scaleY(geoData.last.alt) + 20));
+    }
   }
 
   @override
   bool shouldRepaint(ElevationPlotPainter oldDelegate) {
-    return oldDelegate.geoData.last.time != geoData.last.time;
-    //oldDelegate.maxValue != maxValue;
+    return oldDelegate.geoData.last.time != geoData.last.time || oldDelegate.labelIndex != labelIndex;
   }
 }

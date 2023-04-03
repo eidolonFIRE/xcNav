@@ -417,25 +417,29 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void fetchAmbPressure() {
-    if (!baroAmbientRequested) {
-      baroAmbientRequested = true;
-      http.get(
-          Uri.parse(
-              "https://weatherkit.apple.com/api/v1/weather/en_US/${geo.lat.toStringAsFixed(5)}/${geo.lng.toStringAsFixed(5)}?dataSets=currentWeather"),
-          headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
-        if (response.statusCode != 200) {
-          baroAmbientRequestCount++;
-          debugPrint(
-              "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}");
-        } else {
-          final payload = jsonDecode(response.body);
-          baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);
-          ambientTemperature = payload["currentWeather"]["temperature"] * 9 / 5 + 32;
-          debugPrint("Ambient pressure found: ${baroAmbient?.hectpascal} ( ${ambientTemperature}F )");
-          baroFromWeatherkit = true;
-        }
-        baroAmbientRequested = false;
-      });
+    try {
+      if (!baroAmbientRequested) {
+        baroAmbientRequested = true;
+        http.get(
+            Uri.parse(
+                "https://weatherkit.apple.com/api/v1/weather/en_US/${geo.lat.toStringAsFixed(5)}/${geo.lng.toStringAsFixed(5)}?dataSets=currentWeather"),
+            headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
+          if (response.statusCode != 200) {
+            baroAmbientRequestCount++;
+            debugPrint(
+                "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}");
+          } else {
+            final payload = jsonDecode(response.body);
+            baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);
+            ambientTemperature = payload["currentWeather"]["temperature"] * 9 / 5 + 32;
+            debugPrint("Ambient pressure found: ${baroAmbient?.hectpascal} ( ${ambientTemperature}F )");
+            baroFromWeatherkit = true;
+          }
+          baroAmbientRequested = false;
+        });
+      }
+    } catch (err, stack) {
+      debugPrint("Failed to fetch weatherkitdata: $err $stack");
     }
   }
 

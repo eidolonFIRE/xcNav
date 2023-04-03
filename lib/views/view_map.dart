@@ -340,7 +340,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             .whereNot(
                               (element) => element.id == editingWp,
                             )
-                            .mapIndexed((i, e) =>
+                            .map((e) =>
                                 TaggedPolyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), tag: e.id))
                             .toList(),
                         onTap: (p0, tapPosition) {
@@ -402,6 +402,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     onLongPress: () {
                                       setState(() {
                                         editingWp = e.id;
+                                        draggingLatLng = null;
                                       });
                                     },
                                     child: WaypointMarker(e, 60 * 0.8),

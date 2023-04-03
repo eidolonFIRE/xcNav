@@ -15,11 +15,11 @@ import 'package:xcnav/models/waypoint.dart';
 // --- Providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/widgets/map_selector.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
+import 'package:xcnav/widgets/map_selector.dart';
 
 // --- Misc
 import 'package:xcnav/dialogs/edit_waypoint.dart';

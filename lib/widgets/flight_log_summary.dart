@@ -118,13 +118,6 @@ class FlightLogSummary extends StatelessWidget {
                           color: Colors.blue,
                         ),
                       ),
-                      // ElevatedButton.icon(
-                      //     label: const Text("ok"),
-                      //     onPressed: () => Navigator.pop(context),
-                      //     icon: const Icon(
-                      //       Icons.check,
-                      //       color: Colors.green,
-                      //     ))
                     ],
                   ))));
     });
@@ -298,6 +291,11 @@ class FlightLogSummary extends StatelessWidget {
                         },
                         interactiveFlags: InteractiveFlag.none,
                         // bounds: mapBounds,
+                        onTap: (tapPosition, point) {
+                          if (log.goodFile) {
+                            Navigator.pushNamed(context, "/logReplay", arguments: log);
+                          }
+                        },
                       ),
                       children: [
                         getMapTileLayer(MapTileSrc.topo, 1),
@@ -416,6 +414,14 @@ class FlightLogSummary extends StatelessWidget {
                           TableCell(
                               child: Text.rich(
                             richValue(UnitType.vario, log.bestClimb, decimals: 1, unitStyle: unitStyle),
+                            textAlign: TextAlign.end,
+                          )),
+                        ]),
+                        TableRow(children: [
+                          const TableCell(child: Text("Alt Gained")),
+                          TableCell(
+                              child: Text.rich(
+                            richValue(UnitType.distFine, log.altGained, decimals: 0, unitStyle: unitStyle),
                             textAlign: TextAlign.end,
                           )),
                         ]),

@@ -3,10 +3,12 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/douglas_peucker.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/units.dart';
 import 'package:xml/xml.dart';
 
 class FlightLog {
@@ -37,6 +39,63 @@ class FlightLog {
   DateTime get startTime => DateTime.fromMillisecondsSinceEpoch(samples.first.time);
   DateTime get endTime => DateTime.fromMillisecondsSinceEpoch(samples.last.time);
 
+  int speedHistOffset = 0;
+  List<int>? _speedHist;
+  List<int> get speedHist {
+    if (_speedHist == null) {
+      _speedHist = [];
+
+      // Build speed histogram
+      for (final each in samples) {
+        final index = unitConverters[UnitType.speed]!(each.spd).round();
+
+        while (_speedHist!.length <= index) {
+          // debugPrint("${_speedHist!.length} <= ${index}");
+          _speedHist!.add(0);
+        }
+
+        _speedHist![index]++;
+      }
+
+      // Trim low count from outliers. Removes outliers and cleans up the chart.
+      final int highest = _speedHist!.reduce(max);
+
+      int t = _speedHist!.length - 1;
+      while (t >= 0) {
+        if (_speedHist!.last < (highest / 100 + 1)) {
+          _speedHist!.removeLast();
+        } else {
+          break;
+        }
+        t--;
+      }
+
+      while (t < _speedHist!.length) {
+        if (_speedHist!.first < (highest / 100 + 1)) {
+          _speedHist!.removeAt(0);
+          speedHistOffset++;
+        } else {
+          break;
+        }
+        t++;
+      }
+    }
+    return _speedHist!;
+  }
+
+  double? _altGained;
+  double get altGained {
+    if (_altGained == null) {
+      _altGained = 0;
+      final values = douglasPeucker(samples.map((e) => e.alt).toList(), 3);
+      debugPrint("Elev points reduced ${samples.length} => ${values.length}");
+      for (int t = 0; t < values.length - 1; t++) {
+        _altGained = _altGained! + max(0, values[t + 1] - values[t]);
+      }
+    }
+    return _altGained!;
+  }
+
   int compareTo(FlightLog other) {
     if (goodFile && other.goodFile) {
       return other.startTime.compareTo(startTime);
@@ -56,6 +115,14 @@ class FlightLog {
 
       if (samples.isEmpty) {
         throw "No samples in log";
+      }
+
+      // --- Fill in speeds
+      for (int t = 0; t < samples.length - 1; t++) {
+        if (samples[t + 1].spd == 0 && samples[t].time < samples[t + 1].time) {
+          final double dist = latlngCalc.distance(samples[t].latlng, samples[t + 1].latlng);
+          samples[t + 1].spd = dist / (samples[t + 1].time - samples[t].time) * 1000;
+        }
       }
 
       var date = DateTime.fromMillisecondsSinceEpoch(samples.first.time);

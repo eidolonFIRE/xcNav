@@ -183,7 +183,7 @@ class Geo {
   }
 
   Map<String, num> toJson() {
-    return {
+    final dict = {
       "lat": lat,
       "lng": lng,
       "alt": alt,
@@ -192,9 +192,13 @@ class Geo {
       "spd": spd,
       "vario": vario,
     };
+    if (ground != null) {
+      dict["ground"] = ground!;
+    }
+    return dict;
   }
 
-  Geo.fromJson(dynamic data) {
+  Geo.fromJson(Map<String, dynamic> data) {
     lat = data["lat"] is int ? (data["lat"] as int).toDouble() : data["lat"];
     lng = data["lng"] is int ? (data["lng"] as int).toDouble() : data["lng"];
     alt = data["alt"] is int ? (data["alt"] as int).toDouble() : data["alt"];
@@ -202,5 +206,9 @@ class Geo {
     hdg = data["hdg"] is int ? (data["hdg"] as int).toDouble() : data["hdg"];
     spd = data["spd"] is int ? (data["spd"] as int).toDouble() : data["spd"];
     vario = data["vario"] is int ? (data["vario"] as int).toDouble() : data["vario"];
+
+    if (data.containsKey("ground")) {
+      ground = data["ground"] is int ? (data["ground"] as int).toDouble() : data["ground"];
+    }
   }
 }

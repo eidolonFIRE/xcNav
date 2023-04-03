@@ -15,6 +15,7 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/screens/log_replay.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/weather.dart';
@@ -210,6 +211,7 @@ class XCNav extends StatelessWidget {
         "/about": (context) => const About(),
         "/adsbHelp": (context) => const ADSBhelp(),
         "/checklist": (context) => const ChecklistViewer(),
+        "/logReplay": (context) => const LogReplay(),
       },
     );
   }

@@ -207,7 +207,6 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                               painter: ElevationPlotPainter(
                                   myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30)),
                                   groundSamples.data ?? [],
-                                  settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 100 : 152.4,
                                   distScale,
                                   waypoint: activePlan.getSelectedWp(),
                                   waypointETA: waypointETA),
