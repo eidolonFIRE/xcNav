@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
@@ -24,6 +25,8 @@ TileProvider? makeTileProvider(String instanceName) {
         );
   } catch (e, trace) {
     debugPrint("Error making tile provider $instanceName : $e $trace");
+    DatadogSdk.instance.logs?.error("Error making tile provider",
+        errorMessage: e.toString(), errorStackTrace: trace, attributes: {"layerName": instanceName});
     return null;
   }
 }

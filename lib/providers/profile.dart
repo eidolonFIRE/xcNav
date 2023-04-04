@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
@@ -49,6 +50,9 @@ class Profile with ChangeNotifier {
     debugPrint("Loaded Profile: $name, $id, $secretID, avatar: ${_avatarRaw?.length ?? 0}");
 
     hash = _hash();
+
+    // Add context to logging
+    DatadogSdk.instance.setUserInfo(id: id);
   }
 
   static String? nameValidator(String? name) {
@@ -142,6 +146,9 @@ class Profile with ChangeNotifier {
     prefs.setString("profile.secretID", newSecretID);
 
     hash = _hash();
+
+    // Add context to logging
+    DatadogSdk.instance.setUserInfo(id: newID);
   }
 
   String _hash() {

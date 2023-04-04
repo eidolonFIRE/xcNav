@@ -34,8 +34,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
   ValueNotifier<int> sampleIndex = ValueNotifier(0);
 
-  final lowerStyle = TextStyle(color: Colors.black, fontSize: 20);
-  final TextStyle unitStyle = TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic);
+  final lowerStyle = const TextStyle(color: Colors.black, fontSize: 20);
+  final TextStyle unitStyle = const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic);
 
   late final TabController tabController;
 
@@ -294,21 +294,20 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                 );
                               }),
                         ),
-                        if (sampleIndex == null)
-                          const Align(
-                            alignment: Alignment.center,
-                            child: Text.rich(
-                              TextSpan(children: [
-                                WidgetSpan(
-                                    child: Icon(
-                                  Icons.touch_app,
-                                  size: 26,
-                                )),
-                                TextSpan(text: "  Scrub Timeline")
-                              ]),
-                              style: TextStyle(fontSize: 18, shadows: [Shadow(color: Colors.black, blurRadius: 20)]),
-                            ),
+                        const Align(
+                          alignment: Alignment.center,
+                          child: Text.rich(
+                            TextSpan(children: [
+                              WidgetSpan(
+                                  child: Icon(
+                                Icons.touch_app,
+                                size: 26,
+                              )),
+                              TextSpan(text: "  Scrub Timeline")
+                            ]),
+                            style: TextStyle(fontSize: 18, shadows: [Shadow(color: Colors.black, blurRadius: 20)]),
                           ),
+                        ),
                       ],
                     ),
                   )),

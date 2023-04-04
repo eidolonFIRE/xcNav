@@ -418,7 +418,7 @@ class FlightLogSummary extends StatelessWidget {
                           )),
                         ]),
                         TableRow(children: [
-                          const TableCell(child: Text("Alt Gained")),
+                          const TableCell(child: Text("Total Elev Gain")),
                           TableCell(
                               child: Text.rich(
                             richValue(UnitType.distFine, log.altGained, decimals: 0, unitStyle: unitStyle),

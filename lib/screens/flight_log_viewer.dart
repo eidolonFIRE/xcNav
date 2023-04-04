@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
-
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
 // Models
 import 'package:xcnav/models/flight_log.dart';
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/widgets/basic_log_aggregate.dart';
 import 'package:xcnav/widgets/chart_log_aggregate.dart';
 import 'package:xcnav/widgets/chart_log_duration_hist.dart';
@@ -114,11 +112,13 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
           try {
             logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
             // completer.complete();
-          } catch (error, stack) {
+          } catch (err, trace) {
             // This is reached if the error happens during json parsing
             // Create a "bad file" entry so user can opt to remove it
             logs[each.uri.path] = FlightLog.fromJson(each.path, {}, rawJson: value);
-            debugPrint("Caught log loading error on file ${each.uri}: $error $stack");
+            debugPrint("Caught log loading error on file ${each.uri}: $err $trace");
+            DatadogSdk.instance.logs?.error("Failed to load FlightLog",
+                errorMessage: err.toString(), errorStackTrace: trace, attributes: {"filename": each.path});
           }
           completer.complete();
         });

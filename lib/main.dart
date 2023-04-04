@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -15,13 +18,12 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/screens/log_replay.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
 
 // screens
+import 'package:xcnav/screens/log_replay.dart';
 import 'package:xcnav/screens/adsb_help.dart';
 import 'package:xcnav/screens/checklist_viewer.dart';
 import 'package:xcnav/screens/home.dart';
@@ -41,6 +43,8 @@ import 'package:xcnav/notifications.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/settings_service.dart';
+import 'package:xcnav/secrets.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,8 +54,37 @@ void main() {
     settingsMgr = SettingsMgr(prefs);
     initMapCache();
   }).then((value) {
-    runApp(
-      MultiProvider(
+    runZonedGuarded(() async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      final configuration = DdSdkConfiguration(
+        clientToken: datadogToken,
+        env: kDebugMode ? "debug" : "release",
+        site: DatadogSite.us3,
+        trackingConsent: TrackingConsent.granted,
+        nativeCrashReportEnabled: true,
+        loggingConfiguration: LoggingConfiguration(
+          sendNetworkInfo: true,
+          printLogsToConsole: true,
+        ),
+        rumConfiguration: RumConfiguration(
+          applicationId: 'xcNav',
+          detectLongTasks: true,
+        ),
+      );
+
+      final ddsdk = DatadogSdk.instance;
+      ddsdk.sdkVerbosity = Verbosity.verbose;
+
+      await DatadogSdk.instance.initialize(configuration);
+
+      FlutterError.onError = (FlutterErrorDetails details) {
+        ddsdk.logs?.error(details.toString(), errorStackTrace: details.stack);
+        ddsdk.rum?.handleFlutterError(details);
+        FlutterError.presentError(details);
+      };
+
+      runApp(MultiProvider(
           providers: [
             ChangeNotifierProvider(
               create: (_) => MyTelemetry(),
@@ -95,8 +128,11 @@ void main() {
             )
           ],
           child: FocusDetector(
-              onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())),
-    );
+              onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())));
+    }, (e, s) {
+      DatadogSdk.instance.rum?.addErrorInfo(e.toString(), RumErrorSource.source, stackTrace: s);
+      throw e;
+    });
   });
 }
 

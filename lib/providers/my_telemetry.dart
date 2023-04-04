@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:bisection/bisect.dart';
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -426,8 +427,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
           if (response.statusCode != 200) {
             baroAmbientRequestCount++;
-            debugPrint(
-                "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}");
+            throw "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}";
           } else {
             final payload = jsonDecode(response.body);
             baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);
@@ -438,8 +438,12 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           baroAmbientRequested = false;
         });
       }
-    } catch (err, stack) {
-      debugPrint("Failed to fetch weatherkitdata: $err $stack");
+    } catch (err, trace) {
+      debugPrint("Failed to fetch weatherkitdata: $err $trace");
+      DatadogSdk.instance.logs?.error("WeatherKit",
+          errorMessage: err.toString(),
+          errorStackTrace: trace,
+          attributes: {"lat": geo.lat.toStringAsFixed(5), "lng": geo.lng.toStringAsFixed(5)});
     }
   }
 
@@ -454,17 +458,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
     }).timeout(const Duration(milliseconds: 500), onTimeout: () {
       debugPrint("DEM SERVICE TIMEOUT! ${geo.latlng}");
+      DatadogSdk.instance.logs?.warn("DEM service timeout", attributes: {"lat": geo.lat, "lng": geo.latlng});
     });
 
     recordGeo.add(geo);
 
     // fetch ambient baro from weather service
     if (baroAmbient == null && baroAmbientRequestCount < 10) {
-      try {
-        fetchAmbPressure();
-      } catch (e) {
-        debugPrint("Failed to fetch ambient pressure... $e");
-      }
+      fetchAmbPressure();
     }
 
     // --- In-Flight detector

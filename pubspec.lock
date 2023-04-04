@@ -162,6 +162,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.2.4"
+  datadog_flutter_plugin:
+    dependency: "direct main"
+    description:
+      name: datadog_flutter_plugin
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.3.2"
   dbus:
     dependency: transitive
     description:
@@ -546,6 +553,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.6.4"
+  json_annotation:
+    dependency: transitive
+    description:
+      name: json_annotation
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.8.0"
   latlong2:
     dependency: "direct main"
     description:

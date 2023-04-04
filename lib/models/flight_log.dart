@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
@@ -183,14 +184,17 @@ class FlightLog {
       } else {
         waypoints = [];
       }
-
       goodFile = true;
-    } catch (e) {
+    } catch (e, trace) {
       debugPrint("Error Loading Flight Log: $e");
       samples = [];
       waypoints = [];
       title = "Broken File! $filename";
       goodFile = false;
+      DatadogSdk.instance.logs?.error("Broken FlightLog File",
+          errorMessage: e.toString(),
+          errorStackTrace: trace,
+          attributes: {"filename": filename, "dataLength": rawJson?.length});
     }
   }
 

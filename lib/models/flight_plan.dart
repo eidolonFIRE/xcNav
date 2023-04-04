@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
@@ -57,8 +58,12 @@ class FlightPlan {
       }
 
       goodFile = true;
-    } catch (e) {
+    } catch (err, trace) {
       goodFile = false;
+      DatadogSdk.instance.logs?.error("Failed to parse FlightPlan",
+          errorMessage: err.toString(),
+          errorStackTrace: trace,
+          attributes: {"filename": name, "data": data.toString()});
     }
   }
 
@@ -163,9 +168,11 @@ class FlightPlan {
       }
 
       goodFile = true;
-    } catch (e) {
-      debugPrint("Error loading kml file: ${e.toString()}");
+    } catch (err, trace) {
+      debugPrint("Error loading kml file: ${err.toString()}");
       goodFile = false;
+      DatadogSdk.instance.logs?.error("Failed to import KML",
+          errorMessage: err.toString(), errorStackTrace: trace, attributes: {"filename": name});
     }
   }
 }

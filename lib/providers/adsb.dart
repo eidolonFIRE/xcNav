@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:network_info_plus/network_info_plus.dart';
@@ -114,8 +115,9 @@ class ADSB with ChangeNotifier {
       }, cancelOnError: false);
       debugPrint("USB PORT CONNECTED");
       return true;
-    } catch (e) {
-      debugPrint("USB SERIAL GENERAL ERROR: ${e.toString()}");
+    } catch (err, trace) {
+      debugPrint("USB SERIAL GENERAL ERROR: ${err.toString()}");
+      DatadogSdk.instance.logs?.error("USB error (adsb)", errorMessage: err.toString(), errorStackTrace: trace);
       return false;
     }
   }
