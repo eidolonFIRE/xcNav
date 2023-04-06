@@ -12,7 +12,7 @@ import 'package:xcnav/widgets/chart_log_aggregate.dart';
 import 'package:xcnav/widgets/chart_log_duration_hist.dart';
 
 // Widgets
-import 'package:xcnav/widgets/flight_log_summary.dart';
+import 'package:xcnav/widgets/flight_log_card.dart';
 
 class FlightLogViewer extends StatefulWidget {
   const FlightLogViewer({Key? key}) : super(key: key);
@@ -192,7 +192,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                 )
               : ListView.builder(
                   itemCount: keys.length,
-                  itemBuilder: (context, index) => FlightLogSummary(logs[keys[index]]!, refreshLogsFromDirectory),
+                  itemBuilder: (context, index) => FlightLogCard(logs[keys[index]]!, refreshLogsFromDirectory),
                 ),
 
           // --- Stats

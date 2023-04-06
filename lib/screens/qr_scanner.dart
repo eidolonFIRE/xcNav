@@ -53,7 +53,7 @@ class _QRScannerState extends State<QRScanner> {
               child: SizedBox(
                 height: 50,
                 child: TextField(
-                  maxLength: 6,
+                  // maxLength: 6,
                   textAlign: TextAlign.center,
                   textCapitalization: TextCapitalization.characters,
                   enableIMEPersonalizedLearning: false,
@@ -151,7 +151,7 @@ class _QRScannerState extends State<QRScanner> {
 
   void joinCode(String code) {
     controller!.pauseCamera().then((_) {
-      final exp = RegExp(r'^([0-9a-zA-Z]{6})$');
+      final exp = RegExp(r'^([0-9a-zA-Z]{6,})$');
       if (exp.hasMatch(code)) {
         debugPrint("Joined code: $code");
         Navigator.pop<bool>(context, true);

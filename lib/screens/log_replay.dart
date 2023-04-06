@@ -11,6 +11,7 @@ import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
+import 'package:xcnav/widgets/log_summary.dart';
 import 'package:xcnav/widgets/map_selector.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
@@ -33,6 +34,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   FlightLog? log;
 
   ValueNotifier<int> sampleIndex = ValueNotifier(0);
+  bool hasScrubbed = false;
 
   final lowerStyle = const TextStyle(color: Colors.black, fontSize: 20);
   final TextStyle unitStyle = const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic);
@@ -42,7 +44,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 2, vsync: this);
+    tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -76,9 +78,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                           mapReady = true;
                           if (log != null) {
                             final mapBounds = LatLngBounds.fromPoints(log!.samples.map((e) => e.latlng).toList());
-                            for (final each in log!.waypoints) {
-                              mapBounds.extendBounds(LatLngBounds.fromPoints(each.latlng));
-                            }
+                            // NOTE: disabled for now
+                            // for (final each in log!.waypoints) {
+                            //   mapBounds.extendBounds(LatLngBounds.fromPoints(each.latlng));
+                            // }
                             mapBounds.pad(0.2);
                             mapController.fitBounds(mapBounds);
                           }
@@ -270,6 +273,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
               // --- Elevation Plot
               Listener(
                   onPointerMove: (pos) {
+                    if (!hasScrubbed) {
+                      setState(() {
+                        hasScrubbed = true;
+                      });
+                    }
                     sampleIndex.value = max(
                         0,
                         min(
@@ -294,20 +302,21 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                 );
                               }),
                         ),
-                        const Align(
-                          alignment: Alignment.center,
-                          child: Text.rich(
-                            TextSpan(children: [
-                              WidgetSpan(
-                                  child: Icon(
-                                Icons.touch_app,
-                                size: 26,
-                              )),
-                              TextSpan(text: "  Scrub Timeline")
-                            ]),
-                            style: TextStyle(fontSize: 18, shadows: [Shadow(color: Colors.black, blurRadius: 20)]),
+                        if (!hasScrubbed)
+                          const Align(
+                            alignment: Alignment.center,
+                            child: Text.rich(
+                              TextSpan(children: [
+                                WidgetSpan(
+                                    child: Icon(
+                                  Icons.touch_app,
+                                  size: 26,
+                                )),
+                                TextSpan(text: "  Scrub Timeline")
+                              ]),
+                              style: TextStyle(fontSize: 18, shadows: [Shadow(color: Colors.black, blurRadius: 20)]),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   )),
@@ -356,6 +365,12 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       )));
                 }),
               ),
+
+              // --- Summary
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: LogSummary(log: log!),
+              ),
             ]),
           ),
 
@@ -365,6 +380,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
               text: "Altitude",
             ),
             Tab(icon: Icon(Icons.speed), text: "Speed"),
+            Tab(icon: Icon(Icons.info), text: "Summary")
           ]),
         ],
       ),
