@@ -166,7 +166,7 @@ class FlightLogCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         child: SizedBox(
           width: MediaQuery.of(context).size.width - 8,
-          height: MediaQuery.of(context).size.width / 2,
+          height: log.goodFile ? MediaQuery.of(context).size.width / 2 : null,
           child: Stack(children: [
             if (log.goodFile)
               FlutterMap(
@@ -223,23 +223,24 @@ class FlightLogCard extends StatelessWidget {
                   ]),
 
             // --- info overlay
-            Positioned(
-              right: 8,
-              bottom: 4,
-              child: Text.rich(
-                TextSpan(children: [
-                  TextSpan(text: DateFormat("h:mm a").format(log.startTime)),
-                  const TextSpan(text: "  ( "),
-                  richHrMin(duration: log.durationTime),
-                  const TextSpan(text: " )  "),
-                  TextSpan(
-                    text: DateFormat("h:mm a").format(log.endTime),
-                  )
-                ]),
-                style: const TextStyle(color: Colors.black),
-                textAlign: TextAlign.center,
+            if (log.goodFile)
+              Positioned(
+                right: 8,
+                bottom: 4,
+                child: Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: DateFormat("h:mm a").format(log.startTime)),
+                    const TextSpan(text: "  ( "),
+                    richHrMin(duration: log.durationTime),
+                    const TextSpan(text: " )  "),
+                    TextSpan(
+                      text: DateFormat("h:mm a").format(log.endTime),
+                    )
+                  ]),
+                  style: const TextStyle(color: Colors.black),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
 
             // --- Title bar
             Container(
