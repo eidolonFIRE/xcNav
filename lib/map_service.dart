@@ -15,7 +15,10 @@ enum MapTileSrc {
   airports,
 }
 
+bool mapServiceIsInit = false;
+
 TileProvider? makeTileProvider(String instanceName) {
+  if (!mapServiceIsInit) return null;
   try {
     return FMTC.instance(instanceName).getTileProvider(
           FMTCTileProviderSettings(
@@ -125,6 +128,8 @@ Future initMapCache() async {
 
   // Do a regular purge of old tiles
   purgeMapTileCache();
+
+  mapServiceIsInit = true;
 }
 
 String asReadableSize(double value) {

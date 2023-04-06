@@ -427,7 +427,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
           if (response.statusCode != 200) {
             baroAmbientRequestCount++;
-            throw "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}";
+            // throw "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}";
           } else {
             final payload = jsonDecode(response.body);
             baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);

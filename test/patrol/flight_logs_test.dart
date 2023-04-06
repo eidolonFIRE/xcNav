@@ -100,11 +100,7 @@ void main() {
       await $.waitUntilExists($(Scaffold));
 
       // --- Open flight logs screen
-      // final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey(debugLabel: "MainScaffold");
-      // scaffoldKey.currentState?.openDrawer();
-
       await $.tester.tapAt($.tester.getBottomLeft($(MaterialApp)) + const Offset(20, -20));
-
       await $.pump(const Duration(seconds: 2));
       await $("Log").tap(andSettle: false);
 
