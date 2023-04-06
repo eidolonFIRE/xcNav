@@ -37,6 +37,8 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
 
   double distScale = 100;
 
+  List<ElevSample?>? prevSamples;
+
   TextEditingController barometerTextController = TextEditingController();
 
   List<Duration?> lookBehindOptions = [
@@ -196,13 +198,15 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 child: ClipRect(
                     child: FutureBuilder<List<ElevSample?>>(
                         future: doSamples(Provider.of<MyTelemetry>(context).geo, activePlan.getSelectedWp()),
+                        initialData: prevSamples,
                         builder: (context, groundSamples) {
+                          prevSamples = groundSamples.data;
                           final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
                           final oldestTimestamp = lookBehind != null
                               ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.geo.time).subtract(lookBehind!)
                               : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time);
 
-                          if (groundSamples.connectionState == ConnectionState.done) {
+                          if (groundSamples.connectionState == ConnectionState.done || groundSamples.data != null) {
                             return CustomPaint(
                               painter: ElevationPlotPainter(
                                   myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30)),
