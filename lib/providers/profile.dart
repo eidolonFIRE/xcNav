@@ -53,6 +53,7 @@ class Profile with ChangeNotifier {
 
     // Add context to logging
     DatadogSdk.instance.setUserInfo(id: id);
+    DatadogSdk.instance.setUserInfo(name: name);
   }
 
   static String? nameValidator(String? name) {

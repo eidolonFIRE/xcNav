@@ -360,7 +360,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       _inFlight = true;
 
       // scan backwards to find sample 30 seconds back
-      int launchIndex = recordGeo.length - 1;
+      int launchIndex = max(0, recordGeo.length - 1);
       while (launchIndex > 0 &&
           recordGeo[launchIndex].time >
               DateTime.now().millisecondsSinceEpoch - const Duration(seconds: 30).inMilliseconds) {

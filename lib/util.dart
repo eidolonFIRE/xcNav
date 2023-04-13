@@ -17,5 +17,6 @@ String? parseAsString(dynamic value) {
   if (value is String) return value;
   if (value is int) return value.toString();
   if (value is double) return value.toString();
+  if (value is bool) return value.toString();
   return null;
 }
