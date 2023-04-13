@@ -470,7 +470,7 @@ class Client with ChangeNotifier {
 
       // update pilots with new info
       msg["pilots"].forEach((jsonPilot) {
-        final pilotId = parseAsString(msg["id"]);
+        final pilotId = parseAsString(jsonPilot["id"]);
         if (pilotId != null && pilotId != Provider.of<Profile>(globalContext, listen: false).id) {
           group.processNewPilot(pilotId, jsonPilot);
         }
