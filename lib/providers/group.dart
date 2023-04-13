@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -120,15 +121,21 @@ class Group with ChangeNotifier {
   /// Add or Replace local pilot instance
   void processNewPilot(String id, dynamic p) async {
     pilots[id] = Pilot.fromJson(p);
+    debugPrint("Processed pilot $id) ${pilots[id]?.name}");
     _appendToPastGroups();
     notifyListeners();
   }
 
   void updatePilotTelemetry(String? pilotID, dynamic telemetry, int timestamp) {
     if (pilotID != null) {
-      Pilot? pilot = pilots[pilotID];
-      if (pilot != null) pilots[pilotID]!.updateTelemetry(telemetry, timestamp);
-      notifyListeners();
+      if (pilots.containsKey(pilotID)) {
+        pilots[pilotID]!.updateTelemetry(telemetry, timestamp);
+        notifyListeners();
+      } else {
+        final msg = "Tried to update pilot we don't have. $pilotID";
+        DatadogSdk.instance.logs
+            ?.warn(msg, attributes: {"pilotID": pilotID, "telemetry": telemetry, "timestamp": timestamp});
+      }
     }
   }
 

@@ -113,23 +113,23 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
       }
     }
 
-    if (Platform.isIOS) {
-      // --- Check "always"
-      final locAlways = await Permission.locationAlways.status;
-      if (locAlways.isPermanentlyDenied) {
-        debugPrint("Location was fully denied!");
-        failedPerms = true;
-        showDialog(context: context, builder: (context) => const RequestLocationAlways());
-        return;
-      } else if (!locAlways.isGranted) {
-        debugPrint("Location-always was not granted!");
-        final status = await Permission.locationAlways.request();
-        if (!status.isGranted) {
-          failedPerms = true;
-          return;
-        }
-      }
-    }
+    // if (Platform.isIOS) {
+    //   // --- Check "always"
+    //   final locAlways = await Permission.locationAlways.status;
+    //   if (locAlways.isPermanentlyDenied) {
+    //     debugPrint("Location was fully denied!");
+    //     failedPerms = true;
+    //     showDialog(context: context, builder: (context) => const RequestLocationAlways());
+    //     return;
+    //   } else if (!locAlways.isGranted) {
+    //     debugPrint("Location-always was not granted!");
+    //     final status = await Permission.locationAlways.request();
+    //     if (!status.isGranted) {
+    //       failedPerms = true;
+    //       return;
+    //     }
+    //   }
+    // }
 
     failedPerms = false;
     debugPrint("Location permissions all look good!");

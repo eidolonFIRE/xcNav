@@ -11,6 +11,16 @@ PODS:
   - CNIOHTTPParser (2.40.0)
   - CNIOLinux (2.40.0)
   - CNIOWindows (2.40.0)
+  - datadog_flutter_plugin (0.0.1):
+    - DatadogSDK (= 1.17.0)
+    - DatadogSDKCrashReporting (= 1.17.0)
+    - DictionaryCoder (= 1.0.8)
+    - Flutter
+  - DatadogSDK (1.17.0)
+  - DatadogSDKCrashReporting (1.17.0):
+    - DatadogSDK (= 1.17.0)
+    - PLCrashReporter (~> 1.11.0)
+  - DictionaryCoder (1.0.8)
   - DKImagePickerController/Core (4.3.4):
     - DKImagePickerController/ImageDataManager
     - DKImagePickerController/Resource
@@ -102,6 +112,7 @@ PODS:
     - gRPC-Swift (~> 1.8.0)
   - permission_handler_apple (9.0.4):
     - Flutter
+  - PLCrashReporter (1.11.0)
   - qr_code_scanner (0.2.0):
     - Flutter
     - MTBBarcodeScanner
@@ -255,6 +266,7 @@ PODS:
 
 DEPENDENCIES:
   - better_open_file (from `.symlinks/plugins/better_open_file/ios`)
+  - datadog_flutter_plugin (from `.symlinks/plugins/datadog_flutter_plugin/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - flutter_barometer (from `.symlinks/plugins/flutter_barometer/ios`)
@@ -288,6 +300,9 @@ SPEC REPOS:
     - CNIOHTTPParser
     - CNIOLinux
     - CNIOWindows
+    - DatadogSDK
+    - DatadogSDKCrashReporting
+    - DictionaryCoder
     - DKImagePickerController
     - DKPhotoGallery
     - gRPC-Swift
@@ -295,6 +310,7 @@ SPEC REPOS:
     - Logging
     - Mantle
     - MTBBarcodeScanner
+    - PLCrashReporter
     - SDWebImage
     - SDWebImageWebPCoder
     - SwiftNIO
@@ -316,6 +332,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   better_open_file:
     :path: ".symlinks/plugins/better_open_file/ios"
+  datadog_flutter_plugin:
+    :path: ".symlinks/plugins/datadog_flutter_plugin/ios"
   file_picker:
     :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
@@ -370,6 +388,10 @@ SPEC CHECKSUMS:
   CNIOHTTPParser: 8ce395236fa1d09ac3b4f4bcfba79b849b2ac684
   CNIOLinux: 62e3505f50de558c393dc2f273dde71dcce518da
   CNIOWindows: 3047f2d8165848a3936a0a755fee27c6b5ee479b
+  datadog_flutter_plugin: ce3abe857ee123133a0be597984627240049a657
+  DatadogSDK: b1d2f64053b4e79fcb52859070f868d6696c4e31
+  DatadogSDKCrashReporting: 0a2afb7b22765f5188e3d3e48be1cd9b7c3368e5
+  DictionaryCoder: 5f84fff69f54cb806071538430bdafe04a89d658
   DKImagePickerController: b512c28220a2b8ac7419f21c491fc8534b7601ac
   DKPhotoGallery: fdfad5125a9fdda9cc57df834d49df790dbb4179
   file_picker: ce3938a0df3cc1ef404671531facef740d03f920
@@ -393,6 +415,7 @@ SPEC CHECKSUMS:
   path_provider_foundation: 37748e03f12783f9de2cb2c4eadfaa25fe6d4852
   patrol: a7622350c42b3a944962fbfe052d07e3691789e5
   permission_handler_apple: 44366e37eaf29454a1e7b1b7d736c2cceaeb17ce
+  PLCrashReporter: 7a9dff14a23ba5d2e28c6160f0bb6fada5e71a8d
   qr_code_scanner: bb67d64904c3b9658ada8c402e8b4d406d5d796e
   SDWebImage: 0327043dbb9533e75f2eff8445b3df0f2ceca6ac
   SDWebImageWebPCoder: 3dc350894112feab5375cfba9ce0986544a66a69
