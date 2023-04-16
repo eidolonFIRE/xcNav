@@ -102,7 +102,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     if (whenInUse.isPermanentlyDenied) {
       debugPrint("Location was fully denied!");
       failedPerms = true;
-      showDialog(context: context, builder: (context) => const RequestLocationAlways());
+      showDialog(context: context, builder: (context) => const RequestLocationDialog());
       return;
     } else if (whenInUse.isDenied) {
       debugPrint("Location whenInUse was not granted!");
@@ -112,24 +112,6 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
         return;
       }
     }
-
-    // if (Platform.isIOS) {
-    //   // --- Check "always"
-    //   final locAlways = await Permission.locationAlways.status;
-    //   if (locAlways.isPermanentlyDenied) {
-    //     debugPrint("Location was fully denied!");
-    //     failedPerms = true;
-    //     showDialog(context: context, builder: (context) => const RequestLocationAlways());
-    //     return;
-    //   } else if (!locAlways.isGranted) {
-    //     debugPrint("Location-always was not granted!");
-    //     final status = await Permission.locationAlways.request();
-    //     if (!status.isGranted) {
-    //       failedPerms = true;
-    //       return;
-    //     }
-    //   }
-    // }
 
     failedPerms = false;
     debugPrint("Location permissions all look good!");
@@ -186,11 +168,11 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
                   );
                 }),
           if (showWaiting && failedPerms && !checkedRecently)
-            Text(
-              "Check location permission${Platform.isIOS ? " is set to ALWAYS." : "."}",
+            const Text(
+              "Check location permission.",
               softWrap: true,
               maxLines: 2,
-              style: const TextStyle(color: Colors.redAccent, fontSize: 20),
+              style: TextStyle(color: Colors.redAccent, fontSize: 20),
             ),
           // --- Wings and Dashed lines
           SizedBox(
