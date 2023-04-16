@@ -16,6 +16,7 @@ import 'package:xcnav/models/waypoint.dart';
 // --- Providers
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/active_plan.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
@@ -505,6 +506,9 @@ class Client with ChangeNotifier {
       // successfully joined group
       group.currentGroupID = groupId;
       requestGroupInfo(group.currentGroupID);
+      // NOTE: This helps iOS devices show up immediately. They don't
+      //       send location updates while the device isn't moving.
+      sendTelemetry(Provider.of<MyTelemetry>(globalContext, listen: false).geo);
     }
   }
 }

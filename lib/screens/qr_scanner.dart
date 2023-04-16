@@ -24,6 +24,8 @@ class _QRScannerState extends State<QRScanner> {
   bool goodResult = false;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   final TextEditingController inputGroupId = TextEditingController();
+  final groupCodeExp = RegExp(r'^([0-9a-zA-Z]{6,})$');
+  static const groupCodePrefix = "xcNav_Group:";
 
   // In order to get hot reload to work we need to pause the camera if the platform
   // is android, or resume the camera if the platform is iOS.
@@ -114,7 +116,7 @@ class _QRScannerState extends State<QRScanner> {
                             child: QrImage(
                               foregroundColor: Colors.black,
                               backgroundColor: Colors.white,
-                              data: Provider.of<Group>(context).currentGroupID!.toUpperCase(),
+                              data: "$groupCodePrefix${Provider.of<Group>(context).currentGroupID!.toUpperCase()}",
                               version: QrVersions.auto,
                               gapless: true,
                               padding: const EdgeInsets.all(60),
@@ -149,17 +151,18 @@ class _QRScannerState extends State<QRScanner> {
     );
   }
 
-  void joinCode(String code) {
-    controller!.pauseCamera().then((_) {
-      final exp = RegExp(r'^([0-9a-zA-Z]{6,})$');
-      if (exp.hasMatch(code)) {
-        debugPrint("Joined code: $code");
+  bool joinCode(String code) {
+    if (groupCodeExp.hasMatch(code)) {
+      debugPrint("Joined code: $code");
+      controller!.pauseCamera().then((_) {
         Navigator.pop<bool>(context, true);
         Provider.of<Client>(context, listen: false).joinGroup(context, code);
-      } else {
-        debugPrint("Invalid code: $code");
-      }
-    });
+      });
+      return true;
+    } else {
+      debugPrint("Invalid code: $code");
+      return false;
+    }
   }
 
   void _onQRViewCreated(QRViewController controller) {
@@ -169,9 +172,8 @@ class _QRScannerState extends State<QRScanner> {
     controller.scannedDataStream.listen((scanData) {
       debugPrint("QR scanner scanData: ${scanData.code}");
       // Follow invite link
-      if (scanData.code != null && !goodResult) {
-        goodResult = true;
-        joinCode(scanData.code!);
+      if (scanData.code != null && !goodResult && scanData.code!.startsWith(groupCodePrefix)) {
+        goodResult = joinCode(scanData.code!.substring(groupCodePrefix.length));
       }
     });
     this.controller!.pauseCamera();
