@@ -110,7 +110,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
 
         File.fromUri(each.uri).readAsString().then((value) {
           try {
-            logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value));
+            logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value), rawJson: value);
             // completer.complete();
           } catch (err, trace) {
             // This is reached if the error happens during json parsing
