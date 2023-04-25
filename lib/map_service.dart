@@ -110,13 +110,13 @@ final Map<MapTileSrc, Image> mapTileThumbnails = {
 };
 
 Future initMapCache() async {
-  FlutterMapTileCaching.initialise(await RootDirectory.normalCache);
+  await FlutterMapTileCaching.initialise();
   await initDemCache();
 
   for (final tileSrc in mapTileThumbnails.keys) {
     final tileName = tileSrc.toString().split(".").last;
     final StoreDirectory store = FMTC.instance(tileName);
-    await store.manage.createAsync();
+    await store.manage.create();
     await store.metadata.addAsync(key: 'sourceURL', value: getMapTileLayer(tileSrc, 1).urlTemplate!);
     await store.metadata.addAsync(
       key: 'validDuration',
@@ -129,7 +129,7 @@ Future initMapCache() async {
   }
 
   // Do a regular purge of old tiles
-  purgeMapTileCache();
+  // purgeMapTileCache();
 
   mapServiceIsInit = true;
 }
@@ -147,36 +147,37 @@ Future<String> getMapTileCacheSize() async {
   for (final tileSrc in mapTileThumbnails.keys) {
     final tileName = tileSrc.toString().split(".").last;
     final StoreDirectory store = FMTC.instance(tileName);
-    sum += (await store.stats.noCache.storeSizeAsync) * 1024;
+    sum += (await store.stats.storeSizeAsync) * 1024;
   }
 
   // Also add the elevation map
   final StoreDirectory demStore = FMTC.instance("dem");
-  sum += (await demStore.stats.noCache.storeSizeAsync) * 1024;
+  sum += (await demStore.stats.storeSizeAsync) * 1024;
 
   return asReadableSize(sum);
 }
 
-void purgeMapTileCache() async {
-  final threshhold = DateTime.now().subtract(const Duration(days: 14));
-  for (final tileSrc in mapTileThumbnails.keys) {
-    final tileName = tileSrc.toString().split(".").last;
-    final StoreDirectory store = FMTC.instance(tileName);
-    int countDelete = 0;
-    int countRemain = 0;
-    for (final tile in store.access.tiles.listSync()) {
-      if (tile.statSync().changed.isBefore(threshhold)) {
-        // debugPrint("Deleting Tile: ${tile.path}");
-        tile.deleteSync();
-        countDelete++;
-      } else {
-        countRemain++;
-      }
-    }
-    debugPrint("Scanned $tileName and deleted $countDelete / ${countRemain + countDelete} tiles.");
-    store.stats.invalidateCachedStatistics();
-  }
-}
+// void purgeMapTileCache() async {
+//   final threshhold = DateTime.now().subtract(const Duration(days: 14));
+//   for (final tileSrc in mapTileThumbnails.keys) {
+//     final tileName = tileSrc.toString().split(".").last;
+//     final StoreDirectory store = FMTC.instance(tileName);
+
+//     int countDelete = 0;
+//     int countRemain = 0;
+//     for (final tile in store.access.tiles.listSync()) {
+//       if (tile.statSync().changed.isBefore(threshhold)) {
+//         // debugPrint("Deleting Tile: ${tile.path}");
+//         tile.deleteSync();
+//         countDelete++;
+//       } else {
+//         countRemain++;
+//       }
+//     }
+//     debugPrint("Scanned $tileName and deleted $countDelete / ${countRemain + countDelete} tiles.");
+//     store.stats.invalidateCachedStatistics();
+//   }
+// }
 
 void emptyMapTileCache() {
   // Empty elevation map cache
