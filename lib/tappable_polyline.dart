@@ -46,14 +46,14 @@ class TappablePolylineLayer extends PolylineLayer {
   /// Callback when polyline has long press
   final void Function(TaggedPolyline, TapPosition tapPosition)? onLongPress;
 
-  TappablePolylineLayer(
-      {Key? key,
-      polylines = const [],
-      this.onTap,
-      this.onLongPress,
-      this.pointerDistanceTolerance = 15,
-      polylineCulling = false})
-      : super(key: key, polylines: polylines, polylineCulling: polylineCulling);
+  TappablePolylineLayer({
+    Key? key,
+    polylines = const [],
+    this.onTap,
+    this.onLongPress,
+    this.pointerDistanceTolerance = 15,
+    polylineCulling = false,
+  }) : super(key: key, polylines: polylines, polylineCulling: polylineCulling);
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +98,7 @@ class TappablePolylineLayer extends PolylineLayer {
               children: [
                 for (final polylineOpt in polylines)
                   CustomPaint(
-                    painter: PolylinePainter(polylineOpt, false),
+                    painter: PolylinePainter(polylineOpt, false, mapState),
                     size: size,
                   ),
               ],

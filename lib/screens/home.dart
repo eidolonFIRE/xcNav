@@ -9,7 +9,6 @@ import 'package:xcnav/endpoint.dart';
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/chat_messages.dart';
-import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/settings_service.dart';
 
 // Views

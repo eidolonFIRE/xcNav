@@ -116,11 +116,11 @@ Future initMapCache() async {
   for (final tileSrc in mapTileThumbnails.keys) {
     final tileName = tileSrc.toString().split(".").last;
     final StoreDirectory store = FMTC.instance(tileName);
-    await store.manage.create();
+    await store.manage.createAsync();
     await store.metadata.addAsync(key: 'sourceURL', value: getMapTileLayer(tileSrc, 1).urlTemplate!);
     await store.metadata.addAsync(
       key: 'validDuration',
-      value: '14',
+      value: '60',
     );
     await store.metadata.addAsync(
       key: 'behaviour',

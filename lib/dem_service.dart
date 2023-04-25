@@ -20,7 +20,7 @@ Future initDemCache() async {
       .addAsync(key: 'sourceURL', value: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png');
   await demStore.metadata.addAsync(
     key: 'validDuration',
-    value: '14',
+    value: '60',
   );
   await demStore.metadata.addAsync(
     key: 'behaviour',
