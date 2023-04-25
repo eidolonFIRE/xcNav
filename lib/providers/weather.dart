@@ -5,11 +5,9 @@ import 'package:bisection/bisect.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:xcnav/models/grib2.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 
 // Gas constant for dry air at the surface of the Earth
 const rd = 287;
@@ -139,31 +137,20 @@ class Sounding {
 }
 
 class Weather with ChangeNotifier {
-  late final BuildContext context;
   final String dateStr = DateFormat("yyyyMMdd").format(DateTime.now());
 
   /// Timestamp for last weather request
   DateTime? lastPull;
   Sounding? _sounding;
 
-  Weather(BuildContext ctx) {
-    context = ctx;
-
-    // Provider.of<MyTelemetry>(context, listen: false).addListener(() {
-    //   // Listen for movement so we can update the weather.
-
-    // });
-  }
-
-  Future<Sounding?> getSounding() {
+  Future<Sounding?> getSounding(LatLng latlng) {
     final completer = Completer<Sounding?>();
-    MyTelemetry myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
     if (lastPull == null ||
         DateTime.now().subtract(const Duration(minutes: 60)).isAfter(lastPull!) ||
         (_sounding != null &&
-            ((_sounding!.center.longitude - myTelemetry.geo.lng).abs() > 0.2 ||
-                (_sounding!.center.latitude - myTelemetry.geo.lat).abs() > 0.2))) {
-      final box = Rect.fromCircle(center: myTelemetry.geo.latlngOffset, radius: 0.3);
+            ((_sounding!.center.longitude - latlng.longitude).abs() > 0.2 ||
+                (_sounding!.center.latitude - latlng.latitude).abs() > 0.2))) {
+      final box = Rect.fromCircle(center: Offset(latlng.longitude, latlng.latitude), radius: 0.3);
 
       _updateSounding(box).then((value) => completer.complete(value));
     } else {

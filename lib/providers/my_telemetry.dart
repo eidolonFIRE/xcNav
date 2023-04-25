@@ -38,6 +38,8 @@ double densityAlt(BarometerValue ambientPressure, double ambientTemp) {
   return 145442.16 * (1 - pow(17.326 * ambientPressure.inchOfMercury / (459.67 + ambientTemp), 0.235)) / meters2Feet;
 }
 
+Geo defaultGeo = Geo(lat: 37, lng: -122);
+
 class FlightEvent {
   final FlightEventType type;
   final DateTime time;
@@ -46,22 +48,11 @@ class FlightEvent {
 }
 
 class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
-  Geo geo = Geo();
-
   BuildContext? globalContext;
+  bool isInitialized = false;
 
-  // NOTE: fuel feature disabled for now
-
-  /// Liters
-  // double fuel = 0;
-
-  /// Liter/Hour
-  // double fuelBurnRate = 4;
-
-  /// fuel save interval
-  // double? lastSavedFuelLevel;
-
-  Geo geoPrev = Geo();
+  Geo? geo;
+  Geo? geoPrev;
 
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
@@ -122,7 +113,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void init() {
-    debugPrint("Build /MyTelemetry");
+    debugPrint("Init /MyTelemetry");
 
     assert(globalContext != null, "globalContext in MyTelemetry instance hasn't been set yet!");
 
@@ -167,7 +158,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                 Position(
                   latitude: selectedWp.latlng[0].latitude,
                   longitude: selectedWp.latlng[0].longitude,
-                  altitude: geo.alt,
+                  altitude: geo?.alt ?? 0,
                   speed: 0,
                   timestamp: DateTime.now(),
                   heading: 0,
@@ -177,19 +168,20 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                 bypassRecording: true);
           }
 
-          fakeFlight.initFakeFlight(geo);
+          fakeFlight.initFakeFlight(geo ?? defaultGeo);
           timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
             final targetWp = activePlan.getSelectedWp();
-            final target = targetWp == null
+            final target = (targetWp == null || geo == null)
                 ? null
-                : targetWp.latlng.length > 1
-                    ? geo
+                : targetWp.isPath
+                    ? geo!
                         .getIntercept(
                           targetWp.latlngOriented,
                         )
                         .latlng
                     : targetWp.latlng[0];
-            handleGeoUpdate(globalContext!, fakeFlight.genFakeLocationFlight(target, geoPrev), bypassRecording: true);
+            handleGeoUpdate(globalContext!, fakeFlight.genFakeLocationFlight(target, geoPrev ?? geo ?? defaultGeo),
+                bypassRecording: true);
           });
         }
       } else {
@@ -209,6 +201,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         }
       }
     });
+
+    isInitialized = true;
   }
 
   void _startBaroService() {
@@ -312,50 +306,38 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
       updateGeo(position, bypassRecording: settingsMgr.groundMode.value || bypassRecording);
-    }
 
-    if (!settingsMgr.groundMode.value || settingsMgr.groundModeTelem.value) {
-      if (group.activePilots.isNotEmpty || client.telemetrySkips > 20) {
-        client.sendTelemetry(geo);
-        client.telemetrySkips = 0;
-      } else {
-        client.telemetrySkips++;
+      if (geo != null) {
+        if (!settingsMgr.groundMode.value || settingsMgr.groundModeTelem.value) {
+          if (group.activePilots.isNotEmpty || client.telemetrySkips > 20) {
+            client.sendTelemetry(geo!);
+            client.telemetrySkips = 0;
+          } else {
+            client.telemetrySkips++;
+          }
+        }
+
+        if (inFlight && geo!.spd > 1) {
+          Provider.of<Wind>(context, listen: false)
+              .handleVector(Vector(geo!.hdg, geo!.spd, timestamp: position.timestamp));
+        }
+
+        // Update ADSB
+        adsb.refresh(geo!, inFlight);
+
+        if (inFlight) {
+          audioCueService.cueMyTelemetry(geo!);
+          audioCueService.cueNextWaypoint(geo!);
+          audioCueService.cueGroupAwareness(geo!);
+        }
       }
     }
-
-    if (inFlight && geo.spd > 1) {
-      Provider.of<Wind>(context, listen: false).handleVector(Vector(geo.hdg, geo.spd, timestamp: position.timestamp));
-    }
-
-    // Update ADSB
-    adsb.refresh(geo, inFlight);
-
-    if (inFlight) {
-      audioCueService.cueMyTelemetry(geo);
-      audioCueService.cueNextWaypoint(geo);
-      audioCueService.cueGroupAwareness(geo);
-    }
   }
-
-  // void _load() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   fuel = prefs.getDouble("me.fuel") ?? 0;
-  //   lastSavedFuelLevel = fuel;
-  //   fuelBurnRate = prefs.getDouble("me.fuelBurnRate") ?? 4;
-  // }
-
-  // void _save() async {
-  //   debugPrint("Fuel Level Saved");
-  //   final prefs = await SharedPreferences.getInstance();
-  //   prefs.setDouble("me.fuel", fuel);
-  //   prefs.setDouble("me.fuelBurnRate", fuelBurnRate);
-  //   lastSavedFuelLevel = fuel;
-  // }
 
   bool get inFlight => _inFlight;
 
   void startFlight() {
-    if (!_inFlight) {
+    if (!_inFlight && geo != null) {
       debugPrint("Flight started");
       _inFlight = true;
 
@@ -373,7 +355,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
 
       flightEvent.add(FlightEvent(
-          type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
+          type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo!.time), latlng: geo!.latlng));
 
       // clear the log
       recordGeo.removeRange(0, launchIndex);
@@ -383,11 +365,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void stopFlight({bypassRecording = false}) {
-    if (_inFlight) {
+    if (_inFlight && geo != null) {
       _inFlight = false;
       debugPrint("Flight Ended");
       flightEvent.add(FlightEvent(
-          type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo.time), latlng: geo.latlng));
+          type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo!.time), latlng: geo!.latlng));
       // Save current flight to log
       if (!bypassRecording) {
         saveFlight();
@@ -417,13 +399,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  void fetchAmbPressure() {
+  void fetchAmbPressure(LatLng latlng) {
     try {
       if (!baroAmbientRequested) {
         baroAmbientRequested = true;
         http.get(
             Uri.parse(
-                "https://weatherkit.apple.com/api/v1/weather/en_US/${geo.lat.toStringAsFixed(5)}/${geo.lng.toStringAsFixed(5)}?dataSets=currentWeather"),
+                "https://weatherkit.apple.com/api/v1/weather/en_US/${latlng.latitude.toStringAsFixed(5)}/${latlng.longitude.toStringAsFixed(5)}?dataSets=currentWeather"),
             headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
           if (response.statusCode != 200) {
             baroAmbientRequestCount++;
@@ -443,37 +425,39 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       DatadogSdk.instance.logs?.error("WeatherKit",
           errorMessage: err.toString(),
           errorStackTrace: trace,
-          attributes: {"lat": geo.lat.toStringAsFixed(5), "lng": geo.lng.toStringAsFixed(5)});
+          attributes: {"lat": latlng.latitude.toStringAsFixed(5), "lng": latlng.longitude.toStringAsFixed(5)});
     }
   }
 
   void updateGeo(Position position, {bool bypassRecording = false}) async {
-    // debugPrint("${location.elapsedRealtimeNanos}) ${location.latitude}, ${location.longitude}, ${location.altitude}");
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
-    geo.prevGnd = geoPrev.ground;
-    await sampleDem(geo.latlng, true).then((value) {
+
+    if (geo == null) return;
+
+    geo!.prevGnd = geoPrev?.ground;
+    await sampleDem(geo!.latlng, true).then((value) {
       if (value != null) {
-        geo.ground = value;
+        geo!.ground = value;
       }
     }).timeout(const Duration(milliseconds: 500), onTimeout: () {
-      debugPrint("DEM SERVICE TIMEOUT! ${geo.latlng}");
-      DatadogSdk.instance.logs?.warn("DEM service timeout", attributes: {"lat": geo.lat, "lng": geo.latlng});
+      debugPrint("DEM SERVICE TIMEOUT! ${geo!.latlng}");
+      DatadogSdk.instance.logs?.warn("DEM service timeout", attributes: {"lat": geo!.lat, "lng": geo!.lng});
     });
 
-    recordGeo.add(geo);
+    recordGeo.add(geo!);
 
     // fetch ambient baro from weather service
     if (baroAmbient == null && baroAmbientRequestCount < 10) {
-      fetchAmbPressure();
+      fetchAmbPressure(geo!.latlng);
     }
 
     // --- In-Flight detector
     if (globalContext != null && settingsMgr.autoRecordFlight.value) {
-      if (inFlight) {
+      if (inFlight && geoPrev != null) {
         // Is moving slowly near the ground?
-        if (geo.spdSmooth < 3.0 && geo.varioSmooth.abs() < 1.0 && geo.alt - (geo.ground ?? geo.alt) < 30) {
-          triggerHyst += geo.time - geoPrev.time;
+        if (geo!.spdSmooth < 3.0 && geo!.varioSmooth.abs() < 1.0 && geo!.alt - (geo!.ground ?? geo!.alt) < 30) {
+          triggerHyst += geo!.time - geoPrev!.time;
         } else {
           triggerHyst = 0;
         }
@@ -483,8 +467,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         }
       } else {
         // Is moving a normal speed and above the ground?
-        if (4.0 < geo.spd && geo.spd < 25 && geo.alt - (geo.ground ?? 0) > 30) {
-          triggerHyst += geo.time - geoPrev.time;
+        if (4.0 < geo!.spd && geo!.spd < 25 && geo!.alt - (geo!.ground ?? 0) > 30) {
+          triggerHyst += geo!.time - geoPrev!.time;
         } else {
           triggerHyst = 0;
         }
@@ -496,13 +480,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     if (inFlight) {
-      // --- burn fuel
-      // NOTE: fuel feature disabled for now
-      // fuel = max(0, fuel - fuelBurnRate * (geo.time - geoPrev.time) / 3600000.0);
-
       // --- Record path
-      if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo.latlng) > 50)) {
-        flightTrace.add(geo.latlng);
+      if (flightTrace.isEmpty || (flightTrace.isNotEmpty && latlngCalc.distance(flightTrace.last, geo!.latlng) > 50)) {
+        flightTrace.add(geo!.latlng);
         // --- keep list from bloating
         if (flightTrace.length > 10000) {
           flightTrace.removeRange(0, 100);
@@ -518,36 +498,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     notifyListeners();
   }
-
-  // void updateFuel(double delta) {
-  //   fuel = max(0, fuel + delta);
-  //   // every so often, save the fuel level in case the app crashes
-  //   if ((fuel - (lastSavedFuelLevel ?? fuel)).abs() > 0.2) _save();
-  //   notifyListeners();
-  // }
-
-  // void updateFuelBurnRate(double delta) {
-  //   fuelBurnRate = max(0.1, fuelBurnRate + delta);
-  //   _save();
-  //   notifyListeners();
-  // }
-
-  // Color fuelIndicatorColor(ETA next, ETA trip) {
-  //   double fuelTime = fuel / fuelBurnRate;
-  //   if (fuelTime > 0.0001 && inFlight && next.time != null) {
-  //     if (fuelTime < 0.25 || (fuelTime < next.time!.inMilliseconds.toDouble() / 3600000)) {
-  //       // Red at 15minutes of fuel left or can't make selected waypoint
-  //       return Colors.red.shade900;
-  //     } else if (fuelTime < trip.time!.inMilliseconds.toDouble() / 3600000) {
-  //       // Orange if not enough fuel to finish the plan
-  //       return Colors.amber.shade900;
-  //     }
-  //   }
-  //   return Colors.grey.shade900;
-  // }
-
-  // NOTE: fuel feature disabled for now
-  // Duration get fuelTimeRemaining => Duration(milliseconds: ((fuel / fuelBurnRate) * 3600000).ceil());
 
   Polyline buildFlightTrace() {
     return Polyline(points: flightTrace, strokeWidth: 4, color: const Color.fromARGB(150, 255, 50, 50), isDotted: true);

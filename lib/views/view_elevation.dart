@@ -115,7 +115,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
               IconButton(
                   visualDensity: VisualDensity.compact,
                   onPressed: () {
-                    myTelemetry.fetchAmbPressure();
+                    if (myTelemetry.geo != null) myTelemetry.fetchAmbPressure(myTelemetry.geo!.latlng);
                   },
                   iconSize: 18,
                   icon: myTelemetry.baroFromWeatherkit
@@ -167,7 +167,10 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
           ),
 
           // --- Density Altitude
-          if (!myTelemetry.inFlight && myTelemetry.baroAmbient != null && myTelemetry.ambientTemperature != null)
+          if (!myTelemetry.inFlight &&
+              myTelemetry.baroAmbient != null &&
+              myTelemetry.ambientTemperature != null &&
+              myTelemetry.geo != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -181,7 +184,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 Text.rich(richValue(
                     UnitType.distFine,
                     densityAlt(myTelemetry.baroAmbient!, myTelemetry.ambientTemperature!) +
-                        (myTelemetry.geo.ground ?? myTelemetry.geo.alt),
+                        (myTelemetry.geo!.ground ?? myTelemetry.geo!.alt),
                     digits: 6,
                     decimals: -2,
                     valueStyle: Theme.of(context).textTheme.headline4,
@@ -197,13 +200,14 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 // constraints: const BoxConstraints(maxHeight: 400),
                 child: ClipRect(
                     child: FutureBuilder<List<ElevSample?>>(
-                        future: doSamples(Provider.of<MyTelemetry>(context).geo, activePlan.getSelectedWp()),
+                        future: doSamples(myTelemetry.recordGeo.last, activePlan.getSelectedWp()),
                         initialData: prevSamples,
                         builder: (context, groundSamples) {
                           prevSamples = groundSamples.data;
                           final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
                           final oldestTimestamp = lookBehind != null
-                              ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.geo.time).subtract(lookBehind!)
+                              ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.last.time)
+                                  .subtract(lookBehind!)
                               : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time);
 
                           if (groundSamples.connectionState == ConnectionState.done || groundSamples.data != null) {

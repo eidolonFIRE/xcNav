@@ -15,7 +15,12 @@ class WaypointNavBar extends StatelessWidget {
     TextStyle instrLabel = const TextStyle(fontSize: 14, color: Colors.black87, fontStyle: FontStyle.italic);
 
     return Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
-      ETA etaNext = activePlan.getSelectedWp()?.eta(myTelemetry.geo, myTelemetry.geo.spd) ?? ETA(0, const Duration());
+      late ETA etaNext;
+      if (myTelemetry.geo != null) {
+        etaNext = activePlan.getSelectedWp()?.eta(myTelemetry.geo!, myTelemetry.geo!.spd) ?? ETA(0, const Duration());
+      } else {
+        etaNext = ETA(0, const Duration());
+      }
 
       final curWp = activePlan.getSelectedWp();
 

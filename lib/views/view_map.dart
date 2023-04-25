@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 
@@ -11,7 +12,9 @@ import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/endpoint.dart';
+import 'package:xcnav/main.dart';
 import 'package:xcnav/map_service.dart';
 
 // providers
@@ -95,6 +98,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
 
+  DateTime? lastSavedLastKnownLatLng;
+
   @override
   void initState() {
     super.initState();
@@ -161,32 +166,36 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   }
 
   void refreshMapView() {
-    Geo geo = Provider.of<MyTelemetry>(context, listen: false).geo;
-    CenterZoom? centerZoom;
+    Geo? geo = Provider.of<MyTelemetry>(context, listen: false).geo;
 
-    // --- Orient to gps heading
-    if (!northLock && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
-      mapController.rotate(-geo.hdg / pi * 180);
-    }
-    // --- Move to center
-    if (focusMode == FocusMode.me) {
-      centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
-    } else if (focusMode == FocusMode.group) {
-      List<LatLng> points = Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
-      points.add(LatLng(geo.lat, geo.lng));
-      if (lastMapChange == null ||
-          (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
-        centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
-            options: const FitBoundsOptions(padding: EdgeInsets.all(100), maxZoom: 13, inside: false));
-      } else {
-        // Preserve zoom if it has been recently overriden
-        centerZoom = CenterZoom(center: LatLngBounds.fromPoints(points).center, zoom: mapController.zoom);
+    if (geo != null) {
+      CenterZoom? centerZoom;
+
+      // --- Orient to gps heading
+      if (!northLock && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
+        mapController.rotate(-geo.hdg / pi * 180);
       }
+      // --- Move to center
+      if (focusMode == FocusMode.me) {
+        centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
+      } else if (focusMode == FocusMode.group) {
+        List<LatLng> points =
+            Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
+        points.add(LatLng(geo.lat, geo.lng));
+        if (lastMapChange == null ||
+            (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
+          centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
+              options: const FitBoundsOptions(padding: EdgeInsets.all(100), maxZoom: 13, inside: false));
+        } else {
+          // Preserve zoom if it has been recently overriden
+          centerZoom = CenterZoom(center: LatLngBounds.fromPoints(points).center, zoom: mapController.zoom);
+        }
+      }
+      if (centerZoom != null) {
+        mapController.move(centerZoom.center, centerZoom.zoom);
+      }
+      mapAspectRatio = mapKey.currentContext!.size!.aspectRatio;
     }
-    if (centerZoom != null) {
-      mapController.move(centerZoom.center, centerZoom.zoom);
-    }
-    mapAspectRatio = mapKey.currentContext!.size!.aspectRatio;
   }
 
   bool markerIsInView(LatLng point) {
@@ -264,11 +273,21 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       });
                     },
                     interactiveFlags: InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
-                    center: Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
+                    center: Provider.of<MyTelemetry>(context, listen: false).geo?.latlng ?? lastKnownLatLng,
                     zoom: 12.0,
+                    minZoom: 2,
                     onTap: (tapPosition, point) => onMapTap(context, point),
                     onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                     onPositionChanged: (mapPosition, hasGesture) {
+                      if (lastSavedLastKnownLatLng == null ||
+                          lastSavedLastKnownLatLng!.difference(DateTime.now()).abs() > const Duration(minutes: 2)) {
+                        lastSavedLastKnownLatLng = DateTime.now();
+                        SharedPreferences.getInstance().then((prefs) {
+                          prefs.setString("lastKnownLatLng",
+                              jsonEncode({"lat": mapPosition.center!.latitude, "lng": mapPosition.center!.longitude}));
+                        });
+                      }
+
                       if (hasGesture) {
                         isMapDialOpen.value = false;
                         if (focusMode == FocusMode.me || focusMode == FocusMode.group) {
@@ -313,10 +332,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     PolylineLayer(polylines: [Provider.of<MyTelemetry>(context, listen: false).buildFlightTrace()]),
 
                     // ADSB Proximity
-                    if (Provider.of<ADSB>(context, listen: false).enabled)
+                    if (Provider.of<ADSB>(context, listen: false).enabled &&
+                        Provider.of<MyTelemetry>(context, listen: false).geo != null)
                       CircleLayer(circles: [
                         CircleMarker(
-                            point: Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
+                            point: Provider.of<MyTelemetry>(context, listen: false).geo!.latlng,
                             color: Colors.transparent,
                             borderStrokeWidth: 1,
                             borderColor: Colors.black54,
@@ -325,11 +345,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ]),
 
                     // Next waypoint: path
-                    PolylineLayer(
-                      polylines: plan.buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: true).geo,
-                          (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
-                          baseTiles: settingsMgr.mainMapTileSrc.value),
-                    ),
+                    if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
+                      PolylineLayer(
+                        polylines: plan.buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: true).geo!,
+                            (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
+                            baseTiles: settingsMgr.mainMapTileSrc.value),
+                      ),
 
                     // Waypoints: paths
                     TappablePolylineLayer(
@@ -358,21 +379,23 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         })),
 
                     // Next waypoint: barbs
-                    MarkerLayer(
-                        markers: plan
-                            .buildNextWpBarbs(Provider.of<MyTelemetry>(context, listen: true).geo,
-                                (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344))
-                            .map((e) => Marker(
-                                point: e.latlng,
-                                width: 20,
-                                height: 20,
-                                builder: (ctx) => IgnorePointer(
-                                      child: Container(
-                                          transformAlignment: const Alignment(0, 0),
-                                          transform: Matrix4.rotationZ(e.hdg),
-                                          child: SvgPicture.asset("assets/images/chevron.svg", color: Colors.black87)),
-                                    )))
-                            .toList()),
+                    if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
+                      MarkerLayer(
+                          markers: plan
+                              .buildNextWpBarbs(Provider.of<MyTelemetry>(context, listen: true).geo!,
+                                  (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344))
+                              .map((e) => Marker(
+                                  point: e.latlng,
+                                  width: 20,
+                                  height: 20,
+                                  builder: (ctx) => IgnorePointer(
+                                        child: Container(
+                                            transformAlignment: const Alignment(0, 0),
+                                            transform: Matrix4.rotationZ(e.hdg),
+                                            child:
+                                                SvgPicture.asset("assets/images/chevron.svg", color: Colors.black87)),
+                                      )))
+                              .toList()),
 
                     // Waypoint markers
                     MarkerLayer(
@@ -517,48 +540,53 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
                                     child: Opacity(
                                       opacity: getGAtransparency(
-                                          e.alt - Provider.of<MyTelemetry>(context, listen: false).geo.alt),
+                                          e.alt - (Provider.of<MyTelemetry>(context, listen: false).geo?.alt ?? 0)),
                                       child: Stack(
                                         children: [
                                           /// --- GA icon
                                           Container(
                                             transformAlignment: const Alignment(0, 0),
                                             transform: Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
-                                            child: e.getIcon(Provider.of<MyTelemetry>(context, listen: false).geo),
+                                            child: e.getIcon(),
                                           ),
 
                                           /// --- Relative Altitude
-                                          Container(
-                                              transform: Matrix4.translationValues(40, 0, 0),
-                                              transformAlignment: const Alignment(0, 0),
-                                              child: Text.rich(
-                                                TextSpan(children: [
-                                                  WidgetSpan(
-                                                    child: Icon(
-                                                      (e.alt -
-                                                                  Provider.of<MyTelemetry>(context, listen: false)
-                                                                      .geo
-                                                                      .alt) >
-                                                              0
-                                                          ? Icons.keyboard_arrow_up
-                                                          : Icons.keyboard_arrow_down,
-                                                      color: Colors.black,
-                                                      size: 21,
+                                          if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
+                                            Container(
+                                                transform: Matrix4.translationValues(40, 0, 0),
+                                                transformAlignment: const Alignment(0, 0),
+                                                child: Text.rich(
+                                                  TextSpan(children: [
+                                                    WidgetSpan(
+                                                      child: Icon(
+                                                        (e.alt -
+                                                                    Provider.of<MyTelemetry>(context, listen: false)
+                                                                        .geo!
+                                                                        .alt) >
+                                                                0
+                                                            ? Icons.keyboard_arrow_up
+                                                            : Icons.keyboard_arrow_down,
+                                                        color: Colors.black,
+                                                        size: 21,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  richValue(
-                                                      UnitType.distFine,
-                                                      (e.alt - Provider.of<MyTelemetry>(context, listen: false).geo.alt)
-                                                          .abs(),
-                                                      digits: 5,
-                                                      valueStyle: const TextStyle(color: Colors.black),
-                                                      unitStyle: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
-                                                ]),
-                                                overflow: TextOverflow.visible,
-                                                softWrap: false,
-                                                maxLines: 1,
-                                                style: const TextStyle(fontSize: 16),
-                                              )),
+                                                    richValue(
+                                                        UnitType.distFine,
+                                                        (e.alt -
+                                                                Provider.of<MyTelemetry>(context, listen: false)
+                                                                    .geo!
+                                                                    .alt)
+                                                            .abs(),
+                                                        digits: 5,
+                                                        valueStyle: const TextStyle(color: Colors.black),
+                                                        unitStyle:
+                                                            TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                                                  ]),
+                                                  overflow: TextOverflow.visible,
+                                                  softWrap: false,
+                                                  maxLines: 1,
+                                                  style: const TextStyle(fontSize: 16),
+                                                )),
                                         ],
                                       ),
                                     ),
@@ -583,27 +611,31 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     pilot,
                                     20,
                                     hdg: pilot.geo!.hdg + mapController.rotation * pi / 180,
-                                    relAlt: pilot.geo!.alt - Provider.of<MyTelemetry>(context, listen: false).geo.alt,
+                                    relAlt: pilot.geo!.alt - Provider.of<MyTelemetry>(context, listen: false).geo!.alt,
                                   ))))
                           .toList(),
                     ),
 
                     // "ME" Live Location Marker
                     Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
-                      return MarkerLayer(
-                        markers: [
-                          Marker(
-                            width: 50.0,
-                            height: 50.0,
-                            point: myTelemetry.geo.latlng,
-                            builder: (ctx) => Container(
-                              transformAlignment: const Alignment(0, 0),
-                              transform: Matrix4.rotationZ(myTelemetry.geo.hdg),
-                              child: Image.asset("assets/images/red_arrow.png"),
+                      if (myTelemetry.geo != null) {
+                        return MarkerLayer(
+                          markers: [
+                            Marker(
+                              width: 50.0,
+                              height: 50.0,
+                              point: myTelemetry.geo!.latlng,
+                              builder: (ctx) => Container(
+                                transformAlignment: const Alignment(0, 0),
+                                transform: Matrix4.rotationZ(myTelemetry.geo!.hdg),
+                                child: Image.asset("assets/images/red_arrow.png"),
+                              ),
                             ),
-                          ),
-                        ],
-                      );
+                          ],
+                        );
+                      } else {
+                        return Container();
+                      }
                     }),
 
                     // Measurement Polyline

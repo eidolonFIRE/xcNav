@@ -27,11 +27,12 @@ class _WeatherViewerState extends State<WeatherViewer> {
 
           /// === View Sounding at current geo
           FutureBuilder<Sounding?>(
-              future: Provider.of<Weather>(context).getSounding(),
+              future: Provider.of<Weather>(context, listen: false)
+                  .getSounding(Provider.of<MyTelemetry>(context, listen: false).geo!.latlng),
               builder: (context, sounding) {
                 if (sounding.hasData && sounding.data != null) {
                   double myBaro = Provider.of<MyTelemetry>(context, listen: false).baro?.hectpascal ??
-                      pressureFromElevation(Provider.of<MyTelemetry>(context, listen: false).geo.alt, 1013.25);
+                      pressureFromElevation(Provider.of<MyTelemetry>(context, listen: false).geo?.alt ?? 0, 1013.25);
                   // Get the sample from selection
                   SoundingSample? sample;
                   if (selectedY != null) {

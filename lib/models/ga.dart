@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:xcnav/models/geo.dart';
 
 enum GAtype {
   unknown,
@@ -48,7 +47,7 @@ class GA {
   /// - Full opacity within close vertical range or has warning
   /// - Fade transparency with vertical separation
   /// - Red Icon when on warning & close vertical range.
-  SvgPicture getIcon(Geo relative) {
+  SvgPicture getIcon() {
     Color color = warning ? Colors.red : Colors.amber.shade600;
 
     switch (type) {

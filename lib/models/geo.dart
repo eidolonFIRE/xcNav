@@ -1,7 +1,4 @@
 import 'dart:math';
-
-import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -80,7 +77,6 @@ class Geo {
   double varioSmooth = 0;
 
   LatLng get latlng => LatLng(lat, lng);
-  Offset get latlngOffset => Offset(lng, lat);
 
   Geo({this.lat = 0, this.lng = 0, this.alt = 0, int? timestamp, this.hdg = 0, this.spd = 0, this.vario = 0}) {
     time = timestamp ?? DateTime.now().millisecondsSinceEpoch;

@@ -159,12 +159,9 @@ class _PlanEditorState extends State<PlanEditor> {
   Widget build(BuildContext context) {
     if (plan == null) {
       plan = ModalRoute.of(context)!.settings.arguments as FlightPlan;
-      mapBounds = plan!.getBounds() ??
-          (LatLngBounds.fromPoints([
-            Provider.of<MyTelemetry>(context, listen: false).geo.latlng,
-            Provider.of<MyTelemetry>(context, listen: false).geo.latlng..longitude += 0.05
-          ])
-            ..pad(2));
+      final center = Provider.of<MyTelemetry>(context, listen: false).geo ?? defaultGeo;
+      mapBounds =
+          plan!.getBounds() ?? (LatLngBounds.fromPoints([center.latlng, center.latlng..longitude += 0.05])..pad(2));
     }
     return WillPopScope(
       onWillPop: () {

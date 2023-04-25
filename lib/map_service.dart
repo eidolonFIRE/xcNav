@@ -49,6 +49,7 @@ TileLayer getMapTileLayer(MapTileSrc tileSrc, double opacity) {
           urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
           tileProvider: makeTileProvider(tileName),
           maxNativeZoom: 19,
+          minZoom: 2,
           opacity: opacity * 0.8 + 0.2);
     // https://docs.openaip.net/?urls.primaryName=Tiles%20API
     case MapTileSrc.airspace:
@@ -74,6 +75,7 @@ TileLayer getMapTileLayer(MapTileSrc tileSrc, double opacity) {
         // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
         tileProvider: makeTileProvider(tileName),
         maxNativeZoom: 14,
+        minZoom: 2,
         opacity: opacity,
       );
   }

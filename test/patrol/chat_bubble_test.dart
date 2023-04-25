@@ -39,7 +39,7 @@ void main() {
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (context) => Weather(context),
+        create: (_) => Weather(),
         lazy: false,
       ),
       ChangeNotifierProvider(

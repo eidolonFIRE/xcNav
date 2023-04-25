@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock/wakelock.dart';
@@ -27,7 +29,6 @@ import 'package:xcnav/screens/log_replay.dart';
 import 'package:xcnav/screens/adsb_help.dart';
 import 'package:xcnav/screens/checklist_viewer.dart';
 import 'package:xcnav/screens/home.dart';
-import 'package:xcnav/screens/loading.dart';
 import 'package:xcnav/screens/plan_editor.dart';
 import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
@@ -46,12 +47,29 @@ import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/secrets.dart';
 
+LatLng lastKnownLatLng = LatLng(37, -122);
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
+
+    // Load last known LatLng
+    final raw = prefs.getString("lastKnownLatLng");
+    if (raw != null) {
+      try {
+        final data = jsonDecode(raw);
+        lastKnownLatLng = LatLng(data["lat"] is int ? (data["lat"] as int).toDouble() : data["lat"],
+            data["lng"] is int ? (data["lng"] as int).toDouble() : data["lng"]);
+        debugPrint("Last known LatLng: ${lastKnownLatLng.toString()}");
+      } catch (err, trace) {
+        final msg = 'Parsing last known LatLng from "$raw"';
+        debugPrint("Error: $msg, $err, $trace");
+        DatadogSdk.instance.logs?.error(msg, errorMessage: err.toString(), errorStackTrace: trace);
+      }
+    }
     initMapCache();
   }).then((value) {
     runZonedGuarded(() async {
@@ -91,11 +109,11 @@ void main() {
               lazy: false,
             ),
             ChangeNotifierProvider(
-              create: (context) => Weather(context),
+              create: (_) => Weather(),
               lazy: false,
             ),
             ChangeNotifierProvider(
-              create: (context) => Wind(),
+              create: (_) => Wind(),
               lazy: false,
             ),
             ChangeNotifierProvider(
@@ -168,6 +186,8 @@ class XCNav extends StatelessWidget {
       }
     });
 
+    final profile = Provider.of<Profile>(context, listen: false);
+
     return MaterialApp(
       title: 'xcNav',
       debugShowCheckedModeBanner: false,
@@ -232,9 +252,9 @@ class XCNav extends StatelessWidget {
         // )
       ),
       themeMode: ThemeMode.dark,
-      initialRoute: "/",
+      initialRoute: Profile.nameValidator(profile.name) != null ? "/home" : "/profileEditor",
       routes: {
-        "/": (context) => const LoadingScreen(),
+        // "/": (context) => const LoadingScreen(),
         "/home": (context) => const MyHomePage(),
         "/profileEditor": (context) => const ProfileEditor(),
         "/qrScanner": (context) => const QRScanner(),

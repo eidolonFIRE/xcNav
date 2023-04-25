@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 // ignore: depend_on_referenced_packages
 import 'package:provider/provider.dart';
+import 'package:xcnav/check_permissions.dart';
+import 'package:xcnav/endpoint.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/chat_messages.dart';
+import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/settings_service.dart';
 
 // Views
@@ -112,6 +117,23 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     debugPrint("Build /home");
     setSystemUI();
+
+    checkPermissions(context).then((failed) {
+      final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+      if (failed == false && !myTelemetry.isInitialized) {
+        // get initial location
+        debugPrint("Getting initial location from GPS");
+        final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+        GeolocatorPlatform.instance.getCurrentPosition().then((location) {
+          debugPrint("initial location: $location");
+          myTelemetry.updateGeo(location);
+          myTelemetry.init();
+
+          // Setup the backend
+          selectEndpoint(LatLng(location.latitude, location.longitude));
+        });
+      }
+    });
 
     if (pageIndexNames[viewPageIndex] == "Chat") {
       // Don't notify

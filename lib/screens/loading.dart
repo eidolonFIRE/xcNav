@@ -67,22 +67,23 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
   void getInitalLocation() {
     // get initial location
     debugPrint("Getting initial location from GPS");
+    final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
     _geolocatorPlatform.getCurrentPosition().then((location) {
       debugPrint("initial location: $location");
-      Provider.of<MyTelemetry>(context, listen: false).init();
-      Provider.of<MyTelemetry>(context, listen: false).updateGeo(location);
+      myTelemetry.updateGeo(location);
+      myTelemetry.init();
 
       // Setup the backend
       selectEndpoint(LatLng(location.latitude, location.longitude));
-
-      // Go to next screen
-      final name = Provider.of<Profile>(context, listen: false).name;
-      if (name != null && name.length >= 2) {
-        Navigator.pushReplacementNamed(context, "/home");
-      } else {
-        Navigator.pushReplacementNamed(context, "/profileEditor");
-      }
     });
+
+    // Go to next screen
+    final name = Provider.of<Profile>(context, listen: false).name;
+    if (name != null && name.length >= 2) {
+      Navigator.pushReplacementNamed(context, "/home");
+    } else {
+      Navigator.pushReplacementNamed(context, "/profileEditor");
+    }
   }
 
   void checkPermissions(BuildContext context) async {

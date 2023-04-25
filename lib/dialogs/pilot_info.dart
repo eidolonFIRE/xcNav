@@ -26,13 +26,13 @@ void showPilotInfo(BuildContext context, String pilotId) {
       barrierLabel: "pilot_info_dialog",
       barrierDismissible: true,
       builder: (context) => Consumer2<MyTelemetry, Group>(builder: (context, myTelemetry, group, child) {
-            if (group.pilots[pilotId]?.geo != null) {
+            if (group.pilots[pilotId]?.geo != null && myTelemetry.geo != null) {
               final Pilot pilot = group.pilots[pilotId]!;
-              final double dist = pilot.geo!.distanceTo(myTelemetry.geo);
+              final double dist = pilot.geo!.distanceTo(myTelemetry.geo!);
 
-              final double relHdg = latlngCalc.bearing(myTelemetry.geo.latlng, pilot.geo!.latlng) * pi / 180;
+              final double relHdg = latlngCalc.bearing(myTelemetry.geo!.latlng, pilot.geo!.latlng) * pi / 180;
 
-              final double closingSpd = myTelemetry.geo.spd * cos(myTelemetry.geo.hdg - relHdg) -
+              final double closingSpd = myTelemetry.geo!.spd * cos(myTelemetry.geo!.hdg - relHdg) -
                   pilot.geo!.spd * cos(pilot.geo!.hdg - relHdg);
 
               final etaIntercept = ETA.fromSpeed(dist, closingSpd);
@@ -40,7 +40,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
               Waypoint? selectedWp = Provider.of<ActivePlan>(context, listen: false).waypoints[pilot.selectedWp];
               final ETA? etaWp = selectedWp?.eta(pilot.geo!, pilot.geo!.spd);
 
-              final relAlt = pilot.geo!.alt - myTelemetry.geo.alt;
+              final relAlt = pilot.geo!.alt - myTelemetry.geo!.alt;
 
               const cellHeight = 60.0;
 

@@ -28,8 +28,13 @@ Widget topInstruments(BuildContext context) {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text.rich(richValue(UnitType.speed, myTelemetry.geo.spd,
-                    digits: 3, autoDecimalThresh: -1, valueStyle: const TextStyle(fontSize: 55), unitStyle: unitStyle)),
+                myTelemetry.geo != null
+                    ? Text.rich(richValue(UnitType.speed, myTelemetry.geo!.spd,
+                        digits: 3,
+                        autoDecimalThresh: -1,
+                        valueStyle: const TextStyle(fontSize: 55),
+                        unitStyle: unitStyle))
+                    : const Text("--"),
               ],
             ),
           ),
@@ -79,8 +84,8 @@ Widget topInstruments(BuildContext context) {
                                       alignment: Alignment.topCenter,
                                       child: Container(
                                         transformAlignment: const Alignment(0, 0),
-                                        transform: Matrix4.rotationZ(
-                                            wind.result!.windHdg + (northlockWind ? 0 : -myTelemetry.geo.hdg)),
+                                        transform: Matrix4.rotationZ(wind.result!.windHdg +
+                                            (northlockWind && myTelemetry.geo != null ? 0 : -myTelemetry.geo!.hdg)),
                                         child: SvgPicture.asset(
                                           "assets/images/arrow.svg",
                                           width: 80,
@@ -131,14 +136,14 @@ Widget topInstruments(BuildContext context) {
                           primaryAltimeter == AltimeterMode.msl ? VerticalDirection.down : VerticalDirection.up,
                       children: [
                         Altimeter(
-                          myTelemetry.geo.alt,
+                          myTelemetry.geo?.alt,
                           valueStyle: primaryAltimeter == AltimeterMode.msl ? upperStyle : lowerStyle,
                           unitStyle: unitStyle,
                           unitTag: "MSL",
                           isPrimary: primaryAltimeter == AltimeterMode.msl,
                         ),
                         Altimeter(
-                          myTelemetry.geo.ground != null ? myTelemetry.geo.alt - myTelemetry.geo.ground! : null,
+                          myTelemetry.geo?.ground != null ? myTelemetry.geo!.alt - myTelemetry.geo!.ground! : null,
                           valueStyle: primaryAltimeter == AltimeterMode.agl ? upperStyle : lowerStyle,
                           unitStyle: unitStyle,
                           unitTag: "AGL",
