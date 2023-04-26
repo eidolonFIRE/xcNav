@@ -52,8 +52,7 @@ class Profile with ChangeNotifier {
     hash = _hash();
 
     // Add context to logging
-    DatadogSdk.instance.setUserInfo(id: id);
-    DatadogSdk.instance.setUserInfo(name: name);
+    DatadogSdk.instance.setUserInfo(name: name, id: id);
   }
 
   static String? nameValidator(String? name) {

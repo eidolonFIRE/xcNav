@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:collection/collection.dart';
 
 // Models
 import 'package:xcnav/models/flight_log.dart';
@@ -41,6 +42,9 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
   bool loaded = false;
 
   late final TabController mainTabController;
+  final logListController = ScrollController();
+
+  List<String> logKeys = [];
 
   @override
   void initState() {
@@ -128,6 +132,8 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
         setState(() {
           loaded = true;
           refreshSlice(sliceSize);
+          logKeys = logs.keys.toList();
+          logKeys.sort((a, b) => logs[a]!.compareTo(logs[b]!));
         });
       });
     } else {
@@ -154,8 +160,6 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    var keys = logs.keys.toList();
-    keys.sort((a, b) => logs[a]!.compareTo(logs[b]!));
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -190,9 +194,16 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
               ? const Center(
                   child: CircularProgressIndicator.adaptive(),
                 )
-              : ListView.builder(
-                  itemCount: keys.length,
-                  itemBuilder: (context, index) => FlightLogCard(logs[keys[index]]!, refreshLogsFromDirectory),
+              : ListView(
+                  controller: logListController,
+                  children: logKeys
+                      .mapIndexed((i, e) => FlightLogCard(logs[e]!, () {
+                            setState(() {
+                              logs.remove(e);
+                              logKeys.removeAt(i);
+                            });
+                          }))
+                      .toList(),
                 ),
 
           // --- Stats

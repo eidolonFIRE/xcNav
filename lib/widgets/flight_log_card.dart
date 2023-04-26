@@ -18,19 +18,8 @@ import 'package:xcnav/widgets/waypoint_marker.dart';
 class FlightLogCard extends StatelessWidget {
   final FlightLog log;
   final Function onDelete;
-  late final LatLngBounds? mapBounds;
 
-  FlightLogCard(this.log, this.onDelete, {Key? key}) : super(key: key) {
-    if (log.goodFile) {
-      mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList());
-      // NOTE: disabled this for now
-      // for (final each in log.waypoints) {
-      //   mapBounds!.extendBounds(LatLngBounds.fromPoints(each.latlng));
-      // }
-      mapBounds!.pad(0.2);
-    }
-    debugPrint("Built log: ${log.filename} ${log.goodFile ? "" : "--BAD"}");
-  }
+  const FlightLogCard(this.log, this.onDelete, {Key? key}) : super(key: key);
 
   /// Recover waypoints from log and put them into a new flight plan.
   void restoreWaypoints(BuildContext context) {
@@ -160,6 +149,13 @@ class FlightLogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     MapController mapController = MapController();
+    LatLngBounds? mapBounds;
+
+    if (log.goodFile) {
+      mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList());
+      mapBounds.pad(0.2);
+    }
+
     return Padding(
       padding: const EdgeInsets.all(4.0),
       child: ClipRRect(
@@ -170,15 +166,11 @@ class FlightLogCard extends StatelessWidget {
           child: Stack(children: [
             if (log.goodFile)
               FlutterMap(
+                  key: GlobalKey(debugLabel: "flight_log_card:${log.startTime.millisecondsSinceEpoch.toString()}"),
                   mapController: mapController,
                   options: MapOptions(
-                    onMapReady: () {
-                      if (mapBounds != null) {
-                        mapController.fitBounds(mapBounds!);
-                      }
-                    },
+                    bounds: mapBounds,
                     interactiveFlags: InteractiveFlag.none,
-                    // bounds: mapBounds,
                     onTap: (tapPosition, point) {
                       if (log.goodFile) {
                         Navigator.pushNamed(context, "/logReplay", arguments: log);
@@ -216,7 +208,7 @@ class FlightLogCard extends StatelessWidget {
                     PolylineLayer(polylines: [
                       Polyline(
                           points: log.samples.map((e) => e.latlng).toList(),
-                          strokeWidth: 3,
+                          strokeWidth: 4,
                           color: Colors.red,
                           isDotted: true)
                     ]),
