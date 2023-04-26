@@ -38,7 +38,6 @@ class ElevationPlotPainter extends CustomPainter {
   final List<Geo> geoData;
   final List<ElevSample?> groundData;
 
-  late final double vertGridRes;
   final double distScale;
 
   final Waypoint? waypoint;
@@ -53,8 +52,6 @@ class ElevationPlotPainter extends CustomPainter {
 
   ElevationPlotPainter(this.geoData, this.groundData, this.distScale,
       {this.waypoint, this.waypointETA, this.showPilotIcon = true, this.labelIndex}) {
-    vertGridRes = settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 100 : 152.4;
-
     _paintGround = Paint()
       ..color = Colors.orange.shade800
       ..style = PaintingStyle.fill;
@@ -145,12 +142,15 @@ class ElevationPlotPainter extends CustomPainter {
     final futureGround = groundData.where((element) => element != null).map((e) => e!.elev);
 
     // --- Common misc.
-    final double maxElev = ((max(geoData.map((e) => e.alt).reduce((a, b) => a > b ? a : b),
-                        (futureGround.isNotEmpty ? futureGround.reduce(max) : 0)) +
-                    vertGridRes / 2) /
-                vertGridRes)
-            .ceil() *
-        vertGridRes;
+    final double maxElevUnsnapped =
+        max(geoData.map((e) => e.alt).reduce(max), (futureGround.isNotEmpty ? futureGround.reduce(max) : 0));
+
+    // --- Set vertical grid resolution
+    final double vertGridResScale = max(1, ((maxElevUnsnapped / size.height) / 5).floor() * 2).toDouble();
+    final double vertGridRes =
+        (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 100 : 152.4) * vertGridResScale;
+
+    final double maxElev = ((maxElevUnsnapped + vertGridRes / 2) / vertGridRes).ceil() * vertGridRes;
 
     final Iterable<double> historyGroundData =
         geoData.map((e) => e.ground).where((element) => element != null).cast<double>();
