@@ -3,6 +3,7 @@ import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 
 Distance latlngCalc = const Distance(roundResult: false);
 
@@ -195,16 +196,16 @@ class Geo {
   }
 
   Geo.fromJson(Map<String, dynamic> data) {
-    lat = data["lat"] is int ? (data["lat"] as int).toDouble() : data["lat"];
-    lng = data["lng"] is int ? (data["lng"] as int).toDouble() : data["lng"];
-    alt = data["alt"] is int ? (data["alt"] as int).toDouble() : data["alt"];
+    lat = parseAsDouble(data["lat"]);
+    lng = parseAsDouble(data["lng"]);
+    alt = parseAsDouble(data["alt"]);
     time = data["time"] as int;
-    hdg = data["hdg"] is int ? (data["hdg"] as int).toDouble() : data["hdg"];
-    spd = data["spd"] is int ? (data["spd"] as int).toDouble() : data["spd"];
-    vario = data["vario"] is int ? (data["vario"] as int).toDouble() : data["vario"];
+    hdg = parseAsDouble(data["hdg"]);
+    spd = parseAsDouble(data["spd"]);
+    vario = parseAsDouble(data["vario"]);
 
     if (data.containsKey("ground")) {
-      ground = data["ground"] is int ? (data["ground"] as int).toDouble() : data["ground"];
+      ground = parseAsDouble(data["ground"]);
     }
   }
 }

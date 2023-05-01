@@ -149,11 +149,13 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
         break;
       case SliceSize.year:
         logsSlice = logs.values.where((element) =>
-            element.goodFile && element.startTime.isAfter(DateTime.now().subtract(const Duration(days: 365))));
+            element.goodFile &&
+            (element.startTime?.isAfter(DateTime.now().subtract(const Duration(days: 365))) ?? false));
         break;
       case SliceSize.month:
         logsSlice = logs.values.where((element) =>
-            element.goodFile && element.startTime.isAfter(DateTime.now().subtract(const Duration(days: 30))));
+            element.goodFile &&
+            (element.startTime?.isAfter(DateTime.now().subtract(const Duration(days: 30))) ?? false));
         break;
     }
   }

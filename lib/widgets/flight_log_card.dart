@@ -166,7 +166,7 @@ class FlightLogCard extends StatelessWidget {
           child: Stack(children: [
             if (log.goodFile)
               FlutterMap(
-                  key: GlobalKey(debugLabel: "flight_log_card:${log.startTime.millisecondsSinceEpoch.toString()}"),
+                  key: GlobalKey(debugLabel: "flight_log_card:${log.startTime?.millisecondsSinceEpoch.toString()}"),
                   mapController: mapController,
                   options: MapOptions(
                     bounds: mapBounds,
@@ -221,12 +221,12 @@ class FlightLogCard extends StatelessWidget {
                 bottom: 4,
                 child: Text.rich(
                   TextSpan(children: [
-                    TextSpan(text: DateFormat("h:mm a").format(log.startTime)),
+                    TextSpan(text: log.startTime != null ? DateFormat("h:mm a").format(log.startTime!) : "-"),
                     const TextSpan(text: "  ( "),
                     richHrMin(duration: log.durationTime),
                     const TextSpan(text: " )  "),
                     TextSpan(
-                      text: DateFormat("h:mm a").format(log.endTime),
+                      text: log.endTime != null ? DateFormat("h:mm a").format(log.endTime!) : "-",
                     )
                   ]),
                   style: const TextStyle(color: Colors.black),

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:bisection/bisect.dart';
@@ -14,10 +13,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/fake_path.dart';
+import 'package:xcnav/models/flight_log.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
@@ -96,8 +95,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   @override
   void dispose() {
-    //  NOTE: fuel feature disabled for now
-    // _save();
     timer?.cancel();
     _flightEventListener?.cancel();
     WidgetsBinding.instance.removeObserver(this);
@@ -105,10 +102,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   MyTelemetry() {
-    // NOTE: fuel feature disabled for now
-    // _load();
     WidgetsBinding.instance.addObserver(this);
-
     _startBaroService();
   }
 
@@ -381,21 +375,18 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   Future saveFlight() async {
     if (recordGeo.length > 10) {
+      final log = FlightLog(
+          samples: recordGeo,
+          waypoints: globalContext != null
+              ? Provider.of<ActivePlan>(globalContext!, listen: false)
+                  .waypoints
+                  .values
+                  .where((element) => (!element.ephemeral && element.validate()))
+                  .toList()
+              : []);
+
+      log.save();
       lastSavedLog = DateTime.now();
-      Directory tempDir = await getApplicationDocumentsDirectory();
-      File logFile = File("${tempDir.path}/flight_logs/${recordGeo[0].time}.json");
-      debugPrint("Writing ${logFile.uri} with ${recordGeo.length} samples");
-      await logFile.create(recursive: true).then((value) => logFile.writeAsString(jsonEncode({
-            "samples": recordGeo.map((e) => e.toJson()).toList(),
-            "waypoints": globalContext != null
-                ? Provider.of<ActivePlan>(globalContext!, listen: false)
-                    .waypoints
-                    .values
-                    .where((element) => (!element.ephemeral && element.validate()))
-                    .map((e) => e.toJson())
-                    .toList()
-                : []
-          })));
     }
   }
 

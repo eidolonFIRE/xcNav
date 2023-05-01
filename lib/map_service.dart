@@ -23,7 +23,11 @@ TileProvider? makeTileProvider(String instanceName) {
     return FMTC.instance(instanceName).getTileProvider(
           FMTCTileProviderSettings(
             behavior: CacheBehavior.cacheFirst,
-            cachedValidDuration: const Duration(days: 14),
+            cachedValidDuration: const Duration(days: 30),
+            errorHandler: (exception) {
+              DatadogSdk.instance.logs
+                  ?.warn(exception.message, errorMessage: exception.toString(), attributes: {"layer": instanceName});
+            },
           ),
         );
   } catch (e, trace) {
@@ -120,7 +124,7 @@ Future initMapCache() async {
     await store.metadata.addAsync(key: 'sourceURL', value: getMapTileLayer(tileSrc, 1).urlTemplate!);
     await store.metadata.addAsync(
       key: 'validDuration',
-      value: '60',
+      value: '30',
     );
     await store.metadata.addAsync(
       key: 'behaviour',

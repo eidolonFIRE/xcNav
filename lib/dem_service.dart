@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -7,8 +8,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:dart_numerics/dart_numerics.dart' as math;
 
 TileLayer? _demTileLayer;
-
-// const demZoomLevel = 12;
 
 // Digital Elevation Map - service
 
@@ -33,11 +32,13 @@ Future initDemCache() async {
     tileProvider: FMTC.instance("dem").getTileProvider(
           FMTCTileProviderSettings(
             behavior: CacheBehavior.cacheFirst,
-            cachedValidDuration: const Duration(days: 14),
+            cachedValidDuration: const Duration(days: 60),
+            errorHandler: (exception) {
+              DatadogSdk.instance.logs
+                  ?.warn(exception.message, errorMessage: exception.toString(), attributes: {"layer": "dem"});
+            },
           ),
         ),
-    // maxNativeZoom: demZoomLevel.toDouble(),
-    // minNativeZoom: demZoomLevel.toDouble(),
   );
 }
 

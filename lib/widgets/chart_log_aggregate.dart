@@ -64,12 +64,15 @@ class ChartLogAggregate extends StatelessWidget {
     }
     for (final each in logs) {
       int index = 0;
+
+      if (each.startTime == null) continue;
+
       switch (mode) {
         case ChartLogAggregateMode.week:
-          index = each.startTime.weekday;
+          index = each.startTime!.weekday;
           break;
         case ChartLogAggregateMode.year:
-          index = each.startTime.month;
+          index = each.startTime!.month;
           break;
       }
 

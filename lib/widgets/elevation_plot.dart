@@ -249,22 +249,22 @@ class ElevationPlotPainter extends CustomPainter {
       // Line
       canvas.drawLine(Offset(x, scaleY(geoData[labelIndex!].alt)), Offset(x, 0), _paintVarioTrend);
 
-      // Text
-      TextSpan span = TextSpan(
-          style: const TextStyle(color: Colors.white),
-          text: intl.DateFormat("h:mm a").format(DateTime.fromMillisecondsSinceEpoch(t)));
-      TextPainter tp = TextPainter(text: span, textAlign: TextAlign.center, textDirection: TextDirection.ltr);
-      tp.layout();
+      //   // Text
+      //   TextSpan span = TextSpan(
+      //       style: const TextStyle(color: Colors.white),
+      //       text: intl.DateFormat("h:mm a").format(DateTime.fromMillisecondsSinceEpoch(t)));
+      //   TextPainter tp = TextPainter(text: span, textAlign: TextAlign.center, textDirection: TextDirection.ltr);
+      //   tp.layout();
 
-      final xDynamic = x - (labelIndex! > geoData.length / 2 ? tp.width + 4 : -4);
+      //   final xDynamic = x - (labelIndex! > geoData.length / 2 ? tp.width + 4 : -4);
 
-      // Background card
-      canvas.drawRRect(
-          RRect.fromRectAndRadius(
-              Rect.fromLTWH(xDynamic - 4, 0, tp.width + 8, tp.height + 8), const Radius.circular(10)),
-          _paintCard);
+      //   // Background card
+      //   canvas.drawRRect(
+      //       RRect.fromRectAndRadius(
+      //           Rect.fromLTWH(xDynamic - 4, 0, tp.width + 8, tp.height + 8), const Radius.circular(10)),
+      //       _paintCard);
 
-      tp.paint(canvas, Offset(xDynamic, 4));
+      //   tp.paint(canvas, Offset(xDynamic, 4));
     }
 
     // --- Draw Waypoint
