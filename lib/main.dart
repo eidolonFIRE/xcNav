@@ -201,7 +201,7 @@ class XCNav extends StatelessWidget {
         // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
         // primaryColorLight: primaryDarkColor,
 
-        colorScheme: const ColorScheme.dark(background: darkColor),
+        colorScheme: const ColorScheme.dark(background: darkColor, primary: Colors.blue, secondary: Colors.amber),
         appBarTheme: const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40), backgroundColor: darkColor),
         // primarySwatch: Colors.grey,
         // scaffoldBackgroundColor: Colors.blueGrey.shade900,
@@ -211,6 +211,8 @@ class XCNav extends StatelessWidget {
         dialogTheme: DialogTheme(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
+            foregroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.white),
+            iconColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.white),
             side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.black)),
             backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.grey.shade900),
             minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
@@ -221,9 +223,9 @@ class XCNav extends StatelessWidget {
             textStyle: MaterialStateProperty.resolveWith<TextStyle>(
                 (states) => const TextStyle(color: Colors.white, fontSize: 20)),
           ),
-
-          // child: ElevatedButton(onPressed: () {}, child: Text('label')),
         ),
+        toggleButtonsTheme: const ToggleButtonsThemeData(
+            selectedColor: Colors.white, selectedBorderColor: Colors.blue, fillColor: Colors.black54),
         popupMenuTheme: PopupMenuThemeData(textStyle: Theme.of(context).textTheme.bodyMedium),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(

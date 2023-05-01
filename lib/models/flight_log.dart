@@ -249,7 +249,7 @@ class FlightLog {
 
   // =========================================
   Future<bool> save() async {
-    return saveFileToAppDocs(filename: "flight_logs/${startTime!.millisecondsSinceEpoch}", data: toJson())
+    return saveFileToAppDocs(filename: "flight_logs/${startTime!.millisecondsSinceEpoch}.json", data: toJson())
         .then((value) => unsaved = false);
   }
 

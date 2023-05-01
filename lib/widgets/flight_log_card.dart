@@ -116,11 +116,11 @@ class FlightLogCard extends StatelessWidget {
         context: context,
         builder: (BuildContext ctx) {
           return AlertDialog(
-            title: const Text('Please Confirm'),
+            title: const Text('Confirm'),
             content: const Text('Are you sure you want to delete this log?'),
             actions: [
               // The "Yes" button
-              TextButton.icon(
+              ElevatedButton.icon(
                   onPressed: () {
                     // Delete Log File
                     File logFile = File(log.filename);
@@ -135,12 +135,12 @@ class FlightLogCard extends StatelessWidget {
                     color: Colors.red,
                   ),
                   label: const Text('Delete')),
-              TextButton(
-                  onPressed: () {
-                    // Close the dialog
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancel'))
+              // ElevatedButton(
+              //     onPressed: () {
+              //       // Close the dialog
+              //       Navigator.of(context).pop();
+              //     },
+              //     child: const Text('Cancel'))
             ],
           );
         });
@@ -251,7 +251,7 @@ class FlightLogCard extends StatelessWidget {
                         maxLines: 6,
                         style: Theme.of(context)
                             .textTheme
-                            .bodyLarge!
+                            .titleLarge!
                             .merge(TextStyle(color: log.goodFile ? Colors.black : Colors.red)),
                       ),
                     ),

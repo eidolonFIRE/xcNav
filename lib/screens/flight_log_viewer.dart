@@ -113,6 +113,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
         completers.add(completer);
 
         File.fromUri(each.uri).readAsString().then((value) {
+          debugPrint("Loading log: ${each.uri}");
           try {
             logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value), rawJson: value);
             // completer.complete();

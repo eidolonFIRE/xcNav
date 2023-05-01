@@ -484,11 +484,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               ),
                             ),
                             // --- Fuel Stats: summary
-                            if (log!.sumFuelStat != null)
+                            if (log!.sumFuelStat != null && log!.fuelStats.length > 1)
                               DefaultTextStyle(
                                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                 child: Padding(
-                                  padding: const EdgeInsets.only(top: 4),
+                                  padding: const EdgeInsets.only(top: 8),
                                   child: SizedBox(
                                     height: 25,
                                     child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
