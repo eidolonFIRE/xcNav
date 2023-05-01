@@ -95,13 +95,13 @@ class _ChecklistViewerState extends State<ChecklistViewer> {
             children: [
               Text(
                 "Checklist:",
-                style: Theme.of(context).textTheme.headline6,
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
               if (!isEditing)
                 DropdownButton<String>(
                     value: curChecklist,
                     items: checklists.keys.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                    style: Theme.of(context).textTheme.headline6,
+                    style: Theme.of(context).textTheme.bodyLarge,
                     onChanged: (value) {
                       setState(() {
                         curChecklist = value;
@@ -223,7 +223,7 @@ class _ChecklistViewerState extends State<ChecklistViewer> {
                                             key: Key(item.title),
                                             title: Text(
                                               item.title,
-                                              style: Theme.of(context).textTheme.headline5,
+                                              style: Theme.of(context).textTheme.bodyLarge,
                                             ),
                                             trailing: Transform.scale(
                                               scale: 1.5,

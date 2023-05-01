@@ -51,7 +51,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                         padding: const EdgeInsets.all(30.0),
                         child: Text(
                           "Current Sounding",
-                          style: Theme.of(context).textTheme.headline4,
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
                       ),
 

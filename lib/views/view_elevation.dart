@@ -176,7 +176,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(
                   "Density Altitude:",
-                  style: Theme.of(context).textTheme.headline6,
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 const SizedBox(
                   width: 20,
@@ -187,7 +187,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                         (myTelemetry.geo!.ground ?? myTelemetry.geo!.alt),
                     digits: 6,
                     decimals: -2,
-                    valueStyle: Theme.of(context).textTheme.headline4,
+                    valueStyle: Theme.of(context).textTheme.headlineMedium,
                     unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)))
               ]),
             ),

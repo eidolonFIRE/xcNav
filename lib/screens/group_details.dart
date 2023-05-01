@@ -43,7 +43,7 @@ class _GroupDetailsState extends State<GroupDetails> {
       appBar: AppBar(
         title: Text(
           "Group Members",
-          style: Theme.of(context).textTheme.headline6,
+          style: Theme.of(context).textTheme.bodyLarge,
         ),
         actions: [
           // IconButton(
@@ -74,7 +74,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                                 title: Row(children: [
                                   Text(
                                     p.name,
-                                    style: Theme.of(context).textTheme.headline5,
+                                    style: Theme.of(context).textTheme.displayMedium,
                                   ),
                                   if (isTierRecognized(p.tier))
                                     Padding(

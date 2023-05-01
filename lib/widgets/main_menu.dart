@@ -56,7 +56,7 @@ class _MainMenuState extends State<MainMenu> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.start,
-                          style: Theme.of(context).textTheme.headline4,
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
                       ]),
                 ),
@@ -92,8 +92,8 @@ class _MainMenuState extends State<MainMenu> {
                       TextSpan(children: [
                         richHrMin(
                             duration: DateTime.now().difference(myTelemetry.takeOff!),
-                            valueStyle: Theme.of(context).textTheme.headline5,
-                            unitStyle: Theme.of(context).textTheme.headline6?.copyWith(color: Colors.grey),
+                            valueStyle: Theme.of(context).textTheme.headlineSmall,
+                            unitStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                             longUnits: true)
                       ]),
                       textAlign: TextAlign.center,
@@ -127,7 +127,7 @@ class _MainMenuState extends State<MainMenu> {
         ListTile(
             minVerticalPadding: 20,
             leading: const Icon(Icons.radar, size: 30),
-            title: Text("ADSB-in", style: Theme.of(context).textTheme.headline5),
+            title: Text("ADSB-in", style: Theme.of(context).textTheme.headlineSmall),
             trailing: Switch.adaptive(
               activeColor: Colors.lightBlueAccent,
               value: Provider.of<ADSB>(context).enabled,
@@ -215,7 +215,7 @@ class _MainMenuState extends State<MainMenu> {
           ),
           title: Text(
             "Group",
-            style: Theme.of(context).textTheme.headline5,
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           // trailing: IconButton(
           //     iconSize: 30,
@@ -230,7 +230,7 @@ class _MainMenuState extends State<MainMenu> {
         ListTile(
           minVerticalPadding: 20,
           leading: const Icon(Icons.checklist, size: 30),
-          title: Text("Checklist", style: Theme.of(context).textTheme.headline5),
+          title: Text("Checklist", style: Theme.of(context).textTheme.headlineSmall),
           onTap: () => {Navigator.popAndPushNamed(context, "/checklist")},
         ),
 
@@ -242,7 +242,7 @@ class _MainMenuState extends State<MainMenu> {
               Icons.cloudy_snowing,
               size: 30,
             ),
-            title: Text("Weather", style: Theme.of(context).textTheme.headline5),
+            title: Text("Weather", style: Theme.of(context).textTheme.headlineSmall),
             onTap: () => {Navigator.popAndPushNamed(context, "/weather")},
           ),
 
@@ -253,7 +253,7 @@ class _MainMenuState extends State<MainMenu> {
               Icons.menu_book,
               size: 30,
             ),
-            title: Text("Log", style: Theme.of(context).textTheme.headline5)),
+            title: Text("Log", style: Theme.of(context).textTheme.headlineSmall)),
 
         Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 
@@ -264,13 +264,13 @@ class _MainMenuState extends State<MainMenu> {
               Icons.settings,
               size: 30,
             ),
-            title: Text("Settings", style: Theme.of(context).textTheme.headline5)),
+            title: Text("Settings", style: Theme.of(context).textTheme.headlineSmall)),
 
         ListTile(
           minVerticalPadding: 20,
           onTap: () => {Navigator.popAndPushNamed(context, "/about")},
           leading: const Icon(Icons.info, size: 30),
-          title: Text("About", style: Theme.of(context).textTheme.headline5),
+          title: Text("About", style: Theme.of(context).textTheme.headlineSmall),
         ),
       ],
     ));

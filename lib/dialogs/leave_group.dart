@@ -12,7 +12,7 @@ void promptLeaveGroup(BuildContext context) {
         return AlertDialog(
           title: Text(
             "Leave Group?",
-            style: Theme.of(context).textTheme.headline4,
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
           titlePadding: const EdgeInsets.all(10),
           contentPadding: const EdgeInsets.fromLTRB(10, 10, 10, 0),

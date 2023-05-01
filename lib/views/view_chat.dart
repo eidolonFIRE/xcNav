@@ -83,7 +83,7 @@ class ViewChatState extends State<ViewChat> {
                           msg.startsWith("Emergency:") ? msg.substring(11) : msg,
                           style: Theme.of(context)
                               .textTheme
-                              .headline6!
+                              .bodyLarge!
                               .merge(TextStyle(color: msg.startsWith("Emergency:") ? Colors.red : Colors.white)),
                         ),
                         onPressed: () => Navigator.pop(context, msg),

@@ -313,19 +313,13 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                           // Build each
                                           return ListTile(
                                             leading: e.config!.icon,
-                                            title: Text(
-                                              e.title,
-                                              style: Theme.of(context).textTheme.bodyText1,
-                                            ),
+                                            title: Text(e.title),
                                             trailing: trailing,
                                           );
                                         })
                                     // --- Actions
                                     : ListTile(
-                                        title: Text(
-                                          e.title,
-                                          style: Theme.of(context).textTheme.bodyText1,
-                                        ),
+                                        title: Text(e.title),
                                         trailing: IconButton(
                                             icon: e.action!.actionIcon ?? const Icon(Icons.navigate_next),
                                             onPressed: e.action!.callback),

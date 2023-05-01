@@ -106,7 +106,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                 height: MediaQuery.of(context).size.height / 3,
                 child: Card(
                   margin: EdgeInsets.zero,
-                  color: Theme.of(context).backgroundColor,
+                  color: Theme.of(context).colorScheme.background,
                   child: GridView.count(
                     crossAxisCount: 5,
                     shrinkWrap: true,

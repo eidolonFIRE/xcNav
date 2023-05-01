@@ -251,7 +251,7 @@ class FlightLogCard extends StatelessWidget {
                         maxLines: 6,
                         style: Theme.of(context)
                             .textTheme
-                            .headline6!
+                            .bodyLarge!
                             .merge(TextStyle(color: log.goodFile ? Colors.black : Colors.red)),
                       ),
                     ),

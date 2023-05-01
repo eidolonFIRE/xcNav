@@ -40,7 +40,7 @@ class _ADSBhelpState extends State<ADSBhelp> with SingleTickerProviderStateMixin
                 /// ---
                 Text(
                   "Recommended Device:",
-                  style: Theme.of(context).textTheme.headline4,
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                   SizedBox(
@@ -82,7 +82,7 @@ class _ADSBhelpState extends State<ADSBhelp> with SingleTickerProviderStateMixin
                 /// ---
                 Text(
                   "FAQ:",
-                  style: Theme.of(context).textTheme.headline4,
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
 
                 Column(

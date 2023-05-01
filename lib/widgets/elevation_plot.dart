@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart' as intl;
+// import 'package:intl/intl.dart' as intl;
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
@@ -33,7 +33,7 @@ class ElevationPlotPainter extends CustomPainter {
   late final Paint _paintGrid;
   late final Paint _paintVarioTrend;
   late final Paint _paintPath;
-  late final Paint _paintCard;
+  // late final Paint _paintCard;
 
   final List<Geo> geoData;
   final List<ElevSample?> groundData;
@@ -85,9 +85,9 @@ class ElevationPlotPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 8;
 
-    _paintCard = Paint()
-      ..color = Colors.grey.shade800
-      ..style = PaintingStyle.fill;
+    // _paintCard = Paint()
+    //   ..color = Colors.grey.shade800
+    //   ..style = PaintingStyle.fill;
 
     if (waypoint != null) {
       void setSvgPin() {

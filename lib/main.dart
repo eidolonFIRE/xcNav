@@ -200,21 +200,14 @@ class XCNav extends StatelessWidget {
         // appBarTheme: AppBarTheme(backgroundColor: primaryDarkColor),
         // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
         // primaryColorLight: primaryDarkColor,
-        backgroundColor: darkColor,
+
+        colorScheme: const ColorScheme.dark(background: darkColor),
         appBarTheme: const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40), backgroundColor: darkColor),
         // primarySwatch: Colors.grey,
         // scaffoldBackgroundColor: Colors.blueGrey.shade900,
         brightness: Brightness.dark,
         bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
-        textTheme: const TextTheme(
-          headline4: TextStyle(color: Colors.white),
-          bodyText1: TextStyle(fontSize: 20),
-          // button: TextStyle(
-          //   fontSize: 20,
-          //   color: Colors.white,
-          // )
-        ),
         dialogTheme: DialogTheme(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(

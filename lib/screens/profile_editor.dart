@@ -257,7 +257,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
                   controller: nameController,
                   autofocus: isOptional,
                   maxLength: 20,
-                  style: Theme.of(context).textTheme.headline5,
+                  style: Theme.of(context).textTheme.headlineSmall,
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ ]"))],
                   validator: Profile.nameValidator,
                   decoration: const InputDecoration(
@@ -280,7 +280,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
                       cropperFocus.requestFocus();
                     },
                     child: InputDecorator(
-                      baseStyle: Theme.of(context).textTheme.headline5,
+                      baseStyle: Theme.of(context).textTheme.headlineSmall,
                       isFocused: cropperFocus.hasFocus,
                       decoration: InputDecoration(
                         errorText: avatarErrorText,

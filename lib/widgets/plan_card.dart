@@ -146,7 +146,7 @@ class _PlanCardState extends State<PlanCard> {
                     widget.plan.goodFile ? widget.plan.name : "Broken File",
                     style: Theme.of(context)
                         .textTheme
-                        .headline6!
+                        .bodyLarge!
                         .merge(TextStyle(color: widget.plan.goodFile ? Colors.white : Colors.red)),
                     overflow: TextOverflow.ellipsis,
                   ),
