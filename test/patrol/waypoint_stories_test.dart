@@ -32,6 +32,7 @@ import 'package:xcnav/views/view_waypoints.dart';
 import 'mock_providers.dart';
 
 void main() {
+  SharedPreferences.setMockInitialValues({});
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
   });

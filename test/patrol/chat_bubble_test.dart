@@ -28,6 +28,7 @@ import 'package:xcnav/providers/wind.dart';
 import 'mock_providers.dart';
 
 void main() {
+  SharedPreferences.setMockInitialValues({});
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
   });
