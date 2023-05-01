@@ -201,10 +201,11 @@ class XCNav extends StatelessWidget {
         // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
         // primaryColorLight: primaryDarkColor,
 
-        colorScheme: const ColorScheme.dark(background: darkColor, primary: Colors.blue, secondary: Colors.amber),
+        colorScheme: const ColorScheme.dark(background: darkColor, primary: Colors.blue),
         appBarTheme: const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40), backgroundColor: darkColor),
-        // primarySwatch: Colors.grey,
-        // scaffoldBackgroundColor: Colors.blueGrey.shade900,
+
+        textTheme: const TextTheme(bodyLarge: TextStyle(fontSize: 18)),
+
         brightness: Brightness.dark,
         bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
@@ -233,18 +234,7 @@ class XCNav extends StatelessWidget {
             textStyle: MaterialStateProperty.resolveWith<TextStyle>(
                 (states) => const TextStyle(color: Colors.white, fontSize: 20)),
           ),
-
-          // child: ElevatedButton(onPressed: () {}, child: Text('label')),
         ),
-        // navigationBarTheme: const NavigationBarThemeData(
-        //   backgroundColor: darkColor,
-        // )
-        // textButtonTheme: TextButtonThemeData(
-        //   style: ButtonStyle(
-        //       textStyle: MaterialStateProperty.resolveWith((state) => const TextStyle(color: Colors.white),
-        //     ),
-        //   )
-        // )
       ),
       themeMode: ThemeMode.dark,
       initialRoute: Profile.nameValidator(profile.name) != null ? "/home" : "/profileEditor",

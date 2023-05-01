@@ -186,7 +186,7 @@ class _ChecklistViewerState extends State<ChecklistViewer> {
                                         cata.title,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.bold, color: Colors.black, fontSize: 30),
+                                            fontWeight: FontWeight.bold, color: Colors.black, fontSize: 28),
                                       ),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,

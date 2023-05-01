@@ -267,7 +267,7 @@ class FlightLog {
         bisect<int>(samples.map((e) => e.time).toList(), time.millisecondsSinceEpoch, compare: (a, b) => a - b));
   }
 
-  FlightLog({this.samples = const [], this.waypoints = const [], fuelReports = const []}) {
+  FlightLog({this.samples = const [], this.waypoints = const [], List<FuelReport> fuelReports = const []}) {
     if (samples.isEmpty) {
       goodFile = false;
       title = "Broken Log";

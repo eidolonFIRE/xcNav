@@ -248,7 +248,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                     Text(
                       "Summary",
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     Padding(
                       padding: const EdgeInsets.all(10.0),
@@ -269,7 +269,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                     Text(
                       "Flight Duration (histogram)",
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     SizedBox(
                       // width: MediaQuery.of(context).size.width,
@@ -296,7 +296,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                     Text(
                       "Monthly Totals",
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     // if (sliceSize.index > SliceSize.month.index)
                     SizedBox(
