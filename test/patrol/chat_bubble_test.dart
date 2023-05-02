@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
@@ -83,6 +84,12 @@ void main() {
       )
     ], child: const XCNav());
   }
+
+  setUp(() async {
+    final flamante = rootBundle.load('assets/fonts/roboto-condensed.regular.ttf');
+    final fontLoader = FontLoader('roboto-condensed')..addFont(flamante);
+    await fontLoader.load();
+  });
 
   patrolTest(
     'Check chat bubble appears and clears',

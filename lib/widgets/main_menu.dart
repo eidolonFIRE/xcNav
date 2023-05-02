@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
+import 'package:xcnav/dialogs/fuel_report_dialog.dart';
 import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/patreon.dart';
 import 'package:xcnav/providers/adsb.dart';
@@ -107,9 +108,9 @@ class _MainMenuState extends State<MainMenu> {
             trailing: IconButton(
               iconSize: 40,
               icon: myTelemetry.inFlight
-                  ? const Icon(Icons.stop_circle, color: Colors.red)
+                  ? const Icon(Icons.stop, color: Colors.red)
                   : const Icon(
-                      Icons.play_circle,
+                      Icons.play_arrow,
                       color: Colors.lightGreen,
                     ),
               onPressed: (() {
@@ -121,6 +122,85 @@ class _MainMenuState extends State<MainMenu> {
               }),
             ),
           );
+        }),
+
+        // --- Fuel Reports
+        Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
+          const unitStyle = TextStyle(color: Colors.grey, fontSize: 12);
+
+          void addFuelReport() {
+            fuelReportDialog(context, DateTime.now(), null).then((report) {
+              if (report != null && report.amount >= 0) {
+                myTelemetry.addFuelReport(report.time, report.amount);
+              }
+            });
+          }
+
+          return Padding(
+              padding: const EdgeInsets.fromLTRB(18, 4, 20, 0),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const Icon(
+                  Icons.local_gas_station,
+                  size: 30,
+                ),
+                if (myTelemetry.fuelReports.isEmpty)
+                  ElevatedButton.icon(
+                      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                      onPressed: addFuelReport,
+                      icon: const Icon(
+                        Icons.add,
+                        color: Colors.lightBlue,
+                        // size: 30,
+                      ),
+                      label: Text(
+                        "Report Fuel",
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      )),
+                if (myTelemetry.fuelReports.isNotEmpty)
+                  Card(
+                    color: Colors.grey.shade900,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        DefaultTextStyle(
+                          style: Theme.of(context).textTheme.titleMedium!,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Text.rich(TextSpan(children: [
+                              richHrMin(duration: (DateTime.now().difference(myTelemetry.fuelReports.last.time))),
+                              const TextSpan(text: " ago: ", style: TextStyle(color: Colors.grey)),
+                              richValue(UnitType.fuel, myTelemetry.fuelReports.last.amount, decimals: 1)
+                            ])),
+                          ),
+                        ),
+                        if (myTelemetry.sumFuelStat != null)
+                          Text.rich(TextSpan(children: [
+                            TextSpan(
+                                text: unitConverters[UnitType.fuel]!(myTelemetry.sumFuelStat!.rate).toStringAsFixed(1)),
+                            TextSpan(text: "${getUnitStr(UnitType.fuel)}/hr", style: unitStyle),
+                            const TextSpan(text: "   "),
+                            TextSpan(
+                                text: unitConverters[UnitType.distCoarse]!(myTelemetry.sumFuelStat!.mpl)
+                                    .toStringAsFixed(1)),
+                            TextSpan(
+                                text: "${getUnitStr(UnitType.distCoarse)}/${getUnitStr(UnitType.fuel)}",
+                                style: unitStyle),
+                          ]))
+
+                        //  const Text(
+                        //     "No stats yet...",
+                        //     style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                        //   ),
+                      ]),
+                    ),
+                  ),
+                if (myTelemetry.fuelReports.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.add, color: Colors.blue, size: 30),
+                    onPressed: addFuelReport,
+                  ),
+                if (myTelemetry.fuelReports.isEmpty) Container()
+              ]));
         }),
 
         // --- ADSB
@@ -207,7 +287,7 @@ class _MainMenuState extends State<MainMenu> {
 
         // Group
         ListTile(
-          minVerticalPadding: 20,
+          minVerticalPadding: 10,
           onTap: () => {Navigator.popAndPushNamed(context, "/groupDetails")},
           leading: const Icon(
             Icons.groups,
@@ -217,18 +297,18 @@ class _MainMenuState extends State<MainMenu> {
             "Group",
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          // trailing: IconButton(
-          //     iconSize: 30,
-          //     onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
-          //     icon: const Icon(
-          //       Icons.qr_code_scanner,
-          //       color: Colors.lightBlue,
-          //     )),
+          trailing: IconButton(
+              iconSize: 30,
+              onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
+              icon: const Icon(
+                Icons.person_add,
+                color: Colors.lightGreen,
+              )),
         ),
 
         // Checklist
         ListTile(
-          minVerticalPadding: 20,
+          minVerticalPadding: 10,
           leading: const Icon(Icons.checklist, size: 30),
           title: Text("Checklist", style: Theme.of(context).textTheme.headlineSmall),
           onTap: () => {Navigator.popAndPushNamed(context, "/checklist")},
@@ -237,7 +317,7 @@ class _MainMenuState extends State<MainMenu> {
         // NOTE: Weather is only available in NorthAmerica until more weather sources can be added
         if (localeZone == "NA")
           ListTile(
-            minVerticalPadding: 20,
+            minVerticalPadding: 10,
             leading: const Icon(
               Icons.cloudy_snowing,
               size: 30,
@@ -247,7 +327,7 @@ class _MainMenuState extends State<MainMenu> {
           ),
 
         ListTile(
-            minVerticalPadding: 20,
+            minVerticalPadding: 10,
             onTap: () => {Navigator.popAndPushNamed(context, "/flightLogs")},
             leading: const Icon(
               Icons.menu_book,
@@ -258,7 +338,7 @@ class _MainMenuState extends State<MainMenu> {
         Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 
         ListTile(
-            minVerticalPadding: 20,
+            minVerticalPadding: 10,
             onTap: () => {Navigator.popAndPushNamed(context, "/settings")},
             leading: const Icon(
               Icons.settings,
@@ -267,7 +347,7 @@ class _MainMenuState extends State<MainMenu> {
             title: Text("Settings", style: Theme.of(context).textTheme.headlineSmall)),
 
         ListTile(
-          minVerticalPadding: 20,
+          minVerticalPadding: 10,
           onTap: () => {Navigator.popAndPushNamed(context, "/about")},
           leading: const Icon(Icons.info, size: 30),
           title: Text("About", style: Theme.of(context).textTheme.headlineSmall),

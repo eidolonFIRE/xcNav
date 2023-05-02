@@ -201,7 +201,7 @@ class XCNav extends StatelessWidget {
         // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
         // primaryColorLight: primaryDarkColor,
 
-        colorScheme: const ColorScheme.dark(background: darkColor, primary: Colors.blue),
+        colorScheme: const ColorScheme.dark(background: darkColor, primary: Colors.lightBlue),
         appBarTheme: const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40), backgroundColor: darkColor),
 
         textTheme: const TextTheme(bodyLarge: TextStyle(fontSize: 18)),

@@ -80,6 +80,12 @@ void main() {
     ], child: const XCNav());
   }
 
+  setUp(() async {
+    final flamante = rootBundle.load('assets/fonts/roboto-condensed.regular.ttf');
+    final fontLoader = FontLoader('roboto-condensed')..addFont(flamante);
+    await fontLoader.load();
+  });
+
   patrolTest(
     'Get to home screen',
     ($) async {

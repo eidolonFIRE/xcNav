@@ -17,6 +17,7 @@ import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/fake_path.dart';
 import 'package:xcnav/models/flight_log.dart';
+import 'package:xcnav/models/fuel_report.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
@@ -29,6 +30,7 @@ import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/secrets.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 
 enum FlightEventType { init, takeoff, land }
 
@@ -58,6 +60,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   DateTime? takeOff;
   Geo? launchGeo;
   DateTime? lastSavedLog;
+  List<FuelReport> fuelReports = [];
+  List<FuelStat> fuelStats = [];
 
   // in-flight hysterisis
   int triggerHyst = 0;
@@ -87,6 +91,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   FakeFlight fakeFlight = FakeFlight();
   Timer? timer;
+
+  FuelStat? _sumFuelStat;
+  FuelStat? get sumFuelStat {
+    if (_sumFuelStat == null && fuelStats.isNotEmpty) {
+      _sumFuelStat = fuelStats.reduce((a, b) => a + b);
+    }
+    return _sumFuelStat;
+  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -329,7 +341,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   bool get inFlight => _inFlight;
-
   void startFlight() {
     if (!_inFlight && geo != null) {
       debugPrint("Flight started");
@@ -350,6 +361,20 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
       flightEvent.add(FlightEvent(
           type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo!.time), latlng: geo!.latlng));
+
+      if (fuelReports.isNotEmpty) {
+        int index = 0;
+        while (index < fuelReports.length - 2 && fuelReports[index + 1].time.isBefore(takeOff!)) {
+          // Scan forward
+          index++;
+        }
+        if (fuelReports[index].time.isBefore(takeOff!)) {
+          // Move up most recent fuel report so it's part of this log
+          debugPrint(
+              "FuelReport (${fuelReports[index].amount}L) moved from ${fuelReports[index].time} --> ${takeOff!}");
+          fuelReports[index] = FuelReport(takeOff!, fuelReports[index].amount);
+        }
+      }
 
       // clear the log
       recordGeo.removeRange(0, launchIndex);
@@ -383,11 +408,51 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                   .values
                   .where((element) => (!element.ephemeral && element.validate()))
                   .toList()
-              : []);
+              : [],
+          fuelReports: fuelReports);
 
       log.save();
       lastSavedLog = DateTime.now();
     }
+  }
+
+  /// Find the nearest sample index
+  int timeToSampleIndex(DateTime time) {
+    return nearestIndex(recordGeo.map((e) => e.time).toList(), time.millisecondsSinceEpoch);
+  }
+
+  void addFuelReport(DateTime time, double amount) {
+    // Check if we need to just replace the last recent report
+    if (fuelReports.isNotEmpty && fuelReports.last.time.isAfter(time.subtract(const Duration(minutes: 3)))) {
+      if (fuelStats.isNotEmpty &&
+          fuelReports.length > 1 &&
+          fuelReports.last.amount < fuelReports[fuelReports.length - 2].amount) {
+        // Pop fuel stat
+
+        fuelStats.removeLast();
+        debugPrint("Removing last FuelStat (${fuelStats.length})");
+      }
+
+      // Pop the last fuel report... (reports too close together)
+      fuelReports.removeLast();
+      debugPrint("Removing last FuelReport (${fuelReports.length})");
+    }
+
+    // Add new fuel report
+    fuelReports.add(FuelReport(time, amount));
+    debugPrint("Added fuel report (${fuelReports.length})");
+
+    if (fuelReports.length > 1 && fuelReports.last.amount < fuelReports[fuelReports.length - 2].amount) {
+      // Add fuel stat
+      fuelStats.add(FuelStat.fromSamples(
+          fuelReports[fuelReports.length - 2],
+          fuelReports.last,
+          recordGeo.sublist(timeToSampleIndex(fuelReports[fuelReports.length - 2].time),
+              timeToSampleIndex(fuelReports.last.time) + 1)));
+      debugPrint("Added fuel stat (${fuelStats.length})");
+    }
+
+    _sumFuelStat = null;
   }
 
   void fetchAmbPressure(LatLng latlng) {

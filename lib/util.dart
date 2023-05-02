@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:bisection/bisect.dart';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,4 +72,12 @@ Future<bool> saveFileToAppDocs({required filename, required String data}) async 
         errorMessage: err.toString(), errorStackTrace: trace, attributes: {"dataLength": data.length});
     return false;
   }
+}
+
+int nearestIndex(List<num> a, num value) {
+  if (a.length == 1) return 0;
+  final b = bisect<num>(a, value);
+  if (b == 0) return 0;
+  if (b >= a.length) return a.length - 1;
+  return (a[b] - value <= value - a[b - 1]) ? b : b - 1;
 }

@@ -186,7 +186,7 @@ class FlightLog {
   // =========================================
   FuelStat? _sumFuelStat;
   FuelStat? get sumFuelStat {
-    if (_fuelStats == null || _fuelStats!.isEmpty) return null;
+    if (fuelStats.isEmpty) return null;
     return _sumFuelStat ??= fuelStats.reduce((a, b) => a + b);
   }
 
@@ -198,10 +198,13 @@ class FlightLog {
 
       if (goodFile && startTime != null) {
         for (int t = 0; t < _fuelReports.length - 1; t++) {
-          // NOTE: if fuel amount stays the same or increases, burn segment is dropped
+          // NOTE: if fuel amount stays the same or increases, segment is dropped
           if (_fuelReports[t].amount > _fuelReports[t + 1].amount) {
-            _fuelStats!.add(FuelStat.fromSamples(_fuelReports[t], _fuelReports[t + 1],
-                samples.sublist(timeToSampleIndex(_fuelReports[t].time), timeToSampleIndex(_fuelReports[t + 1].time))));
+            _fuelStats!.add(FuelStat.fromSamples(
+                _fuelReports[t],
+                _fuelReports[t + 1],
+                samples.sublist(
+                    timeToSampleIndex(_fuelReports[t].time), timeToSampleIndex(_fuelReports[t + 1].time) + 1)));
           }
         }
       }
@@ -216,11 +219,12 @@ class FlightLog {
     _sumFuelStat = null;
   }
 
+  bool containsTime(DateTime time) {
+    return time == startTime || time == endTime || (time.isAfter(startTime!) && time.isBefore(endTime!));
+  }
+
   bool insertFuelReport(double amount, DateTime time) {
-    if ((time.isAfter(startTime!) || time == startTime) &&
-        (time.isBefore(endTime!) || time == endTime) &&
-        !_fuelReports.map((e) => e.time).contains(time) &&
-        amount >= 0) {
+    if (containsTime(time) && !_fuelReports.map((e) => e.time).contains(time) && amount >= 0) {
       _fuelReports.insert(
           bisect(_fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch),
           FuelReport(time, amount));
@@ -234,7 +238,7 @@ class FlightLog {
   }
 
   void updateFuelReport(int index, double amount) {
-    if (index > 0 && index < _fuelReports.length) {
+    if (index >= 0 && index < _fuelReports.length) {
       _fuelReports[index] = FuelReport(_fuelReports[index].time, amount);
       resetFuelStatCache();
       unsaved = true;
@@ -249,8 +253,9 @@ class FlightLog {
 
   // =========================================
   Future<bool> save() async {
-    return saveFileToAppDocs(filename: "flight_logs/${startTime!.millisecondsSinceEpoch}.json", data: toJson())
-        .then((value) => unsaved = false);
+    final filename = "flight_logs/${startTime!.millisecondsSinceEpoch}.json";
+    debugPrint("Saving FlightLog $filename");
+    return saveFileToAppDocs(filename: filename, data: toJson()).then((value) => unsaved = false);
   }
 
   int compareTo(FlightLog other) {
@@ -261,10 +266,9 @@ class FlightLog {
     }
   }
 
-  /// Given a duration relative to the beginning of the log, find the nearest sample index
+  /// Find the nearest sample index
   int timeToSampleIndex(DateTime time) {
-    return min(samples.length - 1,
-        bisect<int>(samples.map((e) => e.time).toList(), time.millisecondsSinceEpoch, compare: (a, b) => a - b));
+    return nearestIndex(samples.map((e) => e.time).toList(), time.millisecondsSinceEpoch);
   }
 
   FlightLog({this.samples = const [], this.waypoints = const [], List<FuelReport> fuelReports = const []}) {
@@ -275,7 +279,7 @@ class FlightLog {
     }
     _filename = "${samples.first.time}.json";
 
-    _fuelReports = fuelReports;
+    _fuelReports = fuelReports.where((each) => containsTime(each.time)).toList();
   }
 
   FlightLog.fromJson(String filename, Map<String, dynamic> data, {this.rawJson}) {

@@ -136,6 +136,12 @@ void main() {
     },
   );
 
+  setUp(() async {
+    final flamante = rootBundle.load('assets/fonts/roboto-condensed.regular.ttf');
+    final fontLoader = FontLoader('roboto-condensed')..addFont(flamante);
+    await fontLoader.load();
+  });
+
   patrolTest(
     'Save waypoint to library',
     ($) async {

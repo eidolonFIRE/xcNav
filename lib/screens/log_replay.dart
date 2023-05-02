@@ -1,18 +1,16 @@
 import 'dart:math';
 import 'dart:ui';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
+import 'package:xcnav/dialogs/fuel_report_dialog.dart';
 
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
-import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
 import 'package:xcnav/widgets/log_summary.dart';
@@ -162,7 +160,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                               });
                                             },
                                             onLongPress: () {
-                                              editFuelReportDialog(context, e.time, e.amount).then((newReport) {
+                                              fuelReportDialog(context, e.time, e.amount).then((newReport) {
                                                 setState(() {
                                                   if (newReport != null) {
                                                     if (newReport.amount == 0 &&
@@ -276,7 +274,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                   child: MapButton(
                       size: 45,
                       onPressed: () {
-                        editFuelReportDialog(context,
+                        fuelReportDialog(context,
                                 DateTime.fromMillisecondsSinceEpoch(log!.samples[sampleIndex.value].time), null)
                             .then((newReport) {
                           if (newReport != null) {
@@ -527,73 +525,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 //    MISC UTILS
 //
 // ----------------------------------------------------------------------------------
-
-Future<FuelReport?> editFuelReportDialog(BuildContext context, DateTime time, double? amount) {
-  final fuelAmountController = TextEditingController(text: amount?.toStringAsFixed(1));
-  final amountFormKey = GlobalKey<FormState>();
-  return showDialog<FuelReport?>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Report Fuel Level"),
-          content: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Text(
-                intl.DateFormat("h:mm a").format(time),
-                style: const TextStyle(fontSize: 20),
-              ),
-              SizedBox(
-                width: 70,
-                child: Form(
-                  key: amountFormKey,
-                  child: TextFormField(
-                    controller: fuelAmountController,
-                    textAlign: TextAlign.end,
-                    decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.all(4)),
-                    keyboardType: TextInputType.number,
-                    autofocus: true,
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
-                    validator: (value) {
-                      if (value != null) {
-                        if (value.trim().isEmpty) return "Empty";
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              )
-            ],
-          ),
-          actions: [
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context, FuelReport(DateTime.fromMillisecondsSinceEpoch(0), 0));
-              },
-              icon: const Icon(
-                Icons.delete,
-                color: Colors.red,
-              ),
-              label: const Text("Delete"),
-            ),
-            ElevatedButton.icon(
-                onPressed: () {
-                  if (amountFormKey.currentState?.validate() ?? false) {
-                    Navigator.pop(context, FuelReport(time, parseAsDouble(fuelAmountController.text)));
-                  }
-                },
-                icon: const Icon(
-                  Icons.check,
-                  color: Colors.lightGreen,
-                ),
-                label: const Text("Save"))
-          ],
-        );
-      });
-}
-
 class _ThumbShape extends RoundSliderThumbShape {
   final _indicatorShape = const PaddleSliderValueIndicatorShape();
 

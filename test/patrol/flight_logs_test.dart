@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
@@ -77,6 +78,11 @@ void main() {
     ], child: const XCNav());
   }
 
+  setUp(() async {
+    final flamante = rootBundle.load('assets/fonts/roboto-condensed.regular.ttf');
+    final fontLoader = FontLoader('roboto-condensed')..addFont(flamante);
+    await fontLoader.load();
+  });
   patrolTest(
     'Flight Logs: loads with no logs',
     ($) async {
@@ -101,11 +107,13 @@ void main() {
       await $.waitUntilExists($(Scaffold));
 
       // --- Open flight logs screen
-      await $.tester.tapAt($.tester.getBottomLeft($(MaterialApp)) + const Offset(20, -20));
+      await $.tester.tapAt($.tester.getBottomLeft($(MaterialApp)) + const Offset(30, -30));
+      await $.pump(const Duration(seconds: 2));
+      await $.tester.drag($("ADSB-in"), const Offset(0, -300));
       await $.pump(const Duration(seconds: 2));
       await $("Log").tap(andSettle: false);
 
-      // --- Select Stats tile
+      // // --- Select Stats tile
       await $.waitUntilExists($("Entries"));
       await $("Stats").tap(andSettle: false);
       await $.pump(const Duration(seconds: 2));
