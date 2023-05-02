@@ -16,62 +16,55 @@ class LogSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTextStyle(
-      style: const TextStyle(fontSize: 18, height: 1.5),
-      child: Table(
-        columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
+      style: const TextStyle(fontSize: 16, height: 1.5),
+      child: ListView(
+        shrinkWrap: true,
         children: [
-          TableRow(children: [
-            const TableCell(child: Text("Duration")),
-            TableCell(
-                child: Text.rich(
-                    richHrMin(
-                        duration: log.durationTime,
-                        longUnits: true,
-                        // valueStyle: Theme.of(context).textTheme.bodyMedium!,
-                        unitStyle: unitStyle),
-                    textAlign: TextAlign.end))
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text("Duration"),
+            Text.rich(
+                richHrMin(
+                    duration: log.durationTime,
+                    longUnits: true,
+                    // valueStyle: Theme.of(context).textTheme.bodyMedium!,
+                    unitStyle: unitStyle),
+                textAlign: TextAlign.end)
           ]),
-          TableRow(children: [
-            const TableCell(child: Text("Distance")),
-            TableCell(
-                child: Text.rich(
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text("Distance"),
+            Text.rich(
               richValue(UnitType.distCoarse, log.durationDist, decimals: 1, unitStyle: unitStyle),
               textAlign: TextAlign.end,
-            )),
+            ),
           ]),
-          TableRow(children: [
-            const TableCell(child: Text("Avg Speed")),
-            TableCell(
-                child: Text.rich(
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text("Avg Speed"),
+            Text.rich(
               richValue(UnitType.speed, log.meanSpd, decimals: 1, unitStyle: unitStyle),
               textAlign: TextAlign.end,
-            )),
+            ),
           ]),
-          TableRow(children: [
-            const TableCell(child: Text("Max Altitude")),
-            TableCell(
-                child: Text.rich(
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text("Max Altitude"),
+            Text.rich(
               richValue(UnitType.distFine, log.maxAlt, decimals: 1, unitStyle: unitStyle),
               textAlign: TextAlign.end,
-            )),
+            ),
           ]),
-          TableRow(children: [
-            const TableCell(child: Text("Best 1min Climb")),
-            TableCell(
-                child: Text.rich(
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text("Best 1min Climb"),
+            Text.rich(
               richValue(UnitType.vario, log.bestClimb, decimals: 1, unitStyle: unitStyle),
               textAlign: TextAlign.end,
-            )),
+            ),
           ]),
-          TableRow(children: [
-            const TableCell(child: Text("Total Elev Gain")),
-            TableCell(
-                child: Text.rich(
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text("Total Elev Gain"),
+            Text.rich(
               richValue(UnitType.distFine, log.altGained, decimals: 0, unitStyle: unitStyle),
               textAlign: TextAlign.end,
-            )),
+            ),
           ]),
-          // const TableRow(children: [TableCell(child: Text("")), TableCell(child: Text(""))]),
         ],
       ),
     );

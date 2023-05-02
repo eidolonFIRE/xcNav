@@ -433,7 +433,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
                 // --- Summary
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                   child: LogSummary(log: log!),
                 ),
 
