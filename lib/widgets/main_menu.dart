@@ -126,7 +126,7 @@ class _MainMenuState extends State<MainMenu> {
 
         // --- Fuel Reports
         Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
-          const unitStyle = TextStyle(color: Colors.grey, fontSize: 12);
+          const unitStyle = TextStyle(color: Colors.grey, fontSize: 14);
 
           void addFuelReport() {
             fuelReportDialog(context, DateTime.now(), null).then((report) {
@@ -137,7 +137,7 @@ class _MainMenuState extends State<MainMenu> {
           }
 
           return Padding(
-              padding: const EdgeInsets.fromLTRB(18, 4, 20, 0),
+              padding: const EdgeInsets.fromLTRB(18, 8, 20, 4),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 const Icon(
                   Icons.local_gas_station,
@@ -163,40 +163,40 @@ class _MainMenuState extends State<MainMenu> {
                       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
                         DefaultTextStyle(
-                          style: Theme.of(context).textTheme.titleMedium!,
+                          style: Theme.of(context).textTheme.titleLarge!.merge(const TextStyle(color: Colors.grey)),
                           child: Padding(
                             padding: const EdgeInsets.all(4),
                             child: Text.rich(TextSpan(children: [
                               richHrMin(duration: (DateTime.now().difference(myTelemetry.fuelReports.last.time))),
-                              const TextSpan(text: " ago: ", style: TextStyle(color: Colors.grey)),
-                              richValue(UnitType.fuel, myTelemetry.fuelReports.last.amount, decimals: 1)
+                              const TextSpan(text: " ago: "),
+                              richValue(UnitType.fuel, myTelemetry.fuelReports.last.amount,
+                                  decimals: 1, valueStyle: const TextStyle(color: Colors.white))
                             ])),
                           ),
                         ),
                         if (myTelemetry.sumFuelStat != null)
-                          Text.rich(TextSpan(children: [
-                            TextSpan(
-                                text: unitConverters[UnitType.fuel]!(myTelemetry.sumFuelStat!.rate).toStringAsFixed(1)),
-                            TextSpan(text: "${getUnitStr(UnitType.fuel)}/hr", style: unitStyle),
-                            const TextSpan(text: "   "),
-                            TextSpan(
-                                text: unitConverters[UnitType.distCoarse]!(myTelemetry.sumFuelStat!.mpl)
-                                    .toStringAsFixed(1)),
-                            TextSpan(
-                                text: "${getUnitStr(UnitType.distCoarse)}/${getUnitStr(UnitType.fuel)}",
-                                style: unitStyle),
-                          ]))
-
-                        //  const Text(
-                        //     "No stats yet...",
-                        //     style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-                        //   ),
+                          DefaultTextStyle(
+                            style: Theme.of(context).textTheme.bodyLarge!,
+                            child: Text.rich(TextSpan(children: [
+                              TextSpan(
+                                  text:
+                                      unitConverters[UnitType.fuel]!(myTelemetry.sumFuelStat!.rate).toStringAsFixed(1)),
+                              TextSpan(text: "${getUnitStr(UnitType.fuel)}/hr", style: unitStyle),
+                              const TextSpan(text: "   "),
+                              TextSpan(
+                                  text: unitConverters[UnitType.distCoarse]!(myTelemetry.sumFuelStat!.mpl)
+                                      .toStringAsFixed(1)),
+                              TextSpan(
+                                  text: "${getUnitStr(UnitType.distCoarse)}/${getUnitStr(UnitType.fuel)}",
+                                  style: unitStyle),
+                            ])),
+                          )
                       ]),
                     ),
                   ),
                 if (myTelemetry.fuelReports.isNotEmpty)
                   IconButton(
-                    icon: const Icon(Icons.add, color: Colors.blue, size: 30),
+                    icon: const Icon(Icons.add, color: Colors.lightBlue, size: 30),
                     onPressed: addFuelReport,
                   ),
                 if (myTelemetry.fuelReports.isEmpty) Container()
