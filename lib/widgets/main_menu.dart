@@ -184,7 +184,8 @@ class _MainMenuState extends State<MainMenu> {
                               TextSpan(text: "${getUnitStr(UnitType.fuel)}/hr", style: unitStyle),
                               const TextSpan(text: "   "),
                               TextSpan(
-                                  text: unitConverters[UnitType.distCoarse]!(myTelemetry.sumFuelStat!.mpl)
+                                  text: unitConverters[UnitType.distCoarse]!(
+                                          myTelemetry.sumFuelStat!.mpl / unitConverters[UnitType.fuel]!(1))
                                       .toStringAsFixed(1)),
                               TextSpan(
                                   text: "${getUnitStr(UnitType.distCoarse)}/${getUnitStr(UnitType.fuel)}",

@@ -11,6 +11,7 @@ import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/widgets/basic_log_aggregate.dart';
 import 'package:xcnav/widgets/chart_log_aggregate.dart';
 import 'package:xcnav/widgets/chart_log_duration_hist.dart';
+import 'package:xcnav/widgets/chart_log_fuel_insights.dart';
 
 // Widgets
 import 'package:xcnav/widgets/flight_log_card.dart';
@@ -45,6 +46,10 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
   final logListController = ScrollController();
 
   List<String> logKeys = [];
+
+  // Fuel Chart
+  ChartFuelModeX chartFuelX = ChartFuelModeX.spd;
+  ChartFuelModeY chartFuelY = ChartFuelModeY.rate;
 
   @override
   void initState() {
@@ -221,7 +226,6 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: ToggleButtons(
-                          borderRadius: BorderRadius.circular(20),
                           constraints:
                               BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
                           isSelected: SliceSize.values.map((e) => e == sliceSize).toList(),
@@ -309,7 +313,79 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                           mode: ChartLogAggregateMode.year,
                         ),
                       ),
-                    )
+                    ),
+
+                    Container(
+                      height: 10,
+                    ),
+                    Text(
+                      "Fuel Insights",
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+
+                    Container(
+                      height: 10,
+                    ),
+
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: 200,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 0, 20, 10),
+                        child: ChartLogFuelInsights(
+                          logsSlice: logsSlice,
+                          chartFuelModeX: chartFuelX,
+                          chartFuelModeY: chartFuelY,
+                        ),
+                      ),
+                    ),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ToggleButtons(
+                          isSelected: ChartFuelModeY.values.map((e) => e == chartFuelY).toList(),
+                          onPressed: (index) {
+                            setState(() {
+                              chartFuelY = ChartFuelModeY.values[index];
+                            });
+                          },
+                          children: const [
+                            Text(
+                              "Burn\nRate",
+                              textAlign: TextAlign.center,
+                            ),
+                            Text("Eff.")
+                          ],
+                        ),
+                        SizedBox(
+                            width: MediaQuery.of(context).size.width / 10,
+                            child: const Divider(
+                              thickness: 2,
+                            )),
+                        ToggleButtons(
+                          isSelected: ChartFuelModeX.values.map((e) => e == chartFuelX).toList(),
+                          onPressed: (index) {
+                            setState(() {
+                              chartFuelX = ChartFuelModeX.values[index];
+                            });
+                          },
+                          children: const [
+                            Text("Alt."),
+                            Text(
+                              "Alt.\nGained",
+                              textAlign: TextAlign.center,
+                            ),
+                            Text("Speed")
+                          ],
+                        )
+                      ],
+                    ),
+
+                    Container(
+                      height: 100,
+                    ),
                   ],
                 )
         ],

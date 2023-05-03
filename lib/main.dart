@@ -225,8 +225,11 @@ class XCNav extends StatelessWidget {
                 (states) => const TextStyle(color: Colors.white, fontSize: 20)),
           ),
         ),
-        toggleButtonsTheme: const ToggleButtonsThemeData(
-            selectedColor: Colors.white, selectedBorderColor: Colors.blue, fillColor: Colors.black54),
+        toggleButtonsTheme: ToggleButtonsThemeData(
+            borderRadius: BorderRadius.circular(10),
+            selectedColor: Colors.white,
+            selectedBorderColor: Colors.blue,
+            fillColor: Colors.black54),
         popupMenuTheme: PopupMenuThemeData(textStyle: Theme.of(context).textTheme.bodyMedium),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
