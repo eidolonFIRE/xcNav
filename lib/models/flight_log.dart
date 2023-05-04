@@ -91,7 +91,7 @@ class FlightLog {
 
         // check max
         double newClimb = (samples[right].alt - samples[left].alt) / (samples[right].time - samples[left].time) * 1000;
-        if (newClimb > bestClimb) {
+        if (newClimb > _bestClimb!) {
           _bestClimb = newClimb;
         }
 
