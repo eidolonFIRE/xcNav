@@ -32,7 +32,7 @@ TileProvider? makeTileProvider(String instanceName) {
         );
   } catch (e, trace) {
     debugPrint("Error making tile provider $instanceName : $e $trace");
-    DatadogSdk.instance.logs?.error("Error making tile provider",
+    DatadogSdk.instance.logs?.error("FMTC: Error making tile provider",
         errorMessage: e.toString(), errorStackTrace: trace, attributes: {"layerName": instanceName});
     return null;
   }
@@ -114,7 +114,12 @@ final Map<MapTileSrc, Image> mapTileThumbnails = {
 };
 
 Future initMapCache() async {
-  await FlutterMapTileCaching.initialise();
+  await FlutterMapTileCaching.initialise(
+    errorHandler: (error) {
+      DatadogSdk.instance.logs?.error("FMTC: init error", errorMessage: error.toString());
+    },
+    debugMode: true,
+  );
   await initDemCache();
 
   for (final tileSrc in mapTileThumbnails.keys) {
@@ -185,15 +190,17 @@ Future<String> getMapTileCacheSize() async {
 
 void emptyMapTileCache() {
   // Empty elevation map cache
-  final StoreDirectory demStore = FMTC.instance("dem");
-  debugPrint("Clear Map Cache: dem");
-  demStore.manage.reset();
+  // final StoreDirectory demStore = FMTC.instance("dem");
+  // debugPrint("Clear Map Cache: dem");
+  // demStore.manage.reset();
 
-  // Empty standard map caches
-  for (final tileSrc in mapTileThumbnails.keys) {
-    final tileName = tileSrc.toString().split(".").last;
-    final StoreDirectory store = FMTC.instance(tileName);
-    debugPrint("Clear Map Cache: $tileName");
-    store.manage.reset();
-  }
+  // // Empty standard map caches
+  // for (final tileSrc in mapTileThumbnails.keys) {
+  //   final tileName = tileSrc.toString().split(".").last;
+  //   final StoreDirectory store = FMTC.instance(tileName);
+  //   debugPrint("Clear Map Cache: $tileName");
+  //   store.manage.reset();
+  // }
+
+  FMTC.instance.rootDirectory.manage.reset();
 }
