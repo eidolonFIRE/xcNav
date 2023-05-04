@@ -49,11 +49,39 @@ import 'package:xcnav/secrets.dart';
 
 LatLng lastKnownLatLng = LatLng(37, -122);
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
-  SharedPreferences.getInstance().then((prefs) {
+  final configuration = DdSdkConfiguration(
+    clientToken: datadogToken,
+    env: kDebugMode ? "debug" : "release",
+    site: DatadogSite.us3,
+    trackingConsent: TrackingConsent.granted,
+    nativeCrashReportEnabled: true,
+    loggingConfiguration: LoggingConfiguration(
+      sendNetworkInfo: true,
+      printLogsToConsole: true,
+    ),
+    rumConfiguration: RumConfiguration(
+      applicationId: 'xcNav',
+      detectLongTasks: true,
+    ),
+  );
+
+  final ddsdk = DatadogSdk.instance;
+  ddsdk.sdkVerbosity = Verbosity.verbose;
+
+  await DatadogSdk.instance.initialize(configuration);
+
+  FlutterError.onError = (FlutterErrorDetails details) {
+    ddsdk.logs?.error(details.toString(), errorStackTrace: details.stack);
+    ddsdk.rum?.handleFlutterError(details);
+    FlutterError.presentError(details);
+  };
+
+  runZonedGuarded(() async {
+    final prefs = await SharedPreferences.getInstance();
     settingsMgr = SettingsMgr(prefs);
 
     // Load last known LatLng
@@ -70,87 +98,56 @@ void main() {
         DatadogSdk.instance.logs?.error(msg, errorMessage: err.toString(), errorStackTrace: trace);
       }
     }
-    initMapCache();
-  }).then((value) {
-    runZonedGuarded(() async {
-      WidgetsFlutterBinding.ensureInitialized();
+    await initMapCache();
 
-      final configuration = DdSdkConfiguration(
-        clientToken: datadogToken,
-        env: kDebugMode ? "debug" : "release",
-        site: DatadogSite.us3,
-        trackingConsent: TrackingConsent.granted,
-        nativeCrashReportEnabled: true,
-        loggingConfiguration: LoggingConfiguration(
-          sendNetworkInfo: true,
-          printLogsToConsole: true,
-        ),
-        rumConfiguration: RumConfiguration(
-          applicationId: 'xcNav',
-          detectLongTasks: true,
-        ),
-      );
-
-      final ddsdk = DatadogSdk.instance;
-      ddsdk.sdkVerbosity = Verbosity.verbose;
-
-      await DatadogSdk.instance.initialize(configuration);
-
-      FlutterError.onError = (FlutterErrorDetails details) {
-        ddsdk.logs?.error(details.toString(), errorStackTrace: details.stack);
-        ddsdk.rum?.handleFlutterError(details);
-        FlutterError.presentError(details);
-      };
-
-      runApp(MultiProvider(
-          providers: [
-            ChangeNotifierProvider(
-              create: (_) => MyTelemetry(),
-              lazy: false,
-            ),
-            ChangeNotifierProvider(
-              create: (_) => Weather(),
-              lazy: false,
-            ),
-            ChangeNotifierProvider(
-              create: (_) => Wind(),
-              lazy: false,
-            ),
-            ChangeNotifierProvider(
-              create: (_) => ActivePlan(),
-              lazy: false,
-            ),
-            ChangeNotifierProvider(
-              create: (_) => Plans(),
-              lazy: false,
-            ),
-            ChangeNotifierProvider(
-              create: (_) => Profile(),
-              lazy: false,
-            ),
-            ChangeNotifierProvider(
-              create: (_) => Group(),
-              lazy: false,
-            ),
-            ChangeNotifierProvider(
-              create: (_) => ChatMessages(),
-              lazy: false,
-            ),
-            ChangeNotifierProvider(
-              create: (context) => ADSB(context),
-              lazy: false,
-            ),
-            ChangeNotifierProvider(
-              create: (BuildContext context) => Client(context),
-              lazy: false,
-            )
-          ],
-          child: FocusDetector(
-              onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())));
-    }, (e, s) {
-      DatadogSdk.instance.rum?.addErrorInfo(e.toString(), RumErrorSource.source, stackTrace: s);
-      throw e;
-    });
+    runApp(MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => MyTelemetry(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Weather(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Wind(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => ActivePlan(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Plans(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Profile(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Group(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => ChatMessages(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (context) => ADSB(context),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (BuildContext context) => Client(context),
+            lazy: false,
+          )
+        ],
+        child: FocusDetector(
+            onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())));
+  }, (e, s) {
+    DatadogSdk.instance.rum?.addErrorInfo(e.toString(), RumErrorSource.source, stackTrace: s);
+    throw e;
   });
 }
 
