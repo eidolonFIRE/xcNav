@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_tile_caching/fmtc_advanced.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:xcnav/dem_service.dart';
@@ -24,10 +25,10 @@ TileProvider? makeTileProvider(String instanceName) {
           FMTCTileProviderSettings(
             behavior: CacheBehavior.cacheFirst,
             cachedValidDuration: const Duration(days: 30),
-            errorHandler: (exception) {
-              DatadogSdk.instance.logs
-                  ?.warn(exception.message, errorMessage: exception.toString(), attributes: {"layer": instanceName});
-            },
+            // errorHandler: (exception) {
+            //   DatadogSdk.instance.logs
+            //       ?.warn(exception.message, errorMessage: exception.toString(), attributes: {"layer": instanceName});
+            // },
           ),
         );
   } catch (e, trace) {
@@ -114,12 +115,16 @@ final Map<MapTileSrc, Image> mapTileThumbnails = {
 };
 
 Future initMapCache() async {
-  await FlutterMapTileCaching.initialise(
-    errorHandler: (error) {
-      DatadogSdk.instance.logs?.error("FMTC: init error", errorMessage: error.toString());
-    },
-    debugMode: true,
-  );
+  FlutterMapTileCaching.initialise(await RootDirectory.normalCache,
+      settings: FMTCSettings(
+        defaultTileProviderSettings:
+            FMTCTileProviderSettings(behavior: CacheBehavior.cacheFirst, cachedValidDuration: const Duration(days: 30)),
+      )
+      // errorHandler: (error) {
+      //   DatadogSdk.instance.logs?.error("FMTC: init error", errorMessage: error.toString());
+      // },
+      // debugMode: true,
+      );
   await initDemCache();
 
   for (final tileSrc in mapTileThumbnails.keys) {
@@ -138,7 +143,7 @@ Future initMapCache() async {
   }
 
   // Do a regular purge of old tiles
-  // purgeMapTileCache();
+  purgeMapTileCache();
 
   mapServiceIsInit = true;
 }
@@ -166,41 +171,41 @@ Future<String> getMapTileCacheSize() async {
   return asReadableSize(sum);
 }
 
-// void purgeMapTileCache() async {
-//   final threshhold = DateTime.now().subtract(const Duration(days: 14));
-//   for (final tileSrc in mapTileThumbnails.keys) {
-//     final tileName = tileSrc.toString().split(".").last;
-//     final StoreDirectory store = FMTC.instance(tileName);
+void purgeMapTileCache() async {
+  final threshhold = DateTime.now().subtract(const Duration(days: 30));
+  for (final tileSrc in mapTileThumbnails.keys) {
+    final tileName = tileSrc.toString().split(".").last;
+    final StoreDirectory store = FMTC.instance(tileName);
 
-//     int countDelete = 0;
-//     int countRemain = 0;
-//     for (final tile in store.access.tiles.listSync()) {
-//       if (tile.statSync().changed.isBefore(threshhold)) {
-//         // debugPrint("Deleting Tile: ${tile.path}");
-//         tile.deleteSync();
-//         countDelete++;
-//       } else {
-//         countRemain++;
-//       }
-//     }
-//     debugPrint("Scanned $tileName and deleted $countDelete / ${countRemain + countDelete} tiles.");
-//     store.stats.invalidateCachedStatistics();
-//   }
-// }
+    int countDelete = 0;
+    int countRemain = 0;
+    for (final tile in store.access.tiles.listSync()) {
+      if (tile.statSync().changed.isBefore(threshhold)) {
+        // debugPrint("Deleting Tile: ${tile.path}");
+        tile.deleteSync();
+        countDelete++;
+      } else {
+        countRemain++;
+      }
+    }
+    debugPrint("Scanned $tileName and deleted $countDelete / ${countRemain + countDelete} tiles.");
+    store.stats.invalidateCachedStatistics();
+  }
+}
 
 void emptyMapTileCache() {
   // Empty elevation map cache
-  // final StoreDirectory demStore = FMTC.instance("dem");
-  // debugPrint("Clear Map Cache: dem");
-  // demStore.manage.reset();
+  final StoreDirectory demStore = FMTC.instance("dem");
+  debugPrint("Clear Map Cache: dem");
+  demStore.manage.reset();
 
-  // // Empty standard map caches
-  // for (final tileSrc in mapTileThumbnails.keys) {
-  //   final tileName = tileSrc.toString().split(".").last;
-  //   final StoreDirectory store = FMTC.instance(tileName);
-  //   debugPrint("Clear Map Cache: $tileName");
-  //   store.manage.reset();
-  // }
+  // Empty standard map caches
+  for (final tileSrc in mapTileThumbnails.keys) {
+    final tileName = tileSrc.toString().split(".").last;
+    final StoreDirectory store = FMTC.instance(tileName);
+    debugPrint("Clear Map Cache: $tileName");
+    store.manage.reset();
+  }
 
-  FMTC.instance.rootDirectory.manage.reset();
+  // FMTC.instance.rootDirectory.manage.reset();
 }
