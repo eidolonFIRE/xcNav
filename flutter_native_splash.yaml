@@ -84,7 +84,7 @@ flutter_native_splash:
   #color_dark_web: "#042a49"
   #image_android: assets/splash-android.png
   #image_dark_android: assets/splash-invert-android.png
-  #image_ios: assets/splash-ios.png
+  image_ios: assets/images/xcnav_logo_wings.png
   #image_dark_ios: assets/splash-invert-ios.png
   #image_web: assets/splash-web.png
   #image_dark_web: assets/splash-invert-web.png
