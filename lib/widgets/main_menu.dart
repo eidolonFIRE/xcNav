@@ -84,6 +84,7 @@ class _MainMenuState extends State<MainMenu> {
           const unitStyle = TextStyle(color: Colors.grey, fontSize: 14);
 
           void addFuelReport() {
+            Navigator.pop(context);
             fuelReportDialog(context, DateTime.now(), null).then((report) {
               if (report != null && report.amount >= 0) {
                 myTelemetry.addFuelReport(report.time, report.amount);

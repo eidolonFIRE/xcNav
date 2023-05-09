@@ -31,6 +31,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+// TODO: clean these
 TextStyle instrLower = const TextStyle(fontSize: 35);
 TextStyle instrUpper = const TextStyle(fontSize: 40);
 TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic);
@@ -179,7 +180,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 debugPrint("BottomNavigationBar.tap($value)");
                 if (value == 0) {
                   scaffoldKey.currentState?.openDrawer();
-                  // Scaffold.of(context).openDrawer();
                 } else {
                   setState(() {
                     viewPageIndex = value;

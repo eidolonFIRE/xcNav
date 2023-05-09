@@ -289,7 +289,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         children: const [
                           Icon(
                             Icons.local_gas_station,
-                            color: Colors.blue,
+                            color: Colors.black,
                             size: 30,
                           ),
                           Padding(
