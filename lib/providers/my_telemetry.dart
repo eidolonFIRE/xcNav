@@ -58,6 +58,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
   DateTime? takeOff;
+  DateTime? landing;
   Geo? launchGeo;
   DateTime? lastSavedLog;
   List<FuelReport> fuelReports = [];
@@ -357,6 +358,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       launchGeo = recordGeo[launchIndex];
 
       takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
+      landing = null;
       debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
 
       flightEvent.add(FlightEvent(
@@ -387,6 +389,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (_inFlight && geo != null) {
       _inFlight = false;
       debugPrint("Flight Ended");
+      landing = DateTime.fromMillisecondsSinceEpoch(geo!.time);
       flightEvent.add(FlightEvent(
           type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo!.time), latlng: geo!.latlng));
       // Save current flight to log

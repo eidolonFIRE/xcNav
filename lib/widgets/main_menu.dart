@@ -79,51 +79,6 @@ class _MainMenuState extends State<MainMenu> {
               ])),
         ),
 
-        // --- Flight Timer
-        Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
-          return ListTile(
-            leading: const Icon(
-              Icons.timer_outlined,
-              size: 30,
-            ),
-            title: (myTelemetry.takeOff != null && myTelemetry.inFlight)
-                ? Card(
-                    color: Colors.grey.shade900,
-                    child: Text.rich(
-                      TextSpan(children: [
-                        richHrMin(
-                            duration: DateTime.now().difference(myTelemetry.takeOff!),
-                            valueStyle: Theme.of(context).textTheme.headlineSmall,
-                            unitStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
-                            longUnits: true)
-                      ]),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : const Text(
-                    "Flight Timer Stopped",
-                    style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-            trailing: IconButton(
-              iconSize: 40,
-              icon: myTelemetry.inFlight
-                  ? const Icon(Icons.stop, color: Colors.red)
-                  : const Icon(
-                      Icons.play_arrow,
-                      color: Colors.lightGreen,
-                    ),
-              onPressed: (() {
-                if (myTelemetry.inFlight) {
-                  myTelemetry.stopFlight();
-                } else {
-                  myTelemetry.startFlight();
-                }
-              }),
-            ),
-          );
-        }),
-
         // --- Fuel Reports
         Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
           const unitStyle = TextStyle(color: Colors.grey, fontSize: 14);
@@ -145,7 +100,7 @@ class _MainMenuState extends State<MainMenu> {
                 ),
                 if (myTelemetry.fuelReports.isEmpty)
                   ElevatedButton.icon(
-                      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                      // style: const ButtonStyle(visualDensity: VisualDensity.compact),
                       onPressed: addFuelReport,
                       icon: const Icon(
                         Icons.add,
