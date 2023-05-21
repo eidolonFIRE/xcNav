@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
@@ -25,6 +26,10 @@ class Profile with ChangeNotifier {
 
   late SharedPreferences prefs;
 
+  bool isLoaded = false;
+  final _onLoad = Completer();
+  Future<void> get onLoad => _onLoad.future;
+
   Profile() {
     load();
     hash = _hash();
@@ -51,9 +56,14 @@ class Profile with ChangeNotifier {
 
     hash = _hash();
 
+    isLoaded = true;
+    _onLoad.complete();
+
     // Add context to logging
     DatadogSdk.instance.setUserInfo(name: name, id: id);
   }
+
+  bool get isValid => nameValidator(name) == null && id != null;
 
   static String? nameValidator(String? name) {
     if (name != null) {

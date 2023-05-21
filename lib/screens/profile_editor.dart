@@ -54,7 +54,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
     var profile = Provider.of<Profile>(context, listen: false);
     currentName = profile.name;
-    isOptional = currentName != null && currentName != "";
+    isOptional = Profile.nameValidator(currentName) == null;
     nameController.value = TextEditingValue(text: currentName ?? "");
 
     // initial image
@@ -166,11 +166,11 @@ class _ProfileEditorState extends State<ProfileEditor> {
         isProcessing = false;
       });
 
-      if (isOptional) {
-        Navigator.pop(context);
-      } else {
-        Navigator.popAndPushNamed(context, "/home");
-      }
+      // if (isOptional) {
+      Navigator.pop(context);
+      // } else {
+      //   Navigator.popAndPushNamed(context, "/home");
+      // }
     });
   }
 

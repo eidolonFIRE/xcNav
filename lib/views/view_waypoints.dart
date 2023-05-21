@@ -19,7 +19,6 @@ import 'package:xcnav/widgets/waypoint_marker.dart';
 
 // --- Misc
 import 'package:xcnav/dialogs/edit_waypoint.dart';
-import 'package:xcnav/screens/home.dart';
 
 // --- Models
 import 'package:xcnav/models/waypoint.dart';
@@ -393,7 +392,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
               child: Text(
                 "No waypoints added yet... \n\nLong-press on the map to begin.",
                 textAlign: TextAlign.center,
-                style: instrLabel,
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic),
               ),
             ),
         ],

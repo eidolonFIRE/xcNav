@@ -32,7 +32,7 @@ Future<FuelReport?> fuelReportDialog(BuildContext context, DateTime time, double
                         hintText: getUnitStr(UnitType.fuel, lexical: true),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         contentPadding: const EdgeInsets.all(4)),
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     autofocus: true,
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
                     validator: (value) {

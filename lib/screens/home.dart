@@ -9,6 +9,7 @@ import 'package:xcnav/endpoint.dart';
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/chat_messages.dart';
+import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/settings_service.dart';
 
 // Views
@@ -30,11 +31,6 @@ class MyHomePage extends StatefulWidget {
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
-
-// TODO: clean these
-TextStyle instrLower = const TextStyle(fontSize: 35);
-TextStyle instrUpper = const TextStyle(fontSize: 40);
-TextStyle instrLabel = TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic);
 
 class _MyHomePageState extends State<MyHomePage> {
   final viewMapKey = GlobalKey<ViewMapState>();
@@ -74,6 +70,40 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      // --- Check profile set
+      final profile = Provider.of<Profile>(context, listen: false);
+      if (profile.isLoaded && !profile.isValid) {
+        Navigator.pushNamed(context, "/profileEditor");
+      } else if (!profile.isLoaded) {
+        // not loaded yet
+        debugPrint("Profile not yet loaded...");
+        profile.onLoad.then((_) {
+          if (!profile.isValid) {
+            Navigator.pushNamed(context, "/profileEditor");
+          }
+        });
+      }
+
+      // --- Check permissions
+      checkPermissions(context).then((failed) {
+        final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+        if (failed == false && !myTelemetry.isInitialized) {
+          // get initial location
+          debugPrint("Getting initial location from GPS");
+          final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+          GeolocatorPlatform.instance.getCurrentPosition().then((location) {
+            debugPrint("initial location: $location");
+            myTelemetry.updateGeo(location);
+            myTelemetry.init();
+
+            // Setup the backend
+            selectEndpoint(LatLng(location.latitude, location.longitude));
+          });
+        }
+      });
+    });
   }
 
   /// Top Bar in ground support mode
@@ -83,7 +113,8 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Text("Ground Support", style: instrLabel),
+          Text("Ground Support",
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic)),
           Card(
               color: Colors.grey.shade700,
               child: Padding(
@@ -118,138 +149,118 @@ class _MyHomePageState extends State<MyHomePage> {
     debugPrint("Build /home");
     setSystemUI();
 
-    checkPermissions(context).then((failed) {
-      final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-      if (failed == false && !myTelemetry.isInitialized) {
-        // get initial location
-        debugPrint("Getting initial location from GPS");
-        final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-        GeolocatorPlatform.instance.getCurrentPosition().then((location) {
-          debugPrint("initial location: $location");
-          myTelemetry.updateGeo(location);
-          myTelemetry.init();
-
-          // Setup the backend
-          selectEndpoint(LatLng(location.latitude, location.longitude));
-        });
-      }
-    });
-
     if (pageIndexNames[viewPageIndex] == "Chat") {
       // Don't notify
       Provider.of<ChatMessages>(context, listen: false).markAllRead(false);
     }
 
     return WillPopScope(
-      onWillPop: () async => false,
-      child: Scaffold(
-        key: scaffoldKey,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          leadingWidth: 35,
-          toolbarHeight: 90,
-          title: settingsMgr.groundMode.value ? groundControlBar(context) : topInstruments(context),
-          // actions: [IconButton(onPressed: () {}, icon: Icon(Icons.timer_outlined))],
-        ),
-        // --- Main Menu
-        drawer: const MainMenu(),
+        onWillPop: () async => false,
+        child: Scaffold(
+          key: scaffoldKey,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            leadingWidth: 35,
+            toolbarHeight: 90,
+            title: settingsMgr.groundMode.value ? groundControlBar(context) : topInstruments(context),
+            // actions: [IconButton(onPressed: () {}, icon: Icon(Icons.timer_outlined))],
+          ),
+          // --- Main Menu
+          drawer: const MainMenu(),
 
-        /// --- Main screen
-        body: Column(
-          children: [
-            Expanded(
-              child: PageView(
-                controller: viewController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [ViewMap(key: viewMapKey), const ViewElevation(), const ViewWaypoints(), const ViewChat()],
+          /// --- Main screen
+          body: Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: viewController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [ViewMap(key: viewMapKey), const ViewElevation(), const ViewWaypoints(), const ViewChat()],
+                ),
               ),
-            ),
-            BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              showUnselectedLabels: false,
-              showSelectedLabels: false,
-              unselectedItemColor: Colors.white54,
-              selectedItemColor: Colors.white,
-              iconSize: 35,
-              currentIndex: viewPageIndex,
-              selectedIconTheme: const IconThemeData(size: 40, shadows: [
-                Shadow(blurRadius: 40, color: Colors.black, offset: Offset(0, 5)),
-                Shadow(blurRadius: 60, color: Colors.black)
-              ]),
-              onTap: ((value) {
-                debugPrint("BottomNavigationBar.tap($value)");
-                if (value == 0) {
-                  scaffoldKey.currentState?.openDrawer();
-                } else {
-                  setState(() {
-                    viewPageIndex = value;
-                    viewController.jumpToPage(value - 1);
-                  });
-                }
-                if (value != 4) {
-                  FocusScopeNode currentFocus = FocusScope.of(context);
-
-                  if (!currentFocus.hasPrimaryFocus) {
-                    currentFocus.unfocus();
+              BottomNavigationBar(
+                type: BottomNavigationBarType.fixed,
+                showUnselectedLabels: false,
+                showSelectedLabels: false,
+                unselectedItemColor: Colors.white54,
+                selectedItemColor: Colors.white,
+                iconSize: 35,
+                currentIndex: viewPageIndex,
+                selectedIconTheme: const IconThemeData(size: 40, shadows: [
+                  Shadow(blurRadius: 40, color: Colors.black, offset: Offset(0, 5)),
+                  Shadow(blurRadius: 60, color: Colors.black)
+                ]),
+                onTap: ((value) {
+                  debugPrint("BottomNavigationBar.tap($value)");
+                  if (value == 0) {
+                    scaffoldKey.currentState?.openDrawer();
+                  } else {
+                    setState(() {
+                      viewPageIndex = value;
+                      viewController.jumpToPage(value - 1);
+                    });
                   }
-                }
-              }),
-              items: [
-                const BottomNavigationBarItem(
-                  label: "Menu",
-                  icon: Icon(
-                    Icons.more_vert,
-                  ),
-                ),
-                const BottomNavigationBarItem(
-                  label: "Map",
-                  icon: Icon(
-                    Icons.map,
-                  ),
-                ),
-                const BottomNavigationBarItem(
-                  label: "Side",
-                  icon: Icon(
-                    Icons.area_chart,
-                  ),
-                ),
-                const BottomNavigationBarItem(
-                  label: "Points",
-                  icon: Icon(
-                    Icons.pin_drop,
-                  ),
-                ),
-                BottomNavigationBarItem(
-                  label: "Chat",
-                  icon: Stack(
-                    children: [
-                      const Icon(
-                        Icons.chat,
-                      ),
-                      if (Provider.of<ChatMessages>(context).numUnread > 0)
-                        Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                                decoration: const BoxDecoration(
-                                    color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(10))),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4.0),
-                                  child: Text(
-                                    "${Provider.of<ChatMessages>(context).numUnread}",
-                                    style: const TextStyle(fontSize: 20),
-                                  ),
-                                ))),
-                    ],
-                  ),
-                ),
-              ],
-            )
-          ],
-        ),
+                  if (value != 4) {
+                    FocusScopeNode currentFocus = FocusScope.of(context);
 
-        // --- Bottom Navigation Bar
-      ),
-    );
+                    if (!currentFocus.hasPrimaryFocus) {
+                      currentFocus.unfocus();
+                    }
+                  }
+                }),
+                items: [
+                  const BottomNavigationBarItem(
+                    label: "Menu",
+                    icon: Icon(
+                      Icons.more_vert,
+                    ),
+                  ),
+                  const BottomNavigationBarItem(
+                    label: "Map",
+                    icon: Icon(
+                      Icons.map,
+                    ),
+                  ),
+                  const BottomNavigationBarItem(
+                    label: "Side",
+                    icon: Icon(
+                      Icons.area_chart,
+                    ),
+                  ),
+                  const BottomNavigationBarItem(
+                    label: "Points",
+                    icon: Icon(
+                      Icons.pin_drop,
+                    ),
+                  ),
+                  BottomNavigationBarItem(
+                    label: "Chat",
+                    icon: Stack(
+                      children: [
+                        const Icon(
+                          Icons.chat,
+                        ),
+                        if (Provider.of<ChatMessages>(context).numUnread > 0)
+                          Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                  decoration: const BoxDecoration(
+                                      color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(10))),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Text(
+                                      "${Provider.of<ChatMessages>(context).numUnread}",
+                                      style: const TextStyle(fontSize: 20),
+                                    ),
+                                  ))),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ));
   }
 }

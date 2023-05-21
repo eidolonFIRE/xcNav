@@ -183,8 +183,6 @@ class XCNav extends StatelessWidget {
       }
     });
 
-    final profile = Provider.of<Profile>(context, listen: false);
-
     return MaterialApp(
       title: 'xcNav',
       debugShowCheckedModeBanner: false,
@@ -237,9 +235,8 @@ class XCNav extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.dark,
-      initialRoute: Profile.nameValidator(profile.name) != null ? "/home" : "/profileEditor",
+      initialRoute: "/home",
       routes: {
-        // "/": (context) => const LoadingScreen(),
         "/home": (context) => const MyHomePage(),
         "/profileEditor": (context) => const ProfileEditor(),
         "/qrScanner": (context) => const QRScanner(),
