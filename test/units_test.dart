@@ -15,7 +15,7 @@ void main() {
     expect(printHrMinLexical(const Duration(hours: 0, minutes: 0)), "0 minutes");
     expect(printHrMinLexical(const Duration(hours: 0, minutes: 1)), "1 minute");
     expect(printHrMinLexical(const Duration(hours: 0, minutes: 0)), "0 minutes");
-    expect(printHrMinLexical(const Duration(hours: 1, minutes: 0)), "1 hour 0 minutes");
+    expect(printHrMinLexical(const Duration(hours: 1, minutes: 0)), "1 hour");
     expect(printHrMinLexical(const Duration(hours: 0, minutes: 90)), "1 hour 30 minutes");
     expect(printHrMinLexical(const Duration(hours: 5, minutes: 90)), "6 hours 30 minutes");
 

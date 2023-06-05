@@ -201,7 +201,7 @@ String printHrMinLexical(Duration duration) {
   int min = duration.inMinutes - duration.inHours * 60;
 
   if (hr > 0) {
-    return "$hr hour${hr == 1 ? "" : "s"} $min minute${min == 1 ? "" : "s"}";
+    return "$hr hour${hr == 1 ? "" : "s"}${min > 0 ? " $min minute${min == 1 ? "" : "s"}" : ""}";
   } else {
     return "$min minute${min == 1 ? "" : "s"}";
   }

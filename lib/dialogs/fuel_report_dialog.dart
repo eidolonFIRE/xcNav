@@ -7,7 +7,10 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 
 Future<FuelReport?> fuelReportDialog(BuildContext context, DateTime time, double? amount) {
-  final fuelAmountController = TextEditingController(text: amount?.toStringAsFixed(1));
+  final fuelAmountController = TextEditingController(
+      text: amount
+          ?.toStringAsFixed(2)
+          .replaceAllMapped(RegExp(r"(?:(\.\d*?[1-9]+)|\.)0*$"), (match) => "${match.group(1)}"));
   final amountFormKey = GlobalKey<FormState>();
   return showDialog<FuelReport?>(
       context: context,
