@@ -74,7 +74,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                                 title: Row(children: [
                                   Text(
                                     p.name,
-                                    style: Theme.of(context).textTheme.displayMedium,
+                                    style: Theme.of(context).textTheme.headlineMedium,
                                   ),
                                   if (isTierRecognized(p.tier))
                                     Padding(
