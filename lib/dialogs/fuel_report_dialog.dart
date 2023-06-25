@@ -10,7 +10,7 @@ Future<FuelReport?> fuelReportDialog(BuildContext context, DateTime time, double
   final fuelAmountController = TextEditingController(
       text: amount
           ?.toStringAsFixed(2)
-          .replaceAllMapped(RegExp(r"(?:(\.\d*?[1-9]+)|\.)0*$"), (match) => "${match.group(1)}"));
+          .replaceAllMapped(RegExp(r"(?:(\.\d*?[1-9]+)|\.)0*$"), (match) => match.group(1) ?? ""));
   final amountFormKey = GlobalKey<FormState>();
   return showDialog<FuelReport?>(
       context: context,
