@@ -442,7 +442,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                   padding: const EdgeInsets.all(8),
                   child: log!.fuelReports.isEmpty
                       ? const Center(
-                          child: Text("No fuel reports added."),
+                          child: Text("No fuel reports added..."),
                         )
                       : Column(
                           mainAxisSize: MainAxisSize.min,
@@ -467,20 +467,22 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                             // --- Fuel Stats: data
                             DefaultTextStyle(
                               style: const TextStyle(fontSize: 18),
-                              child: Container(
-                                color: Colors.grey.shade800,
-                                constraints: const BoxConstraints(maxHeight: 130),
-                                child: ListView(
-                                    shrinkWrap: true,
-                                    children: log!.fuelStats
-                                        .map((e) => Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                                              Text("${e.durationTime.inMinutes}"),
-                                              Text(unitConverters[UnitType.fuel]!(e.rate).toStringAsFixed(1)),
-                                              Text(unitConverters[UnitType.distCoarse]!(
-                                                      e.mpl / unitConverters[UnitType.fuel]!(1))
-                                                  .toStringAsFixed(1))
-                                            ]))
-                                        .toList()),
+                              child: Expanded(
+                                child: Container(
+                                  color: Colors.grey.shade800,
+                                  // constraints: const BoxConstraints(maxHeight: 130),
+                                  child: ListView(
+                                      shrinkWrap: true,
+                                      children: log!.fuelStats
+                                          .map((e) => Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                                                Text("${e.durationTime.inMinutes}"),
+                                                Text(unitConverters[UnitType.fuel]!(e.rate).toStringAsFixed(1)),
+                                                Text(unitConverters[UnitType.distCoarse]!(
+                                                        e.mpl / unitConverters[UnitType.fuel]!(1))
+                                                    .toStringAsFixed(1))
+                                              ]))
+                                          .toList()),
+                                ),
                               ),
                             ),
                             // --- Fuel Stats: summary
