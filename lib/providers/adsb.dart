@@ -177,9 +177,10 @@ class ADSB with ChangeNotifier {
       debugPrint("WifiName: $wifiName, WifiGateway: $wifiGateway");
 
       dynamic address = InternetAddress.loopbackIPv4;
-      if (wifiName != null && (wifiName.startsWith("Ping-") || wifiName.startsWith("Sentry_"))) {
+      if (wifiName != null && wifiName.contains("Ping-")) {
         // Temporary hard coded for Ping...
-        address = wifiGateway ?? "0.0.0.0";
+        debugPrint("Ping / Sentry wifi detected.");
+        address = "0.0.0.0";
       }
 
       debugPrint("Opening ADSB listen on ${address.toString()}:4000");

@@ -72,27 +72,31 @@ class ChartLogFuelInsights extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int cardinalityStats = logsSlice
-        .map(
-          (e) => e.fuelStats.length,
-        )
-        .reduce((a, b) => a + b);
-    return ScatterChart(ScatterChartData(
-        titlesData: FlTitlesData(
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          leftTitles:
-              AxisTitles(axisNameWidget: getYunit(), sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
-          bottomTitles:
-              AxisTitles(axisNameWidget: getXunit(), sideTitles: SideTitles(showTitles: true, reservedSize: 25)),
-        ),
-        scatterSpots: logsSlice
-            .map((e) => e.fuelStats
-                .map((s) => ScatterSpot(getX(s), getY(s),
-                    radius: 5,
-                    color: Colors.lightGreen.withAlpha(max(max(30, 150 - cardinalityStats),
-                        min(255, (255 * s.durationTime.inSeconds / const Duration(hours: 2).inSeconds).round())))))
-                .toList())
-            .reduce((a, b) => a + b)));
+    if (logsSlice.isNotEmpty) {
+      final int cardinalityStats = logsSlice
+          .map(
+            (e) => e.fuelStats.length,
+          )
+          .reduce((a, b) => a + b);
+      return ScatterChart(ScatterChartData(
+          titlesData: FlTitlesData(
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles:
+                AxisTitles(axisNameWidget: getYunit(), sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
+            bottomTitles:
+                AxisTitles(axisNameWidget: getXunit(), sideTitles: SideTitles(showTitles: true, reservedSize: 25)),
+          ),
+          scatterSpots: logsSlice
+              .map((e) => e.fuelStats
+                  .map((s) => ScatterSpot(getX(s), getY(s),
+                      radius: 5,
+                      color: Colors.lightGreen.withAlpha(max(max(30, 150 - cardinalityStats),
+                          min(255, (255 * s.durationTime.inSeconds / const Duration(hours: 2).inSeconds).round())))))
+                  .toList())
+              .reduce((a, b) => a + b)));
+    } else {
+      return const Center(child: Text("No fuel reports have been added..."));
+    }
   }
 }
