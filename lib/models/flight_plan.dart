@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/airports.dart';
+import 'package:xcnav/util.dart';
 import 'package:xml/xml.dart';
 
 // --- Models
@@ -64,6 +66,67 @@ class FlightPlan {
           errorMessage: err.toString(),
           errorStackTrace: trace,
           attributes: {"filename": name, "data": data.toString()});
+    }
+  }
+
+  FlightPlan.fromiFlightPlanner(this.name, String url) {
+    final pattern = RegExp(r"((?<!^)[\-]?)?([\-]{0,2}[\d\.]+/[\-]?[\d\.]+)|([\w\d]{3,4})");
+
+    List<LatLng> latlngs = [];
+
+    LatLng parseLatLng(String raw) {
+      final double lat = parseAsDouble(raw.split("/")[0]);
+      final double lng = parseAsDouble(raw.split("/")[1]);
+      return LatLng(lat, lng);
+    }
+
+    for (final each in pattern.allMatches(url)) {
+      final latlngRaw = each.group(2);
+      final airportCode = each.group(3);
+
+      if (airportCode != null) {
+        // Airport
+        Airport? airport = getAirport(airportCode);
+
+        // Try extending US code
+        if (airport == null && airportCode.length == 3) {
+          airport = getAirport("K$airportCode");
+        }
+
+        if (airport != null) {
+          final waypoint = Waypoint(name: "$airportCode - ${airport.name}", latlngs: [airport.latlng], icon: "airport");
+          if (latlngs.isEmpty) {
+            // start a path
+            latlngs.add(airport.latlng);
+          } else if (latlngs.length > 1) {
+            // end a path
+            latlngs.add(airport.latlng);
+            final path = Waypoint(name: "To: ${airport.name}", latlngs: latlngs);
+            waypoints[path.id] = path;
+            latlngs = [airport.latlng];
+          } else {
+            // empty unfinished path
+            latlngs.clear();
+            latlngs = [];
+          }
+          waypoints[waypoint.id] = waypoint;
+        } else {
+          final msg = "Couldn't find airport $airportCode.";
+          debugPrint("Error: $msg");
+          DatadogSdk.instance.logs?.error(msg, attributes: {"url": url});
+          goodFile = false;
+          return;
+        }
+      } else if (latlngRaw != null) {
+        // Append to path
+        latlngs.add(parseLatLng(latlngRaw));
+      }
+    }
+
+    if (waypoints.isEmpty) {
+      goodFile = false;
+    } else {
+      goodFile = true;
     }
   }
 

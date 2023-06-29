@@ -119,6 +119,7 @@ flutter:
   assets:
     - assets/images/
     - assets/external/
+    - assets/airports.json
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

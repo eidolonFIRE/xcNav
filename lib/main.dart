@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
+import 'package:xcnav/airports.dart';
 
 // providers
 import 'package:xcnav/providers/adsb.dart';
@@ -156,6 +157,8 @@ class XCNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    loadAirports(context);
+
     Wakelock.enable();
 
     configLocalNotification();
@@ -207,8 +210,10 @@ class XCNav extends StatelessWidget {
         dialogTheme: DialogTheme(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
-            foregroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.white),
-            iconColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.white),
+            foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                (states) => states.contains(MaterialState.disabled) ? Colors.grey.shade600 : Colors.white),
+            iconColor: MaterialStateProperty.resolveWith<Color>(
+                (states) => states.contains(MaterialState.disabled) ? Colors.grey.shade600 : Colors.white),
             side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.black)),
             backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.grey.shade900),
             minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),

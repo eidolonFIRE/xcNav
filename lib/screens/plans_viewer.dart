@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/edit_plan_name.dart';
 
@@ -39,12 +41,100 @@ class _PlansViewerState extends State<PlansViewer> {
 
         final selectedFolderOptions = await selectKmlFolders(context, folderNames);
         final selectedFolders = folderNames.isNotEmpty ? selectedFolderOptions?.folders : null;
-        var newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
+        final newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
         plans.setPlan(newPlan);
       });
     } else {
       // User canceled the picker
     }
+  }
+
+  void iFlightURL(BuildContext context, String? initialClipText) async {
+    // final urlController = TextEditingController(text: (await Clipboard.getData("text/plain"))?.text);
+    // final nameController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    // final initialClipText = ;
+
+    FlightPlan parsePlan(String name, String url) {
+      debugPrint("----");
+      final uri = Uri.parse(url);
+      final route = uri.queryParameters["Route"] ?? "";
+      return FlightPlan.fromiFlightPlanner(name, route);
+    }
+
+    // if (urlController.text.isNotEmpty) parsePlan();
+
+    String? name;
+    String? url;
+
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text("iFlightPlanner"),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      key: const Key("iFlightPlannerName"),
+                      autofocus: true,
+                      // controller: nameController,
+                      decoration: const InputDecoration(hintText: "Plan Name"),
+                      validator: (value) {
+                        if (value?.isEmpty ?? true) {
+                          return "Must not be empty.";
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        formKey.currentState?.validate();
+                      },
+                      onSaved: (newValue) => name = newValue,
+                    ),
+                    TextFormField(
+                      key: const Key("iFlightPlannerURL"),
+                      // controller: urlController,
+                      initialValue: initialClipText,
+                      decoration: const InputDecoration(hintText: "URL"),
+                      keyboardType: TextInputType.multiline,
+                      maxLines: null,
+                      validator: (value) {
+                        if (value?.isEmpty ?? false) {
+                          return "Must not be empty.";
+                        }
+                        final plan = parsePlan("-", value!);
+                        if (!plan.goodFile) {
+                          return "Error Parsing.";
+                        }
+                        return null;
+                      },
+                      onChanged: (url) {
+                        formKey.currentState?.validate();
+                      },
+                      onSaved: (newValue) => url = newValue,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                ElevatedButton.icon(
+                    onPressed: () {
+                      formKey.currentState?.save();
+                      if ((formKey.currentState?.validate() ?? false) && name != null && url != null) {
+                        final plan = parsePlan(name!, url!);
+                        Provider.of<Plans>(context, listen: false).setPlan(plan);
+                        Navigator.pop(context);
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.check,
+                      color: Colors.lightGreen,
+                    ),
+                    label: const Text("Load"))
+              ],
+            ));
   }
 
   @override
@@ -56,21 +146,59 @@ class _PlansViewerState extends State<PlansViewer> {
         appBar: AppBar(
           title: const Text("Library"),
           actions: [
-            IconButton(
-                iconSize: 30,
-                onPressed: () {
-                  editPlanName(context, null).then((value) {
-                    if (value != null && value != "") {
-                      var plan = FlightPlan(value);
-                      Navigator.pushNamed(context, "/planEditor", arguments: plan);
-                    }
-                  });
+            PopupMenuButton<String>(
+                onSelected: (value) {
+                  switch (value) {
+                    case "new":
+                      editPlanName(context, null).then((value) {
+                        if (value != null && value != "") {
+                          var plan = FlightPlan(value);
+                          Navigator.pushNamed(context, "/planEditor", arguments: plan);
+                        }
+                      });
+                      break;
+                    case "kml":
+                      selectKmlImport(context, Provider.of<Plans>(context, listen: false));
+                      break;
+                    case "iFlight":
+                      Clipboard.getData("text/plain").then(
+                        (value) {
+                          iFlightURL(context, value?.text);
+                        },
+                      );
+                      break;
+                  }
                 },
-                icon: const Icon(Icons.add)),
-            IconButton(
-                iconSize: 30,
-                onPressed: () => {selectKmlImport(context, Provider.of<Plans>(context, listen: false))},
-                icon: const Icon(Icons.file_upload_outlined))
+                itemBuilder: (context) => <PopupMenuEntry<String>>[
+                      const PopupMenuItem(
+                          value: "new",
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.add,
+                              color: Colors.lightGreen,
+                            ),
+                            title: Text("New"),
+                          )),
+                      const PopupMenuItem(
+                          value: "kml",
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.file_upload_outlined,
+                              color: Colors.lightBlue,
+                            ),
+                            title: Text("Import KML"),
+                          )),
+                      PopupMenuItem(
+                          value: "iFlight",
+                          child: ListTile(
+                            leading: SvgPicture.asset(
+                              "assets/external/iFlightPlanner-Mark-White.svg",
+                              color: Colors.white,
+                              height: 24,
+                            ),
+                            title: const Text("iFlightPlanner URL"),
+                          ))
+                    ]),
           ],
         ),
         body: plans.loadedPlans.isEmpty
