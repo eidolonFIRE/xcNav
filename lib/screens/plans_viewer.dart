@@ -50,20 +50,13 @@ class _PlansViewerState extends State<PlansViewer> {
   }
 
   void iFlightURL(BuildContext context, String? initialClipText) async {
-    // final urlController = TextEditingController(text: (await Clipboard.getData("text/plain"))?.text);
-    // final nameController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    // final initialClipText = ;
-
     FlightPlan parsePlan(String name, String url) {
-      debugPrint("----");
       final uri = Uri.parse(url);
       final route = uri.queryParameters["Route"] ?? "";
       return FlightPlan.fromiFlightPlanner(name, route);
     }
-
-    // if (urlController.text.isNotEmpty) parsePlan();
 
     String? name;
     String? url;
