@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 class Airport {
@@ -16,8 +15,7 @@ class Airport {
 
 Map<String, Airport>? _airports;
 
-void loadAirports(BuildContext context) async {
-  String data = await DefaultAssetBundle.of(context).loadString("assets/airports.json");
+void loadAirports(String data) async {
   final Map<String, dynamic> jsonResult = jsonDecode(data);
 
   _airports = {};
