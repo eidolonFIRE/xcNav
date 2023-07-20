@@ -60,7 +60,7 @@ class Profile with ChangeNotifier {
     _onLoad.complete();
 
     // Add context to logging
-    DatadogSdk.instance.setUserInfo(name: name, id: id, extraInfo: {"name": name});
+    DatadogSdk.instance.setUserInfo(name: name, id: id);
   }
 
   bool get isValid => nameValidator(name) == null && id != null;
@@ -158,7 +158,7 @@ class Profile with ChangeNotifier {
     hash = _hash();
 
     // Add context to logging
-    DatadogSdk.instance.setUserInfo(id: newID);
+    DatadogSdk.instance.setUserInfo(id: newID, name: name);
   }
 
   String _hash() {

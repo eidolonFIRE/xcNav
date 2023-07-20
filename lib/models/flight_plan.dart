@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -7,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/airports.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xml/xml.dart';
 
 // --- Models
@@ -149,7 +151,8 @@ class FlightPlan {
           // (substr 1 to trim off the # symbol)
           final styleUrl = element.getElement("styleUrl")!.text.substring(1);
 
-          int? color;
+          int color = 0xff000000;
+          String? icon;
 
           // First try old style
           final styleElement = document
@@ -168,7 +171,7 @@ class FlightPlan {
               color = int.parse((colorText), radix: 16) | 0xff000000;
             }
           } else {
-            // Try the new goggle style format
+            // Try the new google style format
 
             // first styleMap and the destination url
             final styleMap = document.findAllElements("StyleMap").where((e) => e.getAttribute("id")! == styleUrl).first;
@@ -180,38 +183,80 @@ class FlightPlan {
                 .text
                 .substring(1);
             // grab destination url
-            final finalStyleElement = document
+            var finalStyleElement = document
                 .findAllElements("gx:CascadingStyle")
                 .where((e) => e.getAttribute("kml:id") == finalStyleUrl)
-                .first;
-            if (points.length > 1) {
-              // LineStyle
-              final finalColorString =
-                  finalStyleElement.getElement("Style")!.getElement("LineStyle")!.getElement("color")!.text;
-              color = int.parse((finalColorString), radix: 16) | 0xff000000;
-            } else {
-              // IconStyle
-              String href = finalStyleElement
-                  .getElement("Style")!
-                  .getElement("IconStyle")!
-                  .getElement("Icon")!
-                  .getElement("href")!
-                  .text;
-              String? finalColorString = RegExp(r'color=([a-f0-9]{6})').firstMatch(href)?.group(1).toString();
-              if (finalColorString != null) {
-                color = int.parse((finalColorString), radix: 16) | 0xff000000;
+                .firstOrNull;
+            // Try again with google-earth style
+            finalStyleElement ??= document
+                .findAllElements("Style")
+                .where((element) => element.getAttribute("id")?.startsWith(finalStyleUrl) ?? false)
+                .firstOrNull;
+
+            // if style found...
+            if (finalStyleElement != null) {
+              if (points.length > 1) {
+                // LineStyle
+                String? colorText =
+                    finalStyleElement.getElement("Style")?.getElement("LineStyle")?.getElement("color")?.text;
+                colorText ??= finalStyleElement.getElement("LineStyle")?.getElement("color")?.text;
+                if (colorText != null) {
+                  colorText = colorText.substring(0, 2) +
+                      colorText.substring(6, 8) +
+                      colorText.substring(4, 6) +
+                      colorText.substring(2, 4);
+                  color = int.parse((colorText), radix: 16) | 0xff000000;
+                }
+              } else {
+                // IconStyle
+                String? href = finalStyleElement
+                    .getElement("Style")
+                    ?.getElement("IconStyle")
+                    ?.getElement("Icon")
+                    ?.getElement("href")
+                    ?.text;
+                href ??= finalStyleElement.getElement("IconStyle")?.getElement("Icon")?.getElement("href")?.text;
+                if (href != null) {
+                  String? finalColorString = RegExp(r'color=([a-f0-9]{6})').firstMatch(href)?.group(1).toString();
+                  if (finalColorString != null) {
+                    color = int.parse((finalColorString), radix: 16) | 0xff000000;
+                  }
+                  for (final each in iconOptions.keys) {
+                    if (href.contains(each ?? "--")) {
+                      icon = each;
+                      break;
+                    }
+                  }
+                  // google earth web icons
+                  String? iconID = RegExp(r'id=([0-9]{4})').firstMatch(href)?.group(1).toString();
+                  const iconIds = {
+                    "2006": "star",
+                    "2396": "x",
+                    "2113": "exclamation",
+                    "2271": "flag",
+                    "2011": "airport",
+                    "2127": "windsock",
+                    "2061": "camp",
+                    "2243": "paraglider",
+                    "2137": "fuel",
+                    "2174": "sleep",
+                    "2058": "camera",
+                  };
+                  if (iconID != null && iconIds.containsKey(iconID)) {
+                    icon = iconIds[iconID];
+                  }
+                }
               }
             }
           }
 
           if (points.isNotEmpty) {
             if (points.length > 1) {
-              // Trim length strings from title
-              debugPrint("path $name");
+              // Trim length strings from title b xm
               final match = RegExp(r'(.*)[\s]+(?:[-])[\s]*([0-9\.]+)[\s]*(miles|mi|km|Miles|Mi|Km)$').firstMatch(name);
               name = match?.group(1) ?? name;
             }
-            final waypoint = Waypoint(name: name, latlngs: points, color: color);
+            final waypoint = Waypoint(name: name, latlngs: points, color: color, icon: icon);
             waypoints[waypoint.id] = waypoint;
           } else {
             debugPrint("Dropping $name with no points.");
