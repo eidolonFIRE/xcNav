@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -62,21 +63,23 @@ class Plans with ChangeNotifier {
     }
   }
 
-  void deletePlan(String name) {
+  Future deletePlan(String name) async {
     // Delete the file
     final plan = _loadedPlans[name];
     if (plan != null) {
-      plan.getFilename().then((filename) {
-        File planFile = File(filename);
-        planFile.exists().then((value) {
-          planFile.delete();
-        });
-      });
+      final filename = await plan.getFilename();
+      File planFile = File(filename);
+      if (await planFile.exists()) {
+        debugPrint("Deleting plan: $name");
+        await planFile.delete();
+      }
       _loadedPlans.remove(name);
       notifyListeners();
     } else {
-      debugPrint("Warn: Tried to delete a plan that isn't loaded $name");
+      final msg = "Warn: Tried to delete a plan that isn't loaded $name";
+      debugPrint(msg);
       debugPrint(_loadedPlans.keys.toString());
+      DatadogSdk.instance.logs?.warn(msg, attributes: {"plans": _loadedPlans.keys.toString()});
     }
   }
 
@@ -84,23 +87,28 @@ class Plans with ChangeNotifier {
     final plan = _loadedPlans[oldName];
     if (plan != null) {
       plan.name = newName;
-      savePlanToFile(oldName);
+      await savePlanToFile(oldName);
       refreshPlansFromDirectory();
     } else {
-      debugPrint("Warn: Tried to rename a plan that isn't loaded $oldName");
+      final msg = "Warn: Tried to rename a plan that isn't loaded $oldName";
+      debugPrint(msg);
       debugPrint(_loadedPlans.keys.toString());
+      DatadogSdk.instance.logs?.warn(msg, attributes: {"plans": _loadedPlans.keys.toString()});
     }
   }
 
-  void renamePlan(String oldName, String newName) {
+  Future renamePlan(String oldName, String newName) async {
+    debugPrint("Renaming plan $oldName -> $newName");
     final plan = _loadedPlans[oldName];
     if (plan != null) {
-      deletePlan(oldName);
+      await deletePlan(oldName);
       plan.name = newName;
       setPlan(plan);
     } else {
-      debugPrint("Warn: Tried to rename a plan that isn't loaded $oldName");
+      final msg = "Warn: Tried to rename a plan that isn't loaded $oldName";
+      debugPrint(msg);
       debugPrint(_loadedPlans.keys.toString());
+      DatadogSdk.instance.logs?.warn(msg, attributes: {"plans": _loadedPlans.keys.toString()});
     }
   }
 

@@ -43,7 +43,7 @@ Future<String?> editPlanName(BuildContext context, String? prevName) {
                   textInputAction: TextInputAction.done,
                   controller: textController,
                   autofocus: true,
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ -()]"))],
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z0-9_ -()\.]"))],
                   validator: (value) {
                     if (value != null) {
                       if (value.trim().isEmpty) return "Must not be empty";
