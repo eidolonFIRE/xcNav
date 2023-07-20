@@ -80,6 +80,7 @@ class _PlanCardState extends State<PlanCard> {
     activePlan.waypoints.addAll(widget.plan.waypoints);
     Provider.of<Client>(context, listen: false).pushWaypoints();
     activePlan.isSaved = true;
+    activePlan.notifyListeners();
   }
 
   void _replacePlanDialog(BuildContext context) {
