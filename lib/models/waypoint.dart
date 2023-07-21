@@ -154,6 +154,12 @@ class Waypoint {
     return _length ??= lengthBetweenIndexs(0, latlng.length - 1);
   }
 
+  set isReversed(bool newValue) {
+    _isReversed = newValue;
+    _latlngOriented = null;
+    _segsOriented = null;
+  }
+
   void toggleDirection() {
     _isReversed = !_isReversed;
     _latlngOriented = null;

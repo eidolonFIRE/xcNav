@@ -352,6 +352,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             baseTiles: settingsMgr.mainMapTileSrc.value),
                       ),
 
+                    // Measurement: yellow line
+                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
+                      PolylineLayer(polylines: [measurementPolyline]),
+
                     // Waypoints: paths
                     TappablePolylineLayer(
                         pointerDistanceTolerance: 30,
@@ -365,11 +369,30 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 TaggedPolyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), tag: e.id))
                             .toList(),
                         onTap: (p0, tapPosition) {
-                          // Select this path waypoint
-                          if (plan.selectedWp == p0.tag) {
-                            plan.waypoints[p0.tag]?.toggleDirection();
+                          // which end is nearer the tap?
+                          final wp = plan.waypoints[p0.tag];
+                          if (wp != null) {
+                            debugPrint("${tapPosition.relative}");
+                            debugPrint("${p0.offsets.first}");
+                            bool tapEnd = tapPosition.relative != null
+                                ? (tapPosition.relative! - p0.offsets.first).distance >
+                                    (tapPosition.relative! - p0.offsets.last).distance
+                                : false;
+
+                            // Select this path waypoint
+                            if (focusMode == FocusMode.measurement) {
+                              for (final each in (tapEnd ? wp.latlng.reversed : wp.latlng)) {
+                                measurementEditor.add(measurementPolyline.points, each);
+                              }
+                            } else {
+                              if (plan.selectedWp == p0.tag) {
+                                wp.toggleDirection();
+                              } else {
+                                wp.isReversed = tapEnd;
+                              }
+                              plan.selectedWp = p0.tag;
+                            }
                           }
-                          plan.selectedWp = p0.tag;
                         },
                         onLongPress: ((p0, tapPosition) {
                           // Start editing path waypoint
@@ -421,7 +444,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               //   debugPrint("Context Menu for Waypoint ${e.name}");
                               // },
                               builder: (context) => GestureDetector(
-                                    onTap: () => plan.selectedWp = e.id,
+                                    onTap: () {
+                                      if (focusMode == FocusMode.measurement) {
+                                        measurementEditor.add(measurementPolyline.points, e.latlng.first);
+                                      } else {
+                                        plan.selectedWp = e.id;
+                                      }
+                                    },
                                     onLongPress: () {
                                       setState(() {
                                         editingWp = e.id;
@@ -639,8 +668,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     }),
 
                     // Measurement Polyline
-                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                      PolylineLayer(polylines: [measurementPolyline]),
                     if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
                       DragMarkers(markers: measurementEditor.edit()),
                     if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
