@@ -13,7 +13,7 @@ Future<SelectedFoldersOptions?> selectKmlFolders(BuildContext context, List<XmlE
         Set<int> checkedElements = {};
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            insetPadding: EdgeInsets.all(10),
+            insetPadding: const EdgeInsets.all(10),
             title: const Text("Select KML Folders"),
             actions: [
               IconButton(
@@ -26,7 +26,7 @@ Future<SelectedFoldersOptions?> selectKmlFolders(BuildContext context, List<XmlE
                     color: Colors.lightGreen,
                   ))
             ],
-            content: Container(
+            content: SizedBox(
               width: MediaQuery.of(context).size.width - 10,
               child: ListView.builder(
                 shrinkWrap: true,

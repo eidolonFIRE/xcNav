@@ -372,8 +372,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           // which end is nearer the tap?
                           final wp = plan.waypoints[p0.tag];
                           if (wp != null) {
-                            debugPrint("${tapPosition.relative}");
-                            debugPrint("${p0.offsets.first}");
                             bool tapEnd = tapPosition.relative != null
                                 ? (tapPosition.relative! - p0.offsets.first).distance >
                                     (tapPosition.relative! - p0.offsets.last).distance
