@@ -275,14 +275,18 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                                     autoDecimalThresh: 1));
 
                           case WaypointID:
-                            final selectedWp = activePlan.getSelectedWp()!;
-                            return SizedBox(
-                              width: 30,
-                              height: 32,
-                              child: selectedWp.isPath
-                                  ? SvgPicture.asset("assets/images/path.svg", color: selectedWp.getColor())
-                                  : WaypointMarker(selectedWp, 30),
-                            );
+                            final selectedWp = activePlan.getSelectedWp();
+                            if (selectedWp == null) {
+                              return Container();
+                            } else {
+                              return SizedBox(
+                                width: 30,
+                                height: 32,
+                                child: selectedWp.isPath
+                                    ? SvgPicture.asset("assets/images/path.svg", color: selectedWp.getColor())
+                                    : WaypointMarker(selectedWp, 30),
+                              );
+                            }
                           default:
                             return Container();
                         }

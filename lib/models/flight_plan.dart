@@ -125,6 +125,13 @@ class FlightPlan {
       }
     }
 
+    if (latlngs.length > 1) {
+      // end a path
+      final path = Waypoint(name: "Path", latlngs: latlngs);
+      waypoints[path.id] = path;
+      latlngs = [path.latlng.last];
+    }
+
     if (waypoints.isEmpty) {
       goodFile = false;
     } else {

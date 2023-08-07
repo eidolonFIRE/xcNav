@@ -48,7 +48,6 @@ void main() {
   test('iFlightPlanner - first airport', () {
     const str =
         "https://www.iFlightPlanner.com/AviationCharts/?Map=sectional&GS=26&Route=1Q4-36.0605/-121.8563-36.9684/-120.3372-36.8597/-120.263-36.8684/-120.3839-36.6836/-120.4525-36.5282/-120.3949--37.3918/-120.9283-3O1";
-
     final uri = Uri.parse(str);
 
     final route = uri.queryParameters["Route"] ?? "";
@@ -65,6 +64,30 @@ void main() {
 
     expect(plan.waypoints.values.toList()[2].latlng.length, 1);
     expect(plan.waypoints.values.toList()[2].name, "3O1 - Gustine");
+  });
+
+  test('iFlightPlanner - no airports', () {
+    const str =
+        "https://www.iflightplanner.com/AviationCharts/?Map=hybrid&GS=26&Route=35.5418/-82.5527-35.5753/-82.6567-35.619/-82.646-35.7038/-82.5744-35.7093/-82.5639";
+    final uri = Uri.parse(str);
+
+    final route = uri.queryParameters["Route"] ?? "";
+    final plan = FlightPlan.fromiFlightPlanner("my plan", route);
+
+    expect(plan.waypoints.length, 1);
+    expect(plan.waypoints.values.first.latlng.length, 5);
+  });
+
+  test('iFlightPlanner - no airports', () {
+    const str =
+        "https://www.iflightplanner.com/AviationCharts/?Map=hybrid&GS=26&Route=1Q4-35.5418/-82.5527-35.5753/-82.6567-35.619/-82.646-35.7038/-82.5744-35.7093/-82.5639";
+    final uri = Uri.parse(str);
+
+    final route = uri.queryParameters["Route"] ?? "";
+    final plan = FlightPlan.fromiFlightPlanner("my plan", route);
+
+    expect(plan.waypoints.length, 2);
+    expect(plan.waypoints.values.last.latlng.length, 6);
   });
 
   test('kml - google-earth-desktop', () async {
