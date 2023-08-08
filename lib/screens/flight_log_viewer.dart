@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:collection/collection.dart';
+import 'package:xcnav/dialogs/log_filters.dart';
 
 // Models
 import 'package:xcnav/models/flight_log.dart';
@@ -23,29 +23,15 @@ class FlightLogViewer extends StatefulWidget {
   State<FlightLogViewer> createState() => _FlightLogViewerState();
 }
 
-enum SliceSize {
-  month,
-  year,
-  all,
-}
-
-const Map<SliceSize, String> sliceStr = {
-  SliceSize.month: "Past Month",
-  SliceSize.year: "Past Year",
-  SliceSize.all: "All Time",
-};
-
 class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderStateMixin {
   Map<String, FlightLog> logs = {};
-  late Iterable<FlightLog> logsSlice;
-  SliceSize sliceSize = SliceSize.all;
+  late List<FlightLog> logsSlice;
+  List<LogFilter>? logFilters;
 
   bool loaded = false;
 
   late final TabController mainTabController;
   final logListController = ScrollController();
-
-  List<String> logKeys = [];
 
   // Fuel Chart
   ChartFuelModeX chartFuelX = ChartFuelModeX.spd;
@@ -137,9 +123,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
       Future.wait(completers.map((e) => e.future).toList()).then((value) {
         setState(() {
           loaded = true;
-          refreshSlice(sliceSize);
-          logKeys = logs.keys.toList();
-          logKeys.sort((a, b) => logs[a]!.compareTo(logs[b]!));
+          refreshSlice();
         });
       });
     } else {
@@ -147,23 +131,14 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
     }
   }
 
-  void refreshSlice(SliceSize newSliceSize) {
-    sliceSize = newSliceSize;
-    switch (sliceSize) {
-      case SliceSize.all:
-        logsSlice = logs.values.where((element) => element.goodFile);
-        break;
-      case SliceSize.year:
-        logsSlice = logs.values.where((element) =>
-            element.goodFile &&
-            (element.startTime?.isAfter(DateTime.now().subtract(const Duration(days: 365))) ?? false));
-        break;
-      case SliceSize.month:
-        logsSlice = logs.values.where((element) =>
-            element.goodFile &&
-            (element.startTime?.isAfter(DateTime.now().subtract(const Duration(days: 30))) ?? false));
-        break;
+  void refreshSlice() {
+    if (logFilters?.isNotEmpty ?? false) {
+      // Filter logs by search functions
+      logsSlice = logs.values.where((element) => logFilters!.map((e) => e(element)).reduce((a, b) => a && b)).toList();
+    } else {
+      logsSlice = logs.values.toList();
     }
+    logsSlice.sort((a, b) => (a.startTime?.millisecondsSinceEpoch ?? 0) - (b.startTime?.millisecondsSinceEpoch ?? 0));
   }
 
   @override
@@ -193,6 +168,19 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
           ]),
         ]),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          editLogFilters(context).then((value) {
+            setState(() {
+              if (value != null) {
+                logFilters = value;
+                refreshSlice();
+              }
+            });
+          });
+        },
+        child: const Icon(Icons.search),
+      ),
       body: TabBarView(
         physics: const NeverScrollableScrollPhysics(),
         controller: mainTabController,
@@ -204,13 +192,16 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                 )
               : ListView(
                   controller: logListController,
-                  children: logKeys
-                      .mapIndexed((i, e) => FlightLogCard(logs[e]!, () {
+                  children: logsSlice
+                      .map((e) => FlightLogCard(e, () {
                             setState(() {
                               logs.remove(e);
-                              logKeys.removeAt(i);
+                              // logKeys.removeAt(i);
+                              refreshSlice();
                             });
                           }))
+                      .toList()
+                      .reversed
                       .toList(),
                 ),
 
@@ -221,29 +212,6 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                 )
               : ListView(
                   children: [
-                    // --- Slice Selector
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ToggleButtons(
-                          constraints:
-                              BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
-                          isSelected: SliceSize.values.map((e) => e == sliceSize).toList(),
-                          onPressed: (index) {
-                            setState(() {
-                              refreshSlice(SliceSize.values.toList()[index]);
-                            });
-                          },
-                          children: SliceSize.values
-                              .map((key) => Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Text(sliceStr[key] ?? ""),
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                    ),
-
                     Container(
                       height: 10,
                     ),
