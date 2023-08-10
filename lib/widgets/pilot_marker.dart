@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:xcnav/dialogs/pilot_info.dart';
 import 'package:xcnav/models/pilot.dart';
-import 'package:xcnav/patreon.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -28,17 +27,13 @@ class PilotMarker extends StatelessWidget {
           transformAlignment: const Alignment(0, 0),
           transform: Matrix4.rotationZ(hdg!) * Matrix4.translationValues(0, -12, 0),
           child: SizedBox(
-            child: SvgPicture.asset(
-              "assets/images/pilot_direction_arrow.svg",
-              clipBehavior: Clip.none,
-              color: tierColors[pilot.tier],
-            ),
+            child: SvgPicture.asset("assets/images/pilot_direction_arrow.svg", clipBehavior: Clip.none),
           ),
         ),
       GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => showPilotInfo(context, pilot.id),
-          child: AvatarRound(pilot.avatar, radius, tier: pilot.tier)),
+          child: AvatarRound(pilot.avatar, radius)),
 
       /// --- Relative Altitude
       if (relAlt != null)

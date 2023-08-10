@@ -30,11 +30,10 @@ class Pilot {
   late final String? avatarHash;
   List<Geo> flightTrace = [];
   Color color = Colors.grey.shade800;
-  String? tier;
 
   WaypointID? selectedWp;
 
-  Pilot(this.id, this.name, this.avatarHash, this.geo, this.tier) {
+  Pilot(this.id, this.name, this.avatarHash, this.geo) {
     // Load Avatar
     _loadAvatar();
   }
@@ -43,7 +42,6 @@ class Pilot {
     id = parseAsString(json["id"])!;
     name = json["name"];
     avatarHash = parseAsString(json["avatarHash"]);
-    tier = json["tier"];
     _loadAvatar();
   }
 
@@ -52,7 +50,6 @@ class Pilot {
       "id": id,
       "name": name,
       "avatarHash": avatarHash,
-      "tier": tier,
     };
   }
 

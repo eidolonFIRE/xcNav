@@ -202,7 +202,6 @@ class SettingsMgr {
   // --- Misc
   late final SettingConfig<ProximitySize> adsbProximitySize;
   late final SettingAction adsbTestAudio;
-  late final SettingAction editPatreonInfo;
 
   // --- Debug Tools
   late final SettingConfig<bool> spoofLocation;
@@ -217,9 +216,6 @@ class SettingsMgr {
   late final SettingConfig<bool> northlockWind;
   late final SettingConfig<MapTileSrc> mainMapTileSrc;
   late final SettingConfig<double> mainMapOpacity;
-
-  late final SettingConfig<String> patreonName;
-  late final SettingConfig<String> patreonEmail;
 
   SettingsMgr(SharedPreferences prefs) {
     // --- General
@@ -290,7 +286,6 @@ class SettingsMgr {
         title: "ADSB Proximity Profile", icon: const Icon(Icons.radar));
     adsbTestAudio =
         SettingAction(this, "Misc", () => null, title: "Test Audio", actionIcon: const Icon(Icons.volume_up));
-    editPatreonInfo = SettingAction(this, "Misc", () => null, title: "Edit Patreon Info");
 
     // --- Debug Tools
     spoofLocation = SettingConfig(this, prefs, "Debug Tools", "", false,
@@ -332,8 +327,6 @@ class SettingsMgr {
     mainMapTileSrc =
         SettingConfig(this, prefs, "UI", "mainMapTileSrc", MapTileSrc.topo, title: "Map Tile Sourc", hidden: true);
     mainMapOpacity = SettingConfig(this, prefs, "UI", "mainMapOpacity", 1.0, title: "Main Map Opacity", hidden: true);
-    patreonName = SettingConfig(this, prefs, "Patreon", "patreonName", "", title: "Patreon Name", hidden: true);
-    patreonEmail = SettingConfig(this, prefs, "Patreon", "patreonEmail", "", title: "Patreon Email", hidden: true);
   }
 }
 

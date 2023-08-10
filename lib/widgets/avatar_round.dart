@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:xcnav/patreon.dart';
 
 class AvatarRound extends StatelessWidget {
   final Widget? avatar;
   final double radius;
-  final String? tier;
 
-  const AvatarRound(this.avatar, this.radius, {Key? key, this.tier}) : super(key: key);
+  const AvatarRound(this.avatar, this.radius, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: radius,
-      backgroundColor: tierColors[tier] ?? Colors.black,
+      backgroundColor: Colors.black,
       child: Padding(
-        padding: EdgeInsets.all(isTierRecognized(tier) ? 3 : 2),
+        padding: const EdgeInsets.all(2),
         child: ClipOval(
           child: SizedBox(
               width: radius * 2,

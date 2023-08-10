@@ -202,9 +202,6 @@ class Client with ChangeNotifier {
           "secretToken": profile.secretID,
         },
         "group_id": Provider.of<Group>(globalContext, listen: false).loadGroup(),
-        "tierHash": crypto.sha256
-            .convert((settingsMgr.patreonEmail.value + settingsMgr.patreonName.value).codeUnits)
-            .toString(),
         "apiVersion": apiVersion,
       });
     } else {
@@ -431,7 +428,6 @@ class Client with ChangeNotifier {
       }
 
       Profile profile = Provider.of<Profile>(globalContext, listen: false);
-      profile.tier = msg["tier"];
       final pilotId = parseAsString(msg["pilot_id"]);
       if (pilotId != null) {
         profile.updateID(pilotId, msg["secretToken"]);

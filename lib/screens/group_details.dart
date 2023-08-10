@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/leave_group.dart';
 import 'package:xcnav/dialogs/select_past_group.dart';
-import 'package:xcnav/patreon.dart';
 
 // Providers
 import 'package:xcnav/providers/group.dart';
@@ -70,17 +69,12 @@ class _GroupDetailsState extends State<GroupDetails> {
               children: (group.pilots.isNotEmpty
                       ? group.pilots.values
                           .map((p) => ListTile(
-                                leading: AvatarRound(p.avatar, 28, tier: p.tier),
+                                leading: AvatarRound(p.avatar, 28),
                                 title: Row(children: [
                                   Text(
                                     p.name,
                                     style: Theme.of(context).textTheme.headlineMedium,
                                   ),
-                                  if (isTierRecognized(p.tier))
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 10),
-                                      child: tierBadge(p.tier),
-                                    )
                                 ]),
                                 subtitle: (group.activePilots.contains(p))
                                     ? Text.rich(TextSpan(children: [

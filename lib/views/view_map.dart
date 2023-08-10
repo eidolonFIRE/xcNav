@@ -915,8 +915,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           (e) => ChatBubble(
                             false,
                             e.text,
-                            AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20,
-                                tier: Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.tier),
+                            AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20),
                             null,
                             e.timestamp,
                             maxWidth: MediaQuery.of(context).size.width - 150,

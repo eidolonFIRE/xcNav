@@ -36,11 +36,7 @@ class _MainMenuState extends State<MainMenu> {
                 Positioned(
                   left: 10,
                   top: 10,
-                  child: AvatarRound(
-                    Provider.of<Profile>(context).avatar,
-                    40,
-                    tier: Provider.of<Profile>(context, listen: false).tier,
-                  ),
+                  child: AvatarRound(Provider.of<Profile>(context).avatar, 40),
                 ),
                 Positioned(
                   left: 100,

@@ -19,7 +19,6 @@ class Profile with ChangeNotifier {
   Image avatar = Image.asset("assets/images/default_avatar.png");
   Uint8List? _avatarRaw;
   String? avatarHash;
-  String? _tier;
 
   late String hash;
 
@@ -50,7 +49,6 @@ class Profile with ChangeNotifier {
     name = prefs.getString("profile.name");
     id = prefs.getString("profile.id");
     secretID = prefs.getString("profile.secretID");
-    tier = prefs.getString("profile.tier");
     final gearRaw = prefs.getString("profile.gear_current");
     if (gearRaw?.isNotEmpty ?? false) {
       _gear = Gear.fromJson(jsonDecode(gearRaw!));
@@ -92,7 +90,6 @@ class Profile with ChangeNotifier {
     prefs.remove("profile.id");
     prefs.remove("profile.secretID");
     prefs.remove("profile.avatar");
-    prefs.remove("profile.tier");
 
     // Delete cached avatar
     path_provider.getTemporaryDirectory().then((tempDir) {
@@ -110,16 +107,6 @@ class Profile with ChangeNotifier {
       avatarHash = md5.convert(_avatarRaw!).toString();
     } else {
       avatarHash = null;
-    }
-  }
-
-  String? get tier => _tier;
-  set tier(String? newTier) {
-    _tier = newTier;
-    if (_tier == null) {
-      prefs.remove("profile.tier");
-    } else {
-      prefs.setString("profile.tier", _tier!);
     }
   }
 

@@ -6,7 +6,6 @@ import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:email_validator/email_validator.dart';
-import 'package:xcnav/map_service.dart';
 
 // Providers
 import 'package:xcnav/providers/profile.dart';
@@ -15,8 +14,8 @@ import 'package:xcnav/providers/adsb.dart';
 
 //
 import 'package:xcnav/units.dart';
-import 'package:xcnav/dialogs/patreon_info.dart';
 import 'package:xcnav/widgets/altimeter.dart';
+import 'package:xcnav/map_service.dart';
 
 class SettingsEditor extends StatefulWidget {
   const SettingsEditor({Key? key}) : super(key: key);
@@ -131,65 +130,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
               ],
             );
           });
-    };
-
-    settingsMgr.editPatreonInfo.callback = () {
-      showDialog(
-          context: context,
-          builder: ((context) {
-            final formKey = GlobalKey<FormState>();
-            final nameController = TextEditingController(text: settingsMgr.patreonName.value);
-            final emailController = TextEditingController(text: settingsMgr.patreonEmail.value);
-
-            /// --- Patreon Info
-            return AlertDialog(
-              content: Form(
-                  key: formKey,
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    TextFormField(
-                        controller: nameController,
-                        // validator: (value) {
-                        //   if (value != null) {
-                        //     if (value.trim().isEmpty) return "Must not be empty";
-                        //   }
-                        //   return null;
-                        // },
-                        decoration: const InputDecoration(
-                          label: Text("Name on Account"),
-                        )),
-                    TextFormField(
-                      controller: emailController,
-                      validator: (value) =>
-                          EmailValidator.validate(value ?? "") || value == "" ? null : "Not a valid email",
-                      decoration: const InputDecoration(label: Text("Email")),
-                    ),
-                  ])),
-              actions: [
-                IconButton(
-                    onPressed: () => {showPatreonInfoDialog(context)},
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    iconSize: 30,
-                    icon: const Icon(
-                      Icons.help,
-                      color: Colors.lightBlue,
-                    )),
-                ElevatedButton.icon(
-                    onPressed: () {
-                      if (formKey.currentState?.validate() ?? false) {
-                        settingsMgr.patreonName.value = nameController.text;
-                        settingsMgr.patreonEmail.value = emailController.text;
-                        Navigator.pop(context);
-                      }
-                    },
-                    label: const Text("Save"),
-                    icon: const Icon(
-                      Icons.check,
-                      color: Colors.green,
-                    ))
-              ],
-            );
-          }));
     };
 
     return Scaffold(
