@@ -56,7 +56,7 @@ class _ADSBhelpState extends State<ADSBhelp> with SingleTickerProviderStateMixin
                               "pingUSB  by  uAvioni",
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  fontSize: 18, color: Colors.lightBlueAccent, decoration: TextDecoration.underline),
+                                  fontSize: 18, color: Colors.lightBlue, decoration: TextDecoration.underline),
                             ),
                           ),
                         ),

@@ -77,8 +77,8 @@ class FlightPlan {
     List<LatLng> latlngs = [];
 
     LatLng parseLatLng(String raw) {
-      final double lat = parseAsDouble(raw.split("/")[0]);
-      final double lng = parseAsDouble(raw.split("/")[1]);
+      final double lat = parseAsDouble(raw.split("/")[0]) ?? 0;
+      final double lng = parseAsDouble(raw.split("/")[1]) ?? 0;
       return LatLng(lat, lng);
     }
 

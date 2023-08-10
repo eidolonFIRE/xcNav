@@ -26,6 +26,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
+import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/secrets.dart';
@@ -412,7 +413,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                   .where((element) => (!element.ephemeral && element.validate()))
                   .toList()
               : [],
-          fuelReports: fuelReports);
+          fuelReports: fuelReports,
+          gear: Provider.of<Profile>(globalContext!, listen: false).gear);
 
       log.save();
       lastSavedLog = DateTime.now();

@@ -7,10 +7,8 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 
 Future<FuelReport?> fuelReportDialog(BuildContext context, DateTime time, double? amount) {
-  final fuelAmountController = TextEditingController(
-      text: amount
-          ?.toStringAsFixed(2)
-          .replaceAllMapped(RegExp(r"(?:(\.\d*?[1-9]+)|\.)0*$"), (match) => match.group(1) ?? ""));
+  final fuelAmountController =
+      TextEditingController(text: amount == null ? null : printDoubleSimple(amount, decimals: 2));
   final amountFormKey = GlobalKey<FormState>();
   return showDialog<FuelReport?>(
       context: context,
@@ -64,7 +62,7 @@ Future<FuelReport?> fuelReportDialog(BuildContext context, DateTime time, double
             ElevatedButton.icon(
                 onPressed: () {
                   if (amountFormKey.currentState?.validate() ?? false) {
-                    Navigator.pop(context, FuelReport(time, parseAsDouble(fuelAmountController.text)));
+                    Navigator.pop(context, FuelReport(time, parseAsDouble(fuelAmountController.text) ?? 0));
                   }
                 },
                 icon: const Icon(

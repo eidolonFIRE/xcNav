@@ -19,7 +19,6 @@ void setSystemUI() {
 
 /// int, double, or String -> String
 String? parseAsString(dynamic value) {
-  if (value == null) return null;
   if (value is String) return value;
   if (value is int) return value.toString();
   if (value is double) return value.toString();
@@ -27,11 +26,19 @@ String? parseAsString(dynamic value) {
   return null;
 }
 
-double parseAsDouble(dynamic value) {
+double? parseAsDouble(dynamic value) {
   if (value is double) return value;
   if (value is int) return value.toDouble();
-  if (value is String) return double.parse(value);
-  return value;
+  if (value is String) {
+    try {
+      return double.parse(value);
+    } catch (err, trace) {
+      final msg = "failed to parse double $value";
+      DatadogSdk.instance.logs?.warn(msg, errorMessage: err.toString(), errorStackTrace: trace);
+    }
+  }
+
+  return null;
 }
 
 String colorWheel(double pos) {

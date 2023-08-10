@@ -90,7 +90,7 @@ class ChartLogFuelInsights extends StatelessWidget {
           scatterSpots: logsSlice
               .map((e) => e.fuelStats
                   .map((s) => ScatterSpot(getX(s), getY(s),
-                      radius: 5,
+                      radius: 3 + s.durationTime.inHours.toDouble() * 2,
                       color: Colors.lightGreen.withAlpha(max(max(30, 150 - cardinalityStats),
                           min(255, (255 * s.durationTime.inSeconds / const Duration(hours: 2).inSeconds).round())))))
                   .toList())

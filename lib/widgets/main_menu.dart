@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
+import 'package:xcnav/dialogs/edit_gear.dart';
 import 'package:xcnav/dialogs/fuel_report_dialog.dart';
 import 'package:xcnav/endpoint.dart';
-import 'package:xcnav/patreon.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/profile.dart';
@@ -68,16 +68,62 @@ class _MainMenuState extends State<MainMenu> {
                       iconSize: 20,
                       icon: Icon(
                         Icons.edit,
-                        color: Colors.grey.shade700,
+                        color: Colors.grey.shade600,
                       ),
                       onPressed: () {
                         Navigator.pushNamed(context, "/profileEditor");
                       },
                     )),
-                if (isTierRecognized(Provider.of<Profile>(context, listen: false).tier))
-                  Positioned(top: 10, right: 10, child: tierBadge(Provider.of<Profile>(context, listen: false).tier)),
               ])),
         ),
+
+        // --- Gear
+        Consumer<Profile>(
+            builder: (context, profile, _) => Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 14),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(profile.gear?.wingMakeModel ?? "wing unset",
+                              style: Theme.of(context).textTheme.headlineSmall!.merge(TextStyle(
+                                  color: profile.gear?.wingColor,
+                                  // fontWeight: profile.gear?.wingMakeModel == null ? FontWeight.normal : FontWeight.bold,
+                                  fontStyle:
+                                      (profile.gear?.wingMakeModel == null ? FontStyle.italic : FontStyle.normal)))),
+                          Text(profile.gear?.frameMakeModel ?? "motor unset",
+                              style: Theme.of(context).textTheme.headlineSmall!.merge(TextStyle(
+                                  // color: profile.gear?.wingColor,
+                                  // fontWeight:
+                                  //     profile.gear?.frameMakeModel == null ? FontWeight.normal : FontWeight.bold,
+                                  fontStyle:
+                                      (profile.gear?.frameMakeModel == null ? FontStyle.italic : FontStyle.normal))))
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: IconButton(
+                          iconSize: 20,
+                          icon: Icon(
+                            Icons.edit,
+                            color: Colors.grey.shade600,
+                          ),
+                          onPressed: () {
+                            editGear(context, gear: profile.gear).then((newGear) {
+                              setState(() {
+                                profile.gear = newGear;
+                              });
+                            });
+                          },
+                        )),
+                  ],
+                )),
+
+        Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 
         // --- Fuel Reports
         Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
@@ -166,7 +212,7 @@ class _MainMenuState extends State<MainMenu> {
             leading: const Icon(Icons.radar, size: 30),
             title: Text("ADSB-in", style: Theme.of(context).textTheme.headlineSmall),
             trailing: Switch.adaptive(
-              activeColor: Colors.lightBlueAccent,
+              activeColor: Colors.lightBlue,
               value: Provider.of<ADSB>(context).enabled,
               onChanged: (value) => {Provider.of<ADSB>(context, listen: false).enabled = value},
             ),
@@ -195,7 +241,7 @@ class _MainMenuState extends State<MainMenu> {
                               padding: const EdgeInsets.only(left: 15),
                               child: GestureDetector(
                                   onTap: () => {Navigator.popAndPushNamed(context, "/adsbHelp")},
-                                  child: const Icon(Icons.help, size: 20, color: Colors.lightBlueAccent)),
+                                  child: const Icon(Icons.help, size: 20, color: Colors.lightBlue)),
                             )),
                       ]))
                 : null),
@@ -214,8 +260,8 @@ class _MainMenuState extends State<MainMenu> {
             ),
             ToggleButtons(
               borderWidth: 2,
-              selectedBorderColor: Colors.lightBlueAccent,
-              selectedColor: Colors.lightBlueAccent,
+              selectedBorderColor: Colors.lightBlue,
+              selectedColor: Colors.lightBlue,
               constraints: const BoxConstraints.expand(width: 40, height: 40),
               borderRadius: const BorderRadius.all(Radius.circular(10)),
               isSelected: AudioCueService.modeOptions.values.map((e) => e == audioCueService.mode).toList(),

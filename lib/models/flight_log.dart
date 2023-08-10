@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:bisection/bisect.dart';
+import 'package:xcnav/models/gear.dart';
 import 'package:xml/xml.dart';
 
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
@@ -30,6 +31,14 @@ class FlightLog {
   List<FuelReport> get fuelReports => _fuelReports;
 
   late String title;
+
+  // =========================================
+  Gear? _gear;
+  Gear? get gear => _gear;
+  set gear(newGear) {
+    _gear = newGear;
+    unsaved = true;
+  }
 
   // =========================================
   Duration? _durationTime;
@@ -271,7 +280,7 @@ class FlightLog {
     return nearestIndex(samples.map((e) => e.time).toList(), time.millisecondsSinceEpoch);
   }
 
-  FlightLog({this.samples = const [], this.waypoints = const [], List<FuelReport> fuelReports = const []}) {
+  FlightLog({this.samples = const [], this.waypoints = const [], List<FuelReport> fuelReports = const [], Gear? gear}) {
     if (samples.isEmpty) {
       goodFile = false;
       title = "Broken Log";
@@ -280,12 +289,21 @@ class FlightLog {
     _filename = "${samples.first.time}.json";
 
     _fuelReports = fuelReports.where((each) => containsTime(each.time)).toList();
+
+    _gear = gear;
   }
 
   FlightLog.fromJson(String filename, Map<String, dynamic> data, {this.rawJson}) {
     _filename = filename;
 
     try {
+      // --- Parse Gear
+      final rawGear = data["gear"];
+      if (rawGear != null) {
+        gear = Gear.fromJson(data["gear"]);
+      }
+
+      // --- Parse Samples
       List<dynamic> dataSamples = data["samples"];
       samples = dataSamples.map((e) => Geo.fromJson(e)).toList();
 
@@ -340,6 +358,7 @@ class FlightLog {
       "waypoints":
           waypoints.where((element) => (!element.ephemeral && element.validate())).map((e) => e.toJson()).toList(),
       "fuelReports": fuelReports.map((e) => e.toJson()).toList(),
+      "gear": gear?.toJson()
     });
   }
 

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:xcnav/models/flight_log.dart';
 
 typedef LogFilter = bool Function(FlightLog log);
 
 DateTime? logFilterDateStart;
 DateTime? logFilterDateEnd;
+String? logFilterGearSearch;
 
 Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
   return showDialog<List<LogFilter>>(
@@ -30,7 +32,7 @@ Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
                           showDialog(
                               context: context,
                               builder: (context) => DatePickerDialog(
-                                    initialDate: logFilterDateEnd ?? DateTime.now(),
+                                    initialDate: logFilterDateStart ?? logFilterDateEnd ?? DateTime.now(),
                                     firstDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
                                     lastDate: logFilterDateEnd ?? DateTime.now().add(const Duration(days: 1)),
                                   )).then((value) {
@@ -54,7 +56,7 @@ Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
                           showDialog(
                               context: context,
                               builder: (context) => DatePickerDialog(
-                                    initialDate: logFilterDateStart ?? DateTime.now(),
+                                    initialDate: logFilterDateEnd ?? logFilterDateStart ?? DateTime.now(),
                                     firstDate:
                                         logFilterDateStart ?? DateTime.now().subtract(const Duration(days: 365 * 10)),
                                     lastDate: DateTime.now(),
@@ -69,8 +71,12 @@ Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
                         icon: const Icon(Icons.calendar_month, color: Colors.lightBlue)),
                   ],
                 ),
-                const SizedBox(
-                    width: double.infinity, child: TextField(decoration: InputDecoration(hintText: "Search Gear"))),
+                SizedBox(
+                    width: double.infinity,
+                    child: TextFormField(
+                        initialValue: logFilterGearSearch,
+                        onChanged: (value) => logFilterGearSearch = value,
+                        decoration: const InputDecoration(hintText: "Search Gear"))),
               ],
             ),
             actions: [
@@ -100,6 +106,22 @@ Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
                     if (logFilterDateEnd != null) {
                       filters.add((log) =>
                           log.goodFile && log.startTime!.isBefore(logFilterDateEnd!.add(const Duration(days: 1))));
+                    }
+                    if (logFilterGearSearch?.isNotEmpty ?? false) {
+                      filters.add((log) {
+                        if (log.gear != null) {
+                          final searchStr = log.gear!.toJson().values.join(" ").toLowerCase();
+                          final score = logFilterGearSearch!
+                              .toLowerCase()
+                              .split(RegExp(r"[\s,]"))
+                              .where((element) => element.isNotEmpty)
+                              .map((each) => tokenSortPartialRatio(each, searchStr) / 100.0)
+                              .reduce((a, b) => a * b);
+                          return score > 0.98;
+                        } else {
+                          return false;
+                        }
+                      });
                     }
                     Navigator.pop(context, filters);
                   },

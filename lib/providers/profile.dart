@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:xcnav/models/gear.dart';
 import 'package:xcnav/secrets.dart';
 
 class Profile with ChangeNotifier {
@@ -30,6 +31,14 @@ class Profile with ChangeNotifier {
   final _onLoad = Completer();
   Future<void> get onLoad => _onLoad.future;
 
+  // =========================================
+  Gear? _gear;
+  Gear? get gear => _gear;
+  set gear(newGear) {
+    _gear = newGear;
+    prefs.setString("profile.gear_current", _gear == null ? "" : jsonEncode(_gear!.toJson()));
+  }
+
   Profile() {
     load();
     hash = _hash();
@@ -42,6 +51,10 @@ class Profile with ChangeNotifier {
     id = prefs.getString("profile.id");
     secretID = prefs.getString("profile.secretID");
     tier = prefs.getString("profile.tier");
+    final gearRaw = prefs.getString("profile.gear_current");
+    if (gearRaw?.isNotEmpty ?? false) {
+      _gear = Gear.fromJson(jsonDecode(gearRaw!));
+    }
 
     final loadedAvatarStr = prefs.getString("profile.avatar");
     _avatarRaw = loadedAvatarStr != null ? base64Decode(loadedAvatarStr) : null;

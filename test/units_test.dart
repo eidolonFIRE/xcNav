@@ -22,6 +22,14 @@ void main() {
     expect(printHrMinLexical(const Duration(days: 1, hours: 5, minutes: 90)), "30 hours 30 minutes");
   });
 
+  test("printDoubleSimple", () {
+    expect(printDoubleSimple(1.23, decimals: 1), "1.2");
+    expect(printDoubleSimple(1, decimals: 1), "1");
+    expect(printDoubleSimple(1.00023, decimals: 1), "1");
+    expect(printDoubleSimple(1.23456, decimals: 3), "1.235");
+    expect(printDoubleSimple(1.00000023456, decimals: 3), "1");
+  });
+
   test("printValue", () {
     // Positive numbers
     expect(printDouble(value: 9.2, digits: 2, decimals: 0, autoDecimalThresh: 10.0), "9.2");

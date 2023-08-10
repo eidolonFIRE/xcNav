@@ -13,7 +13,7 @@ class FuelReport {
   FuelReport(this.time, this.amount);
   FuelReport.fromJson(Map<String, dynamic> data) {
     time = DateTime.fromMillisecondsSinceEpoch(data["time"]);
-    amount = parseAsDouble(data["amount"]);
+    amount = parseAsDouble(data["amount"]) ?? 0;
   }
 
   dynamic toJson() {

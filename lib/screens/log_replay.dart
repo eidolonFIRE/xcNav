@@ -6,10 +6,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
-import 'package:xcnav/dialogs/fuel_report_dialog.dart';
 
+import 'package:xcnav/dialogs/edit_gear.dart';
+import 'package:xcnav/dialogs/fuel_report_dialog.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
@@ -69,7 +71,20 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        appBar: AppBar(title: Text("Replay:  ${log?.title}")),
+        appBar: AppBar(
+          title: Text("Replay:  ${log?.title}"),
+          actions: [
+            IconButton(
+                onPressed: () {
+                  editGear(context, gear: log?.gear).then((newGear) {
+                    if (newGear != null) {
+                      log?.gear = newGear;
+                    }
+                  });
+                },
+                icon: const Icon(Icons.edit))
+          ],
+        ),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.max,
@@ -106,8 +121,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         getMapTileLayer(mapTileSrc, mapOpacity),
 
                         // Airspace overlay
-                        if (mapTileSrc != MapTileSrc.sectional) getMapTileLayer(MapTileSrc.airspace, 1),
-                        if (mapTileSrc != MapTileSrc.sectional) getMapTileLayer(MapTileSrc.airports, 1),
+                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                          getMapTileLayer(MapTileSrc.airspace, 1),
+                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                          getMapTileLayer(MapTileSrc.airports, 1),
 
                         // Waypoints: paths
                         PolylineLayer(

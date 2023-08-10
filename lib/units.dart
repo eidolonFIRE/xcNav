@@ -230,6 +230,13 @@ TextSpan richHrMin({required Duration? duration, TextStyle? valueStyle, TextStyl
   }
 }
 
+/// Print a double but remove unecessary trailing zeros.
+String printDoubleSimple(double value, {decimals = 1}) {
+  return value
+      .toStringAsFixed(decimals)
+      .replaceAllMapped(RegExp(r"(?:(\.\d*?[1-9]+)|\.)0*$"), (match) => match.group(1) ?? "");
+}
+
 String printDouble({required double value, required int digits, required int decimals, double? autoDecimalThresh}) {
   if (value.isInfinite) return "∞";
   if (!value.isFinite) return "?";

@@ -196,16 +196,13 @@ class Geo {
   }
 
   Geo.fromJson(Map<String, dynamic> data) {
-    lat = parseAsDouble(data["lat"]);
-    lng = parseAsDouble(data["lng"]);
-    alt = parseAsDouble(data["alt"]);
+    lat = parseAsDouble(data["lat"])!;
+    lng = parseAsDouble(data["lng"])!;
+    alt = parseAsDouble(data["alt"]) ?? 0;
     time = data["time"] as int;
-    hdg = parseAsDouble(data["hdg"]);
-    spd = parseAsDouble(data["spd"]);
-    vario = parseAsDouble(data["vario"]);
-
-    if (data.containsKey("ground")) {
-      ground = parseAsDouble(data["ground"]);
-    }
+    hdg = parseAsDouble(data["hdg"]) ?? 0;
+    spd = parseAsDouble(data["spd"]) ?? 0;
+    vario = parseAsDouble(data["vario"]) ?? 0;
+    ground = parseAsDouble(data["ground"]);
   }
 }
