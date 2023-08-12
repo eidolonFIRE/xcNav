@@ -113,7 +113,7 @@ class Geo {
 
     if (prev != null) {
       vario = (alt - prev.alt) / (time - prev.time) * 1000;
-      if (vario.isNaN) vario = 0;
+      if (vario.isNaN || vario.isInfinite) vario = 0;
       // Blend vario with previous vario reading to offer some mild smoothing
       if (prev.varioSmooth.isFinite && vario.abs() < 99) varioSmooth = vario * 0.1 + prev.varioSmooth * 0.9;
       spdSmooth = spd * 0.1 + prev.spdSmooth * 0.9;

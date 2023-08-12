@@ -96,8 +96,8 @@ class FlightLogCard extends StatelessWidget {
                           // NOTE: Workaround for "high risk" android permission missing
                           if (result.message.toUpperCase().contains('MANAGE_EXTERNAL_STORAGE')) {
                             debugPrint("Workaround to MANAGE_EXTERNAL_STORAGE... using temp directory");
-                            final filename = p.basename(outFile.path);
-                            final String newpath = '${(await getTemporaryDirectory()).path}/$filename';
+                            final tempFilename = p.basename(outFile.path);
+                            final String newpath = '${(await getTemporaryDirectory()).path}/$tempFilename';
                             await File(outFile.path).copy(newpath);
                             result = await OpenFile.open(newpath);
                           }
@@ -126,6 +126,7 @@ class FlightLogCard extends StatelessWidget {
                   onPressed: () {
                     // Delete Log File
                     logStore.deleteLog(logKey);
+                    Navigator.pop(context);
                   },
                   icon: const Icon(
                     Icons.delete_forever,

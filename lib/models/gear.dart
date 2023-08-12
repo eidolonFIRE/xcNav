@@ -22,15 +22,15 @@ class Gear {
   Gear();
 
   Gear.fromJson(Map<String, dynamic> data) {
-    wingMakeModel = data["wing_make_model"];
+    wingMakeModel = parseAsString(data["wing_make_model"]);
     wingSize = parseAsString(data["wing_size"]);
     wingColor = data["wing_color"] != null ? Color(data["wing_color"]) : null;
-    frameMakeModel = data["motor_make_model"];
+    frameMakeModel = parseAsString(data["frame_make_model"]);
     engine = parseAsString(data["engine"]);
     prop = parseAsString(data["prop"]);
     tankSize = parseAsDouble(data["tank_size"]);
     bladderSize = parseAsDouble(data["blader_size"]);
-    other = data["other"];
+    other = parseAsString(data["other"]);
   }
 
   Map<String, dynamic> toJson() {

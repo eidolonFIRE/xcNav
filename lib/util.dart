@@ -5,7 +5,6 @@ import 'package:bisection/bisect.dart';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 
 void setSystemUI() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -29,7 +28,7 @@ String? parseAsString(dynamic value) {
 double? parseAsDouble(dynamic value) {
   if (value is double) return value;
   if (value is int) return value.toDouble();
-  if (value is String) {
+  if (value is String && value.isNotEmpty) {
     try {
       return double.parse(value);
     } catch (err, trace) {
@@ -68,16 +67,14 @@ String colorWheel(double pos) {
 /// Returns `true` if success.
 Future<bool> saveFileToAppDocs({required filename, required String data}) async {
   try {
-    Directory docsDir = await getApplicationDocumentsDirectory();
-
-    final file = File("${docsDir.path}/$filename");
+    final file = File(filename);
     await file.create(recursive: true);
-    file.writeAsString(data);
-    return true;
+    await file.writeAsString(data);
+    return Future.value(true);
   } catch (err, trace) {
     DatadogSdk.instance.logs?.error("Failed to save file $filename.",
         errorMessage: err.toString(), errorStackTrace: trace, attributes: {"dataLength": data.length});
-    return false;
+    return Future.value(false);
   }
 }
 

@@ -95,7 +95,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                   case "edit_gear":
                     editGear(context, gear: log.gear).then((newGear) {
                       if (newGear != null) {
-                        log.gear = newGear;
+                        logStore.logs[logKey!]!.gear = newGear;
                       }
                     });
 

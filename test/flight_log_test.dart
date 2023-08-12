@@ -37,6 +37,11 @@ void main() {
         gear: loadedLog.gear,
         filename: loadedLog.filename);
     expect(jsonDecode(loadedLog.toJson()), jsonDecode(newLog.toJson()));
+
+    expect(loadedLog.samples.length, 3);
+    expect(loadedLog.fuelReports.length, 2);
+    expect(loadedLog.gear?.wingMakeModel, "1234ok");
+    expect(loadedLog.gear?.tankSize, 12);
   });
 
   test("trim - start clean cut", () {
@@ -152,8 +157,6 @@ void main() {
       Geo(lat: 34.3, lng: 120.1, alt: 0.2, spd: 15.3974637, timestamp: const Duration(minutes: 50).inMilliseconds),
       Geo(lat: 34.4, lng: 120.2, alt: 0.3, spd: 24.0537096, timestamp: const Duration(minutes: 80).inMilliseconds),
     ]);
-
-    log.goodFile = true;
 
     expect(
         log.insertFuelReport(12, DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 2).inMilliseconds)), true);

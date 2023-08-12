@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:xcnav/endpoint.dart';
 
 // --- Models
 import 'package:xcnav/models/error_code.dart';
@@ -19,6 +18,8 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
+
+import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/util.dart';
 
 enum ClientState {

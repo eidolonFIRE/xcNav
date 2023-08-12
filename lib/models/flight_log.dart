@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:bisection/bisect.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/log_store.dart';
 import 'package:xcnav/models/gear.dart';
 import 'package:xml/xml.dart';
 
@@ -270,9 +272,16 @@ class FlightLog {
   // =========================================
   /// Return true if success
   Future<bool> save() async {
-    _filename ??= "flight_logs/${startTime!.millisecondsSinceEpoch}.json";
+    _filename ??=
+        "${(await getApplicationDocumentsDirectory()).path}/flight_logs/${startTime!.millisecondsSinceEpoch}.json";
     debugPrint("Saving FlightLog $filename");
-    return saveFileToAppDocs(filename: filename, data: toJson()).then((value) => unsaved = false);
+    logStore.updateLog(_filename!, this);
+    Completer<bool> completer = Completer();
+    saveFileToAppDocs(filename: filename, data: toJson()).then((value) {
+      unsaved = false;
+      completer.complete(true);
+    });
+    return completer.future;
   }
 
   int compareTo(FlightLog other) {
@@ -345,7 +354,7 @@ class FlightLog {
       goodFile = false;
       throw "Creating FlightLog without samples";
     }
-    _filename = filename ?? "${samples.first.time}.json";
+    _filename = filename;
     _fuelReports = fuelReports.where((each) => containsTime(each.time)).toList();
     _gear = gear;
     goodFile = true;

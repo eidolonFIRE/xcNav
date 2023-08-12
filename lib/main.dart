@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock/wakelock.dart';
@@ -54,6 +55,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
+  final version = await PackageInfo.fromPlatform();
+
   final configuration = DdSdkConfiguration(
     clientToken: datadogToken,
     env: kDebugMode ? "debug" : "release",
@@ -61,7 +64,7 @@ void main() async {
     trackingConsent: TrackingConsent.granted,
     nativeCrashReportEnabled: true,
     loggingConfiguration: LoggingConfiguration(
-      sendNetworkInfo: true,
+      loggerName: "xcNav: ${version.version}  -  ( build ${version.buildNumber} )",
       printLogsToConsole: true,
     ),
     rumConfiguration: RumConfiguration(

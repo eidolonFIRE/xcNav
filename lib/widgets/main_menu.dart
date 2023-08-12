@@ -111,7 +111,9 @@ class _MainMenuState extends State<MainMenu> {
                           onPressed: () {
                             editGear(context, gear: profile.gear).then((newGear) {
                               setState(() {
-                                profile.gear = newGear;
+                                if (newGear != null) {
+                                  profile.gear = newGear;
+                                }
                               });
                             });
                           },

@@ -33,7 +33,7 @@ class Profile with ChangeNotifier {
   // =========================================
   Gear? _gear;
   Gear? get gear => _gear;
-  set gear(newGear) {
+  set gear(Gear? newGear) {
     _gear = newGear;
     prefs.setString("profile.gear_current", _gear == null ? "" : jsonEncode(_gear!.toJson()));
   }

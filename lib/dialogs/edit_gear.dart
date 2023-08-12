@@ -253,6 +253,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                   onPressed: () {
                     // Save latest to prefs
                     if (gear != null) {
+                      debugPrint("Saving gear: ${jsonEncode(gear?.toJson())}");
                       SharedPreferences.getInstance()
                           .then((prefs) => prefs.setString("gear_last_saved_value", jsonEncode(gear?.toJson())));
                     }

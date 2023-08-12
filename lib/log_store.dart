@@ -72,7 +72,7 @@ class LogStore with ChangeNotifier {
         completers.add(completer);
 
         File.fromUri(each.uri).readAsString().then((value) {
-          debugPrint("Loading log: ${each.uri}");
+          debugPrint("Loading log: ${each.path}");
           try {
             _logs[each.uri.path] = FlightLog.fromJson(each.path, jsonDecode(value), rawJson: value);
             // completer.complete();
@@ -105,7 +105,6 @@ class LogStore with ChangeNotifier {
       // Filter logs by search functions
       slice = _logs.keys.where((key) => _logFilters!.map((e) => e(logs[key]!)).reduce((a, b) => a && b)).toList();
     } else {
-      debugPrint("Log filters empty!");
       slice = _logs.keys.toList();
     }
     slice.sort((a, b) =>
