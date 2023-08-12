@@ -230,6 +230,30 @@ TextSpan richHrMin({required Duration? duration, TextStyle? valueStyle, TextStyl
   }
 }
 
+TextSpan richMinSec(
+    {required Duration? duration, TextStyle? valueStyle, TextStyle? unitStyle, bool longUnits = false}) {
+  if (duration == null) {
+    return TextSpan(text: "∞", style: valueStyle);
+  } else {
+    int min = duration.inMinutes;
+    int sec = duration.inSeconds - duration.inMinutes * 60;
+
+    if (min > 0) {
+      return TextSpan(children: [
+        TextSpan(text: min.toString(), style: valueStyle),
+        TextSpan(text: longUnits ? "min " : "m ", style: unitStyle ?? valueStyle),
+        TextSpan(text: sec.toString(), style: valueStyle),
+        TextSpan(text: longUnits ? "sec" : "s", style: unitStyle ?? valueStyle),
+      ]);
+    } else {
+      return TextSpan(children: [
+        TextSpan(text: sec.toString(), style: valueStyle),
+        TextSpan(text: "sec", style: unitStyle ?? valueStyle),
+      ]);
+    }
+  }
+}
+
 /// Print a double but remove unecessary trailing zeros.
 String printDoubleSimple(double value, {decimals = 1}) {
   return value

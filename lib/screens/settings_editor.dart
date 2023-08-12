@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
-import 'package:email_validator/email_validator.dart';
 
 // Providers
 import 'package:xcnav/providers/profile.dart';

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:bisection/bisect.dart';
@@ -19,9 +20,9 @@ import 'package:xcnav/models/fuel_report.dart';
 
 class FlightLog {
   late final bool goodFile;
-  bool unsaved = false;
+  bool unsaved = true;
 
-  late final String _filename;
+  String? _filename;
   late List<Geo> samples;
   late final List<Waypoint> waypoints;
 
@@ -30,7 +31,13 @@ class FlightLog {
   late List<FuelReport> _fuelReports;
   List<FuelReport> get fuelReports => _fuelReports;
 
-  late String title;
+  String get title {
+    if (goodFile) {
+      return DateFormat("MMM d - yyyy").format(DateTime.fromMillisecondsSinceEpoch(samples.first.time));
+    } else {
+      return "Broken Log! $filename";
+    }
+  }
 
   // =========================================
   Gear? _gear;
@@ -127,7 +134,7 @@ class FlightLog {
   }
 
   // =========================================
-  String get filename => _filename;
+  String? get filename => _filename;
   DateTime? get startTime => samples.isEmpty ? null : DateTime.fromMillisecondsSinceEpoch(samples.first.time);
   DateTime? get endTime => samples.isEmpty ? null : DateTime.fromMillisecondsSinceEpoch(samples.last.time);
 
@@ -261,8 +268,9 @@ class FlightLog {
   }
 
   // =========================================
+  /// Return true if success
   Future<bool> save() async {
-    final filename = "flight_logs/${startTime!.millisecondsSinceEpoch}.json";
+    _filename ??= "flight_logs/${startTime!.millisecondsSinceEpoch}.json";
     debugPrint("Saving FlightLog $filename");
     return saveFileToAppDocs(filename: filename, data: toJson()).then((value) => unsaved = false);
   }
@@ -271,7 +279,7 @@ class FlightLog {
     if (goodFile && other.goodFile) {
       return other.startTime!.compareTo(startTime!);
     } else {
-      return other.filename.compareTo(filename);
+      return (other.filename ?? "").compareTo(filename ?? "");
     }
   }
 
@@ -280,21 +288,72 @@ class FlightLog {
     return nearestIndex(samples.map((e) => e.time).toList(), time.millisecondsSinceEpoch);
   }
 
-  FlightLog({this.samples = const [], this.waypoints = const [], List<FuelReport> fuelReports = const [], Gear? gear}) {
+  /// Return a copy of this log with a trimmed timeline.
+  /// Fuel reports will be interpolated in some cases
+  FlightLog trimLog(int startIndex, int endIndex) {
+    // insert new interpolated fuel reports
+
+    final newStartTime = DateTime.fromMillisecondsSinceEpoch(samples[startIndex].time);
+    final newEndTime = DateTime.fromMillisecondsSinceEpoch(samples[endIndex].time);
+
+    double interpTime(DateTime start, DateTime end, DateTime i) {
+      final dur = end.millisecondsSinceEpoch - start.millisecondsSinceEpoch;
+      return (i.millisecondsSinceEpoch - start.millisecondsSinceEpoch) / dur.toDouble();
+    }
+
+    bool newContainsTime(DateTime time) {
+      return time == newStartTime || time == newEndTime || (time.isAfter(newStartTime) && time.isBefore(newEndTime));
+    }
+
+    final newFuelReports = fuelReports.toList();
+    for (int t = 0; t < fuelReports.length - 1; t++) {
+      final first = fuelReports[t];
+      final second = fuelReports[t + 1];
+
+      // first is not contained, but second is.
+      if (!newContainsTime(first.time) && newContainsTime(second.time) && second.time.isAfter(newStartTime)) {
+        // insert new at beginning
+        final interpValue = interpTime(first.time, second.time, newStartTime);
+        newFuelReports.insert(
+            0, FuelReport(newStartTime, first.amount * (1 - interpValue) + second.amount * interpValue));
+      }
+
+      // first is contained, but second is not.
+      if (newContainsTime(first.time) && !newContainsTime(second.time) && first.time.isBefore(newEndTime)) {
+        // insert new at end
+        final interpValue = interpTime(first.time, second.time, newEndTime);
+        newFuelReports.add(FuelReport(newEndTime, first.amount * (1 - interpValue) + second.amount * interpValue));
+      }
+    }
+
+    final newLog = FlightLog(
+        samples: samples.sublist(startIndex, endIndex + 1).toList(),
+        waypoints: waypoints,
+        fuelReports: newFuelReports,
+        gear: gear,
+        filename: filename);
+    return newLog;
+  }
+
+  FlightLog(
+      {this.samples = const [],
+      this.waypoints = const [],
+      List<FuelReport> fuelReports = const [],
+      Gear? gear,
+      String? filename}) {
     if (samples.isEmpty) {
       goodFile = false;
-      title = "Broken Log";
       throw "Creating FlightLog without samples";
     }
-    _filename = "${samples.first.time}.json";
-
+    _filename = filename ?? "${samples.first.time}.json";
     _fuelReports = fuelReports.where((each) => containsTime(each.time)).toList();
-
     _gear = gear;
+    goodFile = true;
   }
 
   FlightLog.fromJson(String filename, Map<String, dynamic> data, {this.rawJson}) {
     _filename = filename;
+    unsaved = false;
 
     try {
       // --- Parse Gear
@@ -319,8 +378,6 @@ class FlightLog {
         }
       }
 
-      title = DateFormat("MMM d - yyyy").format(DateTime.fromMillisecondsSinceEpoch(samples.first.time));
-
       // --- Try load waypoints
       if (data.containsKey("waypoints")) {
         waypoints = (data["waypoints"] as List<dynamic>)
@@ -343,7 +400,6 @@ class FlightLog {
       debugPrint("Error Loading Flight Log: $e");
       samples = [];
       waypoints = [];
-      title = "Broken File! $filename";
       goodFile = false;
       DatadogSdk.instance.logs?.error("Broken FlightLog File",
           errorMessage: e.toString(),

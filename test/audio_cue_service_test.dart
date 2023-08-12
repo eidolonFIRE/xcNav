@@ -39,7 +39,7 @@ class MockFlutterTts extends Mock implements FlutterTts {
 class MockGroup extends Group {
   MockGroup() {
     pilots = {
-      "testPilot": Pilot("testPilot", "John", null, Geo(lat: -37, lng: 122, alt: 100, spd: 4), null),
+      "testPilot": Pilot("testPilot", "John", null, Geo(lat: -37, lng: 122, alt: 100, spd: 4)),
     };
   }
 }

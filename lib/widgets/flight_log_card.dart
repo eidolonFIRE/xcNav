@@ -8,21 +8,22 @@ import 'package:provider/provider.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as p;
 
+import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
-import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class FlightLogCard extends StatelessWidget {
-  final FlightLog log;
-  final Function onDelete;
+  final String logKey;
 
-  const FlightLogCard(this.log, this.onDelete, {Key? key}) : super(key: key);
+  const FlightLogCard(this.logKey, {Key? key}) : super(key: key);
 
   /// Recover waypoints from log and put them into a new flight plan.
   void restoreWaypoints(BuildContext context) {
+    final log = logStore.logs[logKey]!;
+
     final String planName = "Flight: ${log.title}";
 
     final newPlan = FlightPlan(planName);
@@ -67,15 +68,16 @@ class FlightLogCard extends StatelessWidget {
   }
 
   void exportLog(BuildContext context, String fileType) {
-    String filename = "";
+    final log = logStore.logs[logKey]!;
+    String outFilename = "";
     if (log.samples.isNotEmpty) {
-      filename = DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
+      outFilename = DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
     } else {
-      filename = p.basenameWithoutExtension(log.filename);
+      outFilename = p.basenameWithoutExtension(log.filename ?? DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.now()));
     }
     (Platform.isIOS ? getApplicationDocumentsDirectory() : Future(() => Directory('/storage/emulated/0/Documents')))
         .then((Directory path) {
-      var outFile = File("${path.path}/xcNav_$fileType/$filename.$fileType");
+      var outFile = File("${path.path}/xcNav_$fileType/$outFilename.$fileType");
       outFile.create(recursive: true).then((value) => value
           .writeAsString(fileType == "json" ? (log.rawJson ?? "") : (fileType == "kml" ? log.toKML() : log.toGPX()))
           .then((value) => showDialog(
@@ -123,12 +125,7 @@ class FlightLogCard extends StatelessWidget {
               ElevatedButton.icon(
                   onPressed: () {
                     // Delete Log File
-                    File logFile = File(log.filename);
-                    logFile.exists().then((value) {
-                      logFile.delete();
-                      Navigator.of(context).pop();
-                      onDelete();
-                    });
+                    logStore.deleteLog(logKey);
                   },
                   icon: const Icon(
                     Icons.delete_forever,
@@ -150,6 +147,8 @@ class FlightLogCard extends StatelessWidget {
   Widget build(BuildContext context) {
     MapController mapController = MapController();
     LatLngBounds? mapBounds;
+
+    final log = logStore.logs[logKey]!;
 
     if (log.goodFile) {
       mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList());
@@ -173,7 +172,7 @@ class FlightLogCard extends StatelessWidget {
                     interactiveFlags: InteractiveFlag.none,
                     onTap: (tapPosition, point) {
                       if (log.goodFile) {
-                        Navigator.pushNamed(context, "/logReplay", arguments: log);
+                        Navigator.pushNamed(context, "/logReplay", arguments: {"logKey": logKey});
                       }
                     },
                   ),

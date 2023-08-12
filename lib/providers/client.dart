@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:crypto/crypto.dart' as crypto;
 import 'package:xcnav/endpoint.dart';
 
 // --- Models
@@ -20,7 +19,6 @@ import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
 
 enum ClientState {

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
+import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'package:fl_chart/fl_chart.dart';
@@ -7,10 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
 
+import 'package:xcnav/dialogs/confirm_log_trim.dart';
 import 'package:xcnav/dialogs/edit_gear.dart';
 import 'package:xcnav/dialogs/fuel_report_dialog.dart';
+import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
-import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
@@ -36,7 +39,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   double mapOpacity = 1.0;
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
 
-  FlightLog? log;
+  String? logKey;
 
   ValueNotifier<int> sampleIndex = ValueNotifier(0);
   bool hasScrubbed = false;
@@ -58,31 +61,131 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
     super.dispose();
   }
 
+  void infoSetTrimTime(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (context) => const AlertDialog(
+              content: Text("Use the slider to select the trim position."),
+            ));
+  }
+
   @override
   Widget build(BuildContext context) {
-    log ??= ModalRoute.of(context)!.settings.arguments as FlightLog;
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, Object>;
+    logKey ??= args["logKey"] as String;
+
+    final log = logStore.logs[logKey]!;
 
     return WillPopScope(
       onWillPop: () {
-        if (log != null && log!.goodFile && log!.unsaved) {
-          log!.save();
+        if (log.goodFile && log.unsaved) {
+          return log.save();
+        } else {
+          return Future.value(true);
         }
-        return Future.value(true);
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          title: Text("Replay:  ${log?.title}"),
+          title: Text("Replay:  ${log.title}"),
           actions: [
-            IconButton(
-                onPressed: () {
-                  editGear(context, gear: log?.gear).then((newGear) {
-                    if (newGear != null) {
-                      log?.gear = newGear;
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case "edit_gear":
+                    editGear(context, gear: log.gear).then((newGear) {
+                      if (newGear != null) {
+                        log.gear = newGear;
+                      }
+                    });
+
+                    break;
+                  case "trim_start":
+                    if (sampleIndex.value == 0 || sampleIndex.value >= log.samples.length - 1) {
+                      // Alert if bad time selected
+                      infoSetTrimTime(context);
+                    } else {
+                      //
+                      final trimStartTime = DateTime.fromMillisecondsSinceEpoch(log.samples[sampleIndex.value].time);
+                      final trimLength =
+                          trimStartTime.difference(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time));
+                      confirmLogTrim(context,
+                              cutLabel: "Start",
+                              newTime: trimStartTime,
+                              trimLength: trimLength,
+                              sampleCount: sampleIndex.value)
+                          .then((confirmed) {
+                        setState(() {
+                          if (confirmed ?? false) {
+                            final newLog = log.trimLog(sampleIndex.value, log.samples.length - 1);
+                            logStore.updateLog(logKey!, newLog);
+                            sampleIndex.value = 0;
+                          }
+                        });
+                      });
                     }
-                  });
-                },
-                icon: const Icon(Icons.edit))
+                    break;
+                  case "trim_end":
+                    if (sampleIndex.value == 0 || sampleIndex.value >= log.samples.length - 1) {
+                      // Alert if bad time selected
+                      infoSetTrimTime(context);
+                    } else {
+                      //
+                      final trimEndTime = DateTime.fromMillisecondsSinceEpoch(log.samples[sampleIndex.value].time);
+                      final trimLength =
+                          DateTime.fromMillisecondsSinceEpoch(log.samples.last.time).difference(trimEndTime);
+                      confirmLogTrim(context,
+                              cutLabel: "End",
+                              newTime: trimEndTime,
+                              trimLength: trimLength,
+                              sampleCount: (log.samples.length - 1) - sampleIndex.value)
+                          .then((confirmed) {
+                        setState(() {
+                          if (confirmed ?? false) {
+                            final newLog = log.trimLog(0, sampleIndex.value);
+                            logStore.updateLog(logKey!, newLog);
+                          }
+                        });
+                      });
+                    }
+                    break;
+                }
+              },
+              itemBuilder: (context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem(
+                  value: "edit_gear",
+                  child: ListTile(
+                    leading: Icon(Icons.edit),
+                    title: Text("Edit Gear"),
+                  ),
+                ),
+                const PopupMenuDivider(),
+                PopupMenuItem(
+                    value: "trim_start",
+                    child: ListTile(
+                      leading: SvgPicture.asset(
+                        "assets/images/trim_start.svg",
+                        height: 32,
+                      ),
+                      title: const Text(
+                        "Trim Start",
+                        style: TextStyle(color: Colors.amber),
+                      ),
+                    )),
+                PopupMenuItem(
+                    value: "trim_end",
+                    child: ListTile(
+                      leading: SvgPicture.asset(
+                        "assets/images/trim_end.svg",
+                        height: 32,
+                      ),
+                      title: const Text(
+                        "Trim End",
+                        style: TextStyle(color: Colors.amber),
+                      ),
+                    ))
+              ],
+            )
           ],
         ),
         body: Column(
@@ -93,140 +196,138 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.6,
               child: Stack(children: [
-                if (log != null)
-                  FlutterMap(
-                      key: mapKey,
-                      mapController: mapController,
-                      options: MapOptions(
-                        absorbPanEventsOnScrollables: false,
-                        onMapReady: () {
-                          setState(() {
-                            mapReady = true;
-                            if (log != null) {
-                              final mapBounds = LatLngBounds.fromPoints(log!.samples.map((e) => e.latlng).toList());
-                              mapBounds.pad(0.2);
-                              mapController.fitBounds(mapBounds);
-                            }
-                          });
-                        },
-                        interactiveFlags:
-                            InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
-                        onPositionChanged: (mapPosition, hasGesture) {
-                          if (hasGesture) {
-                            isMapDialOpen.value = false;
-                          }
-                        },
+                FlutterMap(
+                    key: mapKey,
+                    mapController: mapController,
+                    options: MapOptions(
+                      absorbPanEventsOnScrollables: false,
+                      onMapReady: () {
+                        setState(() {
+                          mapReady = true;
+
+                          final mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList());
+                          mapBounds.pad(0.2);
+                          mapController.fitBounds(mapBounds);
+                        });
+                      },
+                      interactiveFlags:
+                          InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
+                      onPositionChanged: (mapPosition, hasGesture) {
+                        if (hasGesture) {
+                          isMapDialOpen.value = false;
+                        }
+                      },
+                    ),
+                    children: [
+                      getMapTileLayer(mapTileSrc, mapOpacity),
+
+                      // Airspace overlay
+                      if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                        getMapTileLayer(MapTileSrc.airspace, 1),
+                      if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                        getMapTileLayer(MapTileSrc.airports, 1),
+
+                      // Waypoints: paths
+                      PolylineLayer(
+                        // pointerDistanceTolerance: 30,
+                        polylineCulling: true,
+                        polylines: log.waypoints
+                            .where((value) => value.latlng.length > 1)
+                            .map((e) => Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor()))
+                            .toList(),
                       ),
-                      children: [
-                        getMapTileLayer(mapTileSrc, mapOpacity),
 
-                        // Airspace overlay
-                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                          getMapTileLayer(MapTileSrc.airspace, 1),
-                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                          getMapTileLayer(MapTileSrc.airports, 1),
+                      // Waypoint markers
+                      MarkerLayer(
+                          markers: log.waypoints
+                              .where((e) => e.latlng.length == 1)
+                              .map((e) => Marker(
+                                  point: e.latlng[0],
+                                  height: 60 * 0.8,
+                                  width: 40 * 0.8,
+                                  rotate: true,
+                                  anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
+                                  rotateOrigin: const Offset(0, 30 * 0.8),
+                                  builder: (context) => WaypointMarker(e, 60 * 0.8)))
+                              .toList()),
 
-                        // Waypoints: paths
-                        PolylineLayer(
-                          // pointerDistanceTolerance: 30,
-                          polylineCulling: true,
-                          polylines: log!.waypoints
-                              .where((value) => value.latlng.length > 1)
-                              .map((e) => Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor()))
-                              .toList(),
-                        ),
-
-                        // Waypoint markers
-                        MarkerLayer(
-                            markers: log!.waypoints
-                                .where((e) => e.latlng.length == 1)
-                                .map((e) => Marker(
-                                    point: e.latlng[0],
-                                    height: 60 * 0.8,
-                                    width: 40 * 0.8,
-                                    rotate: true,
-                                    anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
-                                    rotateOrigin: const Offset(0, 30 * 0.8),
-                                    builder: (context) => WaypointMarker(e, 60 * 0.8)))
-                                .toList()),
-
-                        // --- Log Line
-                        PolylineLayer(polylines: [
-                          Polyline(
-                              points: log!.samples.map((e) => e.latlng).toList(),
-                              strokeWidth: 4,
-                              color: Colors.red,
-                              isDotted: true)
-                        ]),
-
-                        // --- Fuel reports
-                        MarkerLayer(
-                          markers: log!.fuelReports
-                              .mapIndexed((index, e) => Marker(
-                                    anchorPos: AnchorPos.align(AnchorAlign.right),
-                                    height: 40,
-                                    width: 60,
-                                    point: log!.samples[log!.timeToSampleIndex(e.time)].latlng,
-                                    builder: (context) {
-                                      return Container(
-                                        transform: Matrix4.translationValues(-2, -20, 0),
-                                        child: GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                sampleIndex.value = log!.timeToSampleIndex(e.time);
-                                              });
-                                            },
-                                            onLongPress: () {
-                                              fuelReportDialog(context, e.time, e.amount).then((newReport) {
-                                                setState(() {
-                                                  if (newReport != null) {
-                                                    if (newReport.amount == 0 &&
-                                                        newReport.time.millisecondsSinceEpoch == 0) {
-                                                      // Report was deleted
-                                                      log!.removeFuelReport(index);
-                                                    } else {
-                                                      // Edit fuel report amount
-                                                      log!.updateFuelReport(index, newReport.amount);
-                                                    }
-                                                  }
-                                                });
-                                              });
-                                            },
-
-                                            // Fuel Report Marker
-                                            child: LabelFlag(
-                                                direction: TextDirection.ltr,
-                                                text: Text.rich(
-                                                  richValue(UnitType.fuel, e.amount, decimals: 1),
-                                                  style: const TextStyle(color: Colors.white),
-                                                ),
-                                                color: Colors.blue)),
-                                      );
-                                    },
-                                  ))
-                              .toList(),
-                        ),
-
-                        // "ME" Live Location Marker
-                        ValueListenableBuilder<int>(
-                            valueListenable: sampleIndex,
-                            builder: (context, value, _) {
-                              return MarkerLayer(
-                                markers: [
-                                  Marker(
-                                    width: 30.0,
-                                    height: 30.0,
-                                    point: log!.samples[value].latlng,
-                                    builder: (ctx) => Container(
-                                      transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.rotationZ(log!.samples[value].hdg),
-                                      child: Image.asset("assets/images/red_arrow.png"),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }),
+                      // --- Log Line
+                      PolylineLayer(polylines: [
+                        Polyline(
+                            points: log.samples.map((e) => e.latlng).toList(),
+                            strokeWidth: 4,
+                            color: Colors.red,
+                            isDotted: true)
                       ]),
+
+                      // --- Fuel reports
+                      MarkerLayer(
+                        markers: log.fuelReports
+                            .mapIndexed((index, e) => Marker(
+                                  anchorPos: AnchorPos.align(AnchorAlign.right),
+                                  height: 40,
+                                  width: 60,
+                                  point: log.samples[log.timeToSampleIndex(e.time)].latlng,
+                                  builder: (context) {
+                                    return Container(
+                                      transform: Matrix4.translationValues(-2, -20, 0),
+                                      child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              sampleIndex.value = log.timeToSampleIndex(e.time);
+                                            });
+                                          },
+                                          onLongPress: () {
+                                            fuelReportDialog(context, e.time, e.amount).then((newReport) {
+                                              setState(() {
+                                                if (newReport != null) {
+                                                  if (newReport.amount == 0 &&
+                                                      newReport.time.millisecondsSinceEpoch == 0) {
+                                                    // Report was deleted
+                                                    log.removeFuelReport(index);
+                                                  } else {
+                                                    // Edit fuel report amount
+                                                    log.updateFuelReport(index, newReport.amount);
+                                                  }
+                                                }
+                                              });
+                                            });
+                                          },
+
+                                          // Fuel Report Marker
+                                          child: LabelFlag(
+                                              direction: TextDirection.ltr,
+                                              text: Text.rich(
+                                                richValue(UnitType.fuel, e.amount, decimals: 1),
+                                                style: const TextStyle(color: Colors.white),
+                                              ),
+                                              color: Colors.blue)),
+                                    );
+                                  },
+                                ))
+                            .toList(),
+                      ),
+
+                      // "ME" Live Location Marker
+                      ValueListenableBuilder<int>(
+                          valueListenable: sampleIndex,
+                          builder: (context, value, _) {
+                            return MarkerLayer(
+                              markers: [
+                                Marker(
+                                  width: 30.0,
+                                  height: 30.0,
+                                  point: log.samples[value].latlng,
+                                  builder: (ctx) => Container(
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: Matrix4.rotationZ(log.samples[value].hdg),
+                                    child: Image.asset("assets/images/red_arrow.png"),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
+                    ]),
 
                 // --- Map Tile Selector
                 Align(
@@ -249,40 +350,40 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     )),
 
                 // --- Time Scrubber
-                if (log != null)
-                  ValueListenableBuilder<int>(
-                      valueListenable: sampleIndex,
-                      builder: (context, index, _) {
-                        return Positioned(
-                            bottom: 10,
-                            left: 10,
-                            right: 10,
-                            child: Theme(
-                              data: ThemeData(
-                                  sliderTheme: const SliderThemeData(
-                                showValueIndicator: ShowValueIndicator.never,
-                                thumbShape: _ThumbShape(),
-                                activeTrackColor: Color.fromARGB(170, 0, 0, 0),
-                                inactiveTrackColor: Colors.black45,
-                                valueIndicatorColor: Colors.black45,
-                                thumbColor: Colors.black,
-                                trackHeight: 8,
-                              )),
-                              child: Slider(
-                                  label: intl.DateFormat("h:mm a")
-                                      .format(DateTime.fromMillisecondsSinceEpoch(log!.samples[index].time)),
-                                  value: (log!.samples[index].time - log!.startTime!.millisecondsSinceEpoch) /
-                                      log!.durationTime.inMilliseconds,
-                                  onChanged: (value) {
-                                    sampleIndex.value = max(
-                                        0,
-                                        min(
-                                            log!.samples.length - 1,
-                                            log!.timeToSampleIndex(log!.startTime!.add(Duration(
-                                                milliseconds: (value * log!.durationTime.inMilliseconds).round())))));
-                                  }),
-                            ));
-                      }),
+
+                ValueListenableBuilder<int>(
+                    valueListenable: sampleIndex,
+                    builder: (context, index, _) {
+                      return Positioned(
+                          bottom: 10,
+                          left: 10,
+                          right: 10,
+                          child: Theme(
+                            data: ThemeData(
+                                sliderTheme: const SliderThemeData(
+                              showValueIndicator: ShowValueIndicator.never,
+                              thumbShape: _ThumbShape(),
+                              activeTrackColor: Color.fromARGB(170, 0, 0, 0),
+                              inactiveTrackColor: Colors.black45,
+                              valueIndicatorColor: Colors.black45,
+                              thumbColor: Colors.black,
+                              trackHeight: 8,
+                            )),
+                            child: Slider(
+                                label: intl.DateFormat("h:mm a")
+                                    .format(DateTime.fromMillisecondsSinceEpoch(log.samples[index].time)),
+                                value: (log.samples[index].time - log.startTime!.millisecondsSinceEpoch) /
+                                    log.durationTime.inMilliseconds,
+                                onChanged: (value) {
+                                  sampleIndex.value = max(
+                                      0,
+                                      min(
+                                          log.samples.length - 1,
+                                          log.timeToSampleIndex(log.startTime!.add(Duration(
+                                              milliseconds: (value * log.durationTime.inMilliseconds).round())))));
+                                }),
+                          ));
+                    }),
 
                 // --- Add Fuel Report
                 Positioned(
@@ -291,12 +392,12 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                   child: MapButton(
                       size: 45,
                       onPressed: () {
-                        fuelReportDialog(context,
-                                DateTime.fromMillisecondsSinceEpoch(log!.samples[sampleIndex.value].time), null)
+                        fuelReportDialog(
+                                context, DateTime.fromMillisecondsSinceEpoch(log.samples[sampleIndex.value].time), null)
                             .then((newReport) {
                           if (newReport != null) {
                             setState(() {
-                              log!.insertFuelReport(newReport.amount, newReport.time);
+                              log.insertFuelReport(newReport.amount, newReport.time);
                             });
                           }
                         });
@@ -341,7 +442,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
                                           // --- Speedometer
-                                          Text.rich(richValue(UnitType.speed, log!.samples[value].spd,
+                                          Text.rich(richValue(UnitType.speed, log.samples[value].spd,
                                               digits: 4,
                                               autoDecimalThresh: -1,
                                               valueStyle: lowerStyle.merge(const TextStyle(fontSize: 30)),
@@ -355,16 +456,16 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
                                           // --- Altimeter stack
                                           Altimeter(
-                                            log!.samples[value].alt,
+                                            log.samples[value].alt,
                                             valueStyle: lowerStyle,
                                             unitStyle: unitStyle,
                                             unitTag: "MSL",
                                             isPrimary: false,
                                           ),
-                                          if (log!.samples[value].ground != null)
+                                          if (log.samples[value].ground != null)
                                             Altimeter(
-                                              log!.samples[value].ground != null
-                                                  ? log!.samples[value].alt - log!.samples[value].ground!
+                                              log.samples[value].ground != null
+                                                  ? log.samples[value].alt - log.samples[value].ground!
                                                   : null,
                                               valueStyle: lowerStyle,
                                               unitStyle: unitStyle,
@@ -397,7 +498,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                           return CustomPaint(
                             // willChange: true,
                             painter:
-                                ElevationPlotPainter(log!.samples, [], 100, showPilotIcon: false, labelIndex: value),
+                                ElevationPlotPainter(log.samples, [], 100, showPilotIcon: false, labelIndex: value),
                           );
                         }),
                   ),
@@ -407,12 +508,12 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Builder(builder: (context) {
-                    final int interval = (log!.speedHist.length / 15).ceil();
+                    final int interval = (log.speedHist.length / 15).ceil();
                     return BarChart(BarChartData(
                         borderData: FlBorderData(show: false),
                         barTouchData: BarTouchData(enabled: false),
                         gridData: FlGridData(drawVerticalLine: false, drawHorizontalLine: false),
-                        barGroups: log!.speedHist
+                        barGroups: log.speedHist
                             .mapIndexed((index, value) => BarChartGroupData(x: index, barRods: [
                                   BarChartRodData(
                                       toY: value.toDouble(),
@@ -430,7 +531,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                     ? SideTitleWidget(
                                         axisSide: meta.axisSide,
                                         child: Text(
-                                          "${value.round() + log!.speedHistOffset}",
+                                          "${value.round() + log.speedHistOffset}",
                                         ),
                                       )
                                     : Container();
@@ -451,13 +552,13 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 // --- Summary
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                  child: LogSummary(log: log!),
+                  child: LogSummary(log: log),
                 ),
 
                 // --- Fuel
                 Padding(
                   padding: const EdgeInsets.all(8),
-                  child: log!.fuelReports.isEmpty
+                  child: log.fuelReports.isEmpty
                       ? const Center(
                           child: Text("No fuel reports added..."),
                         )
@@ -490,7 +591,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   // constraints: const BoxConstraints(maxHeight: 130),
                                   child: ListView(
                                       shrinkWrap: true,
-                                      children: log!.fuelStats
+                                      children: log.fuelStats
                                           .map((e) => Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                                                 Text("${e.durationTime.inMinutes}"),
                                                 Text(unitConverters[UnitType.fuel]!(e.rate).toStringAsFixed(1)),
@@ -503,7 +604,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               ),
                             ),
                             // --- Fuel Stats: summary
-                            if (log!.sumFuelStat != null && log!.fuelStats.length > 1)
+                            if (log.sumFuelStat != null && log.fuelStats.length > 1)
                               DefaultTextStyle(
                                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                 child: Padding(
@@ -512,9 +613,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                     height: 25,
                                     child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                                       const Text("---"),
-                                      Text(unitConverters[UnitType.fuel]!(log!.sumFuelStat!.rate).toStringAsFixed(1)),
+                                      Text(unitConverters[UnitType.fuel]!(log.sumFuelStat!.rate).toStringAsFixed(1)),
                                       Text(unitConverters[UnitType.distCoarse]!(
-                                              log!.sumFuelStat!.mpl / unitConverters[UnitType.fuel]!(1))
+                                              log.sumFuelStat!.mpl / unitConverters[UnitType.fuel]!(1))
                                           .toStringAsFixed(1))
                                     ]),
                                   ),
