@@ -114,7 +114,6 @@ Widget topInstruments(BuildContext context) {
                           ),
                         ));
                   })),
-          SvgPicture.asset("assets/images/vsi_up_up.svg"),
           // --- Altimeter stack
           Padding(
             padding: const EdgeInsets.only(right: 10),
