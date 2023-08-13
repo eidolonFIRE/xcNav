@@ -153,9 +153,6 @@ class Profile with ChangeNotifier {
     prefs.setString("profile.secretID", newSecretID);
 
     hash = _hash();
-
-    // Add context to logging
-    DatadogSdk.instance.setUserInfo(id: newID, name: name);
   }
 
   String _hash() {
