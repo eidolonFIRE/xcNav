@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
 import 'package:xcnav/dialogs/edit_gear.dart';
-import 'package:xcnav/dialogs/fuel_report_dialog.dart';
+import 'package:xcnav/dialogs/edit_fuel_report.dart';
 import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -129,7 +129,7 @@ class _MainMenuState extends State<MainMenu> {
 
           void addFuelReport() {
             Navigator.pop(context);
-            fuelReportDialog(context, DateTime.now(), null).then((report) {
+            editFuelReport(context, DateTime.now(), null).then((report) {
               if (report != null && report.amount >= 0) {
                 myTelemetry.addFuelReport(report.time, report.amount);
               }

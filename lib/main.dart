@@ -12,7 +12,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
-import 'package:xcnav/airports.dart';
 
 // providers
 import 'package:xcnav/providers/adsb.dart';
@@ -48,6 +47,7 @@ import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/secrets.dart';
+import 'package:xcnav/airports.dart';
 
 LatLng lastKnownLatLng = LatLng(37, -122);
 
@@ -56,6 +56,9 @@ void main() async {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
   final version = await PackageInfo.fromPlatform();
+
+  final prefs = await SharedPreferences.getInstance();
+  settingsMgr = SettingsMgr(prefs);
 
   final configuration = DdSdkConfiguration(
     clientToken: datadogToken,
@@ -68,15 +71,25 @@ void main() async {
       printLogsToConsole: true,
     ),
     rumConfiguration: RumConfiguration(
-      applicationId: 'xcNav',
+      applicationId: datadogRumAppId,
       detectLongTasks: true,
     ),
   );
 
+  await DatadogSdk.instance.initialize(configuration);
+
   final ddsdk = DatadogSdk.instance;
   ddsdk.sdkVerbosity = Verbosity.verbose;
 
-  await DatadogSdk.instance.initialize(configuration);
+  // Set up an anonymous ID for logging and usage statistics.
+  // This ID will be uncorrelated to any ID on the server and is therefore anonymous.
+  // It will be saved, however, so individual clients can be distinguished.
+  if (settingsMgr.datadogSdkId.value.isEmpty) {
+    final random = Random.secure();
+    final values = List<int>.generate(10, (i) => random.nextInt(255));
+    settingsMgr.datadogSdkId.value = base64UrlEncode(values);
+  }
+  ddsdk.setUserInfo(id: settingsMgr.datadogSdkId.value);
 
   FlutterError.onError = (FlutterErrorDetails details) {
     ddsdk.logs?.error(details.toString(), errorStackTrace: details.stack);
@@ -85,8 +98,10 @@ void main() async {
   };
 
   runZonedGuarded(() async {
-    final prefs = await SharedPreferences.getInstance();
-    settingsMgr = SettingsMgr(prefs);
+    // Let datadog know we will not be participating.
+    if (settingsMgr.rumOptOut.value) {
+      DatadogSdk.instance.rum?.addUserAction(RumUserActionType.custom, "opt-out");
+    }
 
     // Load last known LatLng
     final raw = prefs.getString("lastKnownLatLng");
@@ -190,6 +205,8 @@ class XCNav extends StatelessWidget {
     });
 
     return MaterialApp(
+      navigatorObservers:
+          settingsMgr.rumOptOut.value ? [] : [DatadogNavigationObserver(datadogSdk: DatadogSdk.instance)],
       title: 'xcNav',
       debugShowCheckedModeBanner: false,
       builder: (context, child) => MediaQuery(

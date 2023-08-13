@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:xcnav/map_service.dart';
 
 import 'package:xcnav/providers/adsb.dart';
@@ -18,6 +20,7 @@ class SettingConfig<T> {
   final String title;
   final String? description;
   final Widget? icon;
+  final Widget? subtitle;
 
   late ValueNotifier<T> _value;
   T defaultValue;
@@ -57,7 +60,7 @@ class SettingConfig<T> {
   }
 
   SettingConfig(SettingsMgr mgr, this._prefsInstance, this.catagory, this.id, this.defaultValue,
-      {required this.title, this.description, this.icon, bool hidden = false}) {
+      {required this.title, this.description, this.icon, bool hidden = false, this.subtitle}) {
     if (id.startsWith("settings.")) {
       throw "Setting ID automatically starts with \"settings.\"";
     }
@@ -202,6 +205,7 @@ class SettingsMgr {
   // --- Misc
   late final SettingConfig<ProximitySize> adsbProximitySize;
   late final SettingAction adsbTestAudio;
+  late final SettingConfig<bool> rumOptOut;
 
   // --- Debug Tools
   late final SettingConfig<bool> spoofLocation;
@@ -216,6 +220,7 @@ class SettingsMgr {
   late final SettingConfig<bool> northlockWind;
   late final SettingConfig<MapTileSrc> mainMapTileSrc;
   late final SettingConfig<double> mainMapOpacity;
+  late final SettingConfig<String> datadogSdkId;
 
   SettingsMgr(SharedPreferences prefs) {
     // --- General
@@ -285,7 +290,21 @@ class SettingsMgr {
     adsbProximitySize = SettingConfig(this, prefs, "Misc", "adsbProximitySize", ProximitySize.medium,
         title: "ADSB Proximity Profile", icon: const Icon(Icons.radar));
     adsbTestAudio =
-        SettingAction(this, "Misc", () => null, title: "Test Audio", actionIcon: const Icon(Icons.volume_up));
+        SettingAction(this, "Misc", () => null, title: "Test Audio Cues", actionIcon: const Icon(Icons.volume_up));
+    rumOptOut = SettingConfig(this, prefs, "Misc", "rumOptOut", false,
+        title: "Opt-out of anonymous usage data",
+        icon: const Icon(Icons.cancel),
+        subtitle: Text.rich(TextSpan(children: [
+          const WidgetSpan(child: Icon(Icons.help, size: 16, color: Colors.lightBlue)),
+          const TextSpan(text: " View list of metrics captured "),
+          TextSpan(
+              text: "HERE.",
+              style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () async {
+                  launchUrl(Uri.parse("https://github.com/eidolonFIRE/xcNav/blob/main/usage_stats.md"));
+                })
+        ])));
 
     // --- Debug Tools
     spoofLocation = SettingConfig(this, prefs, "Debug Tools", "", false,
@@ -327,6 +346,7 @@ class SettingsMgr {
     mainMapTileSrc =
         SettingConfig(this, prefs, "UI", "mainMapTileSrc", MapTileSrc.topo, title: "Map Tile Sourc", hidden: true);
     mainMapOpacity = SettingConfig(this, prefs, "UI", "mainMapOpacity", 1.0, title: "Main Map Opacity", hidden: true);
+    datadogSdkId = SettingConfig(this, prefs, "Debug", "datadogSdkId", "", title: "DatadogSdk user ID");
   }
 }
 

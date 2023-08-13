@@ -11,7 +11,7 @@ import 'package:collection/collection.dart';
 
 import 'package:xcnav/dialogs/confirm_log_trim.dart';
 import 'package:xcnav/dialogs/edit_gear.dart';
-import 'package:xcnav/dialogs/fuel_report_dialog.dart';
+import 'package:xcnav/dialogs/edit_fuel_report.dart';
 import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
@@ -278,7 +278,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                             });
                                           },
                                           onLongPress: () {
-                                            fuelReportDialog(context, e.time, e.amount).then((newReport) {
+                                            editFuelReport(context, e.time, e.amount).then((newReport) {
                                               setState(() {
                                                 if (newReport != null) {
                                                   if (newReport.amount == 0 &&
@@ -392,7 +392,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                   child: MapButton(
                       size: 45,
                       onPressed: () {
-                        fuelReportDialog(
+                        editFuelReport(
                                 context, DateTime.fromMillisecondsSinceEpoch(log.samples[sampleIndex.value].time), null)
                             .then((newReport) {
                           if (newReport != null) {

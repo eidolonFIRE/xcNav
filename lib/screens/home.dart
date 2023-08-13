@@ -1,3 +1,4 @@
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -154,6 +155,10 @@ class _MyHomePageState extends State<MyHomePage> {
       Provider.of<ChatMessages>(context, listen: false).markAllRead(false);
     }
 
+    if (!settingsMgr.rumOptOut.value) {
+      DatadogSdk.instance.rum?.startView("/home/${pageIndexNames[viewPageIndex]}");
+    }
+
     return WillPopScope(
         onWillPop: () async => false,
         child: Scaffold(
@@ -194,8 +199,14 @@ class _MyHomePageState extends State<MyHomePage> {
                   debugPrint("BottomNavigationBar.tap($value)");
                   if (value == 0) {
                     scaffoldKey.currentState?.openDrawer();
+                    if (!settingsMgr.rumOptOut.value) {
+                      DatadogSdk.instance.rum?.addUserAction(RumUserActionType.tap, "Main Menu");
+                    }
                   } else {
                     setState(() {
+                      if (!settingsMgr.rumOptOut.value) {
+                        DatadogSdk.instance.rum?.stopView("/home/${pageIndexNames[viewPageIndex]}");
+                      }
                       viewPageIndex = value;
                       viewController.jumpToPage(value - 1);
                     });

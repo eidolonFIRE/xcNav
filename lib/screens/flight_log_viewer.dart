@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:xcnav/dialogs/log_filters.dart';
+import 'package:xcnav/dialogs/edit_log_filters.dart';
 import 'package:xcnav/log_store.dart';
 
 // Models

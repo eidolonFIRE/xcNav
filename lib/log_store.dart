@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:xcnav/dialogs/log_filters.dart';
+import 'package:xcnav/dialogs/edit_log_filters.dart';
 import 'package:xcnav/models/flight_log.dart';
 
 final logStore = LogStore();

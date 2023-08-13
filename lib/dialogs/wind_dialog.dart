@@ -1,3 +1,4 @@
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,10 @@ import 'package:xcnav/widgets/wind_plot.dart';
 void showWindDialog(BuildContext context) {
   const valueStyle = TextStyle(fontSize: 40, color: Colors.white);
   const unitStyle = TextStyle(fontSize: 18, color: Colors.grey, fontStyle: FontStyle.italic);
+
+  if (!settingsMgr.rumOptOut.value) {
+    DatadogSdk.instance.rum?.startView("/home/wind_dialog");
+  }
 
   showDialog(
     context: context,
@@ -145,6 +150,10 @@ void showWindDialog(BuildContext context) {
                                       wind.samples.removeRange(0, wind.samples.length - 10);
                                       wind.clearResult();
                                     }
+                                    if (!settingsMgr.rumOptOut.value) {
+                                      DatadogSdk.instance.rum
+                                          ?.addUserAction(RumUserActionType.tap, "Reset Wind Detector");
+                                    }
                                   },
                                   selected: false,
                                   child: const Icon(Icons.refresh),
@@ -161,5 +170,9 @@ void showWindDialog(BuildContext context) {
         ),
       ),
     ),
-  );
+  ).then((value) {
+    if (!settingsMgr.rumOptOut.value) {
+      DatadogSdk.instance.rum?.stopView("/home/wind_dialog");
+    }
+  });
 }

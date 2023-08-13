@@ -13,7 +13,7 @@ class AltimeterBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 2),
-      color: Colors.white38,
+      color: Colors.white54,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20 * size))),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(4, 2, 4, 1) * size,

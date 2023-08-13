@@ -27,8 +27,14 @@ class _SettingsEditorState extends State<SettingsEditor> {
   final TextEditingController searchInput = TextEditingController();
   final filterText = TextEditingController();
 
+  Map<String, List<SettingMgrItem>> slices = {};
+
   @override
   Widget build(BuildContext context) {
+    if (slices.isEmpty) {
+      slices = settingsMgr.settings;
+    }
+
     // --- Future Builders
     getMapTileCacheSize().then((value) {
       if (mounted) {
@@ -150,24 +156,29 @@ class _SettingsEditorState extends State<SettingsEditor> {
                     hintText: "search"),
                 onChanged: (value) {
                   if (mounted) {
-                    setState(() {});
+                    setState(() {
+                      debugPrint("Refresh settings filter.");
+                      slices = settingsMgr.settings.map((key, value) => MapEntry(
+                          key,
+                          value
+                              .where((element) =>
+                                  filterText.text.isEmpty ||
+                                  weightedRatio("${element.catagory.toLowerCase()} ${element.title.toLowerCase()}",
+                                          filterText.text.toLowerCase()) >
+                                      min(90, filterText.text.length * 15))
+                              .toList()));
+                    });
                   }
                 },
               ),
             ),
             Expanded(
               child: ListView(
-                  children: settingsMgr.settings
+                  children: slices
                       .map((key, catagory) => MapEntry(key,
                               // --- Catagory
                               Builder(builder: (context) {
-                            // TODO: This is very low performance because the builder gets hit every re-draw.
                             final List<Widget> items = catagory
-                                .where((element) =>
-                                    filterText.text.isEmpty ||
-                                    weightedRatio("${element.catagory.toLowerCase()} ${element.title.toLowerCase()}",
-                                            filterText.text.toLowerCase()) >
-                                        min(90, filterText.text.length * 15))
                                 .map((e) => e.isConfig
                                     // --- Config
                                     ? ValueListenableBuilder(
@@ -180,7 +191,6 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                               trailing = Switch.adaptive(
                                                   value: value as bool, onChanged: (value) => e.config!.value = value);
                                               break;
-                                            // TODO: generalize this. Blocker is getting enum.values from generic
                                             case DisplayUnitsDist:
                                               trailing = DropdownButton<DisplayUnitsDist>(
                                                   onChanged: (value) =>
@@ -253,6 +263,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                           return ListTile(
                                             leading: e.config!.icon,
                                             title: Text(e.title),
+                                            subtitle: e.config!.subtitle,
                                             trailing: trailing,
                                           );
                                         })

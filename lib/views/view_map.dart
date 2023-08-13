@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -136,6 +137,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
       callbackRefresh: () => {setState(() {})},
     );
+
+    if (!settingsMgr.rumOptOut.value) {
+      DatadogSdk.instance.rum?.addAttribute("view_map/focusMode", focusMode.name);
+    }
   }
 
   @override
@@ -161,6 +166,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       if (mode != FocusMode.editPath) editingWp = null;
       if (mode == FocusMode.group) lastMapChange = null;
       debugPrint("FocusMode = $mode");
+
+      if (!settingsMgr.rumOptOut.value) {
+        DatadogSdk.instance.rum?.addAttribute("view_map/focusMode", mode.name);
+      }
     });
     refreshMapView();
   }
@@ -759,8 +768,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
               // --- Current waypoint info
               if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
                 Padding(
-                  padding: EdgeInsets.fromLTRB(settingsMgr.mapControlsRightSide.value ? 80 : 10, 0,
-                      settingsMgr.mapControlsRightSide.value ? 10 : 80, 0),
+                  padding: EdgeInsets.fromLTRB(settingsMgr.mapControlsRightSide.value ? 60 : 0, 0,
+                      settingsMgr.mapControlsRightSide.value ? 0 : 60, 0),
                   child: Align(
                     alignment: Alignment.center,
                     child: Stack(
