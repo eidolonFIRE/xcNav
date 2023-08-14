@@ -89,7 +89,7 @@ Widget topInstruments(BuildContext context) {
                                         transform: Matrix4.rotationZ(wind.result!.windHdg +
                                             (northlockWind && myTelemetry.geo != null ? 0 : -myTelemetry.geo!.hdg)),
                                         child: SvgPicture.asset(
-                                          "assets/images/arrow.svg",
+                                          "assets/images/wind_sock.svg",
                                           width: 80,
                                           height: 80,
                                         ),
@@ -153,10 +153,12 @@ Widget topInstruments(BuildContext context) {
                             Padding(
                               padding: const EdgeInsets.only(right: 20),
                               child: RotatedBox(
-                                  quarterTurns: (myTelemetry.geo?.vario ?? 0) > 0 ? 0 : 2,
+                                  quarterTurns: (myTelemetry.geo?.varioSmooth ?? 0) > 0 ? 0 : 2,
                                   child: SvgPicture.asset("assets/images/arrow.svg",
                                       height: topInstrumentsHeight / 5,
-                                      color: (myTelemetry.geo?.vario ?? 0) > 0 ? Colors.lightGreen : Colors.redAccent)),
+                                      color: (myTelemetry.geo?.varioSmooth ?? 0) > 0
+                                          ? Colors.lightGreen
+                                          : Colors.redAccent)),
                             ),
                           Altimeter(
                             primaryAltimeter != AltimeterMode.msl
@@ -166,7 +168,7 @@ Widget topInstruments(BuildContext context) {
                                     : null),
                             valueStyle: lowerStyle,
                             unitStyle: unitStyle,
-                            unitTag: primaryAltimeter == AltimeterMode.msl ? "MSL" : "AGL",
+                            unitTag: primaryAltimeter != AltimeterMode.msl ? "MSL" : "AGL",
                             isPrimary: false,
                           ),
                         ],
