@@ -92,7 +92,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                           transformAlignment: const Alignment(0, 0),
                                           transform: Matrix4.rotationZ(sample.wHdg!),
                                           child: SvgPicture.asset(
-                                            "assets/images/arrow.svg",
+                                            "assets/images/wind_sock.svg",
                                             width: 100,
                                             height: 100,
                                             // color: Colors.blue,

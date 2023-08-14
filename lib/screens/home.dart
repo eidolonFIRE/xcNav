@@ -166,7 +166,7 @@ class _MyHomePageState extends State<MyHomePage> {
           appBar: AppBar(
             automaticallyImplyLeading: false,
             leadingWidth: 35,
-            toolbarHeight: 90,
+            toolbarHeight: topInstrumentsHeight,
             title: settingsMgr.groundMode.value ? groundControlBar(context) : topInstruments(context),
             // actions: [IconButton(onPressed: () {}, icon: Icon(Icons.timer_outlined))],
           ),

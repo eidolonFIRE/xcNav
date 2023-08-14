@@ -13,6 +13,7 @@ import 'package:xcnav/providers/adsb.dart';
 
 //
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/map_service.dart';
 
@@ -190,6 +191,16 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                             case bool:
                                               trailing = Switch.adaptive(
                                                   value: value as bool, onChanged: (value) => e.config!.value = value);
+                                              break;
+                                            case double:
+                                              trailing = SizedBox(
+                                                width: 80,
+                                                child: TextFormField(
+                                                    textAlign: TextAlign.center,
+                                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                                    initialValue: printDoubleSimple(value as double, decimals: 2),
+                                                    onChanged: (value) => e.config!.value = parseAsDouble(value) ?? 0),
+                                              );
                                               break;
                                             case DisplayUnitsDist:
                                               trailing = DropdownButton<DisplayUnitsDist>(

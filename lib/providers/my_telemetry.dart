@@ -517,7 +517,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (globalContext != null && settingsMgr.autoRecordFlight.value) {
       if (inFlight && geoPrev != null) {
         // Is moving slowly near the ground?
-        if (geo!.spdSmooth < 2.5 && geo!.varioSmooth.abs() < 1.0 && geo!.alt - (geo!.ground ?? geo!.alt) < 30) {
+        if (geo!.spdSmooth < 2.5 && geo!.varioSmooth.abs() < 0.2 && geo!.alt - (geo!.ground ?? geo!.alt) < 30) {
           triggerHyst += geo!.time - geoPrev!.time;
         } else {
           triggerHyst = 0;

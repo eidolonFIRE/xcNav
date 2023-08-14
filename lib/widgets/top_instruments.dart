@@ -9,6 +9,8 @@ import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 
+const topInstrumentsHeight = 90.0;
+
 Widget topInstruments(BuildContext context) {
   const upperStyle = TextStyle(fontSize: 45);
   const lowerStyle = TextStyle(fontSize: 16);
@@ -24,7 +26,7 @@ Widget topInstruments(BuildContext context) {
 
           // --- Speedometer
           Container(
-            constraints: const BoxConstraints(minWidth: 100),
+            constraints: const BoxConstraints(minWidth: topInstrumentsHeight),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -114,45 +116,65 @@ Widget topInstruments(BuildContext context) {
                           ),
                         ));
                   })),
+
           // --- Altimeter stack
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: ValueListenableBuilder<AltimeterMode>(
-                valueListenable: settingsMgr.primaryAltimeter.listenable,
-                builder: (context, primaryAltimeter, _) {
-                  return GestureDetector(
-                    onDoubleTap: () {
-                      if (primaryAltimeter != AltimeterMode.msl) {
-                        settingsMgr.primaryAltimeter.value = AltimeterMode.msl;
-                      } else {
-                        settingsMgr.primaryAltimeter.value = AltimeterMode.agl;
-                      }
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      verticalDirection:
-                          primaryAltimeter == AltimeterMode.msl ? VerticalDirection.down : VerticalDirection.up,
-                      children: [
-                        Altimeter(
-                          myTelemetry.geo?.alt,
-                          valueStyle: primaryAltimeter == AltimeterMode.msl ? upperStyle : lowerStyle,
-                          unitStyle: unitStyle,
-                          unitTag: "MSL",
-                          isPrimary: primaryAltimeter == AltimeterMode.msl,
-                        ),
-                        Altimeter(
-                          myTelemetry.geo?.ground != null ? myTelemetry.geo!.alt - myTelemetry.geo!.ground! : null,
-                          valueStyle: primaryAltimeter == AltimeterMode.agl ? upperStyle : lowerStyle,
-                          unitStyle: unitStyle,
-                          unitTag: "AGL",
-                          isPrimary: primaryAltimeter == AltimeterMode.agl,
-                        )
-                      ],
-                    ),
-                  );
-                }),
-          ),
+          ValueListenableBuilder<AltimeterMode>(
+              valueListenable: settingsMgr.primaryAltimeter.listenable,
+              builder: (context, primaryAltimeter, _) {
+                return GestureDetector(
+                  onDoubleTap: () {
+                    if (primaryAltimeter != AltimeterMode.msl) {
+                      settingsMgr.primaryAltimeter.value = AltimeterMode.msl;
+                    } else {
+                      settingsMgr.primaryAltimeter.value = AltimeterMode.agl;
+                    }
+                  },
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    // verticalDirection:
+                    //     primaryAltimeter == AltimeterMode.msl ? VerticalDirection.down : VerticalDirection.up,
+                    children: [
+                      Altimeter(
+                        primaryAltimeter == AltimeterMode.msl
+                            ? myTelemetry.geo?.alt
+                            : (myTelemetry.geo?.ground != null
+                                ? myTelemetry.geo!.alt - myTelemetry.geo!.ground!
+                                : null),
+                        valueStyle: upperStyle,
+                        unitStyle: unitStyle,
+                        unitTag: primaryAltimeter == AltimeterMode.msl ? "MSL" : "AGL",
+                        isPrimary: true,
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if ((myTelemetry.geo?.varioSmooth ?? 0).abs() > settingsMgr.altimeterVsiThresh.value)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 20),
+                              child: RotatedBox(
+                                  quarterTurns: (myTelemetry.geo?.vario ?? 0) > 0 ? 0 : 2,
+                                  child: SvgPicture.asset("assets/images/arrow.svg",
+                                      height: topInstrumentsHeight / 5,
+                                      color: (myTelemetry.geo?.vario ?? 0) > 0 ? Colors.lightGreen : Colors.redAccent)),
+                            ),
+                          Altimeter(
+                            primaryAltimeter != AltimeterMode.msl
+                                ? myTelemetry.geo?.alt
+                                : (myTelemetry.geo?.ground != null
+                                    ? myTelemetry.geo!.alt - myTelemetry.geo!.ground!
+                                    : null),
+                            valueStyle: lowerStyle,
+                            unitStyle: unitStyle,
+                            unitTag: primaryAltimeter == AltimeterMode.msl ? "MSL" : "AGL",
+                            isPrimary: false,
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                );
+              }),
         ]),
       ),
     ),

@@ -191,6 +191,7 @@ class SettingsMgr {
 
   // --- UI
   late final SettingConfig<AltimeterMode> primaryAltimeter;
+  late final SettingConfig<double> altimeterVsiThresh;
   late final SettingConfig<bool> mapControlsRightSide;
   late final SettingConfig<bool> showPilotNames;
   late final SettingConfig<bool> showWeatherOverlay;
@@ -239,6 +240,13 @@ class SettingsMgr {
         title: "Primary Altimeter",
         icon: const Icon(Icons.vertical_align_top),
         description: "Which altimeter is on top.");
+    altimeterVsiThresh = SettingConfig(this, prefs, "UI", "altimeterVsiThresh", 0.15,
+        title: "Altimeter Arrow Threshold (m/s)",
+        icon: SvgPicture.asset(
+          "assets/images/arrow.svg",
+          height: 20,
+        ),
+        description: "The \"deadzone\" for the up/down arrow next to altimeter.");
     mapControlsRightSide = SettingConfig(this, prefs, "UI", "mapControlsRightSide", false,
         title: "Right-handed UI",
         description: "Move map control buttons to the right side.",
@@ -346,7 +354,7 @@ class SettingsMgr {
     mainMapTileSrc =
         SettingConfig(this, prefs, "UI", "mainMapTileSrc", MapTileSrc.topo, title: "Map Tile Sourc", hidden: true);
     mainMapOpacity = SettingConfig(this, prefs, "UI", "mainMapOpacity", 1.0, title: "Main Map Opacity", hidden: true);
-    datadogSdkId = SettingConfig(this, prefs, "Debug", "datadogSdkId", "", title: "DatadogSdk user ID");
+    datadogSdkId = SettingConfig(this, prefs, "Debug", "datadogSdkId", "", title: "DatadogSdk user ID", hidden: true);
   }
 }
 
