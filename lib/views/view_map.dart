@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/main.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/tfr_notam.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -27,6 +28,7 @@ import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/tfr_service.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -316,6 +318,115 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     if (settingsMgr.showAirspaceOverlay.value &&
                         settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
                       getMapTileLayer(MapTileSrc.airports, 1),
+
+                    // // TFRs - Circles
+                    // FutureBuilder<List<TFR>?>(
+                    //     future: getTFRs(),
+                    //     builder: (context, tfrsFuture) {
+                    //       if (tfrsFuture.hasData) {
+                    //         List<CircleMarker> circles = [];
+
+                    //         for (final eachTfr in tfrsFuture.data!.where((e) => e.isGood())) {
+                    //           for (final eachArea in eachTfr.areas.where((e) => e.isGood())) {
+                    //             circles.add(CircleMarker(
+                    //                 point: eachArea.center!,
+                    //                 radius: eachArea.radius!,
+                    //                 color: Colors.red,
+                    //                 borderStrokeWidth: 8));
+                    //           }
+                    //         }
+
+                    //         return CircleLayer(circles: circles);
+                    //       } else {
+                    //         return Container();
+                    //       }
+                    //     }),
+                    // PolygonLayer(
+                    //   polygons: [
+                    //     Polygon(points: [
+                    //       LatLng(64.29027778, -149.19027778),
+                    //       LatLng(64.23611111, -149.23361111),
+                    //       LatLng(64.23451045, -149.24289144),
+                    //       LatLng(64.23335903, -149.25252398),
+                    //       LatLng(64.23257674, -149.26234982),
+                    //       LatLng(64.2321695, -149.27229455),
+                    //       LatLng(64.23214041, -149.28228289),
+                    //       LatLng(64.23248967, -149.29223923),
+                    //       LatLng(64.23321465, -149.3020882),
+                    //       LatLng(64.23430986, -149.31175523),
+                    //       LatLng(64.23576701, -149.3211671),
+                    //       LatLng(64.23757505, -149.3302525),
+                    //       LatLng(64.23972031, -149.33894256),
+                    //       LatLng(64.24218652, -149.34717135),
+                    //       LatLng(64.244955, -149.35487638),
+                    //       LatLng(64.24800477, -149.36199909),
+                    //       LatLng(64.25131271, -149.36848529),
+                    //       LatLng(64.25485373, -149.37428554),
+                    //       LatLng(64.25860096, -149.37935558),
+                    //       LatLng(64.26252596, -149.38365661),
+                    //       LatLng(64.26659893, -149.38715564),
+                    //       LatLng(64.27078893, -149.38982573),
+                    //       LatLng(64.27506411, -149.39164622),
+                    //       LatLng(64.27939198, -149.39260286),
+                    //       LatLng(64.28373961, -149.39268797),
+                    //       LatLng(64.28807392, -149.39190049),
+                    //       LatLng(64.29236189, -149.39024601),
+                    //       LatLng(64.29657088, -149.38773674),
+                    //       LatLng(64.30066881, -149.3843914),
+                    //       LatLng(64.30462442, -149.38023515),
+                    //       LatLng(64.30840755, -149.37529934),
+                    //       LatLng(64.31198934, -149.36962132),
+                    //       LatLng(64.31534243, -149.36324416),
+                    //       LatLng(64.31844123, -149.35621631),
+                    //       LatLng(64.32126205, -149.34859126),
+                    //       LatLng(64.32378335, -149.3404271),
+                    //       LatLng(64.32416667, -149.33944444),
+                    //       LatLng(64.32986551, -149.34190724),
+                    //       LatLng(64.33563226, -149.34327129),
+                    //       LatLng(64.34142861, -149.34347146),
+                    //       LatLng(64.34721046, -149.34250549),
+                    //       LatLng(64.35293379, -149.34038001),
+                    //       LatLng(64.35855498, -149.33711049),
+                    //       LatLng(64.36403119, -149.33272117),
+                    //       LatLng(64.36932063, -149.32724488),
+                    //       LatLng(64.37438293, -149.32072281),
+                    //       LatLng(64.37917943, -149.3132042),
+                    //       LatLng(64.38367348, -149.304746),
+                    //       LatLng(64.38783072, -149.29541244),
+                    //       LatLng(64.39161934, -149.28527453),
+                    //       LatLng(64.39501037, -149.27440953),
+                    //       LatLng(64.39797784, -149.26290036),
+                    //       LatLng(64.40049902, -149.25083496),
+                    //       LatLng(64.40255461, -149.23830562),
+                    //       LatLng(64.40412885, -149.22540824),
+                    //       LatLng(64.40520969, -149.21224162),
+                    //       LatLng(64.40578883, -149.19890663),
+                    //       LatLng(64.40586184, -149.1855055),
+                    //       LatLng(64.40542815, -149.17214096),
+                    //       LatLng(64.4044911, -149.15891544),
+                    //       LatLng(64.40305786, -149.1459303),
+                    //       LatLng(64.40113942, -149.13328501),
+                    //       LatLng(64.39875048, -149.12107638),
+                    //       LatLng(64.39590933, -149.10939783),
+                    //       LatLng(64.39263775, -149.0983386),
+                    //       LatLng(64.38896077, -149.08798315),
+                    //       LatLng(64.38490653, -149.07841041),
+                    //       LatLng(64.38050605, -149.06969326),
+                    //       LatLng(64.37579298, -149.06189793),
+                    //       LatLng(64.37080334, -149.05508351),
+                    //       LatLng(64.36557523, -149.04930151),
+                    //       LatLng(64.36014858, -149.04459546),
+                    //       LatLng(64.35456478, -149.04100063),
+                    //       LatLng(64.34886642, -149.03854374),
+                    //       LatLng(64.34309692, -149.03724282),
+                    //       LatLng(64.33730021, -149.03710704),
+                    //       LatLng(64.33152043, -149.03813671),
+                    //       LatLng(64.32580153, -149.04032325),
+                    //       LatLng(64.32472222, -149.04083333),
+                    //       LatLng(64.29027778, -149.19027778),
+                    //     ])
+                    //   ],
+                    // ),
 
                     // https://nowcoast.noaa.gov/help/#!section=map-service-list
                     if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
