@@ -24,4 +24,5 @@ final timezones = {
   "SST": TimeZone("SST", "SAMOA STANDARD TIME", const Duration(hours: -11)),
   "SDT": TimeZone("SDT", "SAMOA DAYLIGHT TIME", const Duration(hours: -10)),
   "CHST": TimeZone("CHST", "CHAMORRO STANDARD TIME", const Duration(hours: 10)),
+  "Guam": TimeZone("Guam", "Guam", const Duration(hours: 10)),
 };
