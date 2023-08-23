@@ -139,7 +139,7 @@ class ElevationPlotPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // debugPrint("PAINT ELEVATION PLOT");
 
-    final futureGround = groundData.where((element) => element != null).map((e) => e!.elev);
+    final futureGround = groundData.where((element) => element != null).map((e) => e!.elev).toList();
 
     // --- Common misc.
     final double maxElevUnsnapped =
@@ -174,7 +174,11 @@ class ElevationPlotPainter extends CustomPainter {
     final rangeX = geoData.last.time - geoData.first.time + farthestDist;
 
     double scaleX(int value) {
-      return size.width * (value - geoData.first.time) / rangeX;
+      if (futureGround.isNotEmpty) {
+        return size.width * (value - geoData.first.time) / rangeX;
+      } else {
+        return (size.width - 80) * (value - geoData.first.time) / rangeX;
+      }
     }
 
     Offset scaleOffset(Offset value) {

@@ -42,7 +42,6 @@ import 'package:xcnav/screens/weather_viewer.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
-import 'package:xcnav/tfr_service.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/map_service.dart';

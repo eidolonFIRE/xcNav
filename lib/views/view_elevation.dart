@@ -201,7 +201,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 child: ClipRect(
                     child: FutureBuilder<List<ElevSample?>>(
                         future: doSamples(myTelemetry.recordGeo.last, activePlan.getSelectedWp()),
-                        initialData: prevSamples,
+                        initialData: prevSamples ?? [],
                         builder: (context, groundSamples) {
                           prevSamples = groundSamples.data;
                           final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
@@ -210,19 +210,14 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                                   .subtract(lookBehind!)
                               : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time);
 
-                          if (groundSamples.connectionState == ConnectionState.done || groundSamples.data != null) {
-                            return CustomPaint(
-                              painter: ElevationPlotPainter(
-                                  myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30)),
-                                  groundSamples.data ?? [],
-                                  distScale,
-                                  waypoint: activePlan.getSelectedWp(),
-                                  waypointETA: waypointETA),
-                            );
-                          } else {
-                            return const Center(
-                                child: SizedBox(width: 60, height: 60, child: CircularProgressIndicator()));
-                          }
+                          return CustomPaint(
+                            painter: ElevationPlotPainter(
+                                myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30)),
+                                groundSamples.data ?? [],
+                                distScale,
+                                waypoint: activePlan.getSelectedWp(),
+                                waypointETA: waypointETA),
+                          );
                         })),
               ),
             ),
