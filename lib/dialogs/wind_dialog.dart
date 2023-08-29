@@ -15,6 +15,7 @@ void showWindDialog(BuildContext context) {
 
   if (!settingsMgr.rumOptOut.value) {
     DatadogSdk.instance.rum?.startView("/home/wind_dialog");
+    DatadogSdk.instance.rum?.addAttribute("view_map_northLockWind", settingsMgr.northlockWind.value);
   }
 
   showDialog(
@@ -116,7 +117,13 @@ void showWindDialog(BuildContext context) {
                                 top: 4,
                                 child: MapButton(
                                   size: 40,
-                                  onPressed: () => {settingsMgr.northlockWind.value = !northlockWind},
+                                  onPressed: () {
+                                    settingsMgr.northlockWind.value = !northlockWind;
+                                    if (!settingsMgr.rumOptOut.value) {
+                                      DatadogSdk.instance.rum
+                                          ?.addAttribute("view_map_northLockWind", settingsMgr.northlockWind.value);
+                                    }
+                                  },
                                   selected: false,
                                   child: Container(
                                     width: 40,

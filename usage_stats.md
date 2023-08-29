@@ -7,7 +7,10 @@ It includes:
 - Wind detector:
     - Time spent in dialog
     - Reset button presses
-- Map view mode. (focus on me or group, edit spline, make measurement, etc)
+    - North lock is on?
+- Map view:
+    - Focus Mode. (focus on me or group, edit spline, make measurement, etc)
+    - North lock is on?
 - Error messages & crash reports.
 
 # Why?

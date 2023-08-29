@@ -348,7 +348,7 @@ class SettingsMgr {
         icon: const Icon(Icons.minor_crash),
         description: "Transmit telemetry while in ground support mode.",
         hidden: true);
-    northlockMap = SettingConfig(this, prefs, "UI", "northlockMap", false, title: "Lock map to North-Up", hidden: true);
+    northlockMap = SettingConfig(this, prefs, "UI", "northlockMap", true, title: "Lock map to North-Up", hidden: true);
     northlockWind =
         SettingConfig(this, prefs, "UI", "northlockWind", false, title: "Lock wind detector to North-Up", hidden: true);
     mainMapTileSrc =

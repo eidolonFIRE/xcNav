@@ -80,7 +80,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   FocusMode focusMode = FocusMode.me;
   FocusMode prevFocusMode = FocusMode.me;
-  bool northLock = true;
 
   /// User is dragging something on the map layer (for less than 30 seconds)
   bool get isDragging => dragStart != null && dragStart!.isAfter(DateTime.now().subtract(const Duration(seconds: 30)));
@@ -141,7 +140,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     );
 
     if (!settingsMgr.rumOptOut.value) {
-      DatadogSdk.instance.rum?.addAttribute("view_map/focusMode", focusMode.name);
+      DatadogSdk.instance.rum?.addAttribute("view_map_focusMode", focusMode.name);
+      DatadogSdk.instance.rum?.addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
     }
   }
 
@@ -170,7 +170,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       debugPrint("FocusMode = $mode");
 
       if (!settingsMgr.rumOptOut.value) {
-        DatadogSdk.instance.rum?.addAttribute("view_map/focusMode", mode.name);
+        DatadogSdk.instance.rum?.addAttribute("view_map_focusMode", mode.name);
       }
     });
     refreshMapView();
@@ -183,7 +183,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       CenterZoom? centerZoom;
 
       // --- Orient to gps heading
-      if (!northLock && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
+      if (!settingsMgr.northlockMap.value && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
         mapController.rotate(-geo.hdg / pi * 180);
       }
       // --- Move to center
@@ -283,7 +283,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         mapReady = true;
                       });
                     },
-                    interactiveFlags: InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
+                    interactiveFlags: InteractiveFlag.all &
+                        (settingsMgr.northlockMap.value ? ~InteractiveFlag.rotate : InteractiveFlag.all),
                     center: Provider.of<MyTelemetry>(context, listen: false).geo?.latlng ?? lastKnownLatLng,
                     zoom: 12.0,
                     minZoom: 2,
@@ -985,8 +986,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       onPressed: () => {
                             setState(
                               () {
-                                northLock = !northLock;
-                                if (northLock) mapController.rotate(0);
+                                settingsMgr.northlockMap.value = !settingsMgr.northlockMap.value;
+                                if (settingsMgr.northlockMap.value) mapController.rotate(0);
+                                if (!settingsMgr.rumOptOut.value) {
+                                  DatadogSdk.instance.rum
+                                      ?.addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
+                                }
                               },
                             )
                           },
@@ -999,7 +1004,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   transform: mapReady
                                       ? Matrix4.rotationZ(mapController.rotation * pi / 180)
                                       : Matrix4.rotationZ(0),
-                                  child: northLock
+                                  child: settingsMgr.northlockMap.value
                                       ? SvgPicture.asset("assets/images/compass_north.svg", fit: BoxFit.none)
                                       : SvgPicture.asset("assets/images/compass.svg", fit: BoxFit.cover),
                                 )),
