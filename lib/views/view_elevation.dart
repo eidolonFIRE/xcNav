@@ -209,15 +209,17 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                               ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.last.time)
                                   .subtract(lookBehind!)
                               : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time);
-
-                          return CustomPaint(
-                            painter: ElevationPlotPainter(
-                                myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30)),
-                                groundSamples.data ?? [],
-                                distScale,
-                                waypoint: activePlan.getSelectedWp(),
-                                waypointETA: waypointETA),
-                          );
+                          final history =
+                              myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30));
+                          if (history.length < 2) {
+                            return const Center(
+                                child: SizedBox(width: 60, height: 60, child: CircularProgressIndicator()));
+                          } else {
+                            return CustomPaint(
+                              painter: ElevationPlotPainter(history, groundSamples.data ?? [], distScale,
+                                  waypoint: activePlan.getSelectedWp(), waypointETA: waypointETA),
+                            );
+                          }
                         })),
               ),
             ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -139,6 +140,8 @@ class ElevationPlotPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // debugPrint("PAINT ELEVATION PLOT");
 
+    if (geoData.isEmpty) return;
+
     final futureGround = groundData.where((element) => element != null).map((e) => e!.elev).toList();
 
     // --- Common misc.
@@ -170,14 +173,19 @@ class ElevationPlotPainter extends CustomPainter {
       return size.height - size.height * (value - minElev) / rangeElev;
     }
 
-    final double farthestDist = groundData.isNotEmpty ? groundData.last?.dist ?? 0 : 0;
+    final double farthestDist = groundData.lastOrNull?.dist ?? 0;
     final rangeX = geoData.last.time - geoData.first.time + farthestDist;
 
     double scaleX(int value) {
-      if (futureGround.isNotEmpty) {
-        return size.width * (value - geoData.first.time) / rangeX;
+      if (showPilotIcon) {
+        // limit stretch to keep things in view of the center
+        final rightPad = futureGround.isEmpty ? 80 : 0;
+        final leftOffset = size.width * (geoData.last.time - geoData.first.time) / rangeX;
+        final correction = max(0, 30 - leftOffset);
+        return (size.width - rightPad - correction) * (value - geoData.first.time) / rangeX + correction;
       } else {
-        return (size.width - 80) * (value - geoData.first.time) / rangeX;
+        // stretch everything normally
+        return size.width * (value - geoData.first.time) / rangeX;
       }
     }
 
@@ -193,7 +201,7 @@ class ElevationPlotPainter extends CustomPainter {
                   .where((element) => element.ground != null)
                   .map((e) => Offset(scaleX(e.time), scaleY(e.ground!.toDouble())))
                   .toList() +
-              [Offset(scaleX(geoData.last.time), size.height), Offset(0, size.height)],
+              [Offset(scaleX(geoData.last.time), size.height), Offset(scaleX(geoData.first.time), size.height)],
           true);
       canvas.drawPath(groundPath, _paintGround);
     }
