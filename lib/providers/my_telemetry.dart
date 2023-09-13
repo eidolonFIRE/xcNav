@@ -515,10 +515,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     // --- In-Flight detector
     if (globalContext != null && settingsMgr.autoRecordFlight.value) {
-      if (inFlight && geoPrev != null) {
+      if (inFlight) {
         // Is moving slowly near the ground?
         if (geo!.spdSmooth < 2.5 && geo!.varioSmooth.abs() < 0.2 && geo!.alt - (geo!.ground ?? geo!.alt) < 30) {
-          triggerHyst += geo!.time - geoPrev!.time;
+          if (geoPrev != null) {
+            triggerHyst += geo!.time - geoPrev!.time;
+          } else {
+            triggerHyst += const Duration(seconds: 1).inMilliseconds;
+          }
         } else {
           triggerHyst = 0;
         }
@@ -529,7 +533,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       } else {
         // Is moving a normal speed and above the ground?
         if (4.0 < geo!.spd && geo!.spd < 25 && geo!.alt - (geo!.ground ?? 0) > 30) {
-          triggerHyst += geo!.time - geoPrev!.time;
+          if (geoPrev != null) {
+            triggerHyst += geo!.time - geoPrev!.time;
+          } else {
+            triggerHyst += const Duration(seconds: 1).inMilliseconds;
+          }
         } else {
           triggerHyst = 0;
         }
