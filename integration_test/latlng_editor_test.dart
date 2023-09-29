@@ -5,7 +5,7 @@ import 'package:patrol/patrol.dart';
 import 'package:xcnav/widgets/latlng_editor.dart';
 
 void main() {
-  Future setup(PatrolTester $, void Function(List<LatLng>) callback) async {
+  Future setup(PatrolIntegrationTester $, void Function(List<LatLng>) callback) async {
     await $.pumpWidget(
       MaterialApp(
         home: Scaffold(

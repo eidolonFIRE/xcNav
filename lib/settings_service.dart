@@ -39,20 +39,20 @@ class SettingConfig<T> {
       _prefsInstance.setInt("settings.$id", (value as Enum).index);
       debugPrint("Set enum type ${(value as Enum).index}");
     } else {
-      switch (T) {
-        case List<String>:
+      switch (T.toString()) {
+        case "List<String>":
           _prefsInstance.setStringList("settings.$id", newValue as List<String>);
           break;
-        case String:
+        case "String":
           _prefsInstance.setString("settings.$id", newValue as String);
           break;
-        case bool:
+        case "bool":
           _prefsInstance.setBool("settings.$id", newValue as bool);
           break;
-        case double:
+        case "double":
           _prefsInstance.setDouble("settings.$id", newValue as double);
           break;
-        case int:
+        case "int":
           _prefsInstance.setInt("settings.$id", newValue as int);
           break;
       }
@@ -102,21 +102,21 @@ class SettingConfig<T> {
           }
         }
       } else {
-        switch (T) {
-          case List<String>:
+        switch (T.toString()) {
+          case "List<String>":
             _value =
                 ValueNotifier<T>((_prefsInstance.getStringList("settings.$id") ?? defaultValue as List<String>) as T);
             break;
-          case String:
+          case "String":
             _value = ValueNotifier<T>((_prefsInstance.getString("settings.$id") ?? defaultValue as String) as T);
             break;
-          case bool:
+          case "bool":
             _value = ValueNotifier<T>((_prefsInstance.getBool("settings.$id") ?? defaultValue as bool) as T);
             break;
-          case double:
+          case "double":
             _value = ValueNotifier<T>((_prefsInstance.getDouble("settings.$id") ?? defaultValue as double) as T);
             break;
-          case int:
+          case "int":
             _value = ValueNotifier<T>((_prefsInstance.getInt("settings.$id") ?? defaultValue as int) as T);
             break;
           default:
@@ -270,10 +270,8 @@ class SettingsMgr {
         title: "Speed", icon: const Icon(Icons.timer));
     displayUnitVario = SettingConfig(this, prefs, "Display Units", "displayUnitVario", DisplayUnitsVario.fpm,
         title: "Vario", icon: const Icon(Icons.trending_up));
-
-    // NOTE: hide this for now
     displayUnitFuel = SettingConfig(this, prefs, "Display Units", "displayUnitFuel", DisplayUnitsFuel.liter,
-        title: "Fuel", icon: const Icon(Icons.local_gas_station), hidden: true);
+        title: "Fuel", icon: const Icon(Icons.local_gas_station));
 
     displayUnitDist.listenable.addListener(() {
       configUnits(dist: displayUnitDist.value);

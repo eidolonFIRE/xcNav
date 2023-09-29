@@ -57,11 +57,11 @@ class LogStore with ChangeNotifier {
 
   ///
   Future refreshLogsFromDirectory() async {
+    _logs.clear();
     final Directory appDocDir = await getApplicationDocumentsDirectory();
     final Directory appDocDirFolder = Directory("${appDocDir.path}/flight_logs/");
     if (await appDocDirFolder.exists()) {
       loaded.value = false;
-      _logs.clear();
 
       // Async load in all the files
       var files = await appDocDirFolder.list(recursive: false, followLinks: false).toList();
@@ -94,6 +94,7 @@ class LogStore with ChangeNotifier {
       });
     } else {
       debugPrint('"flight_logs" directory doesn\'t exist yet!');
+      loaded.value = true;
       return Future.value();
     }
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mockito/mockito.dart';
@@ -23,7 +22,6 @@ import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
-import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
 
 import 'mock_providers.dart';
@@ -87,8 +85,12 @@ void main() {
   });
 
   patrolTest(
-    'Get to home screen',
+    'Get to profile editor',
     ($) async {
+      // --- override size
+      $.tester.view.physicalSize = const Size(800, 2000);
+      $.tester.view.devicePixelRatio = 1.0;
+
       // --- Setup stubs and initial configs
       GeolocatorPlatform.instance = MockGeolocatorPlatform();
       perm_handler_plat.PermissionHandlerPlatform.instance = MockPermissionHandlerPlatform();
@@ -99,11 +101,13 @@ void main() {
         timeLimit: null,
       ))).thenAnswer((_) => Stream.value(mockPosition));
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-      SharedPreferences.setMockInitialValues({
-        "profile.name": "Mr Test",
-        "profile.id": "1234",
-        "profile.secretID": "1234abcd",
-      });
+
+      // --- When profile isn't set...
+      // SharedPreferences.setMockInitialValues({
+      //   "profile.name": "Mr Test",
+      //   "profile.id": "1234",
+      //   "profile.secretID": "1234abcd",
+      // });
 
       // --- Build App
       await $.pumpWidget(makeApp());
@@ -111,47 +115,9 @@ void main() {
 
       //
       await $.pump(const Duration(seconds: 2));
-    },
-  );
 
-  patrolTest(
-    'Change base map in main view',
-    ($) async {
-      // --- Setup stubs and initial configs
-      GeolocatorPlatform.instance = MockGeolocatorPlatform();
-      perm_handler_plat.PermissionHandlerPlatform.instance = MockPermissionHandlerPlatform();
-      when(GeolocatorPlatform.instance.getServiceStatusStream()).thenAnswer((_) => Stream.value(ServiceStatus.enabled));
-      when(GeolocatorPlatform.instance.getPositionStream(
-          locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best,
-        timeLimit: null,
-      ))).thenAnswer((_) => Stream.value(mockPosition));
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-      SharedPreferences.setMockInitialValues({
-        "profile.name": "Mr Test",
-        "profile.id": "1234",
-        "profile.secretID": "1234abcd",
-      });
-
-      // --- Build App
-      await $.pumpWidget(makeApp());
-      await $.waitUntilExists($(Scaffold));
-
-      // --- Default map layer
-      expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.topo);
-      expect(settingsMgr.mainMapOpacity.value, 1);
-
-      // --- Select a different map
-      await $(#viewMap_mapSelector).tap(andSettle: false);
-      await $.waitUntilVisible($(SpeedDial));
-      await $(#mapSelector_satellite_50).tap(andSettle: false);
-
-      // (let the speeddial finish the animation)
-      await $.pump(const Duration(seconds: 2));
-
-      // --- New map layer
-      expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.satellite);
-      expect(settingsMgr.mainMapOpacity.value, 0.5);
+      //
+      await $.waitUntilExists($("Edit Profile"));
     },
   );
 }

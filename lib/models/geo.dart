@@ -146,7 +146,7 @@ class Geo {
         delta = (delta + 180) % 360 - 180;
         angleToNext = delta.abs();
       }
-      if (dist < matchdist && (angleToNext == double.nan || angleToNext > 90)) {
+      if (dist < matchdist && (angleToNext.isNaN || angleToNext > 90)) {
         matchdist = dist;
         matchIndex = index;
         // debugPrint("match: $index) $dist  $angleToNext");

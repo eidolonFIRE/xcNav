@@ -41,11 +41,18 @@ Future initDemCache() async {
   );
 }
 
-Coords _unproject(LatLng latlng, int zoom) {
+class Point3 {
+  final double x;
+  final double y;
+  final double z;
+  Point3(this.x, this.y, this.z);
+}
+
+Point3 _unproject(LatLng latlng, int zoom) {
   final double n = pow(2.0, zoom.toDouble()).toDouble();
   final xtile = n * ((latlng.longitude + 180) / 360);
   final ytile = n * (1 - math.asinh(tan(latlng.latitude / 180 * pi)) / pi) / 2;
-  return Coords(xtile, ytile)..z = zoom;
+  return Point3(xtile, ytile, zoom.toDouble());
 }
 
 /// Sample the DEM layer. (digital elevation map)
@@ -58,9 +65,9 @@ Future<double?> sampleDem(LatLng latlng, bool highRes, {double offset = 0}) {
 
   Completer<double?> completer = Completer();
   final point = _unproject(latlng, highRes ? 12 : 10);
-  final pointInt = Coords(point.x.toInt(), point.y.toInt())..z = point.z.toInt();
+  final pointInt = TileCoordinates(point.x.toInt(), point.y.toInt(), point.z.toInt());
   final img = _demTileLayer!.tileProvider.getImage(pointInt, _demTileLayer!);
-
+  // debugPrint("Fetch pointInt(${pointInt.x}, ${pointInt.y}, ${pointInt.z})");
   final imgStream = img.resolve(ImageConfiguration.empty);
   imgStream.addListener(ImageStreamListener((imgInfo, state) {
     // debugPrint("$state ${imgInfo.toString()}");
@@ -69,9 +76,9 @@ Future<double?> sampleDem(LatLng latlng, bool highRes, {double offset = 0}) {
       imgInfo.image.toByteData().then((value) {
         if (value != null) {
           int s = imgInfo.image.width;
-          int x = ((point.x % 1) * s).toInt();
-          int y = ((point.y % 1) * s).toInt();
-          // debugPrint("offset: $x, $y ( ${(x + y * s) * 4} / ${imgInfo.sizeBytes} )");
+          int x = ((point.x % 1.0) * s).toInt();
+          int y = ((point.y % 1.0) * s).toInt();
+          // debugPrint("offset: $x, $y ($s) ( ${(x + y * s) * 4} / ${imgInfo.sizeBytes} )");
           final bitPos = (x + y * s) * 4;
           final r = value.getUint8(bitPos + 0);
           final g = value.getUint8(bitPos + 1);
@@ -79,7 +86,7 @@ Future<double?> sampleDem(LatLng latlng, bool highRes, {double offset = 0}) {
           // final a = value.getUint8(bitPos + 3);
           // debugPrint("rgba : $r $g $b $a");
           final elev = ((r * 256 + g + b.toDouble() / 256) - 32768);
-          // debugPrint("Elevation: ${elev} meters");
+          // debugPrint("Elevation: $elev meters");
 
           // TODO: do more testing with lagging elevation data
           // Timer(Duration(seconds: 10), () => {completer.complete(elev + offset)});

@@ -80,12 +80,12 @@ class ChartLogFuelInsights extends StatelessWidget {
           .reduce((a, b) => a + b);
       return ScatterChart(ScatterChartData(
           titlesData: FlTitlesData(
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            leftTitles:
-                AxisTitles(axisNameWidget: getYunit(), sideTitles: SideTitles(showTitles: true, reservedSize: 30)),
-            bottomTitles:
-                AxisTitles(axisNameWidget: getXunit(), sideTitles: SideTitles(showTitles: true, reservedSize: 25)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: AxisTitles(
+                axisNameWidget: getYunit(), sideTitles: const SideTitles(showTitles: true, reservedSize: 30)),
+            bottomTitles: AxisTitles(
+                axisNameWidget: getXunit(), sideTitles: const SideTitles(showTitles: true, reservedSize: 25)),
           ),
           scatterSpots: logsSlice
               .map((e) => e.fuelStats

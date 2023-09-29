@@ -85,10 +85,10 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
         title: const Text(
           "Flight Logs",
         ),
-        bottom: TabBar(controller: mainTabController, tabs: [
+        bottom: TabBar(controller: mainTabController, tabs: const [
           Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Padding(
                 padding: EdgeInsets.all(12.0),
                 child: Icon(Icons.list),
@@ -96,7 +96,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
               Text("Entries")
             ],
           ),
-          Row(mainAxisSize: MainAxisSize.min, children: const [
+          Row(mainAxisSize: MainAxisSize.min, children: [
             Padding(
               padding: EdgeInsets.all(12.0),
               child: Icon(Icons.insights),
@@ -128,10 +128,12 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                     ? const Center(
                         child: CircularProgressIndicator.adaptive(),
                       )
-                    : ListView(
-                        controller: logListController,
-                        children: logStore.logsSlice.map((e) => FlightLogCard(e)).toList().reversed.toList(),
-                      ),
+                    : (logStore.logs.isEmpty
+                        ? const Center(child: Text("Wow, such empty!"))
+                        : ListView(
+                            controller: logListController,
+                            children: logStore.logsSlice.map((e) => FlightLogCard(e)).toList().reversed.toList(),
+                          )),
 
                 // --- Stats
                 !logStore.loaded.value

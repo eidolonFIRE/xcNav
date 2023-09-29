@@ -128,7 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         valueListenable: settingsMgr.groundModeTelem.listenable,
                         builder: (context, value, _) {
                           return Switch.adaptive(
-                              value: value as bool, onChanged: (value) => settingsMgr.groundModeTelem.value = value);
+                              value: value, onChanged: (value) => settingsMgr.groundModeTelem.value = value);
                         }),
                   ],
                 ),

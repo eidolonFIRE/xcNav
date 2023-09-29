@@ -83,14 +83,14 @@ class ChartLogDurationHist extends StatelessWidget {
   Widget build(BuildContext context) {
     return LineChart(
       LineChartData(
-        gridData: FlGridData(verticalInterval: 1),
+        gridData: const FlGridData(verticalInterval: 1),
         minY: 0,
         lineBarsData: [
           LineChartBarData(
               barWidth: 4,
               isCurved: true,
               preventCurveOverShooting: true,
-              dotData: FlDotData(show: false),
+              dotData: const FlDotData(show: false),
               color: Colors.blue,
               spots: totals.mapIndexed((index, value) => FlSpot(index.toDouble(), value.y.toDouble())).toList())
         ],
@@ -118,8 +118,8 @@ class ChartLogDurationHist extends StatelessWidget {
                 },
               ),
             ),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false),
             ),
             leftTitles: AxisTitles(

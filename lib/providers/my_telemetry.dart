@@ -294,7 +294,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       _positionStreamSubscription = positionStream!.handleError((error) {
         _positionStreamSubscription?.cancel();
         _positionStreamSubscription = null;
-      }).listen((position) => {handleGeoUpdate(context, position)});
+      }).listen((position) => handleGeoUpdate(context, position));
 
       debugPrint('Listening for position updates RESUMED');
     } else {

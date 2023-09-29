@@ -189,10 +189,10 @@ class _WeatherViewerState extends State<WeatherViewer> {
                     ],
                   );
                 } else {
-                  return Center(
+                  return const Center(
                       child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       Padding(
                         padding: EdgeInsets.all(10.0),
                         child: Text("Fetching"),

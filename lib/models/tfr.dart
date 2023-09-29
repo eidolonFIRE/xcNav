@@ -17,31 +17,36 @@ class TFR {
 
   TFR.fromXML(XmlDocument document) {
     // --- Reference NOTAM
-    notamText = document.findAllElements("txtDescrTraditional").first.text.replaceAll(". ", ". \n");
+    notamText = document.findAllElements("txtDescrTraditional").firstOrNull?.value?.replaceAll(". ", ". \n") ?? "error";
 
     // --- Purpose
-    purpose = document.findAllElements("txtDescrPurpose").singleOrNull?.text;
+    purpose = document.findAllElements("txtDescrPurpose").singleOrNull?.value;
 
     // --- Parse unified shape
     latlngs = [];
     final mergedShape = document.findAllElements("abdMergedArea").firstOrNull;
     if (mergedShape != null) {
       for (final each in mergedShape.findAllElements("Avx")) {
-        final latStr = each.getElement("geoLat")!.text;
-        final lat = double.parse(latStr.substring(0, latStr.length - 1));
-        final lngStr = each.getElement("geoLong")!.text;
-        final lng = double.parse(lngStr.substring(0, lngStr.length - 1)) * (lngStr.endsWith("W") ? -1 : 1);
-        latlngs.add(LatLng(lat, lng));
+        final latStr = each.getElement("geoLat")!.value;
+        final lat = double.parse(latStr?.substring(0, latStr.length - 1) ?? "0");
+        final lngStr = each.getElement("geoLong")!.value;
+        final lng =
+            double.parse(lngStr?.substring(0, lngStr.length - 1) ?? "0") * ((lngStr?.endsWith("W") ?? false) ? -1 : 1);
+        if (lat != 0 && lng != 0) {
+          latlngs.add(LatLng(lat, lng));
+        } else {
+          // TODO: raise error
+        }
       }
     } else {
       // TODO: alternate shape parsing?
     }
 
     // --- Parse Active time
-    final zone = document.findAllElements("codeTimeZone").first.text;
-    final startStr = document.findAllElements("dateEffective").firstOrNull?.text ??
-        document.findAllElements("dateIssued").firstOrNull?.text;
-    final endStr = document.findAllElements("dateExpire").firstOrNull?.text;
+    final zone = document.findAllElements("codeTimeZone").first.value;
+    final startStr = document.findAllElements("dateEffective").firstOrNull?.value ??
+        document.findAllElements("dateIssued").firstOrNull?.value;
+    final endStr = document.findAllElements("dateExpire").firstOrNull?.value;
     final curOffset = DateTime.now().timeZoneOffset;
     final start = startStr != null
         ? DateTime.parse(startStr).add(curOffset).subtract(timezones[zone]!.offset)

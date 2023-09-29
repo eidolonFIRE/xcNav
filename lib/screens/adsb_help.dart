@@ -85,10 +85,10 @@ class _ADSBhelpState extends State<ADSBhelp> with SingleTickerProviderStateMixin
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
 
-                Column(
+                const Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       "Why does it still say \"No Data\"?",
                       textAlign: TextAlign.start,

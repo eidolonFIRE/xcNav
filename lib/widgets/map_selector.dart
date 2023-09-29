@@ -4,7 +4,7 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:xcnav/map_service.dart';
 
 class MapSelector extends StatelessWidget {
-  static const opacityLevels = [0.2, 0.5, 1.0];
+  static const opacityLevels = [0.3, 0.6, 1.0];
   final MapTileSrc curLayer;
   final double curOpacity;
   final Function(MapTileSrc tileSrc, double opacity) onChanged;

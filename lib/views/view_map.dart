@@ -7,8 +7,8 @@ import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:flutter_map_line_editor/dragmarker.dart';
-import 'package:flutter_map_line_editor/polyeditor.dart';
+import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
+import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -277,7 +277,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                   key: mapKey,
                   mapController: mapController,
                   options: MapOptions(
-                    absorbPanEventsOnScrollables: false,
                     onMapReady: () {
                       setState(() {
                         mapReady = true;
@@ -310,15 +309,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     },
                   ),
                   children: [
-                    getMapTileLayer(settingsMgr.mainMapTileSrc.value, settingsMgr.mainMapOpacity.value),
+                    Opacity(
+                        opacity: settingsMgr.mainMapOpacity.value,
+                        child: getMapTileLayer(settingsMgr.mainMapTileSrc.value)),
 
                     // Airspace overlay
                     if (settingsMgr.showAirspaceOverlay.value &&
                         settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                      getMapTileLayer(MapTileSrc.airspace, 1),
+                      getMapTileLayer(MapTileSrc.airspace),
                     if (settingsMgr.showAirspaceOverlay.value &&
                         settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                      getMapTileLayer(MapTileSrc.airports, 1),
+                      getMapTileLayer(MapTileSrc.airports),
 
                     // TFRs
                     FutureBuilder<List<TFR>?>(
@@ -348,14 +349,15 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                     // https://nowcoast.noaa.gov/help/#!section=map-service-list
                     if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
-                      TileLayer(
-                        backgroundColor: Colors.transparent,
-                        wmsOptions: WMSTileLayerOptions(
-                          layers: ["1"],
-                          baseUrl:
-                              "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
-                        ),
+                      Opacity(
                         opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.zoom : 0)) / 10.0)),
+                        child: TileLayer(
+                            backgroundColor: Colors.transparent,
+                            wmsOptions: WMSTileLayerOptions(
+                              layers: ["1"],
+                              baseUrl:
+                                  "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
+                            )),
                       ),
 
                     // Other Pilot path trace
@@ -505,9 +507,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       DragMarkers(markers: [
                         DragMarker(
                             point: draggingLatLng ?? plan.waypoints[editingWp]!.latlng.first,
-                            height: 60 * 0.8,
-                            width: 40 * 0.8,
-                            updateMapNearEdge: true,
+                            size: const Size(60 * 0.8, 60 * 0.8),
                             // useLongPress: true,
                             onTap: (_) => plan.selectedWp = editingWp,
                             onDragEnd: (p0, p1) {
@@ -524,7 +524,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               });
                             },
                             rotateMarker: true,
-                            builder: (context) => Stack(
+                            builder: (context, latlng, isDragging) => Stack(
                                   children: [
                                     Container(
                                         transformAlignment: const Alignment(0, 0),
@@ -532,7 +532,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                         child: WaypointMarker(plan.waypoints[editingWp]!, 60 * 0.8)),
                                     Container(
                                         transformAlignment: const Alignment(0, 0),
-                                        transform: Matrix4.translationValues(4, 14 * 0.8, 0),
+                                        transform: Matrix4.translationValues(12, 25, 0),
                                         child: const Icon(
                                           Icons.open_with,
                                           color: Colors.black,
@@ -549,13 +549,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         markers: [
                           Marker(
                               rotate: true,
-                              height: 220,
+                              height: 240,
                               point: plan.waypoints[editingWp]!.latlng.first,
                               builder: (context) => Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Container(
-                                        height: 120,
+                                        height: 140,
                                       ),
                                       FloatingActionButton.small(
                                         heroTag: "editWaypoint",
