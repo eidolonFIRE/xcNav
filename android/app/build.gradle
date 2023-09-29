@@ -55,7 +55,7 @@ android {
         versionName flutterVersionName
 
         testInstrumentationRunner "pl.leancode.patrol.PatrolJUnitRunner"
-        testInstrumentationRunnerArguments clearPackageData: "true"
+        testInstrumentationRunnerArguments clearPackageData: "false"
     }
 
     signingConfigs {
