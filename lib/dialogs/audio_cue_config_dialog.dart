@@ -14,7 +14,7 @@ Future<Map<String, bool>?> showAudioCueConfigDialog(BuildContext context, Map<St
                             secondary: Icon(AudioCueService.icons[entry.key]),
                             title: Text(entry.key),
                             onChanged: (newValue) => setState(
-                                  () => {config[entry.key] = newValue},
+                                  () => config[entry.key] = newValue,
                                 )))
                         .toList() +
                     [

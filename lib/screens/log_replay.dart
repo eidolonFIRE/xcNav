@@ -16,6 +16,7 @@ import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
 import 'package:xcnav/widgets/log_summary.dart';
@@ -200,13 +201,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     key: mapKey,
                     mapController: mapController,
                     options: MapOptions(
-                      absorbPanEventsOnScrollables: false,
                       onMapReady: () {
                         setState(() {
                           mapReady = true;
-
-                          final mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList());
-                          mapBounds.pad(0.2);
+                          final mapBounds =
+                              padLatLngBounds(LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList()), 0.2);
                           mapController.fitBounds(mapBounds);
                         });
                       },
@@ -219,13 +218,13 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       },
                     ),
                     children: [
-                      getMapTileLayer(mapTileSrc, mapOpacity),
+                      Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
 
                       // Airspace overlay
                       if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        getMapTileLayer(MapTileSrc.airspace, 1),
+                        getMapTileLayer(MapTileSrc.airspace),
                       if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        getMapTileLayer(MapTileSrc.airports, 1),
+                        getMapTileLayer(MapTileSrc.airports),
 
                       // Waypoints: paths
                       PolylineLayer(
@@ -403,8 +402,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         });
                       },
                       selected: false,
-                      child: Stack(
-                        children: const [
+                      child: const Stack(
+                        children: [
                           Icon(
                             Icons.local_gas_station,
                             color: Colors.black,
@@ -512,7 +511,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     return BarChart(BarChartData(
                         borderData: FlBorderData(show: false),
                         barTouchData: BarTouchData(enabled: false),
-                        gridData: FlGridData(drawVerticalLine: false, drawHorizontalLine: false),
+                        gridData: const FlGridData(drawVerticalLine: false, drawHorizontalLine: false),
                         barGroups: log.speedHist
                             .mapIndexed((index, value) => BarChartGroupData(x: index, barRods: [
                                   BarChartRodData(
@@ -538,11 +537,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               },
                             ),
                           ),
-                          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          topTitles: AxisTitles(
+                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          topTitles: const AxisTitles(
                             sideTitles: SideTitles(showTitles: false),
                           ),
-                          leftTitles: AxisTitles(
+                          leftTitles: const AxisTitles(
                             sideTitles: SideTitles(showTitles: false),
                           ),
                         )));

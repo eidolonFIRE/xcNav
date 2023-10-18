@@ -87,10 +87,10 @@ void showWindDialog(BuildContext context) {
                             fit: StackFit.expand,
                             children: [
                               wind.result == null
-                                  ? Center(
+                                  ? const Center(
                                       child: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      children: const [
+                                      children: [
                                         Padding(
                                           padding: EdgeInsets.all(10.0),
                                           child: Text("Slowly Turn ¼ Circle", style: TextStyle(fontSize: 18)),

@@ -13,6 +13,7 @@ import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class FlightLogCard extends StatelessWidget {
@@ -152,8 +153,7 @@ class FlightLogCard extends StatelessWidget {
     final log = logStore.logs[logKey]!;
 
     if (log.goodFile) {
-      mapBounds = LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList());
-      mapBounds.pad(0.2);
+      mapBounds = padLatLngBounds(LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList()), 0.2);
     }
 
     return Padding(
@@ -178,7 +178,7 @@ class FlightLogCard extends StatelessWidget {
                     },
                   ),
                   children: [
-                    getMapTileLayer(MapTileSrc.topo, 1),
+                    getMapTileLayer(MapTileSrc.topo),
 
                     // --- Waypoints: paths
                     PolylineLayer(

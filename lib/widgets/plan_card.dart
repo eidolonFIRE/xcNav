@@ -310,7 +310,7 @@ class _PlanCardState extends State<PlanCard> {
                           bounds: widget.plan.getBounds(),
                           interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       children: [
-                        getMapTileLayer(MapTileSrc.topo, 1),
+                        getMapTileLayer(MapTileSrc.topo),
 
                         // Flight plan paths - Polyline
                         TappablePolylineLayer(

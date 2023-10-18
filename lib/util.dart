@@ -5,6 +5,8 @@ import 'package:bisection/bisect.dart';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 void setSystemUI() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -84,4 +86,16 @@ int nearestIndex(List<num> a, num value) {
   if (b == 0) return 0;
   if (b >= a.length) return a.length - 1;
   return (a[b] - value <= value - a[b - 1]) ? b : b - 1;
+}
+
+LatLngBounds padLatLngBounds(LatLngBounds bounds, double bufferRatio) {
+  final heightBuffer = (bounds.southWest.latitude - bounds.northEast.latitude).abs() * bufferRatio;
+  final widthBuffer = (bounds.southWest.longitude - bounds.northEast.longitude).abs() * bufferRatio;
+
+  final point1 = LatLng((90 + bounds.southWest.latitude - heightBuffer) % 180 - 90,
+      (180 + bounds.southWest.longitude - widthBuffer) % 360 - 180);
+  final point2 = LatLng((90 + bounds.northEast.latitude + heightBuffer) % 180 - 90,
+      (180 + bounds.northEast.longitude + widthBuffer) % 360 - 180);
+
+  return LatLngBounds(point1, point2);
 }

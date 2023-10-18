@@ -88,8 +88,8 @@ void main() {
     'Get to profile editor',
     ($) async {
       // --- override size
-      $.tester.binding.window.physicalSizeTestValue = const Size(800, 2000);
-      $.tester.binding.window.devicePixelRatioTestValue = 1.0;
+      $.tester.view.physicalSize = const Size(800, 2000);
+      $.tester.view.devicePixelRatio = 1.0;
 
       // --- Setup stubs and initial configs
       GeolocatorPlatform.instance = MockGeolocatorPlatform();

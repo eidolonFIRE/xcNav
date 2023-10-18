@@ -1,11 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:flutter_map_line_editor/dragmarker.dart';
+import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
+import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter_map_line_editor/polyeditor.dart';
 import 'package:provider/provider.dart';
 
 // --- Models
@@ -15,6 +15,8 @@ import 'package:xcnav/models/waypoint.dart';
 // --- Providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
+import 'package:xcnav/settings_service.dart';
+import 'package:xcnav/util.dart';
 
 // --- Widgets
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -160,8 +162,8 @@ class _PlanEditorState extends State<PlanEditor> {
     if (plan == null) {
       plan = ModalRoute.of(context)!.settings.arguments as FlightPlan;
       final center = Provider.of<MyTelemetry>(context, listen: false).geo ?? defaultGeo;
-      mapBounds =
-          plan!.getBounds() ?? (LatLngBounds.fromPoints([center.latlng, center.latlng..longitude += 0.05])..pad(2));
+      mapBounds = plan!.getBounds() ??
+          padLatLngBounds(LatLngBounds.fromPoints([center.latlng, center.latlng..longitude += 0.05]), 2);
     }
     return WillPopScope(
       onWillPop: () {
@@ -182,7 +184,6 @@ class _PlanEditorState extends State<PlanEditor> {
                       key: const Key("planEditorMap"),
                       mapController: mapController,
                       options: MapOptions(
-                        absorbPanEventsOnScrollables: false,
                         onMapReady: () {
                           setState(() {
                             mapController.fitBounds(mapBounds!);
@@ -194,9 +195,11 @@ class _PlanEditorState extends State<PlanEditor> {
                         onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                       ),
                       children: [
-                        getMapTileLayer(mapTileSrc, mapOpacity),
-                        if (mapTileSrc != MapTileSrc.sectional) getMapTileLayer(MapTileSrc.airspace, 1),
-                        if (mapTileSrc != MapTileSrc.sectional) getMapTileLayer(MapTileSrc.airports, 1),
+                        Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
+                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                          getMapTileLayer(MapTileSrc.airspace),
+                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                          getMapTileLayer(MapTileSrc.airports),
 
                         // Flight plan markers
                         TappablePolylineLayer(
@@ -227,10 +230,11 @@ class _PlanEditorState extends State<PlanEditor> {
                                     ? DragMarker(
                                         useLongPress: true,
                                         point: e.latlng[0],
-                                        height: 60 * (e.id == selectedWp ? 0.8 : 0.6),
-                                        width: 40 * (e.id == selectedWp ? 0.8 : 0.6),
+                                        size: Size(60 * (e.id == selectedWp ? 0.8 : 0.6),
+                                            40 * (e.id == selectedWp ? 0.8 : 0.6)),
                                         offset: Offset(0, -30 * (e.id == selectedWp ? 0.8 : 0.6)),
-                                        feedbackOffset: Offset(0, -30 * (e.id == selectedWp ? 0.8 : 0.6)),
+                                        // TOOD: check that removing this is ok
+                                        // feedbackOffset: Offset(0, -30 * (e.id == selectedWp ? 0.8 : 0.6)),
                                         onTap: (_) {
                                           setState(() {
                                             selectedWp = e.id;
@@ -241,7 +245,8 @@ class _PlanEditorState extends State<PlanEditor> {
                                             plan!.waypoints[e.id]?.latlng = [p1];
                                           });
                                         },
-                                        builder: (context) => WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)))
+                                        builder: (context, latLng, isDragging) =>
+                                            WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)))
                                     : null)
                                 .whereNotNull()
                                 .toList()),

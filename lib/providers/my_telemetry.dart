@@ -172,6 +172,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                   heading: 0,
                   accuracy: 0,
                   speedAccuracy: 0,
+                  altitudeAccuracy: 0.0,
+                  headingAccuracy: 0.0,
                 ),
                 bypassRecording: true);
           }
@@ -294,7 +296,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       _positionStreamSubscription = positionStream!.handleError((error) {
         _positionStreamSubscription?.cancel();
         _positionStreamSubscription = null;
-      }).listen((position) => {handleGeoUpdate(context, position)});
+      }).listen((position) => handleGeoUpdate(context, position));
 
       debugPrint('Listening for position updates RESUMED');
     } else {
@@ -515,10 +517,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     // --- In-Flight detector
     if (globalContext != null && settingsMgr.autoRecordFlight.value) {
-      if (inFlight && geoPrev != null) {
+      if (inFlight) {
         // Is moving slowly near the ground?
         if (geo!.spdSmooth < 2.5 && geo!.varioSmooth.abs() < 0.2 && geo!.alt - (geo!.ground ?? geo!.alt) < 30) {
-          triggerHyst += geo!.time - geoPrev!.time;
+          if (geoPrev != null) {
+            triggerHyst += geo!.time - geoPrev!.time;
+          } else {
+            triggerHyst += const Duration(seconds: 1).inMilliseconds;
+          }
         } else {
           triggerHyst = 0;
         }
@@ -529,7 +535,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       } else {
         // Is moving a normal speed and above the ground?
         if (4.0 < geo!.spd && geo!.spd < 25 && geo!.alt - (geo!.ground ?? 0) > 30) {
-          triggerHyst += geo!.time - geoPrev!.time;
+          if (geoPrev != null) {
+            triggerHyst += geo!.time - geoPrev!.time;
+          } else {
+            triggerHyst += const Duration(seconds: 1).inMilliseconds;
+          }
         } else {
           triggerHyst = 0;
         }

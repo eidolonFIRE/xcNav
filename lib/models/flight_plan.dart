@@ -41,7 +41,7 @@ class FlightPlan {
       points.add(LatLng(points.first.latitude, points.first.longitude + 0.02));
       points.add(LatLng(points.first.latitude, points.first.longitude - 0.02));
     }
-    return LatLngBounds.fromPoints(points)..pad(0.2);
+    return padLatLngBounds(LatLngBounds.fromPoints(points), 0.2);
   }
 
   FlightPlan(this.name) {
@@ -142,11 +142,11 @@ class FlightPlan {
   FlightPlan.fromKml(this.name, XmlElement document, List<XmlElement> folders) {
     void scanElement(XmlElement element) {
       element.findAllElements("Placemark").forEach((element) {
-        String name = element.getElement("name")?.text.trim() ?? "untitled";
+        String name = element.getElement("name")?.innerText.trim() ?? "untitled";
         if (element.getElement("Point") != null || element.getElement("LineString") != null) {
           final List<LatLng> points = (element.getElement("Point") ?? element.getElement("LineString"))!
               .getElement("coordinates")!
-              .text
+              .innerText
               .trim()
               .split(RegExp(r'[\n ]'))
               .where((element) => element.isNotEmpty)
@@ -156,7 +156,7 @@ class FlightPlan {
           }).toList();
 
           // (substr 1 to trim off the # symbol)
-          final styleUrl = element.getElement("styleUrl")!.text.substring(1);
+          final styleUrl = element.getElement("styleUrl")!.innerText.substring(1);
 
           int color = 0xff000000;
           String? icon;
@@ -169,7 +169,7 @@ class FlightPlan {
             String? colorText =
                 (styleElement.first.getElement("IconStyle") ?? styleElement.first.getElement("LineStyle"))
                     ?.getElement("color")
-                    ?.text;
+                    ?.innerText;
             if (colorText != null) {
               colorText = colorText.substring(0, 2) +
                   colorText.substring(6, 8) +
@@ -184,10 +184,10 @@ class FlightPlan {
             final styleMap = document.findAllElements("StyleMap").where((e) => e.getAttribute("id")! == styleUrl).first;
             final finalStyleUrl = styleMap
                 .findAllElements("Pair")
-                .where((e) => e.getElement("key")!.text == "normal")
+                .where((e) => e.getElement("key")!.innerText == "normal")
                 .first
                 .getElement("styleUrl")!
-                .text
+                .innerText
                 .substring(1);
             // grab destination url
             var finalStyleElement = document
@@ -205,8 +205,8 @@ class FlightPlan {
               if (points.length > 1) {
                 // LineStyle
                 String? colorText =
-                    finalStyleElement.getElement("Style")?.getElement("LineStyle")?.getElement("color")?.text;
-                colorText ??= finalStyleElement.getElement("LineStyle")?.getElement("color")?.text;
+                    finalStyleElement.getElement("Style")?.getElement("LineStyle")?.getElement("color")?.innerText;
+                colorText ??= finalStyleElement.getElement("LineStyle")?.getElement("color")?.innerText;
                 if (colorText != null) {
                   colorText = colorText.substring(0, 2) +
                       colorText.substring(6, 8) +
@@ -221,8 +221,8 @@ class FlightPlan {
                     ?.getElement("IconStyle")
                     ?.getElement("Icon")
                     ?.getElement("href")
-                    ?.text;
-                href ??= finalStyleElement.getElement("IconStyle")?.getElement("Icon")?.getElement("href")?.text;
+                    ?.innerText;
+                href ??= finalStyleElement.getElement("IconStyle")?.getElement("Icon")?.getElement("href")?.innerText;
                 if (href != null) {
                   String? finalColorString = RegExp(r'color=([a-f0-9]{6})').firstMatch(href)?.group(1).toString();
                   if (finalColorString != null) {
@@ -288,6 +288,7 @@ class FlightPlan {
       goodFile = false;
       DatadogSdk.instance.logs?.error("Failed to import KML",
           errorMessage: err.toString(), errorStackTrace: trace, attributes: {"filename": name});
+      rethrow;
     }
   }
 }

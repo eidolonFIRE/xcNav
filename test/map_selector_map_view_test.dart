@@ -32,9 +32,10 @@ void main() {
   SharedPreferences.setMockInitialValues({});
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
+    settingsMgr.showAirspaceOverlay.value = false;
   });
 
-  Widget makeApp() {
+  Widget makeApp(ActivePlan activePlan, MockPlans plans) {
     return MultiProvider(providers: [
       ChangeNotifierProvider(
         create: (_) => MyTelemetry(),
@@ -49,11 +50,12 @@ void main() {
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (_) => ActivePlan(),
+        create: (_) => activePlan,
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (_) => Plans(),
+        // ignore: unnecessary_cast
+        create: (_) => plans as Plans,
         lazy: false,
       ),
       ChangeNotifierProvider(
@@ -105,8 +107,11 @@ void main() {
         "profile.secretID": "1234abcd",
       });
 
+      final activePlan = ActivePlan();
+      final plans = MockPlans();
+
       // --- Build App
-      await $.pumpWidget(makeApp());
+      await $.pumpWidget(makeApp(activePlan, plans));
       await $.waitUntilExists($(Scaffold));
 
       //
@@ -133,25 +138,29 @@ void main() {
         "profile.secretID": "1234abcd",
       });
 
+      final activePlan = ActivePlan();
+      final plans = MockPlans();
+
       // --- Build App
-      await $.pumpWidget(makeApp());
+      await $.pumpWidget(makeApp(activePlan, plans));
       await $.waitUntilExists($(Scaffold));
+      await $.pump(const Duration(seconds: 2));
 
       // --- Default map layer
       expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.topo);
       expect(settingsMgr.mainMapOpacity.value, 1);
 
       // --- Select a different map
-      await $(#viewMap_mapSelector).tap(andSettle: false);
+      await $(#viewMap_mapSelector).tap(settlePolicy: SettlePolicy.noSettle);
       await $.waitUntilVisible($(SpeedDial));
-      await $(#mapSelector_satellite_50).tap(andSettle: false);
+      await $(#mapSelector_satellite_60).tap(settlePolicy: SettlePolicy.noSettle);
 
       // (let the speeddial finish the animation)
       await $.pump(const Duration(seconds: 2));
 
       // --- New map layer
       expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.satellite);
-      expect(settingsMgr.mainMapOpacity.value, 0.5);
+      expect(settingsMgr.mainMapOpacity.value, 0.6);
     },
   );
 }

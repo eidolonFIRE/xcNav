@@ -87,7 +87,7 @@ class ChartLogAggregate extends StatelessWidget {
     buildTotals();
     return BarChart(
       BarChartData(
-        gridData: FlGridData(drawVerticalLine: false),
+        gridData: const FlGridData(drawVerticalLine: false),
         barGroups: lexical
             .map((key, value) => MapEntry(
                 key,
@@ -132,7 +132,7 @@ class ChartLogAggregate extends StatelessWidget {
                   // interval: 1,
                   reservedSize: 30,
                 )),
-            topTitles: AxisTitles(
+            topTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false),
             ),
             leftTitles: AxisTitles(

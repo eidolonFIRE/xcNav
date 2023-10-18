@@ -75,9 +75,11 @@ class WaypointMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
-      SvgPicture.asset(
-        "assets/images/pin.svg",
-        color: waypoint.color == null ? Colors.black : Color(waypoint.color!),
+      Center(
+        child: SvgPicture.asset(
+          "assets/images/pin.svg",
+          color: waypoint.color == null ? Colors.black : Color(waypoint.color!),
+        ),
       ),
       if (waypoint.icon != null)
         Center(

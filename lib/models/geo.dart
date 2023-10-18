@@ -115,7 +115,7 @@ class Geo {
       vario = (alt - prev.alt) / (time - prev.time) * 1000;
       if (vario.isNaN || vario.isInfinite) vario = 0;
       // Blend vario with previous vario reading to offer some mild smoothing
-      if (prev.varioSmooth.isFinite && vario.abs() < 99) varioSmooth = vario * 0.1 + prev.varioSmooth * 0.9;
+      if (prev.varioSmooth.isFinite && vario.abs() < 99) varioSmooth = vario * 0.2 + prev.varioSmooth * 0.8;
       spdSmooth = spd * 0.1 + prev.spdSmooth * 0.9;
     } else {
       vario = prev?.vario ?? 0;
@@ -146,7 +146,7 @@ class Geo {
         delta = (delta + 180) % 360 - 180;
         angleToNext = delta.abs();
       }
-      if (dist < matchdist && (angleToNext == double.nan || angleToNext > 90)) {
+      if (dist < matchdist && (angleToNext.isNaN || angleToNext > 90)) {
         matchdist = dist;
         matchIndex = index;
         // debugPrint("match: $index) $dist  $angleToNext");

@@ -301,7 +301,7 @@ TextSpan richValue(UnitType type, double value,
   // Cases for increasing decimals
 
   if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps ||
-      type == UnitType.speed && _unitSpeed == DisplayUnitsVario.mps) decimals++;
+      type == UnitType.speed && _unitSpeed == DisplayUnitsSpeed.mps) decimals++;
 
   double printValue = unitConverters[type]!(value);
 

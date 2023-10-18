@@ -52,52 +52,52 @@ import 'package:xcnav/airports.dart';
 LatLng lastKnownLatLng = LatLng(37, -122);
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-
-  final version = await PackageInfo.fromPlatform();
-
-  final prefs = await SharedPreferences.getInstance();
-  settingsMgr = SettingsMgr(prefs);
-
-  final configuration = DdSdkConfiguration(
-    clientToken: datadogToken,
-    env: kDebugMode ? "debug" : "release",
-    site: DatadogSite.us3,
-    trackingConsent: TrackingConsent.granted,
-    nativeCrashReportEnabled: true,
-    loggingConfiguration: LoggingConfiguration(
-      loggerName: "xcNav: ${version.version}  -  ( build ${version.buildNumber} )",
-      printLogsToConsole: true,
-    ),
-    rumConfiguration: RumConfiguration(
-      applicationId: datadogRumAppId,
-      detectLongTasks: true,
-    ),
-  );
-
-  await DatadogSdk.instance.initialize(configuration);
-
-  final ddsdk = DatadogSdk.instance;
-  ddsdk.sdkVerbosity = Verbosity.verbose;
-
-  // Set up an anonymous ID for logging and usage statistics.
-  // This ID will be uncorrelated to any ID on the server and is therefore anonymous.
-  // It will be saved, however, so individual clients can be distinguished.
-  if (settingsMgr.datadogSdkId.value.isEmpty) {
-    final random = Random.secure();
-    final values = List<int>.generate(10, (i) => random.nextInt(255));
-    settingsMgr.datadogSdkId.value = base64UrlEncode(values);
-  }
-  ddsdk.setUserInfo(id: settingsMgr.datadogSdkId.value);
-
-  FlutterError.onError = (FlutterErrorDetails details) {
-    ddsdk.logs?.error(details.toString(), errorStackTrace: details.stack);
-    ddsdk.rum?.handleFlutterError(details);
-    FlutterError.presentError(details);
-  };
-
   runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+
+    final version = await PackageInfo.fromPlatform();
+
+    final prefs = await SharedPreferences.getInstance();
+    settingsMgr = SettingsMgr(prefs);
+
+    final configuration = DdSdkConfiguration(
+      clientToken: datadogToken,
+      env: kDebugMode ? "debug" : "release",
+      site: DatadogSite.us3,
+      trackingConsent: TrackingConsent.granted,
+      nativeCrashReportEnabled: true,
+      loggingConfiguration: LoggingConfiguration(
+        loggerName: "xcNav: ${version.version}  -  ( build ${version.buildNumber} )",
+        printLogsToConsole: true,
+      ),
+      rumConfiguration: RumConfiguration(
+        applicationId: datadogRumAppId,
+        detectLongTasks: true,
+      ),
+    );
+
+    await DatadogSdk.instance.initialize(configuration);
+
+    final ddsdk = DatadogSdk.instance;
+    ddsdk.sdkVerbosity = Verbosity.verbose;
+
+    // Set up an anonymous ID for logging and usage statistics.
+    // This ID will be uncorrelated to any ID on the server and is therefore anonymous.
+    // It will be saved, however, so individual clients can be distinguished.
+    if (settingsMgr.datadogSdkId.value.isEmpty) {
+      final random = Random.secure();
+      final values = List<int>.generate(10, (i) => random.nextInt(255));
+      settingsMgr.datadogSdkId.value = base64UrlEncode(values);
+    }
+    ddsdk.setUserInfo(id: settingsMgr.datadogSdkId.value);
+
+    FlutterError.onError = (FlutterErrorDetails details) {
+      ddsdk.logs?.error(details.toString(), errorStackTrace: details.stack);
+      ddsdk.rum?.handleFlutterError(details);
+      FlutterError.presentError(details);
+    };
+
     // Let datadog know we will not be participating.
     if (settingsMgr.rumOptOut.value) {
       DatadogSdk.instance.rum?.addUserAction(RumUserActionType.custom, "opt-out");

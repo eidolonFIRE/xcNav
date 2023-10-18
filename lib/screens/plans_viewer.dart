@@ -200,10 +200,10 @@ class _PlansViewerState extends State<PlansViewer> {
           ],
         ),
         body: plans.loadedPlans.isEmpty
-            ? Center(
+            ? const Center(
                 child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   // Padding(
                   //   padding: EdgeInsets.all(8.0),
                   //   child: Text("No plans created yet!"),

@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_tile_caching/fmtc_advanced.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:xcnav/dem_service.dart';
@@ -25,10 +24,6 @@ TileProvider? makeTileProvider(String instanceName) {
           FMTCTileProviderSettings(
             behavior: CacheBehavior.cacheFirst,
             cachedValidDuration: const Duration(days: 30),
-            // errorHandler: (exception) {
-            //   DatadogSdk.instance.logs
-            //       ?.warn(exception.message, errorMessage: exception.toString(), attributes: {"layer": instanceName});
-            // },
           ),
         );
   } catch (e, trace) {
@@ -39,7 +34,7 @@ TileProvider? makeTileProvider(String instanceName) {
   }
 }
 
-TileLayer getMapTileLayer(MapTileSrc tileSrc, double opacity) {
+TileLayer getMapTileLayer(MapTileSrc tileSrc) {
   final tileName = tileSrc.toString().split(".").last;
   switch (tileSrc) {
     case MapTileSrc.sectional:
@@ -47,15 +42,13 @@ TileLayer getMapTileLayer(MapTileSrc tileSrc, double opacity) {
           urlTemplate: 'http://wms.chartbundle.com/tms/v1.0/sec/{z}/{x}/{y}.png?type=google',
           tileProvider: makeTileProvider(tileName),
           maxNativeZoom: 13,
-          minZoom: 4,
-          opacity: opacity * 0.8 + 0.2);
+          minZoom: 4);
     case MapTileSrc.satellite:
       return TileLayer(
           urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
           tileProvider: makeTileProvider(tileName),
           maxNativeZoom: 19,
-          minZoom: 2,
-          opacity: opacity * 0.8 + 0.2);
+          minZoom: 2);
     // https://docs.openaip.net/?urls.primaryName=Tiles%20API
     case MapTileSrc.airspace:
       return TileLayer(
@@ -76,13 +69,11 @@ TileLayer getMapTileLayer(MapTileSrc tileSrc, double opacity) {
           additionalOptions: const {"apiKey": aipClientToken});
     default:
       return TileLayer(
-        urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-        // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
-        tileProvider: makeTileProvider(tileName),
-        maxNativeZoom: 14,
-        minZoom: 2,
-        opacity: opacity,
-      );
+          urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+          // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
+          tileProvider: makeTileProvider(tileName),
+          maxNativeZoom: 14,
+          minZoom: 2);
   }
 }
 
@@ -115,23 +106,26 @@ final Map<MapTileSrc, Image> mapTileThumbnails = {
 };
 
 Future initMapCache() async {
-  FlutterMapTileCaching.initialise(await RootDirectory.normalCache,
-      settings: FMTCSettings(
-        defaultTileProviderSettings:
-            FMTCTileProviderSettings(behavior: CacheBehavior.cacheFirst, cachedValidDuration: const Duration(days: 30)),
-      )
-      // errorHandler: (error) {
-      //   DatadogSdk.instance.logs?.error("FMTC: init error", errorMessage: error.toString());
-      // },
-      // debugMode: true,
-      );
+  await FlutterMapTileCaching.initialise(
+    settings: FMTCSettings(
+      defaultTileProviderSettings:
+          FMTCTileProviderSettings(behavior: CacheBehavior.cacheFirst, cachedValidDuration: const Duration(days: 30)),
+    ),
+    // errorHandler: (error) {
+    //   DatadogSdk.instance.logs?.error("FMTC: init error", errorMessage: error.toString());
+    // },
+    debugMode: true,
+  );
+
+  await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
+
   await initDemCache();
 
   for (final tileSrc in mapTileThumbnails.keys) {
     final tileName = tileSrc.toString().split(".").last;
     final StoreDirectory store = FMTC.instance(tileName);
     await store.manage.createAsync();
-    await store.metadata.addAsync(key: 'sourceURL', value: getMapTileLayer(tileSrc, 1).urlTemplate!);
+    await store.metadata.addAsync(key: 'sourceURL', value: getMapTileLayer(tileSrc).urlTemplate!);
     await store.metadata.addAsync(
       key: 'validDuration',
       value: '30',
@@ -143,7 +137,7 @@ Future initMapCache() async {
   }
 
   // Do a regular purge of old tiles
-  purgeMapTileCache();
+  // purgeMapTileCache();
 
   mapServiceIsInit = true;
 }
@@ -171,27 +165,27 @@ Future<String> getMapTileCacheSize() async {
   return asReadableSize(sum);
 }
 
-void purgeMapTileCache() async {
-  final threshhold = DateTime.now().subtract(const Duration(days: 30));
-  for (final tileSrc in mapTileThumbnails.keys) {
-    final tileName = tileSrc.toString().split(".").last;
-    final StoreDirectory store = FMTC.instance(tileName);
+// void purgeMapTileCache() async {
+//   final threshhold = DateTime.now().subtract(const Duration(days: 30));
+//   for (final tileSrc in mapTileThumbnails.keys) {
+//     final tileName = tileSrc.toString().split(".").last;
+//     final StoreDirectory store = FMTC.instance(tileName);
 
-    int countDelete = 0;
-    int countRemain = 0;
-    for (final tile in store.access.tiles.listSync()) {
-      if (tile.statSync().changed.isBefore(threshhold)) {
-        // debugPrint("Deleting Tile: ${tile.path}");
-        tile.deleteSync();
-        countDelete++;
-      } else {
-        countRemain++;
-      }
-    }
-    debugPrint("Scanned $tileName and deleted $countDelete / ${countRemain + countDelete} tiles.");
-    store.stats.invalidateCachedStatistics();
-  }
-}
+//     int countDelete = 0;
+//     int countRemain = 0;
+//     for (final tile in store.access.tiles.listSync()) {
+//       if (tile.statSync().changed.isBefore(threshhold)) {
+//         // debugPrint("Deleting Tile: ${tile.path}");
+//         tile.deleteSync();
+//         countDelete++;
+//       } else {
+//         countRemain++;
+//       }
+//     }
+//     debugPrint("Scanned $tileName and deleted $countDelete / ${countRemain + countDelete} tiles.");
+//     store.stats.invalidateCachedStatistics();
+//   }
+// }
 
 void emptyMapTileCache() {
   // Empty elevation map cache

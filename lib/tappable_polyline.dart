@@ -3,11 +3,12 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:positioned_tap_detector_2/positioned_tap_detector_2.dart';
 
 class TaggedPolyline extends Polyline {
   /// The name of the polyline
   final String? tag;
+
+  final List<Offset> offsets = [];
 
   TaggedPolyline(
       {required points,
@@ -37,6 +38,11 @@ enum CallType {
 
 /// The options allowing tappable polyline tweaks
 class TappablePolylineLayer extends PolylineLayer {
+  /// The list of [TaggedPolyline] which could be tapped
+  @override
+  // ignore: overridden_fields
+  final List<TaggedPolyline> polylines;
+
   /// The tolerated distance between pointer and user tap to trigger the [onTap] callback
   final double pointerDistanceTolerance;
 
@@ -46,9 +52,9 @@ class TappablePolylineLayer extends PolylineLayer {
   /// Callback when polyline has long press
   final void Function(TaggedPolyline, TapPosition tapPosition)? onLongPress;
 
-  TappablePolylineLayer({
+  const TappablePolylineLayer({
     Key? key,
-    polylines = const [],
+    this.polylines = const [],
     this.onTap,
     this.onLongPress,
     this.pointerDistanceTolerance = 15,
@@ -96,11 +102,10 @@ class TappablePolylineLayer extends PolylineLayer {
             },
             child: Stack(
               children: [
-                for (final polylineOpt in polylines)
-                  CustomPaint(
-                    painter: PolylinePainter(polylineOpt, false, mapState),
-                    size: size,
-                  ),
+                CustomPaint(
+                  painter: PolylinePainter(polylines, false, mapState),
+                  size: size,
+                ),
               ],
             ));
       },
@@ -118,7 +123,7 @@ class TappablePolylineLayer extends PolylineLayer {
     // iterate over all the segments in the polyline to find any
     // matches with the tapped point within the
     // pointerDistanceTolerance.
-    for (Polyline currentPolyline in polylines) {
+    for (final currentPolyline in polylines) {
       for (var j = 0; j < currentPolyline.offsets.length - 1; j++) {
         // We consider the points point1, point2 and tap points in a triangle
         var point1 = currentPolyline.offsets[j];
@@ -161,7 +166,7 @@ class TappablePolylineLayer extends PolylineLayer {
 
           if (minimum < closest) {
             closest = minimum;
-            bestCandidate = currentPolyline as TaggedPolyline;
+            bestCandidate = currentPolyline;
           }
         }
       }

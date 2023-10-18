@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 
@@ -22,19 +21,22 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
+import 'package:xcnav/settings_service.dart';
+import 'package:xcnav/tfr_service.dart';
 
 import 'mock_providers.dart';
 
 void main() {
+  when(getTFRs(LatLng(37, -121))).thenAnswer((realInvocation) => Future.value([]));
+
   SharedPreferences.setMockInitialValues({});
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
   });
 
-  Widget makeApp(ActivePlan activePlan, MockPlans plans, Completer<MockClient> client) {
+  Widget makeApp() {
     return MultiProvider(providers: [
       ChangeNotifierProvider(
         create: (_) => MyTelemetry(),
@@ -45,16 +47,15 @@ void main() {
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (context) => Wind(),
+        create: (_) => Wind(),
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (_) => activePlan,
+        create: (_) => ActivePlan(),
         lazy: false,
       ),
       ChangeNotifierProvider(
-        // ignore: unnecessary_cast
-        create: (_) => plans as Plans,
+        create: (_) => Plans(),
         lazy: false,
       ),
       ChangeNotifierProvider(
@@ -74,12 +75,8 @@ void main() {
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (context) {
-          final fakeClient = MockClient(context);
-          client.complete(fakeClient);
-          // ignore: unnecessary_cast
-          return fakeClient as Client;
-        },
+        // ignore: unnecessary_cast
+        create: (context) => MockClient(context) as Client,
         lazy: false,
       )
     ], child: const XCNav());
@@ -90,9 +87,8 @@ void main() {
     final fontLoader = FontLoader('roboto-condensed')..addFont(flamante);
     await fontLoader.load();
   });
-
   patrolTest(
-    'Check chat bubble appears and clears',
+    'Flight Logs: loads with no logs',
     ($) async {
       // --- Setup stubs and initial configs
       GeolocatorPlatform.instance = MockGeolocatorPlatform();
@@ -109,69 +105,22 @@ void main() {
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
       });
-      final activePlan = ActivePlan();
-      final plans = MockPlans();
-      final clientCompleter = Completer<MockClient>();
 
       // --- Build App
-      await $.pumpWidget(makeApp(activePlan, plans, clientCompleter));
+      await $.pumpWidget(makeApp());
       await $.waitUntilExists($(Scaffold));
 
-      final client = await clientCompleter.future;
+      // --- Open flight logs screen
+      await $.tester.tapAt($.tester.getBottomLeft($(MaterialApp)) + const Offset(30, -30));
+      await $.pump(const Duration(seconds: 2));
+      await $.tester.drag($("ADSB-in"), const Offset(0, -300));
+      await $.pump(const Duration(seconds: 2));
+      await $("Log").tap(settlePolicy: SettlePolicy.noSettle);
 
-      // --- Join a group
-      client.handleAuthResponse({
-        "status": 0,
-        "secretToken": "1234abcd",
-        "pilot_id": "1234",
-        "pilotMetaHash": "cb3b4",
-        "apiVersion": 7,
-        "group_id": "6f3a49"
-      });
-
-      client.handleGroupInfoResponse({
-        "status": 0,
-        "group_id": "6f3a49",
-        "pilots": [
-          {"id": "otherPilotID1234", "name": "bender", "avatarHash": "b96e3cff738b67359e2896db92a11284"}
-        ],
-        "waypoints": {
-          "ld6k9yb82t7h61": {
-            "id": "ld6k9yb82t7h61",
-            "name": "Hospital Canyon",
-            "latlng": [
-              [37.55983, -121.37429]
-            ],
-            "icon": null,
-            "color": 4278190080
-          },
-        }
-      });
-
-      // --- Test a short message
-      client.handleChatMessage({
-        "timestamp": DateTime.now().millisecondsSinceEpoch,
-        "group_id": "6f3a49",
-        "pilot_id": "otherPilotID1234",
-        "text": "testing",
-        "emergency": false
-      });
-
-      await $.waitUntilVisible($("testing"));
-
-      // --- Test a long message
-      client.handleChatMessage({
-        "timestamp": DateTime.now().millisecondsSinceEpoch,
-        "group_id": "6f3a49",
-        "pilot_id": "otherPilotID1234",
-        "text": "ok, this is a long message example. It should line-wrap in the display.",
-        "emergency": false
-      });
-
-      await $
-          .waitUntilVisible($("ok, this is a long message example. It should line-wrap in the display."))
-          .tap(andSettle: false);
-      await $.pump(const Duration(seconds: 30));
+      // // --- Select Stats tile
+      await $.waitUntilExists($("Entries"));
+      await $("Stats").tap(settlePolicy: SettlePolicy.noSettle);
+      await $.pump(const Duration(seconds: 2));
     },
   );
 }

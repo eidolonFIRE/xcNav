@@ -111,7 +111,7 @@ void main() {
     // Speed
     configUnits(speed: DisplayUnitsSpeed.mps);
     expect(richValue(UnitType.speed, 1.0, decimals: 2).children!.map((InlineSpan e) => e.toPlainText()).toList(),
-        ["1.00", "m/s"]);
+        ["1.000", "m/s"]);
     configUnits(speed: DisplayUnitsSpeed.kph);
     expect(richValue(UnitType.speed, 1.0, decimals: 2).children!.map((InlineSpan e) => e.toPlainText()).toList(),
         ["3.60", "kph"]);

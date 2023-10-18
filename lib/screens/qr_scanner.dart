@@ -113,8 +113,8 @@ class _QRScannerState extends State<QRScanner> {
                   child: Stack(children: [
                     (Provider.of<Group>(context).currentGroupID != null)
                         ? Center(
-                            child: QrImage(
-                              foregroundColor: Colors.black,
+                            child: QrImageView(
+                              eyeStyle: const QrEyeStyle(color: Colors.black),
                               backgroundColor: Colors.white,
                               data: "$groupCodePrefix${Provider.of<Group>(context).currentGroupID!.toUpperCase()}",
                               version: QrVersions.auto,
