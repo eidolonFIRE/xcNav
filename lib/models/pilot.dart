@@ -68,6 +68,8 @@ class Pilot {
             heading: 0,
             speed: 0,
             speedAccuracy: 1,
+            altitudeAccuracy: 0.0,
+            headingAccuracy: 0.0,
           ),
           geo,
           null,

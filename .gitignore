@@ -1,4 +1,5 @@
 secrets.dart
+test_bundle.dart
 
 # Miscellaneous
 *.class

@@ -17,17 +17,20 @@ import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 
 Position get mockPosition => Position(
-    latitude: 37,
-    longitude: -121,
-    timestamp: DateTime.fromMillisecondsSinceEpoch(
-      500,
-      isUtc: true,
-    ),
-    altitude: 0.0,
-    accuracy: 0.0,
-    heading: 0.0,
-    speed: 0.0,
-    speedAccuracy: 0.0);
+      latitude: 37,
+      longitude: -121,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(
+        500,
+        isUtc: true,
+      ),
+      altitude: 0.0,
+      accuracy: 0.0,
+      heading: 0.0,
+      speed: 0.0,
+      speedAccuracy: 0.0,
+      altitudeAccuracy: 0.0,
+      headingAccuracy: 0.0,
+    );
 
 class MockGeolocatorPlatform extends Mock
     with

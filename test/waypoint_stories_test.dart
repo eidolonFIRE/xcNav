@@ -32,11 +32,6 @@ import 'package:xcnav/views/view_waypoints.dart';
 import 'mock_providers.dart';
 
 void main() {
-  SharedPreferences.setMockInitialValues({});
-  SharedPreferences.getInstance().then((prefs) {
-    settingsMgr = SettingsMgr(prefs);
-  });
-
   Widget makeApp(ActivePlan activePlan, MockPlans plans) {
     return MultiProvider(providers: [
       ChangeNotifierProvider(
@@ -93,6 +88,12 @@ void main() {
   patrolTest(
     'Create and delete a waypoint',
     ($) async {
+      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.getInstance().then((prefs) {
+        settingsMgr = SettingsMgr(prefs);
+        settingsMgr.showAirspaceOverlay.value = false;
+      });
+
       // --- Setup stubs and initial configs
       GeolocatorPlatform.instance = MockGeolocatorPlatform();
       perm_handler_plat.PermissionHandlerPlatform.instance = MockPermissionHandlerPlatform();
@@ -114,6 +115,7 @@ void main() {
       // --- Build App
       await $.pumpWidget(makeApp(activePlan, plans));
       await $.waitUntilExists($(Scaffold));
+      await $.pump(const Duration(seconds: 2));
 
       // --- Make a waypoint
       await $(ViewMap).tester.tester.longPressAt(const Offset(300, 400));
@@ -142,59 +144,62 @@ void main() {
     },
   );
 
-  patrolTest(
-    'Save waypoint to library',
-    ($) async {
-      // --- Setup stubs and initial configs
-      GeolocatorPlatform.instance = MockGeolocatorPlatform();
-      perm_handler_plat.PermissionHandlerPlatform.instance = MockPermissionHandlerPlatform();
-      when(GeolocatorPlatform.instance.getServiceStatusStream()).thenAnswer((_) => Stream.value(ServiceStatus.enabled));
-      when(GeolocatorPlatform.instance.getPositionStream(
-          locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best,
-        timeLimit: null,
-      ))).thenAnswer((_) => Stream.value(mockPosition));
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-      SharedPreferences.setMockInitialValues({
-        "profile.name": "Mr Test",
-        "profile.id": "1234",
-        "profile.secretID": "1234abcd",
-      });
-      final activePlan = ActivePlan();
-      final plans = MockPlans();
+  patrolTest('Save waypoint to library', ($) async {
+    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.getInstance().then((prefs) {
+      settingsMgr = SettingsMgr(prefs);
+      settingsMgr.showAirspaceOverlay.value = false;
+    });
 
-      // --- Build App
-      await $.pumpWidget(makeApp(activePlan, plans));
-      await $.waitUntilExists($(Scaffold));
+    // --- Setup stubs and initial configs
+    GeolocatorPlatform.instance = MockGeolocatorPlatform();
+    perm_handler_plat.PermissionHandlerPlatform.instance = MockPermissionHandlerPlatform();
+    when(GeolocatorPlatform.instance.getServiceStatusStream()).thenAnswer((_) => Stream.value(ServiceStatus.enabled));
+    when(GeolocatorPlatform.instance.getPositionStream(
+        locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.best,
+      timeLimit: null,
+    ))).thenAnswer((_) => Stream.value(mockPosition));
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+    SharedPreferences.setMockInitialValues({
+      "profile.name": "Mr Test",
+      "profile.id": "1234",
+      "profile.secretID": "1234abcd",
+    });
+    final activePlan = ActivePlan();
+    final plans = MockPlans();
 
-      // --- Inject a waypoint
-      activePlan.updateWaypoint(Waypoint(latlngs: [LatLng(10, 10)], name: "my test waypoint"));
+    // --- Build App
+    await $.pumpWidget(makeApp(activePlan, plans));
+    await $.waitUntilExists($(Scaffold));
 
-      // --- Save waypoint collection
-      final bottomBarRect = $.tester.getRect($(BottomNavigationBar));
-      await $.tester.tapAt(Offset(bottomBarRect.width * 3.5 / 5, bottomBarRect.top + bottomBarRect.height / 2));
-      await $.waitUntilVisible($(ViewWaypoints));
-      await $(#viewWaypoints_moreOptions).tap(settlePolicy: SettlePolicy.noSettle);
-      await $("Save").tap(settlePolicy: SettlePolicy.noSettle);
-      await $(TextFormField).enterText("my test collection", settlePolicy: SettlePolicy.noSettle);
-      await $.pump(const Duration(seconds: 2));
-      await $(AlertDialog).$("Save").tap(settlePolicy: SettlePolicy.noSettle);
-      await $.pump(const Duration(seconds: 1));
-      await $.waitUntilVisible($("my test waypoint"));
+    // --- Inject a waypoint
+    activePlan.updateWaypoint(Waypoint(latlngs: [LatLng(10, 10)], name: "my test waypoint"));
 
-      // --- Delete the waypoint
-      await $.tester.drag($(Slidable).$("my test waypoint"), const Offset(300, 0));
-      await $.pump(const Duration(seconds: 2));
-      await $(SlidableAction)
-          .which<SlidableAction>((widget) => widget.backgroundColor == Colors.red)
-          .tap(settlePolicy: SettlePolicy.noSettle);
+    // --- Save waypoint collection
+    final bottomBarRect = $.tester.getRect($(BottomNavigationBar));
+    await $.tester.tapAt(Offset(bottomBarRect.width * 3.5 / 5, bottomBarRect.top + bottomBarRect.height / 2));
+    await $.waitUntilVisible($(ViewWaypoints));
+    await $(#viewWaypoints_moreOptions).tap(settlePolicy: SettlePolicy.noSettle);
+    await $("Save").tap(settlePolicy: SettlePolicy.noSettle);
+    await $(TextFormField).enterText("my test collection", settlePolicy: SettlePolicy.noSettle);
+    await $.pump(const Duration(seconds: 2));
+    await $(AlertDialog).$("Save").tap(settlePolicy: SettlePolicy.noSettle);
+    await $.pump(const Duration(seconds: 1));
+    await $.waitUntilVisible($("my test waypoint"));
 
-      // --- Check waypoint deleted, and still in collection
-      expect(activePlan.waypoints.length, 0);
-      await $(#viewWaypoints_moreOptions).tap(settlePolicy: SettlePolicy.noSettle);
-      await $("Library").tap(settlePolicy: SettlePolicy.noSettle);
-      await $.waitUntilVisible($("my test collection"));
-      expect(plans.loadedPlans["my test collection"]?.waypoints.length, 1);
-    },
-  );
+    // --- Delete the waypoint
+    await $.tester.drag($(Slidable).$("my test waypoint"), const Offset(300, 0));
+    await $.pump(const Duration(seconds: 2));
+    await $(SlidableAction)
+        .which<SlidableAction>((widget) => widget.backgroundColor == Colors.red)
+        .tap(settlePolicy: SettlePolicy.noSettle);
+
+    // --- Check waypoint deleted, and still in collection
+    expect(activePlan.waypoints.length, 0);
+    await $(#viewWaypoints_moreOptions).tap(settlePolicy: SettlePolicy.noSettle);
+    await $("Library").tap(settlePolicy: SettlePolicy.noSettle);
+    await $.waitUntilVisible($("my test collection"));
+    expect(plans.loadedPlans["my test collection"]?.waypoints.length, 1);
+  });
 }

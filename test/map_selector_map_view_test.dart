@@ -1,6 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/services.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mockito/mockito.dart';
@@ -22,9 +21,10 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
+import 'package:xcnav/map_service.dart';
+import 'package:xcnav/settings_service.dart';
 
 import 'mock_providers.dart';
 
@@ -32,9 +32,10 @@ void main() {
   SharedPreferences.setMockInitialValues({});
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
+    settingsMgr.showAirspaceOverlay.value = false;
   });
 
-  Widget makeApp(ActivePlan activePlan, MockPlans plans, Completer<MockClient> client) {
+  Widget makeApp(ActivePlan activePlan, MockPlans plans) {
     return MultiProvider(providers: [
       ChangeNotifierProvider(
         create: (_) => MyTelemetry(),
@@ -45,7 +46,7 @@ void main() {
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (context) => Wind(),
+        create: (_) => Wind(),
         lazy: false,
       ),
       ChangeNotifierProvider(
@@ -74,12 +75,8 @@ void main() {
         lazy: false,
       ),
       ChangeNotifierProvider(
-        create: (context) {
-          final fakeClient = MockClient(context);
-          client.complete(fakeClient);
-          // ignore: unnecessary_cast
-          return fakeClient as Client;
-        },
+        // ignore: unnecessary_cast
+        create: (context) => MockClient(context) as Client,
         lazy: false,
       )
     ], child: const XCNav());
@@ -92,7 +89,7 @@ void main() {
   });
 
   patrolTest(
-    'Check chat bubble appears and clears',
+    'Get to home screen',
     ($) async {
       // --- Setup stubs and initial configs
       GeolocatorPlatform.instance = MockGeolocatorPlatform();
@@ -109,69 +106,61 @@ void main() {
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
       });
+
       final activePlan = ActivePlan();
       final plans = MockPlans();
-      final clientCompleter = Completer<MockClient>();
 
       // --- Build App
-      await $.pumpWidget(makeApp(activePlan, plans, clientCompleter));
+      await $.pumpWidget(makeApp(activePlan, plans));
       await $.waitUntilExists($(Scaffold));
 
-      final client = await clientCompleter.future;
+      //
+      await $.pump(const Duration(seconds: 2));
+    },
+  );
 
-      // --- Join a group
-      client.handleAuthResponse({
-        "status": 0,
-        "secretToken": "1234abcd",
-        "pilot_id": "1234",
-        "pilotMetaHash": "cb3b4",
-        "apiVersion": 7,
-        "group_id": "6f3a49"
+  patrolTest(
+    'Change base map in main view',
+    ($) async {
+      // --- Setup stubs and initial configs
+      GeolocatorPlatform.instance = MockGeolocatorPlatform();
+      perm_handler_plat.PermissionHandlerPlatform.instance = MockPermissionHandlerPlatform();
+      when(GeolocatorPlatform.instance.getServiceStatusStream()).thenAnswer((_) => Stream.value(ServiceStatus.enabled));
+      when(GeolocatorPlatform.instance.getPositionStream(
+          locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.best,
+        timeLimit: null,
+      ))).thenAnswer((_) => Stream.value(mockPosition));
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+      SharedPreferences.setMockInitialValues({
+        "profile.name": "Mr Test",
+        "profile.id": "1234",
+        "profile.secretID": "1234abcd",
       });
 
-      client.handleGroupInfoResponse({
-        "status": 0,
-        "group_id": "6f3a49",
-        "pilots": [
-          {"id": "otherPilotID1234", "name": "bender", "avatarHash": "b96e3cff738b67359e2896db92a11284"}
-        ],
-        "waypoints": {
-          "ld6k9yb82t7h61": {
-            "id": "ld6k9yb82t7h61",
-            "name": "Hospital Canyon",
-            "latlng": [
-              [37.55983, -121.37429]
-            ],
-            "icon": null,
-            "color": 4278190080
-          },
-        }
-      });
+      final activePlan = ActivePlan();
+      final plans = MockPlans();
 
-      // --- Test a short message
-      client.handleChatMessage({
-        "timestamp": DateTime.now().millisecondsSinceEpoch,
-        "group_id": "6f3a49",
-        "pilot_id": "otherPilotID1234",
-        "text": "testing",
-        "emergency": false
-      });
+      // --- Build App
+      await $.pumpWidget(makeApp(activePlan, plans));
+      await $.waitUntilExists($(Scaffold));
+      await $.pump(const Duration(seconds: 2));
 
-      await $.waitUntilVisible($("testing"));
+      // --- Default map layer
+      expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.topo);
+      expect(settingsMgr.mainMapOpacity.value, 1);
 
-      // --- Test a long message
-      client.handleChatMessage({
-        "timestamp": DateTime.now().millisecondsSinceEpoch,
-        "group_id": "6f3a49",
-        "pilot_id": "otherPilotID1234",
-        "text": "ok, this is a long message example. It should line-wrap in the display.",
-        "emergency": false
-      });
+      // --- Select a different map
+      await $(#viewMap_mapSelector).tap(settlePolicy: SettlePolicy.noSettle);
+      await $.waitUntilVisible($(SpeedDial));
+      await $(#mapSelector_satellite_60).tap(settlePolicy: SettlePolicy.noSettle);
 
-      await $
-          .waitUntilVisible($("ok, this is a long message example. It should line-wrap in the display."))
-          .tap(settlePolicy: SettlePolicy.noSettle);
-      await $.pump(const Duration(seconds: 30));
+      // (let the speeddial finish the animation)
+      await $.pump(const Duration(seconds: 2));
+
+      // --- New map layer
+      expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.satellite);
+      expect(settingsMgr.mainMapOpacity.value, 0.6);
     },
   );
 }

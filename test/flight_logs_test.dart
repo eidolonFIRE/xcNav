@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 
@@ -23,12 +23,14 @@ import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
-import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
+import 'package:xcnav/tfr_service.dart';
 
 import 'mock_providers.dart';
 
 void main() {
+  when(getTFRs(LatLng(37, -121))).thenAnswer((realInvocation) => Future.value([]));
+
   SharedPreferences.setMockInitialValues({});
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
@@ -85,9 +87,8 @@ void main() {
     final fontLoader = FontLoader('roboto-condensed')..addFont(flamante);
     await fontLoader.load();
   });
-
   patrolTest(
-    'Get to home screen',
+    'Flight Logs: loads with no logs',
     ($) async {
       // --- Setup stubs and initial configs
       GeolocatorPlatform.instance = MockGeolocatorPlatform();
@@ -109,49 +110,17 @@ void main() {
       await $.pumpWidget(makeApp());
       await $.waitUntilExists($(Scaffold));
 
-      //
+      // --- Open flight logs screen
+      await $.tester.tapAt($.tester.getBottomLeft($(MaterialApp)) + const Offset(30, -30));
       await $.pump(const Duration(seconds: 2));
-    },
-  );
-
-  patrolTest(
-    'Change base map in main view',
-    ($) async {
-      // --- Setup stubs and initial configs
-      GeolocatorPlatform.instance = MockGeolocatorPlatform();
-      perm_handler_plat.PermissionHandlerPlatform.instance = MockPermissionHandlerPlatform();
-      when(GeolocatorPlatform.instance.getServiceStatusStream()).thenAnswer((_) => Stream.value(ServiceStatus.enabled));
-      when(GeolocatorPlatform.instance.getPositionStream(
-          locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best,
-        timeLimit: null,
-      ))).thenAnswer((_) => Stream.value(mockPosition));
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-      SharedPreferences.setMockInitialValues({
-        "profile.name": "Mr Test",
-        "profile.id": "1234",
-        "profile.secretID": "1234abcd",
-      });
-
-      // --- Build App
-      await $.pumpWidget(makeApp());
-      await $.waitUntilExists($(Scaffold));
-
-      // --- Default map layer
-      expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.topo);
-      expect(settingsMgr.mainMapOpacity.value, 1);
-
-      // --- Select a different map
-      await $(#viewMap_mapSelector).tap(settlePolicy: SettlePolicy.noSettle);
-      await $.waitUntilVisible($(SpeedDial));
-      await $(#mapSelector_satellite_50).tap(settlePolicy: SettlePolicy.noSettle);
-
-      // (let the speeddial finish the animation)
+      await $.tester.drag($("ADSB-in"), const Offset(0, -300));
       await $.pump(const Duration(seconds: 2));
+      await $("Log").tap(settlePolicy: SettlePolicy.noSettle);
 
-      // --- New map layer
-      expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.satellite);
-      expect(settingsMgr.mainMapOpacity.value, 0.5);
+      // // --- Select Stats tile
+      await $.waitUntilExists($("Entries"));
+      await $("Stats").tap(settlePolicy: SettlePolicy.noSettle);
+      await $.pump(const Duration(seconds: 2));
     },
   );
 }

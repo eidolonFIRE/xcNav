@@ -23,6 +23,8 @@ Position fakeGeoToLoc(FakeGeo geo) {
     speed: 0,
     speedAccuracy: 0,
     heading: 0,
+    altitudeAccuracy: 0.0,
+    headingAccuracy: 0.0,
   );
 }
 

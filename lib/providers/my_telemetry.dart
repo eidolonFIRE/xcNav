@@ -172,6 +172,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                   heading: 0,
                   accuracy: 0,
                   speedAccuracy: 0,
+                  altitudeAccuracy: 0.0,
+                  headingAccuracy: 0.0,
                 ),
                 bypassRecording: true);
           }
