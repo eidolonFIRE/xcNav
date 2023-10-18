@@ -245,11 +245,14 @@ class ElevationPlotPainter extends CustomPainter {
 
     // --- Draw Vario Trendline
     final base = scaleOffset(Offset(geoData.last.time.toDouble(), geoData.last.alt));
-    final slope = Offset(scaleX((geoData.last.spdSmooth * distScale).toInt() + geoData.first.time),
-        -size.height + scaleY(geoData.last.varioSmooth + minElev));
-    if (slope.dx.abs() > 0) {
-      for (double t = 0; t < size.width - base.dx; t += 20) {
-        canvas.drawLine(base + slope * t / slope.dx, base + slope * (t + 10) / slope.dx, _paintVarioTrend);
+    Offset slope = const Offset(1, 0);
+    if (geoData.last.spdSmooth.isFinite && geoData.last.varioSmooth.isFinite) {
+      slope = Offset(scaleX((geoData.last.spdSmooth * distScale).toInt() + geoData.first.time),
+          -size.height + scaleY(geoData.last.varioSmooth + minElev));
+      if (slope.dx.abs() > 0) {
+        for (double t = 0; t < size.width - base.dx; t += 20) {
+          canvas.drawLine(base + slope * t / slope.dx, base + slope * (t + 10) / slope.dx, _paintVarioTrend);
+        }
       }
     }
 
