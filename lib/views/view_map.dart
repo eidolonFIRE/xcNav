@@ -29,6 +29,7 @@ import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/tfr_service.dart';
+import 'package:xcnav/util.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -228,8 +229,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       final h = bh / (a * sin(theta) + cos(theta));
 
       // make bounding box and sample
-      final fakeBounds = LatLngBounds(LatLng(center.latitude - h / 2, center.longitude - w / 2),
-          LatLng(center.latitude + h / 2, center.longitude + w / 2));
+      final fakeBounds = LatLngBounds(clampLatLng(center.latitude - h / 2, center.longitude - w / 2),
+          clampLatLng(center.latitude + h / 2, center.longitude + w / 2));
       return fakeBounds.contains(transformedPoint);
     } else {
       return false;

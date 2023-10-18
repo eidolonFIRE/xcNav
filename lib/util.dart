@@ -42,6 +42,10 @@ double? parseAsDouble(dynamic value) {
   return null;
 }
 
+LatLng clampLatLng(double latitude, double longitude) {
+  return LatLng(min(90, max(-90, latitude)), min(180, max(-180, longitude)));
+}
+
 String colorWheel(double pos) {
   // Select color from rainbow
   List<double> color = [];
