@@ -8,6 +8,7 @@ class MapSelector extends StatelessWidget {
   final MapTileSrc curLayer;
   final double curOpacity;
   final Function(MapTileSrc tileSrc, double opacity) onChanged;
+  final bool leftAlign;
 
   const MapSelector({
     required this.curLayer,
@@ -15,6 +16,7 @@ class MapSelector extends StatelessWidget {
     required this.onChanged,
     Key? key,
     required this.isMapDialOpen,
+    this.leftAlign = false,
   }) : super(key: key);
 
   final ValueNotifier<bool> isMapDialOpen;
@@ -30,6 +32,7 @@ class MapSelector extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         openCloseDial: isMapDialOpen,
+        switchLabelPosition: leftAlign,
         children:
             // - Sectional / Satellite
             [MapTileSrc.sectional, MapTileSrc.satellite, MapTileSrc.topo]
