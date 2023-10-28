@@ -1086,6 +1086,27 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           }),
         ),
 
+        // --- Connection status banner (along top of map)
+        if (Provider.of<Client>(context).state == ClientState.disconnected)
+          const Positioned(
+              top: 5,
+              child: Card(
+                  color: Colors.amber,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
+                    child: Text.rich(
+                      TextSpan(children: [
+                        WidgetSpan(
+                            child: Icon(
+                          Icons.language,
+                          size: 20,
+                          color: Colors.black,
+                        )),
+                        TextSpan(text: "  connecting", style: TextStyle(color: Colors.black, fontSize: 20)),
+                      ]),
+                    ),
+                  ))),
+
         // --- Flight Timer
         Align(
           alignment: Alignment.topCenter,
@@ -1172,27 +1193,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 ])))),
                   )),
         ),
-
-        // --- Connection status banner (along top of map)
-        if (Provider.of<Client>(context).state == ClientState.disconnected)
-          const Positioned(
-              top: 5,
-              child: Card(
-                  color: Colors.amber,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
-                    child: Text.rich(
-                      TextSpan(children: [
-                        WidgetSpan(
-                            child: Icon(
-                          Icons.language,
-                          size: 20,
-                          color: Colors.black,
-                        )),
-                        TextSpan(text: "  connecting", style: TextStyle(color: Colors.black, fontSize: 20)),
-                      ]),
-                    ),
-                  ))),
 
         // --- Toggle map layer
         Positioned(
