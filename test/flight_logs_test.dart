@@ -29,8 +29,6 @@ import 'package:xcnav/tfr_service.dart';
 import 'mock_providers.dart';
 
 void main() {
-  when(getTFRs(LatLng(37, -121))).thenAnswer((realInvocation) => Future.value([]));
-
   SharedPreferences.setMockInitialValues({});
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);

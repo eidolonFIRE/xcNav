@@ -349,7 +349,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     )),
 
                 // --- Time Scrubber
-
                 ValueListenableBuilder<int>(
                     valueListenable: sampleIndex,
                     builder: (context, index, _) {
@@ -484,7 +483,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
             ///     Lower Half
             ///
             /// ------------------------------------
-
             Expanded(
               child: TabBarView(physics: const NeverScrollableScrollPhysics(), controller: tabController, children: [
                 // --- Elevation Plot
