@@ -16,6 +16,15 @@ class ETA {
     }
   }
 
+  /// Meters/Sec
+  double? get speed {
+    if (time != null) {
+      return distance / time!.inMilliseconds * 1000;
+    } else {
+      return null;
+    }
+  }
+
   ETA operator +(ETA other) {
     final retTime = (time == null || other.time == null) ? null : time! + other.time!;
     return ETA(distance + other.distance, retTime);

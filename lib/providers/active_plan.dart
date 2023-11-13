@@ -20,6 +20,9 @@ class ActivePlan with ChangeNotifier {
 
   void Function(WaypointID? waypointID)? onSelectWaypoint;
 
+  /// Points when measument on the map is being made.
+  List<LatLng>? mapMeasurement;
+
   @override
   ActivePlan() {
     load();

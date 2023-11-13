@@ -269,6 +269,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    // Hookup the measurement points to the active plan provider.
+    Provider.of<ActivePlan>(context, listen: false).mapMeasurement = measurementPolyline.points;
+
     return Container(
       color: Colors.white,
       child: Stack(alignment: Alignment.center, children: [

@@ -48,7 +48,7 @@ Widget topInstruments(BuildContext context) {
                   builder: (context, northlockWind, _) {
                     return GestureDetector(
                         onTap: () {
-                          showWindDialog(context);
+                          showDialog(context: context, builder: (context) => WindDialog());
                         },
                         child: SizedBox(
                           width: 90,
