@@ -11,6 +11,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/widgets/altimeter.dart';
 
 class LastReport<T> {
   final T value;
@@ -52,7 +53,7 @@ class AudioCueService {
   };
 
   /// Values are in display value (not necessarily standard internal values)
-  static const dynamic precisionLUT = {
+  static const Map<String, Map<dynamic, List<double>>> precisionLUT = {
     "alt": {
       DisplayUnitsDist.imperial: [50, 100, 200], // ft
       DisplayUnitsDist.metric: [10, 20, 50], // meters
@@ -69,16 +70,16 @@ class AudioCueService {
     },
     "hdg": {
       // heading threshold (radians)
-      0: 0.08,
-      1: 0.1,
-      2: 0.16,
+      0: [0.08],
+      1: [0.1],
+      2: [0.16],
     }
   };
 
   /// Values are in minutes
   /// First value is minimum elapsed time since last... will skip trigger
   /// Second value is maximum since last... will force trigger a new one
-  static const dynamic intervalLUT = {
+  static const Map<String, Map<int, List<double>>> intervalLUT = {
     "My Telemetry": {
       0: [0.1, 3.0],
       1: [0.2, 5.0],
@@ -106,7 +107,7 @@ class AudioCueService {
   LastReport<String>? lastChat;
   LastReport<double>? lastHdg;
   Map<String, LastReport<Vector>> lastPilotVector = {};
-  LastReport<double>? lastLowFuel;
+  // LastReport<double>? lastLowFuel;
 
   AudioCueService({
     required this.ttsService,
@@ -147,20 +148,22 @@ class AudioCueService {
     // --- My Telemetry
     if (mode != null && (config["My Telemetry"] ?? false)) {
       // --- Altitude
-      final altPrecision = (precisionLUT["alt"][settingsMgr.displayUnitDist.value][mode] as int).toDouble();
+      final altPrecision = precisionLUT["alt"]![settingsMgr.displayUnitDist.value]![mode!];
       // Value is transformed into display units before quantizing.
       // Triggers yes if:
       // 1: we don't have a previous value
-      // 2: Or, maximum time is reach
+      // 2: Or, maximum time is reached
       // 3: Or, minimum time satisfied and value past threshold
-      final maxInterval = Duration(seconds: ((intervalLUT["My Telemetry"][mode][1]! as double) * 60).toInt());
-      final minInterval = Duration(seconds: ((intervalLUT["My Telemetry"][mode][0]! as double) * 60).toInt());
+      final maxInterval = Duration(seconds: (intervalLUT["My Telemetry"]![mode]![1] * 60).toInt());
+      final minInterval = Duration(seconds: (intervalLUT["My Telemetry"]![mode]![0] * 60).toInt());
       if (lastAlt == null ||
           DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastAlt!.timestamp.add(maxInterval)) ||
           (DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastAlt!.timestamp.add(minInterval)) &&
               (lastAlt!.value - unitConverters[UnitType.distFine]!(myGeo.alt)).abs() >= altPrecision * 0.8)) {
+        final lastAltSrc =
+            settingsMgr.audioCueAltimeter.value == AltimeterMode.msl ? myGeo.alt : (myGeo.alt - (myGeo.ground ?? 0));
         lastAlt = LastReport(
-            ((unitConverters[UnitType.distFine]!(myGeo.alt) / altPrecision).round() * altPrecision).toDouble(),
+            ((unitConverters[UnitType.distFine]!(lastAltSrc) / altPrecision).round() * altPrecision).toDouble(),
             DateTime.fromMillisecondsSinceEpoch(myGeo.time));
 
         final text = "Altitude: ${lastAlt!.value.round()}";
@@ -169,7 +172,7 @@ class AudioCueService {
       }
 
       // --- Speed
-      final spdPrecision = (precisionLUT["spd"][settingsMgr.displayUnitSpeed.value][mode] as int).toDouble();
+      final spdPrecision = precisionLUT["spd"]![settingsMgr.displayUnitSpeed.value]![mode!];
       if (lastSpd == null ||
           DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(maxInterval)) ||
           (DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(minInterval)) &&
@@ -188,9 +191,9 @@ class AudioCueService {
     // --- Next Waypoint
     final selectedWp = activePlan.getSelectedWp();
     if (mode != null && selectedWp != null && (config["Next Waypoint"] ?? false)) {
-      final maxInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][1]! as double) * 60).toInt());
-      final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
-      final hdgPrecision = precisionLUT["hdg"][mode];
+      final maxInterval = Duration(seconds: (intervalLUT["Next Waypoint"]![mode]![1] * 60).toInt());
+      final minInterval = Duration(seconds: (intervalLUT["Next Waypoint"]![mode]![0] * 60).toInt());
+      final hdgPrecision = precisionLUT["hdg"]![mode]![0];
 
       final target = selectedWp.latlng.length > 1 ? myGeo.getIntercept(selectedWp.latlng).latlng : selectedWp.latlng[0];
 
@@ -223,23 +226,23 @@ class AudioCueService {
     }
   }
 
-  void cueFuel(Geo myGeo, double fuel, Duration fuelTimeRemaining) {
-    if (mode != null && fuel > 0 && activePlan.getSelectedWp() != null) {
-      final etaNext = activePlan.getSelectedWp()!.eta(myGeo, myGeo.spd);
-      if (etaNext.time != null && fuelTimeRemaining < etaNext.time!) {
-        final minInterval = Duration(seconds: ((intervalLUT["Fuel"][mode][0]! as double) * 60).toInt());
+  // void cueFuel(Geo myGeo, double fuel, Duration fuelTimeRemaining) {
+  //   if (mode != null && fuel > 0 && activePlan.getSelectedWp() != null) {
+  //     final etaNext = activePlan.getSelectedWp()!.eta(myGeo, myGeo.spd);
+  //     if (etaNext.time != null && fuelTimeRemaining < etaNext.time!) {
+  //       final minInterval = Duration(seconds: ((intervalLUT["Fuel"][mode][0]! as double) * 60).toInt());
 
-        if (lastLowFuel == null || DateTime.now().isAfter(lastLowFuel!.timestamp.add(minInterval))) {
-          // Insufficient fuel!
-          lastLowFuel = LastReport.now(fuel);
+  //       if (lastLowFuel == null || DateTime.now().isAfter(lastLowFuel!.timestamp.add(minInterval))) {
+  //         // Insufficient fuel!
+  //         lastLowFuel = LastReport.now(fuel);
 
-          const text = "Check fuel needed for next waypoint!";
-          ttsService.speak(
-              AudioMessage(text, volume: 1.0, priority: 2, expires: DateTime.now().add(const Duration(seconds: 10))));
-        }
-      }
-    }
-  }
+  //         const text = "Check fuel needed for next waypoint!";
+  //         ttsService.speak(
+  //             AudioMessage(text, volume: 1.0, priority: 2, expires: DateTime.now().add(const Duration(seconds: 10))));
+  //       }
+  //     }
+  //   }
+  // }
 
   void cueChatMessage(Message msg) {
     if (settingsMgr.chatTTS.value) {
@@ -268,11 +271,11 @@ class AudioCueService {
 
   bool _checkLastPilotVector(String id, Vector vector) {
     // Borrow the intervals from "Next Waypoint"
-    final maxInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][1]! as double) * 60).toInt());
-    final minInterval = Duration(seconds: ((intervalLUT["Next Waypoint"][mode][0]! as double) * 60).toInt());
+    final maxInterval = Duration(seconds: (intervalLUT["Next Waypoint"]![mode!]![1] * 60).toInt());
+    final minInterval = Duration(seconds: (intervalLUT["Next Waypoint"]![mode!]![0] * 60).toInt());
 
-    final hdgPrecision = precisionLUT["hdg"][mode] * 3;
-    final distPrecision = precisionLUT["dist"][settingsMgr.displayUnitDist.value][mode];
+    final hdgPrecision = precisionLUT["hdg"]![mode!]![0] * 3;
+    final distPrecision = precisionLUT["dist"]![settingsMgr.displayUnitDist.value]![mode!];
 
     // 1: we haven't done so yet
     // 2: max interval reached
