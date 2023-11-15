@@ -132,7 +132,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                         ? const Center(child: Text("Wow, such empty!"))
                         : ListView(
                             controller: logListController,
-                            children: logStore.logsSlice.map((e) => FlightLogCard(e)).toList().reversed.toList(),
+                            children: logStore.logsSlice.reversed.map((e) => FlightLogCard(e)).toList(),
                           )),
 
                 // --- Stats
