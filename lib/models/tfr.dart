@@ -6,7 +6,8 @@ import 'package:xml/xml.dart';
 
 class TFR {
   late String notamText;
-  late List<LatLng> latlngs;
+  late List<List<LatLng>> shapes;
+  // late List<LatLng> latlngs;
   late DateTimeRange activeTime;
   late String? purpose;
 
@@ -24,9 +25,9 @@ class TFR {
     purpose = document.findAllElements("txtDescrPurpose").singleOrNull?.innerText;
 
     // --- Parse unified shape
-    latlngs = [];
-    final mergedShape = document.findAllElements("abdMergedArea").firstOrNull;
-    if (mergedShape != null) {
+    shapes = [];
+    for (final mergedShape in document.findAllElements("abdMergedArea")) {
+      final List<LatLng> latlngs = [];
       for (final each in mergedShape.findAllElements("Avx")) {
         final latStr = each.getElement("geoLat")!.innerText;
         final lat = double.parse(latStr.substring(0, latStr.length - 1));
@@ -38,8 +39,11 @@ class TFR {
           // TODO: raise error
         }
       }
-    } else {
-      // TODO: alternate shape parsing?
+      if (latlngs.isNotEmpty) shapes.add(latlngs);
+    }
+
+    if (shapes.isEmpty) {
+      // TODO: raise error, no shapes found
     }
 
     // --- Parse Active time

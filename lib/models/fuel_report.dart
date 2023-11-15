@@ -59,6 +59,17 @@ class FuelStat {
     }
   }
 
+  /// Given the last known fuel level, estimate remaining fuel at a timestamp
+  double extrapolateToTime(FuelReport lastReport, DateTime time) {
+    final amount = lastReport.amount - rate * time.difference(lastReport.time).inSeconds / 3600;
+    return amount;
+  }
+
+  /// Given the last known fuel level, estimate remaining endurance
+  Duration extrapolateEndurance(FuelReport lastReport) {
+    return Duration(seconds: (lastReport.amount / rate * 3600).round());
+  }
+
   /// Stats are combined with weight; biasing towards the longest duration
   operator +(FuelStat other) {
     final ratio = durationTime.inMilliseconds / (durationTime.inMilliseconds + other.durationTime.inMilliseconds);

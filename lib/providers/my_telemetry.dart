@@ -339,6 +339,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           audioCueService.cueMyTelemetry(geo!);
           audioCueService.cueNextWaypoint(geo!);
           audioCueService.cueGroupAwareness(geo!);
+          audioCueService.cueFuel(sumFuelStat, fuelReports.lastOrNull);
         }
       }
     }
@@ -407,7 +408,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Future saveFlight() async {
     if (recordGeo.length > 10) {
       final log = FlightLog(
-          samples: recordGeo,
+          samples: recordGeo.toList(),
           waypoints: globalContext != null
               ? Provider.of<ActivePlan>(globalContext!, listen: false)
                   .waypoints
@@ -420,6 +421,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
       log.save();
       lastSavedLog = DateTime.now();
+    } else {
+      const msg = "Recording was too short, skipping save.";
+      debugPrint(msg);
+      DatadogSdk.instance.logs!.warn(msg, attributes: {"record_length": recordGeo.length});
     }
   }
 
@@ -503,7 +508,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (value != null) {
         geo!.ground = value;
       }
-    }).timeout(const Duration(milliseconds: 500), onTimeout: () {
+    }).timeout(const Duration(milliseconds: 1000), onTimeout: () {
       debugPrint("DEM SERVICE TIMEOUT! ${geo!.latlng}");
       DatadogSdk.instance.logs?.warn("DEM service timeout", attributes: {"lat": geo!.lat, "lng": geo!.lng});
     });

@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
@@ -54,6 +56,11 @@ void main() {
     settingsMgr = SettingsMgr(prefs);
   });
 
+  // Fuel stuff
+  late FuelReport a;
+  late FuelReport b;
+  late FuelStat stat;
+
   // Common Setup
   setUp(() async {
     SharedPreferences.setMockInitialValues({"audio_cues_mode": 1});
@@ -70,6 +77,16 @@ void main() {
       group: MockGroup(),
       activePlan: ActivePlan(),
     );
+
+    cueService.mode = 2;
+
+    a = FuelReport(DateTime.fromMillisecondsSinceEpoch(0), 10);
+    b = FuelReport(DateTime.fromMillisecondsSinceEpoch(0).add(const Duration(minutes: 20)), 8.0);
+
+    stat = FuelStat.fromSamples(a, b, [
+      Geo(lat: -37, lng: 122.5, alt: 100, timestamp: a.time.millisecondsSinceEpoch),
+      Geo(lat: -37, lng: 122.0, alt: 100, timestamp: b.time.millisecondsSinceEpoch)
+    ]);
   });
 
   test("queue priority", () {
@@ -110,5 +127,68 @@ void main() {
 
     expect(ttsService.msgQueue.map((element) => element.text).toList(),
         ["Altitude: 400", "Speed: 0", "Altitude: 1400", "Speed: 22", "Altitude: 1600", "Speed: 45"]);
+  });
+
+  test("fuel - not reported yet - start", () {
+    // no fuel reported yet
+    withClock(Clock.fixed(a.time), () => cueService.cueFuel(null, null));
+
+    // first prompt
+    expect(ttsService.msgQueue.map((element) => element.text).toList(), ["Report fuel level."]);
+
+    // short time later
+    withClock(
+        Clock.fixed(a.time.add(
+            Duration(seconds: (AudioCueService.intervalLUT["Report Fuel"]![cueService.mode]![0] * 60 - 1).round()))),
+        () => cueService.cueFuel(null, null));
+
+    // still only one prompt
+    expect(ttsService.msgQueue.map((element) => element.text).toList(), ["Report fuel level."]);
+
+    // short time later + threshold for quick prompt again
+    withClock(
+        Clock.fixed(a.time.add(
+            Duration(seconds: (AudioCueService.intervalLUT["Report Fuel"]![cueService.mode]![0] * 60 + 1).round()))),
+        () => cueService.cueFuel(null, null));
+
+    // long enough to have 2 prompts now
+    expect(ttsService.msgQueue.map((element) => element.text).toList(), ["Report fuel level.", "Report fuel level."]);
+
+    // short time later + threshold for quick prompt again, but has been reported
+    withClock(
+        Clock.fixed(a.time.add(
+            Duration(seconds: (AudioCueService.intervalLUT["Report Fuel"]![cueService.mode]![0] * 60 + 2).round()))),
+        () => cueService.cueFuel(stat, b));
+
+    // still only two prompt
+    expect(ttsService.msgQueue.map((element) => element.text).toList(),
+        ["Report fuel level.", "Report fuel level.", "9 liters fuel remaining."]);
+  });
+
+  test("fuel - reported", () {
+    // fuel has been reported
+    withClock(Clock.fixed(a.time), () => cueService.cueFuel(stat, b));
+    expect(ttsService.msgQueue.map((element) => element.text).toList(), ["10 liters fuel remaining."]);
+
+    // fuel reported and it's been a while
+    withClock(
+        Clock.fixed(b.time.add(
+            Duration(seconds: (AudioCueService.intervalLUT["Report Fuel"]![cueService.mode]![1] * 60 + 1).round()))),
+        () => cueService.cueFuel(stat, b));
+    expect(ttsService.msgQueue.map((element) => element.text).toList(),
+        ['10 liters fuel remaining.', 'Report fuel level.', '3 and a half liters fuel remaining.']);
+  });
+
+  test("fuel - critical", () {
+    // almost critical
+    withClock(Clock.fixed(b.time.add(const Duration(hours: 1))), () => cueService.cueFuel(stat, b));
+    expect(ttsService.msgQueue.map((element) => element.text).toList(),
+        ["Report fuel level.", "2 liters fuel remaining."]);
+
+    ttsService.msgQueue.clear();
+
+    // critical
+    withClock(Clock.fixed(b.time.add(const Duration(hours: 1, minutes: 30))), () => cueService.cueFuel(stat, b));
+    expect(ttsService.msgQueue.map((element) => element.text).toList(), ["Fuel level critical!"]);
   });
 }

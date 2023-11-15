@@ -223,6 +223,8 @@ class SettingsMgr {
   late final SettingConfig<double> mainMapOpacity;
   late final SettingConfig<String> datadogSdkId;
 
+  late final SettingConfig<AltimeterMode> audioCueAltimeter;
+
   SettingsMgr(SharedPreferences prefs) {
     // --- General
     groundMode = SettingConfig(this, prefs, "General", "groundMode", false,
@@ -353,6 +355,9 @@ class SettingsMgr {
         SettingConfig(this, prefs, "UI", "mainMapTileSrc", MapTileSrc.topo, title: "Map Tile Sourc", hidden: true);
     mainMapOpacity = SettingConfig(this, prefs, "UI", "mainMapOpacity", 1.0, title: "Main Map Opacity", hidden: true);
     datadogSdkId = SettingConfig(this, prefs, "Debug", "datadogSdkId", "", title: "DatadogSdk user ID", hidden: true);
+
+    audioCueAltimeter = SettingConfig(this, prefs, "Audio Cues", "audioCueAltimeter", AltimeterMode.msl,
+        title: "Altimeter Mode", icon: const Icon(Icons.vertical_align_top), hidden: true);
   }
 }
 

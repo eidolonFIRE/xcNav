@@ -335,13 +335,15 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             List<Polygon> polygons = [];
 
                             for (final eachTfr in tfrsFuture.data!) {
-                              final color = eachTfr.isActive(const Duration(hours: 3)) ? Colors.red : Colors.orange;
-                              polygons.add(Polygon(
-                                  points: eachTfr.latlngs,
-                                  color: color.withAlpha(50),
-                                  isFilled: true,
-                                  borderColor: color,
-                                  borderStrokeWidth: 4));
+                              for (final shape in eachTfr.shapes) {
+                                final color = eachTfr.isActive(const Duration(hours: 3)) ? Colors.red : Colors.orange;
+                                polygons.add(Polygon(
+                                    points: shape,
+                                    color: color.withAlpha(50),
+                                    isFilled: true,
+                                    borderColor: color,
+                                    borderStrokeWidth: 4));
+                              }
                             }
 
                             return PolygonLayer(
