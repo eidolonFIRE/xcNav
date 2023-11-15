@@ -339,6 +339,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           audioCueService.cueMyTelemetry(geo!);
           audioCueService.cueNextWaypoint(geo!);
           audioCueService.cueGroupAwareness(geo!);
+          audioCueService.cueFuel(sumFuelStat, fuelReports.lastOrNull);
         }
       }
     }

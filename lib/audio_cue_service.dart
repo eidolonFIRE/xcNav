@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
@@ -19,7 +21,7 @@ class LastReport<T> {
   LastReport(this.value, this.timestamp);
 
   LastReport.now(this.value) {
-    timestamp = DateTime.now();
+    timestamp = clock.now();
   }
 }
 
@@ -36,12 +38,16 @@ class AudioCueService {
     "My Telemetry": true,
     "Next Waypoint": true,
     "Group Awareness": true,
+    "Report Fuel": true,
+    "Fuel Level": true,
   };
 
   static const Map<String, IconData> icons = {
     "My Telemetry": Icons.speed,
     "Next Waypoint": Icons.pin_drop,
     "Group Awareness": Icons.groups,
+    "Report Fuel": Icons.local_gas_station,
+    "Fuel Level": Icons.local_gas_station,
   };
 
   /// Multipier options for all cue trigger thresholds
@@ -90,11 +96,20 @@ class AudioCueService {
       1: [0.5, 5.0],
       2: [1.0, 15.0],
     },
-    // "Fuel": {
-    //   0: [0.1, 3.0],
-    //   1: [0.2, 5.0],
-    //   2: [0.5, 15.0],
-    // },
+
+    /// [When fuel low, Read approx fuel level]
+    "Fuel Level": {
+      0: [1, 15.0],
+      1: [2, 20.0],
+      2: [5, 25.0],
+    },
+
+    /// [Prompt first report, Remind following reports]
+    "Report Fuel": {
+      0: [2, 20.0],
+      1: [5, 30.0],
+      2: [10, 45.0],
+    },
   };
 
   static const groupProxmityH = 100;
@@ -107,7 +122,8 @@ class AudioCueService {
   LastReport<String>? lastChat;
   LastReport<double>? lastHdg;
   Map<String, LastReport<Vector>> lastPilotVector = {};
-  // LastReport<double>? lastLowFuel;
+  LastReport<double>? lastFuelReport;
+  LastReport<double>? lastFuelLevel;
 
   AudioCueService({
     required this.ttsService,
@@ -199,11 +215,11 @@ class AudioCueService {
 
       final relativeHdg = myGeo.relativeHdgLatlng(target);
 
-      // debugPrint("Time Since last Hdg: ${(lastHdg?.timestamp ?? DateTime.now()).difference(DateTime.now()).inSeconds}");
+      // debugPrint("Time Since last Hdg: ${(lastHdg?.timestamp ?? clock.now()).difference(clock.now()).inSeconds}");
 
       if (lastHdg == null ||
-          DateTime.now().isAfter(lastHdg!.timestamp.add(maxInterval)) ||
-          (DateTime.now().isAfter(lastHdg!.timestamp.add(minInterval)) && ((relativeHdg).abs() >= hdgPrecision))) {
+          clock.now().isAfter(lastHdg!.timestamp.add(maxInterval)) ||
+          (clock.now().isAfter(lastHdg!.timestamp.add(minInterval)) && ((relativeHdg).abs() >= hdgPrecision))) {
         lastHdg = LastReport.now(myGeo.hdg);
 
         final eta = selectedWp.eta(myGeo, myGeo.spd);
@@ -220,29 +236,60 @@ class AudioCueService {
           final text =
               "Waypoint: $dist ${getUnitStr(UnitType.distCoarse, lexical: true)} out, ${deltaDegrees.abs() <= 45 ? degreesVerbal : oclockVerbal}. ETA $etaTime.";
           ttsService.speak(
-              AudioMessage(text, volume: 0.75, priority: 4, expires: DateTime.now().add(const Duration(seconds: 4))));
+              AudioMessage(text, volume: 0.75, priority: 4, expires: clock.now().add(const Duration(seconds: 4))));
         }
       }
     }
   }
 
-  // void cueFuel(Geo myGeo, double fuel, Duration fuelTimeRemaining) {
-  //   if (mode != null && fuel > 0 && activePlan.getSelectedWp() != null) {
-  //     final etaNext = activePlan.getSelectedWp()!.eta(myGeo, myGeo.spd);
-  //     if (etaNext.time != null && fuelTimeRemaining < etaNext.time!) {
-  //       final minInterval = Duration(seconds: ((intervalLUT["Fuel"][mode][0]! as double) * 60).toInt());
+  ///
+  void cueFuel(FuelStat? sumFuelStat, FuelReport? fuelReport) {
+    if (mode != null) {
+      // Prompt to report fuel
+      if (
+          // Switched on
+          (config["Report Fuel"] ?? false) &&
+              // havent reported yet OR it's been a while*
+              (lastFuelReport == null ||
+                  clock.now().isAfter(lastFuelReport!.timestamp.add(Duration(
+                      seconds: (intervalLUT["Report Fuel"]![mode]![fuelReport == null ? 0 : 1] * 60).round())))) &&
+              // no fuel report yet OR it's been a while
+              (fuelReport == null ||
+                  clock.now().isAfter(
+                      fuelReport.time.add(Duration(seconds: (intervalLUT["Report Fuel"]![mode]![1] * 60).round()))))) {
+        lastFuelReport = LastReport.now(0);
+        const text = "Report fuel level.";
+        ttsService
+            .speak(AudioMessage(text, volume: 0.8, priority: 3, expires: clock.now().add(const Duration(seconds: 10))));
+      }
 
-  //       if (lastLowFuel == null || DateTime.now().isAfter(lastLowFuel!.timestamp.add(minInterval))) {
-  //         // Insufficient fuel!
-  //         lastLowFuel = LastReport.now(fuel);
+      // Advise fuel level
+      if ((config["Fuel Level"] ?? false) && sumFuelStat != null && fuelReport != null) {
+        final etaEmpty = fuelReport.time.add(sumFuelStat.extrapolateEndurance(fuelReport));
+        final estLevel = sumFuelStat.extrapolateToTime(fuelReport, clock.now());
 
-  //         const text = "Check fuel needed for next waypoint!";
-  //         ttsService.speak(
-  //             AudioMessage(text, volume: 1.0, priority: 2, expires: DateTime.now().add(const Duration(seconds: 10))));
-  //       }
-  //     }
-  //   }
-  // }
+        final minInterval = Duration(seconds: (intervalLUT["Fuel Level"]![mode]![0] * 60).toInt());
+        final maxInterval = Duration(seconds: (intervalLUT["Fuel Level"]![mode]![1] * 60).toInt());
+
+        if (lastFuelLevel == null || clock.now().isAfter(lastFuelLevel!.timestamp.add(minInterval))) {
+          if (etaEmpty.isBefore(clock.now().add(minInterval)) || estLevel < 0) {
+            // Critical fuel
+            const text = "Fuel level critical!";
+            ttsService.speak(
+                AudioMessage(text, volume: 1.0, priority: 0, expires: clock.now().add(const Duration(seconds: 10))));
+            lastFuelLevel = LastReport.now(estLevel);
+          } else if (lastFuelLevel == null || clock.now().isAfter(lastFuelLevel!.timestamp.add(maxInterval))) {
+            // Fuel remaining
+            final text =
+                "${printDoubleLexical(value: unitConverters[UnitType.fuel]!(estLevel), halfThreshold: 20)} ${getUnitStr(UnitType.fuel, lexical: true)} fuel remaining.";
+            ttsService.speak(
+                AudioMessage(text, volume: 1.0, priority: 3, expires: clock.now().add(const Duration(seconds: 10))));
+            lastFuelLevel = LastReport.now(estLevel);
+          }
+        }
+      }
+    }
+  }
 
   void cueChatMessage(Message msg) {
     if (settingsMgr.chatTTS.value) {
@@ -282,14 +329,14 @@ class AudioCueService {
     // 3: min interval satisfied and vector is changed
 
     // if (lastPilotVector.containsKey(id)) {
-    //   debugPrint("CheckLastPilotVector: interval = ${lastPilotVector[id]!.timestamp.difference(DateTime.now())}");
+    //   debugPrint("CheckLastPilotVector: interval = ${lastPilotVector[id]!.timestamp.difference(clock.now())}");
     //   debugPrint("CheckLastPilotVector: dist = ${(vector.dist - lastPilotVector[id]!.value.dist).abs()}");
     //   debugPrint("CheckLastPilotVector: hdg = ${(vector.hdg - lastPilotVector[id]!.value.hdg).abs()}");
     // }
 
     if (!lastPilotVector.containsKey(id) ||
-        DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(maxInterval)) ||
-        (DateTime.now().isAfter(lastPilotVector[id]!.timestamp.add(minInterval)) &&
+        clock.now().isAfter(lastPilotVector[id]!.timestamp.add(maxInterval)) ||
+        (clock.now().isAfter(lastPilotVector[id]!.timestamp.add(minInterval)) &&
             (unitConverters[UnitType.distCoarse]!((vector.value - lastPilotVector[id]!.value.value).abs()) >=
                     distPrecision ||
                 (vector.hdg - lastPilotVector[id]!.value.hdg).abs() >= hdgPrecision))) {
@@ -318,8 +365,8 @@ class AudioCueService {
       final text =
           "$nameVerbal $distVerbal ${getUnitStr(UnitType.distCoarse, lexical: true)} out at $oclock o'clock$verbalAlt.";
 
-      ttsService.speak(
-          AudioMessage(text, volume: 0.75, priority: 6, expires: DateTime.now().add(const Duration(seconds: 6))));
+      ttsService
+          .speak(AudioMessage(text, volume: 0.75, priority: 6, expires: clock.now().add(const Duration(seconds: 6))));
     }
   }
 
@@ -327,7 +374,7 @@ class AudioCueService {
     if (_checkLastPilotVector(pilots.first.id, Vector(0, 0))) {
       final text = "${_assembleNames(pilots.toList())} $customMsg";
       ttsService
-          .speak(AudioMessage(text, volume: 0.8, priority: 4, expires: DateTime.now().add(const Duration(seconds: 6))));
+          .speak(AudioMessage(text, volume: 0.8, priority: 4, expires: clock.now().add(const Duration(seconds: 6))));
     }
   }
 
@@ -457,7 +504,7 @@ class AudioCueService {
         if (_checkLastPilotVector("scattered", Vector(0, 0))) {
           final text = "${activePilots.length} pilots are scattered around you.";
           ttsService.speak(
-              AudioMessage(text, volume: 0.75, priority: 8, expires: DateTime.now().add(const Duration(seconds: 4))));
+              AudioMessage(text, volume: 0.75, priority: 8, expires: clock.now().add(const Duration(seconds: 4))));
         }
       }
     }

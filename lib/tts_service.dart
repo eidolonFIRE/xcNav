@@ -124,7 +124,7 @@ class TtsService {
       }
     }
 
-    debugPrint("Speak queue length: ${msgQueue.length}");
+    // debugPrint("Speak queue length: ${msgQueue.length}");
 
     // if nothing is playing... start it
     if (_state != TtsState.playing) {
