@@ -392,7 +392,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ]),
 
                     // Next waypoint: path
-                    if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
+                    if (Provider.of<MyTelemetry>(context, listen: false).geo != null && plan.selectedWp != null)
                       PolylineLayer(
                         polylines: plan.buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: true).geo!,
                             (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
@@ -476,18 +476,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               rotate: true,
                               anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
                               rotateOrigin: const Offset(0, 30 * 0.8),
-                              // NOTE: regular waypoints are no longer draggable. But, this is how it was done before.
-                              // updateMapNearEdge: true,
-                              // useLongPress: true,
-                              // onTap: (_) => plan.selectedWp = e.id,
-                              // onLongDragEnd: (p0, p1) => {
-                              //       plan.moveWaypoint(e.id, [p1])
-                              //     },
-                              // rotateMarker: true,
-                              // onLongPress: (_) {
-                              //   editingWp = e.id;
-                              //   debugPrint("Context Menu for Waypoint ${e.name}");
-                              // },
                               builder: (context) => GestureDetector(
                                     onTap: () {
                                       if (focusMode == FocusMode.measurement) {
