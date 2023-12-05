@@ -21,6 +21,8 @@ class MapButton extends StatelessWidget {
         child: MaterialButton(
             visualDensity: VisualDensity.compact,
             onPressed: onPressed,
+            elevation: 0,
+            color: Colors.white12,
             shape: RoundedRectangleBorder(
               borderRadius: const BorderRadius.all(Radius.circular(30)),
               side: BorderSide(color: selected ? Colors.black : Colors.black45, width: selected ? 3 : 1),
