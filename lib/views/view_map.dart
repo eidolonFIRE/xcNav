@@ -194,6 +194,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         List<LatLng> points =
             Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
         points.add(LatLng(geo.lat, geo.lng));
+        if (settingsMgr.groupViewWaypoint.value) {
+          // Add selected waypoint into view
+          points.addAll(Provider.of<ActivePlan>(context, listen: false).getSelectedWp()?.latlng ?? []);
+        }
         if (lastMapChange == null ||
             (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
           centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),

@@ -196,6 +196,7 @@ class SettingsMgr {
   late final SettingConfig<bool> showPilotNames;
   late final SettingConfig<bool> showWeatherOverlay;
   late final SettingConfig<bool> showAirspaceOverlay;
+  late final SettingConfig<bool> groupViewWaypoint;
 
   // --- Display Units
   late final SettingConfig<DisplayUnitsDist> displayUnitDist;
@@ -264,6 +265,8 @@ class SettingsMgr {
           "assets/images/airspace.svg",
           color: Colors.grey.shade400,
         ));
+    groupViewWaypoint = SettingConfig(this, prefs, "UI", "groupViewWaypoint", false,
+        title: "Group view includes waypoint", icon: const Icon(Icons.pin_drop));
 
     // --- Display Units
     displayUnitDist = SettingConfig(this, prefs, "Display Units", "displayUnitDist", DisplayUnitsDist.imperial,
