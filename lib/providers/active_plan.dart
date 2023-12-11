@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/barb.dart';
 
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
@@ -180,9 +181,9 @@ class ActivePlan with ChangeNotifier {
     return [];
   }
 
-  List<BarbData> buildNextWpBarbs(Geo geo, double interval) {
+  List<Barb> buildNextWpBarbs(Geo geo, double interval) {
     final waypointETA = getSelectedWp()?.eta(geo, 1);
-    List<BarbData> barbs = [];
+    List<Barb> barbs = [];
 
     /// I tried some algorithms to replace this, but turns out this is simpler and more performant. \shrug
     int barbSpacing(int t) {

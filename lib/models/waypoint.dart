@@ -4,6 +4,7 @@ import 'package:bisection/bisect.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/dem_service.dart';
+import 'package:xcnav/models/barb.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/util.dart';
@@ -35,14 +36,6 @@ String hashWaypointsData(Map<WaypointID, Waypoint> waypoints) {
     hash &= 0xffffff;
   }
   return (hash < 0 ? hash * -2 : hash).toRadixString(16);
-}
-
-class BarbData {
-  LatLng latlng;
-
-  /// Radians
-  double hdg;
-  BarbData(this.latlng, this.hdg);
 }
 
 typedef WaypointID = String;
@@ -207,7 +200,7 @@ class Waypoint {
 
   /// Linear interpolate down the path by some distance.
   /// If `initialLatlng` is given, that point will precede the selected path points.
-  BarbData interpolate(double distance, int startIndex, {LatLng? initialLatlng}) {
+  Barb interpolate(double distance, int startIndex, {LatLng? initialLatlng}) {
     double initialSeg = 0;
     if (initialLatlng != null) {
       /// Imaginary added segment to the beginning
@@ -216,7 +209,7 @@ class Waypoint {
       // Early-out for first imaginary segment
       if (distance <= initialSeg || !isPath) {
         final brg = latlngCalc.bearing(initialLatlng, latlngOriented[startIndex]);
-        return BarbData(latlngCalc.offset(initialLatlng, distance, brg), brg * pi / 180);
+        return Barb.fromBrg(latlngCalc.offset(initialLatlng, distance, brg), brg);
       }
     }
 
@@ -233,7 +226,7 @@ class Waypoint {
     final brg = segIndex >= latlngOriented.length - 1
         ? latlngCalc.bearing(latlngOriented[segIndex - 1], latlngOriented[segIndex])
         : latlngCalc.bearing(latlngOriented[segIndex], latlngOriented[segIndex + 1]);
-    return BarbData(latlngCalc.offset(latlngOriented[segIndex], distRemaining, brg), brg * pi / 180);
+    return Barb.fromBrg(latlngCalc.offset(latlngOriented[segIndex], distRemaining, brg), brg);
   }
 
   /// Cumulative segment distances between path vertices

@@ -64,9 +64,9 @@ class ChartLogFuelInsights extends StatelessWidget {
   Widget getYunit() {
     switch (chartFuelModeY) {
       case ChartFuelModeY.eff:
-        return Text("${getUnitStr(UnitType.distCoarse)}/${getUnitStr(UnitType.fuel)}");
+        return Text(fuelEffStr);
       case ChartFuelModeY.rate:
-        return Text("${getUnitStr(UnitType.fuel)}/hr");
+        return Text(fuelRateStr);
     }
   }
 

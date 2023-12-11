@@ -1,7 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/vector.dart';
+import 'package:xcnav/util.dart';
 
 class WindSolveResult {
   late final double airspeed;

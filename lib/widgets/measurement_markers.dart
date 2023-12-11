@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/dem_service.dart';
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 
 List<Marker> buildMeasurementMarkers(List<LatLng> points) {
   const valueStyle = TextStyle(fontSize: 20);

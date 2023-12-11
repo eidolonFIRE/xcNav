@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:xcnav/models/eta.dart';
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 

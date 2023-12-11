@@ -9,7 +9,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/eta.dart';
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 
@@ -33,11 +32,6 @@ class WindDialog extends StatefulWidget {
   State<WindDialog> createState() => _WindDialogState();
 }
 
-// These are here to preserve state between views
-double? _airspeed;
-double? _windspeed;
-double? _windHdg;
-
 class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateMixin {
   static const List<Tab> myTabs = <Tab>[
     Tab(text: "Detector"),
@@ -57,10 +51,12 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
   List<LatLng>? routePoints;
   bool mapReady = false;
 
-  TextEditingController airSpeedController = TextEditingController(
-      text: _airspeed != null ? unitConverters[UnitType.speed]!(_airspeed!).toStringAsFixed(0) : null);
-  TextEditingController windSpeedController = TextEditingController(
-      text: _windspeed != null ? unitConverters[UnitType.speed]!(_windspeed!).toStringAsFixed(0) : null);
+  double? _airspeed;
+  double? _windspeed;
+  double? _windHdg;
+
+  TextEditingController airSpeedController = TextEditingController();
+  TextEditingController windSpeedController = TextEditingController();
 
   GlobalKey vectorBox = GlobalKey(debugLabel: "windVectorBox");
 
@@ -92,23 +88,6 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
     }
   }
 
-  Offset calcCollective(Offset windVector, double airspeed) {
-    double collectiveMag = 0;
-    late Offset collective;
-    final comp = airspeed * airspeed - windVector.dx * windVector.dx;
-    if (comp >= 0) {
-      collectiveMag = -sqrt(comp) + windVector.dy;
-      collective = Offset(0, collectiveMag);
-    }
-    if (comp < 0 || collectiveMag > 0) {
-      collectiveMag = sqrt(windVector.distance * windVector.distance - airspeed * airspeed);
-      final inscribedTheta = asin(airspeed / windVector.distance);
-      final collectiveTheta = windVector.direction + inscribedTheta * (windVector.dx < 0 ? 1 : -1);
-      collective = Offset.fromDirection(collectiveTheta, collectiveMag);
-    }
-    return collective;
-  }
-
   @override
   Widget build(BuildContext context) {
     /// unified getter
@@ -133,6 +112,9 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
       }
     }
 
+    airSpeedController.text = printValue(UnitType.speed, _airspeed!) ?? "";
+    windSpeedController.text = printValue(UnitType.speed, _windspeed!) ?? "";
+
     /// Refresh the vector chart in "Calulate" Tab
     void refreshCalculation() {
       final tempWind = getWindspeed();
@@ -156,7 +138,6 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
       // final tempWind = getWindspeed();
       final tempAir = getAirspeed();
       final tempWindVector = getWindVector();
-      debugPrint("------------ refresh route");
 
       if (points != null && tempWindVector != null && tempAir != null) {
         routeETA = ETA(0, Duration.zero);
@@ -383,19 +364,13 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                               autofocus: airSpeedController.text.isEmpty,
                               decoration: InputDecoration(
                                   suffixText: getUnitStr(UnitType.speed),
-                                  hintText: wind.result?.airspeed != null
-                                      ? unitConverters[UnitType.speed]!(getAirspeed()!).toStringAsFixed(1)
-                                      : null,
+                                  hintText: printValue(UnitType.speed, getAirspeed()!),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                   contentPadding: const EdgeInsets.all(4)),
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
                               onChanged: (value) {
-                                if (value.isNotEmpty) {
-                                  _airspeed = (parseAsDouble(value) ?? 0) / unitConverters[UnitType.speed]!(1);
-                                } else {
-                                  _airspeed = null;
-                                }
+                                _airspeed = parseDoubleValue(UnitType.speed, value);
                                 refreshCalculation();
                               },
                             ),
@@ -418,20 +393,13 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                               textAlign: TextAlign.center,
                               decoration: InputDecoration(
                                   suffixText: getUnitStr(UnitType.speed),
-                                  hintText: wind.result?.windSpd != null
-                                      ? unitConverters[UnitType.speed]!(getWindspeed()!).toStringAsFixed(1)
-                                      : null,
+                                  hintText: printValue(UnitType.speed, getWindspeed()),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                   contentPadding: const EdgeInsets.all(4)),
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
                               onChanged: (value) {
-                                if (value.isNotEmpty) {
-                                  _windspeed = (parseAsDouble(value) ?? 0) / unitConverters[UnitType.speed]!(1);
-                                } else {
-                                  _windspeed = null;
-                                }
-                                debugPrint("Set Windspeed $_windspeed");
+                                _windspeed = parseDoubleValue(UnitType.speed, value);
                                 refreshCalculation();
                               },
                             ),
@@ -605,20 +573,14 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                   autofocus: airSpeedController.text.isEmpty,
                                   decoration: InputDecoration(
                                       suffixText: getUnitStr(UnitType.speed),
-                                      hintText: wind.result?.airspeed != null
-                                          ? unitConverters[UnitType.speed]!(getAirspeed()!).toStringAsFixed(1)
-                                          : null,
+                                      hintText: printValue(UnitType.speed, getAirspeed()!),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                       contentPadding: const EdgeInsets.all(4)),
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
                                   onChanged: (value) {
-                                    if (value.isNotEmpty) {
-                                      _airspeed = (parseAsDouble(value) ?? 0) / unitConverters[UnitType.speed]!(1);
-                                    } else {
-                                      _airspeed = null;
-                                    }
-                                    refreshRoute(points!);
+                                    _airspeed = parseDoubleValue(UnitType.speed, value);
+                                    refreshCalculation();
                                   },
                                 ),
                               )
@@ -640,20 +602,14 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                   textAlign: TextAlign.center,
                                   decoration: InputDecoration(
                                       suffixText: getUnitStr(UnitType.speed),
-                                      hintText: wind.result?.windSpd != null
-                                          ? unitConverters[UnitType.speed]!(getWindspeed()!).toStringAsFixed(1)
-                                          : null,
+                                      hintText: printValue(UnitType.speed, getWindspeed()),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                       contentPadding: const EdgeInsets.all(4)),
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
                                   onChanged: (value) {
-                                    if (value.isNotEmpty) {
-                                      _windspeed = (parseAsDouble(value) ?? 0) / unitConverters[UnitType.speed]!(1);
-                                    } else {
-                                      _windspeed = null;
-                                    }
-                                    refreshRoute(points!);
+                                    _windspeed = parseDoubleValue(UnitType.speed, value);
+                                    refreshCalculation();
                                   },
                                 ),
                               )
@@ -744,6 +700,20 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                 listenable: newRoute,
                                                 builder: (context, _) {
                                                   final selectedWp = activePlan.getSelectedWp();
+
+                                                  final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+
+                                                  final fuelIntercept = (getAirspeed() != null &&
+                                                          getWindHdg() != null &&
+                                                          getWindspeed() != null &&
+                                                          myTelemetry.sumFuelStat != null &&
+                                                          routePoints != null)
+                                                      ? interpolateWithWind(
+                                                          routePoints!, getAirspeed()!, getWindHdg()!, getWindspeed()!,
+                                                          duration: myTelemetry.sumFuelStat!
+                                                              .extrapolateEndurance(myTelemetry.fuelReports.last))
+                                                      : null;
+
                                                   return Stack(
                                                     children: [
                                                       FlutterMap(
@@ -809,6 +779,66 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                                     strokeWidth: 4),
                                                               ],
                                                             ),
+
+                                                          // "ME" Live Location Marker
+                                                          Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
+                                                            if (myTelemetry.geo != null) {
+                                                              return MarkerLayer(
+                                                                markers: [
+                                                                  Marker(
+                                                                    width: 25.0,
+                                                                    height: 25.0,
+                                                                    point: myTelemetry.geo!.latlng,
+                                                                    builder: (ctx) => Container(
+                                                                      transformAlignment: const Alignment(0, 0),
+                                                                      transform:
+                                                                          Matrix4.rotationZ(myTelemetry.geo!.hdg),
+                                                                      child: Image.asset("assets/images/red_arrow.png"),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              );
+                                                            } else {
+                                                              return Container();
+                                                            }
+                                                          }),
+
+                                                          if (fuelIntercept != null)
+                                                            MarkerLayer(
+                                                              markers: [
+                                                                Marker(
+                                                                  width: 40,
+                                                                  height: 40,
+                                                                  point: fuelIntercept.latlng,
+                                                                  builder: (context) => const Stack(
+                                                                    children: [
+                                                                      Center(
+                                                                        child: Icon(
+                                                                          Icons.circle,
+                                                                          size: 20,
+                                                                          color: Colors.black,
+                                                                        ),
+                                                                      ),
+                                                                      Icon(
+                                                                        Icons.warning_rounded,
+                                                                        size: 40,
+                                                                        color: Colors.black,
+                                                                      ),
+                                                                      Center(
+                                                                        child: Padding(
+                                                                          padding: EdgeInsets.only(top: 8, left: 2),
+                                                                          child: Icon(
+                                                                            Icons.local_gas_station,
+                                                                            size: 20,
+                                                                            color: Colors.red,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                )
+                                                              ],
+                                                            )
                                                         ],
                                                       ),
                                                       if (getWindHdg() != null)

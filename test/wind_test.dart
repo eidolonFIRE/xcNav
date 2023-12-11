@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/vector.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/wind.dart';
 

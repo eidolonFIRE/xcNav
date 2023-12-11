@@ -39,6 +39,8 @@ class FuelStat {
   FuelStat(this.amount, this.durationTime, this.durationDist, this.rate, this.mpl, this.meanAlt, this.meanSpd,
       this.altGained);
 
+  bool get isValid => amount > 0 && durationTime.inMilliseconds > 0;
+
   FuelStat.fromSamples(FuelReport start, FuelReport end, List<Geo> samples) {
     amount = start.amount - end.amount;
     durationTime = end.time.difference(start.time);

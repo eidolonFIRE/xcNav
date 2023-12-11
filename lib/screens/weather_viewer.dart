@@ -103,12 +103,7 @@ class _WeatherViewerState extends State<WeatherViewer> {
                                         child: Padding(
                                           padding: const EdgeInsets.only(top: 42, bottom: 42),
                                           child: Text(
-                                            (sample.wVel != null)
-                                                ? printDouble(
-                                                    value: unitConverters[UnitType.speed]!(sample.wVel!),
-                                                    digits: 2,
-                                                    decimals: 0)
-                                                : "",
+                                            printValue(UnitType.speed, sample.wVel, digits: 2, decimals: 0) ?? "",
                                             style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                                           ),
                                         ),

@@ -8,11 +8,13 @@ import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
+import 'package:xcnav/models/vector.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 
 class LastReport<T> {

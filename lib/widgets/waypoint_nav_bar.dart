@@ -7,14 +7,15 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class WaypointNavBar extends StatelessWidget {
-  const WaypointNavBar({Key? key}) : super(key: key);
+  final ActivePlan activePlan;
+  const WaypointNavBar({Key? key, required this.activePlan}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     TextStyle instrLower = const TextStyle(fontSize: 30, color: Colors.black);
-    TextStyle instrLabel = const TextStyle(fontSize: 14, color: Colors.black87, fontStyle: FontStyle.italic);
+    TextStyle instrLabel = const TextStyle(fontSize: 14, color: Colors.black87);
 
-    return Consumer2<ActivePlan, MyTelemetry>(builder: (context, activePlan, myTelemetry, child) {
+    return Consumer<MyTelemetry>(builder: (context, myTelemetry, child) {
       late ETA etaNext;
       if (myTelemetry.geo != null) {
         etaNext = activePlan.getSelectedWp()?.eta(myTelemetry.geo!, myTelemetry.geo!.spd) ?? ETA(0, const Duration());

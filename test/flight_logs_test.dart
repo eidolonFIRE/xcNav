@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 
@@ -24,7 +23,6 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/settings_service.dart';
-import 'package:xcnav/tfr_service.dart';
 
 import 'mock_providers.dart';
 

@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/models/path_intercept.dart';
+
+Distance latlngCalc = const Distance(roundResult: false);
 
 void setSystemUI() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -102,4 +105,77 @@ LatLngBounds padLatLngBounds(LatLngBounds bounds, double bufferRatio) {
       (180 + bounds.northEast.longitude + widthBuffer) % 360 - 180);
 
   return LatLngBounds(point1, point2);
+}
+
+/// Return the difference in radian heading. (+/- pi)
+double deltaHdg(double a, double b) {
+  return (a - b + pi) % (2 * pi) - pi;
+}
+
+/// Calculate resulting vector when traveling straight with wind.
+/// If blown off course, collective will have X component.
+Offset calcCollective(Offset windVector, double airspeed) {
+  double collectiveMag = 0;
+  late Offset collective;
+  final comp = airspeed * airspeed - windVector.dx * windVector.dx;
+  if (comp >= 0) {
+    collectiveMag = -sqrt(comp) + windVector.dy;
+    collective = Offset(0, collectiveMag);
+  }
+  if (comp < 0 || collectiveMag > 0) {
+    collectiveMag = sqrt(windVector.distance * windVector.distance - airspeed * airspeed);
+    final inscribedTheta = asin(airspeed / windVector.distance);
+    final collectiveTheta = windVector.direction + inscribedTheta * (windVector.dx < 0 ? 1 : -1);
+    collective = Offset.fromDirection(collectiveTheta, collectiveMag);
+  }
+  return collective;
+}
+
+/// Travel down a path.
+/// Note there is no caching for this call. It is not recommended to call this too frequently.
+///
+/// latlgns : Path to travel down.
+///
+/// spd : craft speed, m/s
+///
+/// windHdg, windSpd : wind forces acting on craft
+///
+/// duration : max duration down path
+///
+/// distance : max distance down path
+PathIntercept? interpolateWithWind(List<LatLng> latlngs, double spd, double windHdg, double windSpd,
+    {Duration? duration, double? distance}) {
+  double sumDist = 0;
+  Duration sumDur = Duration.zero;
+  for (int index = 0; index < latlngs.length - 1; index++) {
+    final stepDist = latlngCalc.distance(latlngs[index], latlngs[index + 1]);
+    final stepBrg = latlngCalc.bearing(latlngs[index], latlngs[index + 1]);
+
+    final collective = calcCollective(Offset.fromDirection(stepBrg / 180 * pi - windHdg + pi, windSpd), spd);
+    debugPrint("$collective");
+
+    final stepTime = Duration(milliseconds: (stepDist / -collective.dy * 1000).round());
+
+    if ((distance != null && distance <= sumDist + stepDist) || (duration != null && duration <= sumDur + stepTime)) {
+      // Intercept is in this segment
+      if (stepTime <= Duration.zero) {
+        // Headwind too strong, end at this point
+        return PathIntercept(index: index, latlng: latlngs[index], dist: sumDist);
+      } else {
+        // Interpolate segment
+        final remDist = min<double>(distance != null ? distance - sumDist : double.infinity,
+            duration != null ? (duration - sumDur).inMilliseconds / 1000 * -collective.dy : double.infinity);
+
+        final latlng = latlngCalc.offset(latlngs[index], remDist, stepBrg);
+        return PathIntercept(index: index, latlng: latlng, dist: 0);
+      }
+    } else {
+      // Accumulate
+      if (distance != null) sumDist += stepDist;
+      if (duration != null) sumDur += stepTime;
+    }
+  }
+
+  // No intercept found
+  return null;
 }

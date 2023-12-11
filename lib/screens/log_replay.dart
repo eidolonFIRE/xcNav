@@ -572,9 +572,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                                   children: [
                                     const Text("Duration (min)"),
-                                    Text("Burn Rate (${getUnitStr(UnitType.fuel)}/hr)"),
-                                    Text(
-                                        "Efficiency (${getUnitStr(UnitType.distCoarse)}/${getUnitStr(UnitType.fuel)})"),
+                                    Text("Burn Rate ($fuelRateStr)"),
+                                    Text("Efficiency ($fuelEffStr)"),
                                   ],
                                 ),
                               ),
@@ -591,10 +590,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                       children: log.fuelStats
                                           .map((e) => Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                                                 Text("${e.durationTime.inMinutes}"),
-                                                Text(unitConverters[UnitType.fuel]!(e.rate).toStringAsFixed(1)),
-                                                Text(unitConverters[UnitType.distCoarse]!(
-                                                        e.mpl / unitConverters[UnitType.fuel]!(1))
-                                                    .toStringAsFixed(1))
+                                                Text(printValue(UnitType.fuel, e.rate, decimals: 1) ?? "?"),
+                                                Text(printValue(
+                                                        UnitType.distCoarse, e.mpl / unitConverters[UnitType.fuel]!(1),
+                                                        decimals: 1) ??
+                                                    "?")
                                               ]))
                                           .toList()),
                                 ),
@@ -610,10 +610,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                     height: 25,
                                     child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                                       const Text("---"),
-                                      Text(unitConverters[UnitType.fuel]!(log.sumFuelStat!.rate).toStringAsFixed(1)),
-                                      Text(unitConverters[UnitType.distCoarse]!(
-                                              log.sumFuelStat!.mpl / unitConverters[UnitType.fuel]!(1))
-                                          .toStringAsFixed(1))
+                                      Text(printValue(UnitType.fuel, log.sumFuelStat!.rate) ?? "?"),
+                                      Text(printValue(UnitType.distCoarse,
+                                              log.sumFuelStat!.mpl / unitConverters[UnitType.fuel]!(1)) ??
+                                          "?")
                                     ]),
                                   ),
                                 ),
