@@ -682,6 +682,66 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           .toList(),
                     ),
 
+                    // Fuel Warning
+                    Consumer2<MyTelemetry, ActivePlan>(builder: (context, myTelemetry, activePlan, _) {
+                      if (myTelemetry.sumFuelStat != null && myTelemetry.geo != null && activePlan.selectedWp != null) {
+                        final waypointETA = activePlan.getSelectedWp()!.eta(myTelemetry.geo!, 1);
+                        final enduranceDist = myTelemetry.geo!.spdSmooth *
+                            myTelemetry.sumFuelStat!
+                                .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now())
+                                .inSeconds;
+
+                        if (waypointETA.distance >= enduranceDist && enduranceDist >= 0) {
+                          final fuelIntercept = activePlan.getSelectedWp()!.interpolate(
+                              enduranceDist, waypointETA.pathIntercept?.index ?? 0,
+                              initialLatlng: myTelemetry.geo!.latlng);
+
+                          return MarkerLayer(
+                            markers: [
+                              Marker(
+                                width: 50,
+                                height: 50,
+                                point: fuelIntercept.latlng,
+                                builder: (context) => const Stack(
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.only(top: 10),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.circle,
+                                          size: 30,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.warning_rounded,
+                                      size: 50,
+                                      color: Colors.black,
+                                    ),
+                                    Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(top: 11, left: 3),
+                                        child: Icon(
+                                          Icons.local_gas_station,
+                                          size: 25,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            ],
+                          );
+                        } else {
+                          return Container();
+                        }
+                      } else {
+                        return Container();
+                      }
+                    }),
+
                     // "ME" Live Location Marker
                     Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
                       if (myTelemetry.geo != null) {
@@ -848,20 +908,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                                     child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
                                                         decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
                                               } else {
-                                                final etaEmpty = fuelReport.time
-                                                    .add(myTelemetry.sumFuelStat!.extrapolateEndurance(fuelReport));
+                                                final etaEmpty = myTelemetry.sumFuelStat!
+                                                    .extrapolateEndurance(fuelReport, from: clock.now());
 
-                                                final warn =
-                                                    etaEmpty.isBefore(clock.now().add(const Duration(minutes: 15)));
+                                                final warn = etaEmpty < const Duration(minutes: 15);
                                                 final style = TextStyle(
                                                     color: warn ? Colors.red : Colors.black,
                                                     fontSize: 20,
                                                     fontWeight: warn ? FontWeight.bold : FontWeight.normal);
                                                 return Padding(
                                                     padding: const EdgeInsets.all(8.0),
-                                                    child: Text.rich(richHrMin(
-                                                        duration: etaEmpty.difference(clock.now()),
-                                                        valueStyle: style)));
+                                                    child: Text.rich(richHrMin(duration: etaEmpty, valueStyle: style)));
                                               }
                                             } else {
                                               return const Padding(

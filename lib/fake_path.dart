@@ -73,7 +73,7 @@ class FakeFlight {
   }
 
   Position genFakeLocationFlight(LatLng? target, Geo prevGeo) {
-    debugPrint("Gen fake path...");
+    // debugPrint("Gen fake path...");
     if (target != null) {
       final delta = ((latlngCalc.bearing(latlng, target)) - hdg + 180) % (360) - 180;
       // debugPrint("Delta Degrees to Target $delta");

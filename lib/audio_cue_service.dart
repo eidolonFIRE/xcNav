@@ -267,14 +267,14 @@ class AudioCueService {
 
       // Advise fuel level
       if ((config["Fuel Level"] ?? false) && sumFuelStat != null && fuelReport != null) {
-        final etaEmpty = fuelReport.time.add(sumFuelStat.extrapolateEndurance(fuelReport));
+        final etaEmpty = sumFuelStat.extrapolateEndurance(fuelReport, from: clock.now());
         final estLevel = sumFuelStat.extrapolateToTime(fuelReport, clock.now());
 
         final minInterval = Duration(seconds: (intervalLUT["Fuel Level"]![mode]![0] * 60).toInt());
         final maxInterval = Duration(seconds: (intervalLUT["Fuel Level"]![mode]![1] * 60).toInt());
 
         if (lastFuelLevel == null || clock.now().isAfter(lastFuelLevel!.timestamp.add(minInterval))) {
-          if (etaEmpty.isBefore(clock.now().add(minInterval)) || estLevel < 0) {
+          if (etaEmpty < minInterval || estLevel < 0) {
             // Critical fuel
             const text = "Fuel level critical!";
             ttsService.speak(

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:clock/clock.dart';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,7 +20,6 @@ import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xcnav/widgets/wind_plot.dart';
-import 'package:xcnav/widgets/wind_vector_plot.dart';
 
 const valueStyle = TextStyle(fontSize: 40, color: Colors.white);
 const unitStyle = TextStyle(fontSize: 18, color: Colors.grey);
@@ -35,17 +35,11 @@ class WindDialog extends StatefulWidget {
 class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateMixin {
   static const List<Tab> myTabs = <Tab>[
     Tab(text: "Detector"),
-    Tab(text: "Calculate"),
     Tab(text: "Route"),
   ];
 
   late TabController _tabController;
   late MapController mapController;
-
-  // Calculated
-  double plotScale = 1;
-  Offset? craftVector;
-  Offset? collectiveVector;
 
   ETA? routeETA;
   List<LatLng>? routePoints;
@@ -60,7 +54,6 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
 
   GlobalKey vectorBox = GlobalKey(debugLabel: "windVectorBox");
 
-  ChangeNotifier newCalc = ChangeNotifier();
   ChangeNotifier newRoute = ChangeNotifier();
 
   final mapKey = GlobalKey(debugLabel: "windDialog_mapView");
@@ -112,26 +105,8 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
       }
     }
 
-    airSpeedController.text = printValue(UnitType.speed, _airspeed!) ?? "";
-    windSpeedController.text = printValue(UnitType.speed, _windspeed!) ?? "";
-
-    /// Refresh the vector chart in "Calulate" Tab
-    void refreshCalculation() {
-      final tempWind = getWindspeed();
-      final tempAir = getAirspeed();
-      final tempWindVector = getWindVector();
-      debugPrint("------------ refresh calc");
-      if (tempWind != null && tempAir != null && tempWindVector != null) {
-        collectiveVector = calcCollective(tempWindVector, tempAir);
-        craftVector = collectiveVector! - tempWindVector;
-        plotScale = (tempWind + tempAir) * 0.9;
-        // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
-        newCalc.notifyListeners();
-      } else {
-        collectiveVector = null;
-        craftVector = null;
-      }
-    }
+    airSpeedController.text = printValue(UnitType.speed, _airspeed, decimals: 1) ?? "";
+    windSpeedController.text = printValue(UnitType.speed, _windspeed, decimals: 1) ?? "";
 
     /// Refresh the map view in the "Route" tab
     void refreshRoute(List<LatLng>? points) {
@@ -147,7 +122,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
           final originalDistance = latlngCalc.distance(points[t - 1], points[t]);
           final effectiveSpeed = calcCollective(
               Offset.fromDirection(
-                  tempWindVector.direction - latlngCalc.bearing(routePoints!.last, points[t]) / 180 * pi,
+                  tempWindVector.direction - latlngCalc.bearing(routePoints!.last, points[t]) / 180 * pi - pi / 2,
                   tempWindVector.distance),
               tempAir);
 
@@ -186,7 +161,6 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
             controller: _tabController,
             tabs: myTabs,
             onTap: (value) {
-              if (_tabController.index == 1) refreshCalculation();
               setState(() {});
             },
           ),
@@ -330,198 +304,6 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
 
             // ====================================================================================
             //
-            // ---- CALCULATE
-            //
-            // ====================================================================================
-            Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // LEFT SIDE
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // --- Airspeed
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Padding(
-                            padding: EdgeInsets.only(right: 8),
-                            child: Icon(
-                              Icons.flight,
-                              size: 35,
-                              color: Colors.red,
-                            ),
-                          ),
-                          Expanded(
-                            child: TextField(
-                              onTap: () => airSpeedController.clear(),
-                              controller: airSpeedController,
-                              textAlign: TextAlign.center,
-                              autofocus: airSpeedController.text.isEmpty,
-                              decoration: InputDecoration(
-                                  suffixText: getUnitStr(UnitType.speed),
-                                  hintText: printValue(UnitType.speed, getAirspeed()!),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.all(4)),
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
-                              onChanged: (value) {
-                                _airspeed = parseDoubleValue(UnitType.speed, value);
-                                refreshCalculation();
-                              },
-                            ),
-                          )
-                        ]),
-                      ),
-
-                      // --- Wind Speed
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          const Padding(
-                            padding: EdgeInsets.only(right: 8),
-                            child: Icon(Icons.air, size: 35, color: Colors.blue),
-                          ),
-                          Expanded(
-                            child: TextField(
-                              onTap: () => windSpeedController.clear(),
-                              controller: windSpeedController,
-                              textAlign: TextAlign.center,
-                              decoration: InputDecoration(
-                                  suffixText: getUnitStr(UnitType.speed),
-                                  hintText: printValue(UnitType.speed, getWindspeed()),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                  contentPadding: const EdgeInsets.all(4)),
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
-                              onChanged: (value) {
-                                _windspeed = parseDoubleValue(UnitType.speed, value);
-                                refreshCalculation();
-                              },
-                            ),
-                          )
-                        ]),
-                      ),
-
-                      // --- Ground Speed
-
-                      const Padding(
-                        padding: EdgeInsets.only(top: 10),
-                        child: Text(
-                          "Ground Speed",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8, right: 8, top: 8),
-                        child: ListenableBuilder(
-                            listenable: newCalc,
-                            builder: (context, _) {
-                              return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(right: 8),
-                                  child: Icon(Icons.speed, size: 35, color: Colors.amber),
-                                ),
-                                (collectiveVector != null)
-                                    ? Text.rich(richValue(UnitType.speed,
-                                        collectiveVector!.distance * (collectiveVector!.dy > 0 ? -1 : 1),
-                                        digits: 3, valueStyle: valueStyle, unitStyle: unitStyle))
-                                    : const Text(
-                                        "?",
-                                        style: valueStyle,
-                                      ),
-                              ]);
-                            }),
-                      ),
-
-                      // --- Warn drifting
-                      ListenableBuilder(
-                          listenable: newCalc,
-                          builder: (context, _) {
-                            if (collectiveVector != null && collectiveVector!.dx.abs() > 0.01) {
-                              // DRIFTING!
-                              return Padding(
-                                  padding: const EdgeInsets.only(left: 8, right: 8),
-                                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 8),
-                                      child: Icon(Icons.warning_amber_rounded, size: 35, color: Colors.amber),
-                                    ),
-                                    Text.rich(
-                                      TextSpan(children: [
-                                        const TextSpan(text: "Drifting "),
-                                        TextSpan(
-                                            text: ((collectiveVector!.direction + pi / 2) * 180 / pi)
-                                                .abs()
-                                                .round()
-                                                .toStringAsFixed(0)),
-                                        const TextSpan(text: " deg")
-                                      ]),
-                                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                                    ),
-                                  ]));
-                            } else {
-                              return Container();
-                            }
-                          }),
-                    ],
-                  ),
-                ),
-
-                /// RIGHT SIDE
-                Container(
-                    key: vectorBox,
-                    child: Listener(
-                        onPointerMove: (event) {
-                          final size = vectorBox.currentContext?.size;
-                          final delta = -event.localPosition + Offset(size?.width ?? 100, size?.height ?? 100) / 2;
-                          _windHdg = delta.direction;
-                          refreshCalculation();
-                        },
-                        child: Card(
-                          color: Colors.black26,
-                          child: SizedBox(
-                            width: MediaQuery.of(context).size.width - 180,
-                            child: AspectRatio(
-                              aspectRatio: 1,
-                              child: ClipRect(
-                                  child: ListenableBuilder(
-                                      listenable: newCalc,
-                                      builder: (context, _) {
-                                        final tempWindVector = getWindVector();
-
-                                        if (tempWindVector != null && craftVector != null && collectiveVector != null) {
-                                          return CustomPaint(
-                                              painter: WindVectorPlotPainter(
-                                            strokeWidth: 3,
-                                            wind: tempWindVector / plotScale,
-                                            craft: craftVector! / plotScale,
-                                            collective: collectiveVector! / plotScale,
-                                          ));
-                                        } else {
-                                          return const Align(
-                                              alignment: Alignment.center,
-                                              child: Icon(
-                                                Icons.touch_app,
-                                                size: 60,
-                                                color: Colors.white,
-                                              ));
-                                        }
-                                      })),
-                            ),
-                          ),
-                        )))
-              ],
-            ),
-
-            // ====================================================================================
-            //
             // ---- ROUTE
             //
             // ====================================================================================
@@ -567,20 +349,23 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                               ),
                               Expanded(
                                 child: TextField(
-                                  onTap: () => airSpeedController.clear(),
+                                  onTap: () {
+                                    airSpeedController.clear();
+                                    refreshRoute(points);
+                                  },
                                   controller: airSpeedController,
                                   textAlign: TextAlign.center,
                                   autofocus: airSpeedController.text.isEmpty,
                                   decoration: InputDecoration(
                                       suffixText: getUnitStr(UnitType.speed),
-                                      hintText: printValue(UnitType.speed, getAirspeed()!),
+                                      hintText: printValue(UnitType.speed, getAirspeed(), decimals: 1),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                       contentPadding: const EdgeInsets.all(4)),
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
                                   onChanged: (value) {
                                     _airspeed = parseDoubleValue(UnitType.speed, value);
-                                    refreshCalculation();
+                                    refreshRoute(points);
                                   },
                                 ),
                               )
@@ -597,19 +382,22 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                               ),
                               Expanded(
                                 child: TextField(
-                                  onTap: () => windSpeedController.clear(),
+                                  onTap: () {
+                                    windSpeedController.clear();
+                                    refreshRoute(points);
+                                  },
                                   controller: windSpeedController,
                                   textAlign: TextAlign.center,
                                   decoration: InputDecoration(
                                       suffixText: getUnitStr(UnitType.speed),
-                                      hintText: printValue(UnitType.speed, getWindspeed()),
+                                      hintText: printValue(UnitType.speed, getWindspeed(), decimals: 1),
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                       contentPadding: const EdgeInsets.all(4)),
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
                                   onChanged: (value) {
                                     _windspeed = parseDoubleValue(UnitType.speed, value);
-                                    refreshCalculation();
+                                    refreshRoute(points);
                                   },
                                 ),
                               )
@@ -685,7 +473,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                             onPointerMove: (event) {
                               final size = vectorBox.currentContext?.size;
                               final delta = -event.localPosition + Offset(size?.width ?? 100, size?.height ?? 100) / 2;
-                              _windHdg = delta.direction;
+                              _windHdg = delta.direction + pi / 2;
                               refreshRoute(points);
                             },
                             child: Card(
@@ -710,8 +498,9 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                           routePoints != null)
                                                       ? interpolateWithWind(
                                                           routePoints!, getAirspeed()!, getWindHdg()!, getWindspeed()!,
-                                                          duration: myTelemetry.sumFuelStat!
-                                                              .extrapolateEndurance(myTelemetry.fuelReports.last))
+                                                          duration: myTelemetry.sumFuelStat!.extrapolateEndurance(
+                                                              myTelemetry.fuelReports.last,
+                                                              from: clock.now()))
                                                       : null;
 
                                                   return Stack(
@@ -845,7 +634,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                         Center(
                                                             child: Container(
                                                           transformAlignment: const Alignment(0, 0),
-                                                          transform: Matrix4.rotationZ(getWindHdg()! + pi / 2),
+                                                          transform: Matrix4.rotationZ(getWindHdg() ?? 0),
                                                           child: SvgPicture.asset(
                                                             "assets/images/wind_sock.svg",
                                                             width: 60,

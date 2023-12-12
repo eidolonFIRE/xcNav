@@ -62,8 +62,12 @@ Future editFuelReports(BuildContext context) {
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             contentPadding: const EdgeInsets.all(4)),
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        textInputAction: TextInputAction.done,
                         autofocus: !showNow,
                         inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
+                        onFieldSubmitted: (value) {
+                          Navigator.pop(context);
+                        },
                       ),
                     ),
                   ),
@@ -115,8 +119,12 @@ Future editFuelReports(BuildContext context) {
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               contentPadding: const EdgeInsets.all(4)),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          textInputAction: TextInputAction.done,
                           autofocus: true,
                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
+                          onFieldSubmitted: (value) {
+                            Navigator.pop(context);
+                          },
                         ),
                       ),
                     ),

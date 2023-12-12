@@ -151,10 +151,9 @@ PathIntercept? interpolateWithWind(List<LatLng> latlngs, double spd, double wind
     final stepDist = latlngCalc.distance(latlngs[index], latlngs[index + 1]);
     final stepBrg = latlngCalc.bearing(latlngs[index], latlngs[index + 1]);
 
-    final collective = calcCollective(Offset.fromDirection(stepBrg / 180 * pi - windHdg + pi, windSpd), spd);
-    debugPrint("$collective");
+    final collective = calcCollective(Offset.fromDirection(stepBrg / 180 * pi - windHdg - pi / 2, windSpd), spd);
 
-    final stepTime = Duration(milliseconds: (stepDist / -collective.dy * 1000).round());
+    final stepTime = Duration(milliseconds: (stepDist / collective.distance * 1000).round());
 
     if ((distance != null && distance <= sumDist + stepDist) || (duration != null && duration <= sumDur + stepTime)) {
       // Intercept is in this segment
@@ -164,7 +163,7 @@ PathIntercept? interpolateWithWind(List<LatLng> latlngs, double spd, double wind
       } else {
         // Interpolate segment
         final remDist = min<double>(distance != null ? distance - sumDist : double.infinity,
-            duration != null ? (duration - sumDur).inMilliseconds / 1000 * -collective.dy : double.infinity);
+            duration != null ? (duration - sumDur).inMilliseconds / 1000 * collective.distance : double.infinity);
 
         final latlng = latlngCalc.offset(latlngs[index], remDist, stepBrg);
         return PathIntercept(index: index, latlng: latlng, dist: 0);
