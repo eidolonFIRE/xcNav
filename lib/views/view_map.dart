@@ -279,6 +279,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     // Hookup the measurement points to the active plan provider.
     Provider.of<ActivePlan>(context, listen: false).mapMeasurement = measurementPolyline.points;
 
+    settingsMgr.mapControlsRightSide.listenable.addListener(() => setState(() {}));
+
     return Container(
       color: Colors.white,
       child: Stack(alignment: Alignment.center, children: [
@@ -860,7 +862,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
               child: Column(
                 verticalDirection: VerticalDirection.up,
                 mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.end, // TODO
+                crossAxisAlignment:
+                    settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.start : CrossAxisAlignment.end,
                 // crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // --- fuel button
@@ -1053,7 +1056,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       return Column(
                         verticalDirection: VerticalDirection.up,
                         mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment:
+                            settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.start : CrossAxisAlignment.end,
                         children: bubbles
                             .map(
                               (e) => ChatBubble(
@@ -1087,7 +1091,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
             return Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.start, // TODO
+                crossAxisAlignment:
+                    settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 children: [
                   // --- Compass
                   MapButton(
