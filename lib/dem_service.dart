@@ -32,10 +32,6 @@ Future initDemCache() async {
           FMTCTileProviderSettings(
             behavior: CacheBehavior.cacheFirst,
             cachedValidDuration: const Duration(days: 60),
-            // errorHandler: (exception) {
-            //   DatadogSdk.instance.logs
-            //       ?.warn(exception.message, errorMessage: exception.toString(), attributes: {"layer": "dem"});
-            // },
           ),
         ),
   );

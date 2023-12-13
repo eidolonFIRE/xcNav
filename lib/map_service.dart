@@ -1,9 +1,9 @@
 import 'dart:math';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/secrets.dart';
 
@@ -29,8 +29,7 @@ TileProvider? makeTileProvider(String instanceName) {
               }),
         );
   } catch (e, trace) {
-    debugPrint("Error making tile provider $instanceName : $e $trace");
-    DatadogSdk.instance.logs?.error("FMTC: Error making tile provider",
+    error("FMTC: Error making tile provider",
         errorMessage: e.toString(), errorStackTrace: trace, attributes: {"layerName": instanceName});
     return null;
   }
@@ -140,9 +139,6 @@ Future initMapCache() async {
       defaultTileProviderSettings:
           FMTCTileProviderSettings(behavior: CacheBehavior.cacheFirst, cachedValidDuration: const Duration(days: 30)),
     ),
-    errorHandler: (error) {
-      DatadogSdk.instance.logs?.error("FMTC: init error", errorMessage: error.toString());
-    },
     debugMode: true,
   );
 

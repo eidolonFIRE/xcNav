@@ -3,12 +3,12 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as parser;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/datadog.dart';
 
 import 'package:xcnav/models/tfr.dart';
 import 'package:xcnav/state_centroids.dart';
@@ -72,11 +72,11 @@ Future<List<TFR?>> _fetchTfrs(LatLng center) async {
             return;
           } catch (err, trace) {
             final msg = "Couldn't parse TFR: ${tfrUri.toString()}";
-            DatadogSdk.instance.logs?.warn(msg,
+            warn(msg,
                 errorMessage: err.toString(), errorStackTrace: trace, attributes: {"notamUri": tfrUri.toString()});
           }
         } else {
-          DatadogSdk.instance.logs?.warn("Couldn't parse TFR uri", attributes: {"notamId": notamID});
+          warn("Couldn't parse TFR uri", attributes: {"notamId": notamID});
         }
       }
       completer.complete(null);

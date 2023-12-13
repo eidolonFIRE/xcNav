@@ -1,13 +1,13 @@
 import 'dart:math';
 
 import 'package:clock/clock.dart';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/providers/active_plan.dart';
@@ -65,10 +65,8 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
     mapController = MapController();
     _tabController = TabController(vsync: this, length: myTabs.length);
 
-    if (!settingsMgr.rumOptOut.value) {
-      DatadogSdk.instance.rum?.startView("/home/wind_dialog");
-      DatadogSdk.instance.rum?.addAttribute("view_map_northLockWind", settingsMgr.northlockWind.value);
-    }
+    startView("/home/wind_dialog");
+    addAttribute("view_map_northLockWind", settingsMgr.northlockWind.value);
   }
 
   @override
@@ -76,9 +74,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
     _tabController.dispose();
     super.dispose();
 
-    if (!settingsMgr.rumOptOut.value) {
-      DatadogSdk.instance.rum?.stopView("/home/wind_dialog");
-    }
+    stopView("/home/wind_dialog");
   }
 
   @override
@@ -212,9 +208,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                 wind.samples.removeRange(0, wind.samples.length - 10);
                                 wind.clearResult();
                               }
-                              if (!settingsMgr.rumOptOut.value) {
-                                DatadogSdk.instance.rum?.addUserAction(RumUserActionType.tap, "Reset Wind Detector");
-                              }
+                              addTapAction("Reset Wind Detector");
                             },
                             icon: const Icon(
                               Icons.clear,
@@ -270,10 +264,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                             size: 40,
                                             onPressed: () {
                                               settingsMgr.northlockWind.value = !northlockWind;
-                                              if (!settingsMgr.rumOptOut.value) {
-                                                DatadogSdk.instance.rum?.addAttribute(
-                                                    "view_map_northLockWind", settingsMgr.northlockWind.value);
-                                              }
+                                              addAttribute("view_map_northLockWind", settingsMgr.northlockWind.value);
                                             },
                                             selected: false,
                                             child: Container(

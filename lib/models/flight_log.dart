@@ -4,11 +4,11 @@ import 'dart:math';
 import 'package:bisection/bisect.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/log_store.dart';
 import 'package:xcnav/models/gear.dart';
 import 'package:xml/xml.dart';
 
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 
@@ -442,11 +442,10 @@ class FlightLog {
 
       goodFile = true;
     } catch (e, trace) {
-      debugPrint("Error Loading Flight Log: $e");
       samples = [];
       waypoints = [];
       goodFile = false;
-      DatadogSdk.instance.logs?.error("Broken FlightLog File",
+      error("Broken FlightLog File",
           errorMessage: e.toString(),
           errorStackTrace: trace,
           attributes: {"filename": filename, "dataLength": rawJson?.length});

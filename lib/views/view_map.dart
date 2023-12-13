@@ -4,7 +4,6 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:clock/clock.dart';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -23,10 +22,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat_messages.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/adsb.dart';
-import 'package:xcnav/tfr_service.dart';
-import 'package:xcnav/util.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -56,6 +52,10 @@ import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/main.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/datadog.dart';
+import 'package:xcnav/tfr_service.dart';
+import 'package:xcnav/settings_service.dart';
+import 'package:xcnav/util.dart';
 
 enum FocusMode {
   unlocked,
@@ -142,10 +142,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       callbackRefresh: () => {setState(() {})},
     );
 
-    if (!settingsMgr.rumOptOut.value) {
-      DatadogSdk.instance.rum?.addAttribute("view_map_focusMode", focusMode.name);
-      DatadogSdk.instance.rum?.addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
-    }
+    addAttribute("view_map_focusMode", focusMode.name);
+    addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
   }
 
   @override
@@ -172,9 +170,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       if (mode == FocusMode.group) lastMapChange = null;
       debugPrint("FocusMode = $mode");
 
-      if (!settingsMgr.rumOptOut.value) {
-        DatadogSdk.instance.rum?.addAttribute("view_map_focusMode", mode.name);
-      }
+      addAttribute("view_map_focusMode", mode.name);
     });
     refreshMapView();
   }
@@ -1113,10 +1109,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               () {
                                 settingsMgr.northlockMap.value = !settingsMgr.northlockMap.value;
                                 if (settingsMgr.northlockMap.value) mapController.rotate(0);
-                                if (!settingsMgr.rumOptOut.value) {
-                                  DatadogSdk.instance.rum
-                                      ?.addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
-                                }
+
+                                addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
                               },
                             )
                           },

@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dialogs/edit_log_filters.dart';
 import 'package:xcnav/models/flight_log.dart';
 
@@ -80,9 +80,8 @@ class LogStore with ChangeNotifier {
             // This is reached if the error happens during json parsing
             // Create a "bad file" entry so user can opt to remove it
             _logs[each.uri.path] = FlightLog.fromJson(each.path, {}, rawJson: value);
-            debugPrint("Caught log loading error on file ${each.uri}: $err $trace");
-            DatadogSdk.instance.logs?.error("Failed to load FlightLog",
-                errorMessage: err.toString(), errorStackTrace: trace, attributes: {"filename": each.path});
+            error("Failed to load FlightLog",
+                errorMessage: err.toString(), errorStackTrace: trace, attributes: {"filename": each.uri});
           }
           completer.complete();
         });

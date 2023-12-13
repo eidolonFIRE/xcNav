@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
+
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/datadog.dart';
 
 import 'package:xcnav/models/flight_plan.dart';
 
@@ -77,9 +78,7 @@ class Plans with ChangeNotifier {
       notifyListeners();
     } else {
       final msg = "Warn: Tried to delete a plan that isn't loaded $name";
-      debugPrint(msg);
-      debugPrint(_loadedPlans.keys.toString());
-      DatadogSdk.instance.logs?.warn(msg, attributes: {"plans": _loadedPlans.keys.toString()});
+      warn(msg, attributes: {"plans": _loadedPlans.keys.toString()});
     }
   }
 
@@ -91,9 +90,7 @@ class Plans with ChangeNotifier {
       refreshPlansFromDirectory();
     } else {
       final msg = "Warn: Tried to rename a plan that isn't loaded $oldName";
-      debugPrint(msg);
-      debugPrint(_loadedPlans.keys.toString());
-      DatadogSdk.instance.logs?.warn(msg, attributes: {"plans": _loadedPlans.keys.toString()});
+      warn(msg, attributes: {"plans": _loadedPlans.keys.toString()});
     }
   }
 
@@ -106,9 +103,7 @@ class Plans with ChangeNotifier {
       setPlan(plan);
     } else {
       final msg = "Warn: Tried to rename a plan that isn't loaded $oldName";
-      debugPrint(msg);
-      debugPrint(_loadedPlans.keys.toString());
-      DatadogSdk.instance.logs?.warn(msg, attributes: {"plans": _loadedPlans.keys.toString()});
+      warn(msg, attributes: {"plans": _loadedPlans.keys.toString()});
     }
   }
 

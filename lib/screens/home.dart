@@ -1,10 +1,10 @@
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 // ignore: depend_on_referenced_packages
 import 'package:provider/provider.dart';
 import 'package:xcnav/check_permissions.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/endpoint.dart';
 
 // providers
@@ -155,9 +155,7 @@ class _MyHomePageState extends State<MyHomePage> {
       Provider.of<ChatMessages>(context, listen: false).markAllRead(false);
     }
 
-    if (!settingsMgr.rumOptOut.value) {
-      DatadogSdk.instance.rum?.startView("/home/${pageIndexNames[viewPageIndex]}");
-    }
+    startView("/home/${pageIndexNames[viewPageIndex]}");
 
     return PopScope(
         canPop: false,
@@ -199,14 +197,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   debugPrint("BottomNavigationBar.tap($value)");
                   if (value == 0) {
                     scaffoldKey.currentState?.openDrawer();
-                    if (!settingsMgr.rumOptOut.value) {
-                      DatadogSdk.instance.rum?.addUserAction(RumUserActionType.tap, "Main Menu");
-                    }
+                    addTapAction("Main Menu");
                   } else {
                     setState(() {
-                      if (!settingsMgr.rumOptOut.value) {
-                        DatadogSdk.instance.rum?.stopView("/home/${pageIndexNames[viewPageIndex]}");
-                      }
+                      stopView("/home/${pageIndexNames[viewPageIndex]}");
+
                       viewPageIndex = value;
                       viewController.jumpToPage(value - 1);
                     });

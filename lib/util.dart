@@ -2,12 +2,12 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:bisection/bisect.dart';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/path_intercept.dart';
+import 'package:xcnav/datadog.dart';
 
 Distance latlngCalc = const Distance(roundResult: false);
 
@@ -47,7 +47,7 @@ double? parseAsDouble(dynamic value) {
       return double.parse(value);
     } catch (err, trace) {
       final msg = "failed to parse double $value";
-      DatadogSdk.instance.logs?.warn(msg, errorMessage: err.toString(), errorStackTrace: trace);
+      info(msg, errorMessage: err.toString(), errorStackTrace: trace);
     }
   }
 
@@ -90,7 +90,7 @@ Future<bool> saveFileToAppDocs({required filename, required String data}) async 
     await file.writeAsString(data);
     return Future.value(true);
   } catch (err, trace) {
-    DatadogSdk.instance.logs?.error("Failed to save file $filename.",
+    error("Failed to save file $filename.",
         errorMessage: err.toString(), errorStackTrace: trace, attributes: {"dataLength": data.length});
     return Future.value(false);
   }
