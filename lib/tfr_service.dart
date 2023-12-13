@@ -9,10 +9,10 @@ import 'package:html/parser.dart' as parser;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:xcnav/models/geo.dart';
 
 import 'package:xcnav/models/tfr.dart';
 import 'package:xcnav/state_centroids.dart';
+import 'package:xcnav/util.dart';
 import 'package:xml/xml.dart';
 
 final _notamIdExpr = RegExp(r"(\d/[\d]{4})");

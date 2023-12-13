@@ -21,6 +21,7 @@ import 'package:xcnav/models/fuel_report.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/vector.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';
@@ -63,7 +64,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo? launchGeo;
   DateTime? lastSavedLog;
   List<FuelReport> fuelReports = [];
-  List<FuelStat> fuelStats = [];
 
   // in-flight hysterisis
   int triggerHyst = 0;
@@ -97,9 +97,39 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   FuelStat? _sumFuelStat;
   FuelStat? get sumFuelStat {
     if (_sumFuelStat == null && fuelStats.isNotEmpty) {
-      _sumFuelStat = fuelStats.reduce((a, b) => a + b);
+      debugPrint("Building sumFuelStats");
+      // Only use valid stats.
+      final temp = fuelStats.where((e) => e.isValid).toList();
+      if (temp.isNotEmpty) {
+        _sumFuelStat = temp.reduce((a, b) => a + b);
+      } else {
+        // No valid stats...
+        _sumFuelStat = null;
+        // FuelStat(0, Duration.zero, 0, 0, 0, 0, 0, 0);
+      }
     }
     return _sumFuelStat;
+  }
+
+  List<FuelStat>? _fuelStats = [];
+  List<FuelStat> get fuelStats {
+    if (_fuelStats == null) {
+      _fuelStats = [];
+
+      debugPrint("Building fuelStats");
+
+      // Rebuild the stats
+      for (int index = 0; index < fuelReports.length - 1; index++) {
+        final a = fuelReports[index];
+        final b = fuelReports[index + 1];
+        final newStat =
+            FuelStat.fromSamples(a, b, recordGeo.sublist(timeToSampleIndex(a.time), timeToSampleIndex(b.time) + 1));
+        // this will even include stats that are invalid.
+        _fuelStats!.add(newStat);
+      }
+    }
+
+    return _fuelStats!;
   }
 
   @override
@@ -369,20 +399,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo!.time), latlng: geo!.latlng));
 
       if (fuelReports.isNotEmpty) {
-        int index = 0;
-        while (index < fuelReports.length - 2 && fuelReports[index + 1].time.isBefore(takeOff!)) {
-          // Scan forward
-          index++;
-        }
-        if (fuelReports[index].time.isBefore(takeOff!)) {
-          // Move up most recent fuel report so it's part of this log
-          debugPrint(
-              "FuelReport (${fuelReports[index].amount}L) moved from ${fuelReports[index].time} --> ${takeOff!}");
-          fuelReports[index] = FuelReport(takeOff!, fuelReports[index].amount);
-        }
+        // Duplicate the latest fuel report so it's part of this log, and drop everything else.
+        // We assume we weren't just in flight, so we don't account for burn since last report.
+        final latest = fuelReports.last;
+        fuelReports.clear();
+        insertFuelReport(takeOff!, latest.amount, tolerance: Duration.zero);
       }
 
-      // clear the log
+      // trim the log
       recordGeo.removeRange(0, launchIndex);
 
       notifyListeners();
@@ -393,7 +417,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (_inFlight && geo != null) {
       _inFlight = false;
       debugPrint("Flight Ended");
-      landing = DateTime.fromMillisecondsSinceEpoch(geo!.time);
+      landing = DateTime.fromMillisecondsSinceEpoch(recordGeo.last.time);
+
+      // Insert new fuel report extrapolated down (if stats were available)
+      if (sumFuelStat != null && fuelReports.isNotEmpty) {
+        insertFuelReport(landing!, sumFuelStat!.extrapolateToTime(fuelReports.last, landing!));
+      }
+
       flightEvent.add(FlightEvent(
           type: FlightEventType.land, time: DateTime.fromMillisecondsSinceEpoch(geo!.time), latlng: geo!.latlng));
       // Save current flight to log
@@ -416,7 +446,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                   .where((element) => (!element.ephemeral && element.validate()))
                   .toList()
               : [],
-          fuelReports: fuelReports,
+          fuelReports: fuelReports
+              .where((e) =>
+                  e.time.millisecondsSinceEpoch >= recordGeo.first.time &&
+                  e.time.millisecondsSinceEpoch <= recordGeo.last.time)
+              .toList(),
           gear: Provider.of<Profile>(globalContext!, listen: false).gear);
 
       log.save();
@@ -433,37 +467,45 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     return nearestIndex(recordGeo.map((e) => e.time).toList(), time.millisecondsSinceEpoch);
   }
 
-  void addFuelReport(DateTime time, double amount) {
-    // Check if we need to just replace the last recent report
-    if (fuelReports.isNotEmpty && fuelReports.last.time.isAfter(time.subtract(const Duration(minutes: 3)))) {
-      if (fuelStats.isNotEmpty &&
-          fuelReports.length > 1 &&
-          fuelReports.last.amount < fuelReports[fuelReports.length - 2].amount) {
-        // Pop fuel stat
+  /// Find overlapping fuel report.
+  /// If the time is close to two reports, the earlier index will be returned.
+  /// Null is returned if no matches within tolerance are found.
+  int? findFuelReportIndex(DateTime time, {Duration tolerance = const Duration(minutes: 5)}) {
+    final index =
+        bisect_left<int>(fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
+    if (index > 0 && fuelReports[index - 1].time.difference(time).abs().compareTo(tolerance) < 1) {
+      return index - 1;
+    } else if (index < fuelReports.length && fuelReports[index].time.difference(time).abs().compareTo(tolerance) < 1) {
+      return index;
+    } else {
+      return null;
+    }
+  }
 
-        fuelStats.removeLast();
-        debugPrint("Removing last FuelStat (${fuelStats.length})");
+  /// Insert a fuel report into the sorted list.
+  /// If the new report is within tolerance of another report, it will be replaced.
+  void insertFuelReport(DateTime time, double? amount, {Duration tolerance = const Duration(minutes: 5)}) {
+    final overwriteIndex = findFuelReportIndex(time, tolerance: tolerance);
+
+    if (overwriteIndex != null) {
+      if (amount != null) {
+        // edit existing
+        fuelReports[overwriteIndex] = FuelReport(fuelReports[overwriteIndex].time, amount);
+      } else {
+        // remove existing
+        fuelReports.removeAt(overwriteIndex);
       }
-
-      // Pop the last fuel report... (reports too close together)
-      fuelReports.removeLast();
-      debugPrint("Removing last FuelReport (${fuelReports.length})");
+    } else {
+      if (amount != null) {
+        // Insert new
+        final insertIndex = bisect_left<int>(
+            fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
+        fuelReports.insert(insertIndex, FuelReport(time, amount));
+      }
     }
 
-    // Add new fuel report
-    fuelReports.add(FuelReport(time, amount));
-    debugPrint("Added fuel report (${fuelReports.length})");
-
-    if (fuelReports.length > 1 && fuelReports.last.amount < fuelReports[fuelReports.length - 2].amount) {
-      // Add fuel stat
-      fuelStats.add(FuelStat.fromSamples(
-          fuelReports[fuelReports.length - 2],
-          fuelReports.last,
-          recordGeo.sublist(timeToSampleIndex(fuelReports[fuelReports.length - 2].time),
-              timeToSampleIndex(fuelReports.last.time) + 1)));
-      debugPrint("Added fuel stat (${fuelStats.length})");
-    }
-
+    // reset internal calculations
+    _fuelStats = null;
     _sumFuelStat = null;
   }
 

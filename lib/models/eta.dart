@@ -1,6 +1,5 @@
-import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/path_intercept.dart';
 
-/// When time is -1, there is no solution... (infinite eta)
 class ETA {
   /// Meters
   late double distance;
@@ -13,6 +12,15 @@ class ETA {
       time = Duration(milliseconds: distance * 1000 ~/ speed);
     } else {
       time = null;
+    }
+  }
+
+  /// Meters/Sec
+  double? get speed {
+    if (time != null) {
+      return distance / time!.inMilliseconds * 1000;
+    } else {
+      return null;
     }
   }
 

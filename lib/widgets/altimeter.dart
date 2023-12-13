@@ -54,9 +54,7 @@ class Altimeter extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             children: [
                 value != null
-                    ? Text(
-                        printDouble(
-                            value: unitConverters[UnitType.distFine]!(value!), digits: digits, decimals: decimals),
+                    ? Text(printValue(UnitType.distFine, value, digits: digits, decimals: decimals) ?? "",
                         style: valueStyle)
                     : Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -85,8 +83,7 @@ class Altimeter extends StatelessWidget {
               Padding(
                   padding: const EdgeInsets.only(right: 4, bottom: 2),
                   child: value != null
-                      ? Text(printDouble(value: unitConverters[UnitType.distFine]!(value!), digits: 5, decimals: 0),
-                          style: valueStyle)
+                      ? Text(printValue(UnitType.distFine, value, digits: 5, decimals: 0) ?? "", style: valueStyle)
                       : Padding(
                           padding: const EdgeInsets.all(2.0),
                           child: SizedBox(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/util.dart';
 
 class FakeGeo {
   FakeGeo(this.lng, this.lat, this.alt);
@@ -72,7 +73,7 @@ class FakeFlight {
   }
 
   Position genFakeLocationFlight(LatLng? target, Geo prevGeo) {
-    debugPrint("Gen fake path...");
+    // debugPrint("Gen fake path...");
     if (target != null) {
       final delta = ((latlngCalc.bearing(latlng, target)) - hdg + 180) % (360) - 180;
       // debugPrint("Delta Degrees to Target $delta");

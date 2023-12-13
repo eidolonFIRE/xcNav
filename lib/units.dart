@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:xcnav/util.dart';
 
 // --- Constant unit converters
 const km2Miles = 0.621371;
@@ -103,6 +104,9 @@ String getUnitStr(UnitType type, {bool lexical = false}) {
       return "";
   }
 }
+
+String get fuelRateStr => " ${getUnitStr(UnitType.fuel)}/hr";
+String get fuelEffStr => " ${getUnitStr(UnitType.distCoarse)}/${getUnitStr(UnitType.fuel)}";
 
 /// Map of converter functions
 /// `double => double`
@@ -217,14 +221,18 @@ TextSpan richHrMin({required Duration? duration, TextStyle? valueStyle, TextStyl
     if (hr > 0) {
       return TextSpan(children: [
         TextSpan(text: hr.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "hr " : "h ", style: unitStyle ?? valueStyle),
+        TextSpan(
+            text: longUnits ? "hr " : "h ",
+            style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
         TextSpan(text: min.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "min" : "m", style: unitStyle ?? valueStyle),
+        TextSpan(
+            text: longUnits ? "min" : "m",
+            style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
       ]);
     } else {
       return TextSpan(children: [
         TextSpan(text: min.toString(), style: valueStyle),
-        TextSpan(text: "min", style: unitStyle ?? valueStyle),
+        TextSpan(text: "min", style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
       ]);
     }
   }
@@ -241,33 +249,46 @@ TextSpan richMinSec(
     if (min > 0) {
       return TextSpan(children: [
         TextSpan(text: min.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "min " : "m ", style: unitStyle ?? valueStyle),
+        TextSpan(
+            text: longUnits ? "min " : "m ",
+            style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
         TextSpan(text: sec.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "sec" : "s", style: unitStyle ?? valueStyle),
+        TextSpan(
+            text: longUnits ? "sec" : "s",
+            style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
       ]);
     } else {
       return TextSpan(children: [
         TextSpan(text: sec.toString(), style: valueStyle),
-        TextSpan(text: "sec", style: unitStyle ?? valueStyle),
+        TextSpan(text: "sec", style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
       ]);
     }
   }
 }
 
-/// Print a double but remove unecessary trailing zeros.
-String printDoubleSimple(double value, {decimals = 1}) {
-  return value
-      .toStringAsFixed(decimals)
-      .replaceAllMapped(RegExp(r"(?:(\.\d*?[1-9]+)|\.)0*$"), (match) => match.group(1) ?? "");
+/// Trim unecessary zeros from a string number.
+String trimZeros(String text) {
+  return text.replaceAllMapped(RegExp(r"(?:(\.\d*?[1-9]+)|\.)0*$"), (match) => match.group(1) ?? "");
 }
 
-String printDouble({required double value, required int digits, required int decimals, double? autoDecimalThresh}) {
+/// Print a double but remove unecessary trailing zeros.
+String printDoubleSimple(double value, {decimals = 1}) {
+  return trimZeros(value.toStringAsFixed(decimals));
+}
+
+String printDouble(
+    {required double value,
+    required int digits,
+    required int decimals,
+    double? autoDecimalThresh,
+    bool removeZeros = true}) {
   if (value.isInfinite) return "∞";
   if (!value.isFinite) return "?";
   if (autoDecimalThresh != null && value.abs() < autoDecimalThresh) decimals++;
   final int mag = (pow(10, digits + decimals) - 1).round();
   final double decPwr = pow(10, decimals).toDouble();
-  return ((min(mag, max(-mag, value * decPwr))).round() / decPwr).toStringAsFixed(max(0, decimals));
+  final retval = ((min(mag, max(-mag, value * decPwr))).round() / decPwr).toStringAsFixed(max(0, decimals));
+  return removeZeros ? trimZeros(retval) : retval;
 }
 
 String printDoubleLexical(
@@ -296,8 +317,34 @@ String printDoubleLexical(
   return "${value.round()}";
 }
 
+/// Convert a double with units to string.
+String? printValue(UnitType type, double? value,
+    {int digits = 5, int decimals = 2, double? autoDecimalThresh, bool removeZeros = true}) {
+  if (value == null) return null;
+  return printDouble(
+      value: unitConverters[type]!(value),
+      digits: digits,
+      decimals: decimals,
+      autoDecimalThresh: autoDecimalThresh,
+      removeZeros: removeZeros);
+}
+
+/// Attempt to parse a value and convert it to standard unit.
+double? parseDoubleValue(UnitType type, String? value) {
+  final parsed = parseAsDouble(value);
+  if (parsed != null) {
+    return parsed / unitConverters[type]!(1);
+  }
+  return null;
+}
+
 TextSpan richValue(UnitType type, double value,
-    {int digits = 5, int decimals = 0, TextStyle? valueStyle, TextStyle? unitStyle, double? autoDecimalThresh}) {
+    {int digits = 5,
+    int decimals = 0,
+    TextStyle? valueStyle,
+    TextStyle? unitStyle,
+    double? autoDecimalThresh,
+    bool removeZeros = true}) {
   // Cases for increasing decimals
 
   if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps ||
@@ -308,8 +355,15 @@ TextSpan richValue(UnitType type, double value,
   // Make the textspan
   return TextSpan(children: [
     TextSpan(
-        text: printDouble(value: printValue, digits: digits, decimals: decimals, autoDecimalThresh: autoDecimalThresh),
+        text: printDouble(
+            value: printValue,
+            digits: digits,
+            decimals: decimals,
+            autoDecimalThresh: autoDecimalThresh,
+            removeZeros: removeZeros),
         style: valueStyle),
-    TextSpan(text: getUnitStr(type), style: unitStyle),
+    TextSpan(
+        text: " ${getUnitStr(type)}",
+        style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
   ]);
 }

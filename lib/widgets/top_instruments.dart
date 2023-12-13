@@ -14,7 +14,7 @@ const topInstrumentsHeight = 90.0;
 Widget topInstruments(BuildContext context) {
   const upperStyle = TextStyle(fontSize: 45);
   const lowerStyle = TextStyle(fontSize: 16);
-  final TextStyle unitStyle = TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic);
+  final TextStyle unitStyle = TextStyle(fontSize: 14, color: Colors.grey.shade400);
 
   return Padding(
     padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
@@ -48,7 +48,7 @@ Widget topInstruments(BuildContext context) {
                   builder: (context, northlockWind, _) {
                     return GestureDetector(
                         onTap: () {
-                          showWindDialog(context);
+                          showDialog(context: context, builder: (context) => const WindDialog());
                         },
                         child: SizedBox(
                           width: 90,
@@ -98,10 +98,7 @@ Widget topInstruments(BuildContext context) {
                                   Align(
                                       alignment: Alignment.center,
                                       child: Text(
-                                        printDouble(
-                                            value: unitConverters[UnitType.speed]!(wind.result!.windSpd),
-                                            digits: 2,
-                                            decimals: 0),
+                                        printValue(UnitType.speed, wind.result?.windSpd, digits: 2, decimals: 0) ?? "",
                                         style: const TextStyle(
                                             color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
                                       )),
