@@ -8,11 +8,13 @@ import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
+import 'package:xcnav/models/vector.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 
 class LastReport<T> {
@@ -265,14 +267,14 @@ class AudioCueService {
 
       // Advise fuel level
       if ((config["Fuel Level"] ?? false) && sumFuelStat != null && fuelReport != null) {
-        final etaEmpty = fuelReport.time.add(sumFuelStat.extrapolateEndurance(fuelReport));
+        final etaEmpty = sumFuelStat.extrapolateEndurance(fuelReport, from: clock.now());
         final estLevel = sumFuelStat.extrapolateToTime(fuelReport, clock.now());
 
         final minInterval = Duration(seconds: (intervalLUT["Fuel Level"]![mode]![0] * 60).toInt());
         final maxInterval = Duration(seconds: (intervalLUT["Fuel Level"]![mode]![1] * 60).toInt());
 
         if (lastFuelLevel == null || clock.now().isAfter(lastFuelLevel!.timestamp.add(minInterval))) {
-          if (etaEmpty.isBefore(clock.now().add(minInterval)) || estLevel < 0) {
+          if (etaEmpty < minInterval || estLevel < 0) {
             // Critical fuel
             const text = "Fuel level critical!";
             ttsService.speak(

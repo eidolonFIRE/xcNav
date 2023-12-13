@@ -39,6 +39,8 @@ class FuelStat {
   FuelStat(this.amount, this.durationTime, this.durationDist, this.rate, this.mpl, this.meanAlt, this.meanSpd,
       this.altGained);
 
+  bool get isValid => amount > 0 && durationTime.inMilliseconds > 0;
+
   FuelStat.fromSamples(FuelReport start, FuelReport end, List<Geo> samples) {
     amount = start.amount - end.amount;
     durationTime = end.time.difference(start.time);
@@ -65,9 +67,11 @@ class FuelStat {
     return amount;
   }
 
-  /// Given the last known fuel level, estimate remaining endurance
-  Duration extrapolateEndurance(FuelReport lastReport) {
-    return Duration(seconds: (lastReport.amount / rate * 3600).round());
+  /// Given the last known fuel level, estimate remaining endurance.
+  /// If `from` is not supplied, it will use the DateTime of the `lastReport`.
+  Duration extrapolateEndurance(FuelReport lastReport, {DateTime? from}) {
+    final durFromReport = Duration(seconds: (lastReport.amount / rate * 3600).round());
+    return durFromReport - (from != null ? from.difference(lastReport.time) : Duration.zero);
   }
 
   /// Stats are combined with weight; biasing towards the longest duration

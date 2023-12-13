@@ -19,6 +19,7 @@ import 'package:xcnav/units.dart';
 
 import 'package:xcnav/models/gdl90.dart' as gdl90;
 import 'package:xcnav/models/mavlink.dart' as mavlink;
+import 'package:xcnav/util.dart';
 
 enum ProximitySize {
   off,

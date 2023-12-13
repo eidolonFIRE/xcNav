@@ -227,8 +227,8 @@ class ElevationPlotPainter extends CustomPainter {
     // --- Draw Elevation grid lines
     for (double t = minElev; t <= maxElev; t += vertGridRes) {
       canvas.drawLine(Offset(0, scaleY(t)), Offset(size.width, scaleY(t)), _paintGrid);
-      TextSpan span = TextSpan(
-          style: const TextStyle(color: Colors.white), text: unitConverters[UnitType.distFine]!(t).toStringAsFixed(0));
+      TextSpan span =
+          TextSpan(style: const TextStyle(color: Colors.white), text: printValue(UnitType.distFine, t, decimals: 0));
       TextPainter tp = TextPainter(text: span, textAlign: TextAlign.left, textDirection: TextDirection.ltr);
       tp.layout();
       tp.paint(canvas, Offset(4, scaleY(t)));

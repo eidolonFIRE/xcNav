@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:clock/clock.dart';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -14,10 +15,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:xcnav/endpoint.dart';
-import 'package:xcnav/main.dart';
-import 'package:xcnav/map_service.dart';
-import 'package:xcnav/models/tfr.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -44,16 +41,21 @@ import 'package:xcnav/widgets/waypoint_nav_bar.dart';
 // dialogs
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
+import 'package:xcnav/dialogs/edit_fuel_reports.dart';
 
 // models
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/models/tfr.dart';
 
 // misc
 import 'package:xcnav/units.dart';
 import 'package:xcnav/tappable_polyline.dart';
+import 'package:xcnav/endpoint.dart';
+import 'package:xcnav/main.dart';
+import 'package:xcnav/map_service.dart';
 
 enum FocusMode {
   unlocked,
@@ -194,6 +196,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         List<LatLng> points =
             Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
         points.add(LatLng(geo.lat, geo.lng));
+        if (settingsMgr.groupViewWaypoint.value) {
+          // Add selected waypoint into view
+          points.addAll(Provider.of<ActivePlan>(context, listen: false).getSelectedWp()?.latlng ?? []);
+        }
         if (lastMapChange == null ||
             (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
           centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
@@ -269,6 +275,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    // Hookup the measurement points to the active plan provider.
+    Provider.of<ActivePlan>(context, listen: false).mapMeasurement = measurementPolyline.points;
+
+    settingsMgr.mapControlsRightSide.listenable.addListener(() => setState(() {}));
+
     return Container(
       color: Colors.white,
       child: Stack(alignment: Alignment.center, children: [
@@ -388,7 +400,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ]),
 
                     // Next waypoint: path
-                    if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
+                    if (Provider.of<MyTelemetry>(context, listen: false).geo != null && plan.selectedWp != null)
                       PolylineLayer(
                         polylines: plan.buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: true).geo!,
                             (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
@@ -472,18 +484,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               rotate: true,
                               anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
                               rotateOrigin: const Offset(0, 30 * 0.8),
-                              // NOTE: regular waypoints are no longer draggable. But, this is how it was done before.
-                              // updateMapNearEdge: true,
-                              // useLongPress: true,
-                              // onTap: (_) => plan.selectedWp = e.id,
-                              // onLongDragEnd: (p0, p1) => {
-                              //       plan.moveWaypoint(e.id, [p1])
-                              //     },
-                              // rotateMarker: true,
-                              // onLongPress: (_) {
-                              //   editingWp = e.id;
-                              //   debugPrint("Context Menu for Waypoint ${e.name}");
-                              // },
                               builder: (context) => GestureDetector(
                                     onTap: () {
                                       if (focusMode == FocusMode.measurement) {
@@ -684,6 +684,66 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           .toList(),
                     ),
 
+                    // Fuel Warning
+                    Consumer2<MyTelemetry, ActivePlan>(builder: (context, myTelemetry, activePlan, _) {
+                      if (myTelemetry.sumFuelStat != null && myTelemetry.geo != null && activePlan.selectedWp != null) {
+                        final waypointETA = activePlan.getSelectedWp()!.eta(myTelemetry.geo!, 1);
+                        final enduranceDist = myTelemetry.geo!.spdSmooth *
+                            myTelemetry.sumFuelStat!
+                                .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now())
+                                .inSeconds;
+
+                        if (waypointETA.distance >= enduranceDist && enduranceDist >= 0) {
+                          final fuelIntercept = activePlan.getSelectedWp()!.interpolate(
+                              enduranceDist, waypointETA.pathIntercept?.index ?? 0,
+                              initialLatlng: myTelemetry.geo!.latlng);
+
+                          return MarkerLayer(
+                            markers: [
+                              Marker(
+                                width: 50,
+                                height: 50,
+                                point: fuelIntercept.latlng,
+                                builder: (context) => const Stack(
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.only(top: 10),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.circle,
+                                          size: 30,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.warning_rounded,
+                                      size: 50,
+                                      color: Colors.black,
+                                    ),
+                                    Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(top: 11, left: 3),
+                                        child: Icon(
+                                          Icons.local_gas_station,
+                                          size: 25,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            ],
+                          );
+                        } else {
+                          return Container();
+                        }
+                      } else {
+                        return Container();
+                      }
+                    }),
+
                     // "ME" Live Location Marker
                     Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
                       if (myTelemetry.geo != null) {
@@ -788,189 +848,239 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           .toList()),
                 )),
 
+        ///////////////////////////////////////////////////////////////////////////////////////////
         // --- Secondary column (default to right side)
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-              settingsMgr.mapControlsRightSide.value ? 10 : 80, 0, settingsMgr.mapControlsRightSide.value ? 80 : 10, 5),
-          child: Column(
-            verticalDirection: VerticalDirection.up,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // --- Current waypoint info
-              if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
-                Padding(
-                  padding: EdgeInsets.fromLTRB(settingsMgr.mapControlsRightSide.value ? 60 : 0, 0,
-                      settingsMgr.mapControlsRightSide.value ? 0 : 60, 0),
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                            borderRadius: BorderRadius.circular(30),
-                            child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                child: Container(
-                                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
-                                    color: Colors.white38,
-                                    child: const WaypointNavBar()))),
-                        Positioned(
-                            top: 0,
-                            right: 0,
-                            child: InkWell(
-                              onTap: (() {
-                                Provider.of<ActivePlan>(context, listen: false).selectedWp = null;
-                              }),
-                              child: Icon(
-                                Icons.cancel,
-                                color: Colors.grey.withAlpha(180),
-                                size: 20,
-                              ),
-                            ))
-                      ],
-                    ),
-                  ),
-                ),
-
-              // --- Measurement (X)
-              if (focusMode == FocusMode.measurement)
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        "Measure",
-                        style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        iconSize: 40,
-                        padding: EdgeInsets.zero,
-                        icon: const Icon(
-                          Icons.cancel,
-                          size: 40,
-                          color: Colors.red,
-                        ),
-                        onPressed: () => {
-                          setState(() {
-                            measurementPolyline.points.clear();
-                            setFocusMode(prevFocusMode);
-                          })
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-              if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Card(
-                        color: Colors.amber.shade400,
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text.rich(
-                            TextSpan(children: [
-                              WidgetSpan(
-                                  child: Icon(
-                                Icons.touch_app,
-                                size: 18,
+        Positioned(
+          left: settingsMgr.mapControlsRightSide.value ? 10 : null,
+          right: settingsMgr.mapControlsRightSide.value ? null : 10,
+          top: 10,
+          bottom: 10,
+          child: LayoutBuilder(builder: (context, constaints) {
+            final buttonSize = max(30, min(60, constaints.maxHeight / 8)).toDouble();
+            return Align(
+              alignment: Alignment.bottomRight,
+              child: Column(
+                verticalDirection: VerticalDirection.up,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment:
+                    settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                // crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // --- fuel button
+                  Align(
+                      alignment: Alignment.bottomRight,
+                      child: Column(
+                        verticalDirection: VerticalDirection.up,
+                        children: [
+                          MapButton(
+                            size: buttonSize,
+                            selected: false,
+                            child: const Icon(Icons.local_gas_station, color: Colors.black, size: 30),
+                            onPressed: () => {editFuelReports(context)},
+                          ),
+                          SizedBox(
+                              width: 2,
+                              height: buttonSize / 6,
+                              child: Container(
                                 color: Colors.black,
                               )),
-                              TextSpan(text: "Tap to add to path")
-                            ]),
+                          // --- Fuel remaining info
+                          Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
+                            return Container(
+                              foregroundDecoration: BoxDecoration(
+                                  border: Border.all(width: 0.5, color: Colors.black),
+                                  borderRadius: const BorderRadius.all(Radius.circular(15))),
+                              child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: BackdropFilter(
+                                      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                      child: Container(
+                                          color: Colors.white38,
+                                          child: Builder(builder: (context) {
+                                            final fuelReport = myTelemetry.fuelReports.lastOrNull;
+
+                                            if (fuelReport != null) {
+                                              if (myTelemetry.sumFuelStat == null || !myTelemetry.inFlight) {
+                                                final warn = fuelReport.amount <= 1;
+                                                final style = TextStyle(
+                                                    color: warn ? Colors.red : Colors.black,
+                                                    fontSize: 20,
+                                                    fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                                return Padding(
+                                                    padding: const EdgeInsets.all(8.0),
+                                                    child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
+                                                        decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
+                                              } else {
+                                                final etaEmpty = myTelemetry.sumFuelStat!
+                                                    .extrapolateEndurance(fuelReport, from: clock.now());
+
+                                                final warn = etaEmpty < const Duration(minutes: 15);
+                                                final style = TextStyle(
+                                                    color: warn ? Colors.red : Colors.black,
+                                                    fontSize: 20,
+                                                    fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                                return Padding(
+                                                    padding: const EdgeInsets.all(8.0),
+                                                    child: Text.rich(richHrMin(duration: etaEmpty, valueStyle: style)));
+                                              }
+                                            } else {
+                                              return const Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Text(
+                                                  "?",
+                                                  style: TextStyle(color: Colors.black, fontSize: 20),
+                                                ),
+                                              );
+                                            }
+                                          })))),
+                            );
+                          }),
+                        ],
+                      )),
+
+                  // --- Measurement (X)
+                  if (focusMode == FocusMode.measurement)
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            "Measure",
                             style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
-                        ),
-                      ),
-                      IconButton(
-                        iconSize: 40,
-                        padding: EdgeInsets.zero,
-                        icon: const Icon(
-                          Icons.cancel,
-                          size: 40,
-                          color: Colors.red,
-                        ),
-                        onPressed: () => {setFocusMode(prevFocusMode)},
-                      ),
-                      if (editablePoints.length > 1)
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          iconSize: 40,
-                          icon: const Icon(
-                            Icons.check_circle,
-                            size: 40,
-                            color: Colors.green,
+                          IconButton(
+                            iconSize: 40,
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.cancel,
+                              size: 40,
+                              color: Colors.red,
+                            ),
+                            onPressed: () => {
+                              setState(() {
+                                measurementPolyline.points.clear();
+                                setFocusMode(prevFocusMode);
+                              })
+                            },
                           ),
-                          onPressed: () {
-                            // --- finish editing path
-                            var plan = Provider.of<ActivePlan>(context, listen: false);
-                            if (editingWp == null) {
-                              var temp = Waypoint(name: "", latlngs: editablePoints.toList());
-                              editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
-                                  ?.then((newWaypoint) {
-                                if (newWaypoint != null) {
-                                  plan.updateWaypoint(newWaypoint);
+                        ],
+                      ),
+                    ),
+
+                  if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Card(
+                            color: Colors.amber.shade400,
+                            child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text.rich(
+                                TextSpan(children: [
+                                  WidgetSpan(
+                                      child: Icon(
+                                    Icons.touch_app,
+                                    size: 18,
+                                    color: Colors.black,
+                                  )),
+                                  TextSpan(text: "Tap to add to path")
+                                ]),
+                                style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            iconSize: 40,
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.cancel,
+                              size: 40,
+                              color: Colors.red,
+                            ),
+                            onPressed: () => {setFocusMode(prevFocusMode)},
+                          ),
+                          if (editablePoints.length > 1)
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              iconSize: 40,
+                              icon: const Icon(
+                                Icons.check_circle,
+                                size: 40,
+                                color: Colors.green,
+                              ),
+                              onPressed: () {
+                                // --- finish editing path
+                                var plan = Provider.of<ActivePlan>(context, listen: false);
+                                if (editingWp == null) {
+                                  var temp = Waypoint(name: "", latlngs: editablePoints.toList());
+                                  editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
+                                      ?.then((newWaypoint) {
+                                    if (newWaypoint != null) {
+                                      plan.updateWaypoint(newWaypoint);
+                                    }
+                                  });
+                                } else {
+                                  plan.moveWaypoint(editingWp!, editablePoints.toList());
+                                  editingWp = null;
                                 }
-                              });
-                            } else {
-                              plan.moveWaypoint(editingWp!, editablePoints.toList());
-                              editingWp = null;
-                            }
-                            setFocusMode(prevFocusMode);
-                          },
-                        ),
-                    ],
+                                setFocusMode(prevFocusMode);
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+
+                  // --- Chat bubbles
+                  Consumer<ChatMessages>(
+                    builder: (context, chat, child) {
+                      // get valid bubbles
+                      const numSeconds = 20;
+                      List<Message> bubbles = [];
+                      for (int i = chat.messages.length - 1; i >= 0; i--) {
+                        if (chat.messages[i].timestamp >
+                                max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
+                            chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
+                          bubbles.add(chat.messages[i]);
+
+                          Timer(const Duration(seconds: numSeconds), () {
+                            // "self destruct" the message after several seconds by triggering a refresh
+                            chat.refresh();
+                          });
+                        } else {
+                          break;
+                        }
+                      }
+                      return Column(
+                        verticalDirection: VerticalDirection.up,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment:
+                            settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+                        children: bubbles
+                            .map(
+                              (e) => ChatBubble(
+                                false,
+                                e.text,
+                                AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20),
+                                null,
+                                e.timestamp,
+                                maxWidth: MediaQuery.of(context).size.width - 150,
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
                   ),
-                ),
-
-              // --- Chat bubbles
-              Consumer<ChatMessages>(
-                builder: (context, chat, child) {
-                  // get valid bubbles
-                  const numSeconds = 20;
-                  List<Message> bubbles = [];
-                  for (int i = chat.messages.length - 1; i >= 0; i--) {
-                    if (chat.messages[i].timestamp >
-                            max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
-                        chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
-                      bubbles.add(chat.messages[i]);
-
-                      Timer(const Duration(seconds: numSeconds), () {
-                        // "self destruct" the message after several seconds by triggering a refresh
-                        chat.refresh();
-                      });
-                    } else {
-                      break;
-                    }
-                  }
-                  return Column(
-                    verticalDirection: VerticalDirection.up,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: bubbles
-                        .map(
-                          (e) => ChatBubble(
-                            false,
-                            e.text,
-                            AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20),
-                            null,
-                            e.timestamp,
-                            maxWidth: MediaQuery.of(context).size.width - 150,
-                          ),
-                        )
-                        .toList(),
-                  );
-                },
+                ],
               ),
-            ],
-          ),
+            );
+          }),
         ),
 
-        // --- Map View Buttons
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        // --- Map View Buttons (default left side)
         Positioned(
           left: settingsMgr.mapControlsRightSide.value ? null : 10,
           right: settingsMgr.mapControlsRightSide.value ? 10 : null,
@@ -981,7 +1091,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
             return Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 children: [
                   // --- Compass
                   MapButton(
@@ -1195,6 +1306,49 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 ])))),
                   )),
         ),
+
+        // --- Current waypoint info
+        if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
+          Consumer<ActivePlan>(
+            builder: (context, activePlan, _) {
+              final curWaypoint = activePlan.getSelectedWp();
+              if (curWaypoint != null) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 60, right: 60, bottom: 10),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                child: Container(
+                                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
+                                    color: Colors.white38,
+                                    child: WaypointNavBar(activePlan: activePlan)))),
+                        Positioned(
+                            top: 0,
+                            right: 0,
+                            child: InkWell(
+                              onTap: (() {
+                                activePlan.selectedWp = null;
+                              }),
+                              child: Icon(
+                                Icons.cancel,
+                                color: Colors.grey.withAlpha(180),
+                                size: 20,
+                              ),
+                            ))
+                      ],
+                    ),
+                  ),
+                );
+              } else {
+                return Container();
+              }
+            },
+          ),
 
         // --- Toggle map layer
         Positioned(

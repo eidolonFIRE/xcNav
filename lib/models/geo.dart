@@ -2,45 +2,9 @@ import 'dart:math';
 import 'package:flutter_barometer/flutter_barometer.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/models/path_intercept.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
-
-Distance latlngCalc = const Distance(roundResult: false);
-
-class PathIntercept {
-  final int index;
-  final LatLng latlng;
-  final double dist;
-  PathIntercept(this.index, this.latlng, this.dist);
-}
-
-/// Simple direction and value
-class Vector {
-  ///
-  late final DateTime? timestamp;
-
-  /// Radians
-  late final double hdg;
-
-  /// Meters
-  late final double value;
-
-  /// Meters
-  late final double alt;
-  Vector(this.hdg, this.value, {this.alt = 0, this.timestamp});
-
-  Vector.distFromGeoToGeo(Geo a, Geo b) {
-    hdg = a.relativeHdg(b);
-    value = a.distanceTo(b);
-    alt = a.alt - b.alt;
-    timestamp = null;
-  }
-}
-
-/// Return the difference in radian heading. (+/- pi)
-double deltaHdg(double a, double b) {
-  return (a - b + pi) % (2 * pi) - pi;
-}
 
 class Geo {
   double lat = 0;
@@ -128,7 +92,7 @@ class Geo {
   PathIntercept getIntercept(List<LatLng> path, {bool isReversed = false}) {
     // Early out
     if (path.length == 1) {
-      return PathIntercept(0, path[0], latlngCalc.distance(latlng, path[0]));
+      return PathIntercept(index: 0, latlng: path[0], dist: latlngCalc.distance(latlng, path[0]));
     }
 
     // Scan through all line segments and find intercept
@@ -152,8 +116,10 @@ class Geo {
         // debugPrint("match: $index) $dist  $angleToNext");
       }
     }
-    return PathIntercept(isReversed ? path.length - 1 - matchIndex : matchIndex, path[matchIndex],
-        latlngCalc.distance(latlng, path[matchIndex]));
+    return PathIntercept(
+        index: isReversed ? path.length - 1 - matchIndex : matchIndex,
+        latlng: path[matchIndex],
+        dist: latlngCalc.distance(latlng, path[matchIndex]));
   }
 
   double distanceTo(Geo other) {

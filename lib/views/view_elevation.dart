@@ -15,6 +15,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
@@ -265,11 +266,9 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                             return e == lookAheadOptions.first
                                 ? Text.rich(richValue(UnitType.distCoarse, e,
                                     unitStyle: const TextStyle(fontSize: 10, color: Colors.grey)))
-                                : Text(printDouble(
-                                    value: unitConverters[UnitType.distCoarse]!(e),
-                                    digits: 3,
-                                    decimals: 0,
-                                    autoDecimalThresh: 1));
+                                : Text(
+                                    printValue(UnitType.distCoarse, e, digits: 3, decimals: 0, autoDecimalThresh: 1) ??
+                                        "");
 
                           case WaypointID:
                             final selectedWp = activePlan.getSelectedWp();
