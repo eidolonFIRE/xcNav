@@ -224,14 +224,14 @@ class AudioCueService {
           (clock.now().isAfter(lastHdg!.timestamp.add(minInterval)) && ((relativeHdg).abs() >= hdgPrecision))) {
         lastHdg = LastReport.now(myGeo.hdg);
 
-        final eta = selectedWp.eta(myGeo, myGeo.spd);
+        final eta = selectedWp.eta(myGeo, myGeo.spdSmooth);
         if (eta.time != null) {
           final etaTime = printHrMinLexical(eta.time!);
           final dist = printDoubleLexical(
             value: unitConverters[UnitType.distCoarse]!(eta.distance),
           );
           final deltaDegrees = ((relativeHdg * 180 / pi) / 5).round() * 5;
-          final degreesVerbal = "at ${deltaDegrees.abs()} degrees ${relativeHdg > 0 ? "left" : "right"}";
+          final degreesVerbal = "at ${deltaDegrees.abs()} degrees ${relativeHdg > 0 ? "right" : "left"}";
           final int oclock = (((relativeHdg / (2 * pi) * 12.0).round() + 11) % 12) + 1;
           final oclockVerbal = "$oclock o'clock";
 
