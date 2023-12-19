@@ -36,11 +36,14 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: any
   provider: any
-  flutter_map: ^4.0.0
-  wakelock: ^0.6.1+1
+  flutter_map: ^6.1.0
+  flutter_map_tile_caching:
+    git:
+      url: git@github.com:JaffaKetchup/flutter_map_tile_caching.git
+      ref: v8.1.0
   http: any
   intl: any
-  flutter_map_line_editor: ^5.0.0
+  flutter_map_line_editor: ^6.0.0
   shared_preferences: ^2.0.13
   fullscreen: ^1.0.3
   image_picker: ^1.0.4
@@ -51,7 +54,7 @@ dependencies:
   web_socket_channel: ^2.1.0
   flutter_image_compress: ^2.0.4
   path_provider: ^2.0.9
-  flutter_svg: ^1.0.3
+  flutter_svg: ^2.0.9
   geolocator: ^10.0.1
   flutter_local_notifications: ^16.2.0
   focus_detector: ^2.0.1
@@ -62,14 +65,24 @@ dependencies:
   flutter_barometer:
     git:
       url: git@github.com:eidolonFIRE/flutter_barometer.git
-  package_info_plus: ^3.0.2
+  wakelock_plus:
+    git:
+      url: git@github.com:fluttercommunity/plus_plugins.git
+      path: packages/wakelock_plus/wakelock_plus
+      ref: wakelock_plus-v5.0.1
+  # package_info_plus: ^3.0.2
+  package_info_plus:
+    git:
+      url: git@github.com:fluttercommunity/plus_plugins.git
+      path: packages/package_info_plus/package_info_plus
+      ref: package_info_plus-v5.0.1
   flutter_slidable: ^3.0.0
   network_info_plus: ^3.0.1
   url_launcher: ^6.1.2
   email_validator: ^2.0.1
   crypto: ^3.0.2
   usb_serial: ^0.5.1
-  latlong2: ^0.8.1
+  latlong2: ^0.9.0
   collection: ^1.16.0
   better_open_file: any
   dart_numerics: ^0.0.6
@@ -82,12 +95,12 @@ dependencies:
   fl_chart: ^0.65.0
   datadog_flutter_plugin: ^2.1.0
   flutter_native_splash: ^2.2.18
-  flutter_map_tile_caching: ^8.0.1
-  # flutter_map_tile_caching:
-  #   git:
-  #     url: git@github.com:JaffaKetchup/flutter_map_tile_caching.git
-  #     ref: v8.1.0
   clock: ^1.1.1
+
+
+# temporary for fmtc v9
+dependency_overrides:
+  meta: ^1.11.0
 
 
 dev_dependencies:
