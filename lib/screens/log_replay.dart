@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter_svg/svg.dart';
@@ -16,7 +15,6 @@ import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
 import 'package:xcnav/widgets/log_summary.dart';
@@ -77,12 +75,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
     final log = logStore.logs[logKey]!;
 
-    return WillPopScope(
-      onWillPop: () {
+    return PopScope(
+      onPopInvoked: (_) {
         if (log.goodFile && log.unsaved) {
-          return log.save();
-        } else {
-          return Future.value(true);
+          log.save();
         }
       },
       child: Scaffold(
@@ -201,12 +197,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     key: mapKey,
                     mapController: mapController,
                     options: MapOptions(
+                      bounds: log.getBounds(),
                       onMapReady: () {
                         setState(() {
                           mapReady = true;
-                          final mapBounds =
-                              padLatLngBounds(LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList()), 0.2);
-                          mapController.fitBounds(mapBounds);
+                          mapController.fitBounds(log.getBounds());
                         });
                       },
                       interactiveFlags:

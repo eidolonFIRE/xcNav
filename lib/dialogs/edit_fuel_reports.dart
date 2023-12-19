@@ -94,7 +94,7 @@ Future editFuelReports(BuildContext context) {
                       ]))
                     ]),
 
-                  const Divider(),
+                  if (showNow) const Divider(),
 
                   // now
                   if (showNow)

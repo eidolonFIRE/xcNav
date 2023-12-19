@@ -153,7 +153,7 @@ class FlightLogCard extends StatelessWidget {
     final log = logStore.logs[logKey]!;
 
     if (log.goodFile) {
-      mapBounds = padLatLngBounds(LatLngBounds.fromPoints(log.samples.map((e) => e.latlng).toList()), 0.2);
+      mapBounds = log.getBounds(pad: 0.2);
     }
 
     return Padding(

@@ -214,6 +214,7 @@ class XCNav extends StatelessWidget {
           data: MediaQuery.of(context).copyWith(textScaleFactor: min(1.5, MediaQuery.of(context).textScaleFactor)),
           child: child!),
       darkTheme: ThemeData(
+        useMaterial3: false,
         fontFamily: "roboto-condensed",
         // appBarTheme: AppBarTheme(backgroundColor: primaryDarkColor),
         // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),

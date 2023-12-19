@@ -221,18 +221,14 @@ TextSpan richHrMin({required Duration? duration, TextStyle? valueStyle, TextStyl
     if (hr > 0) {
       return TextSpan(children: [
         TextSpan(text: hr.toString(), style: valueStyle),
-        TextSpan(
-            text: longUnits ? "hr " : "h ",
-            style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
+        TextSpan(text: longUnits ? "hr " : "h ", style: resolveSmallerStyle(unitStyle, valueStyle)),
         TextSpan(text: min.toString(), style: valueStyle),
-        TextSpan(
-            text: longUnits ? "min" : "m",
-            style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
+        TextSpan(text: longUnits ? "min" : "m", style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     } else {
       return TextSpan(children: [
         TextSpan(text: min.toString(), style: valueStyle),
-        TextSpan(text: "min", style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
+        TextSpan(text: "min", style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     }
   }
@@ -249,18 +245,14 @@ TextSpan richMinSec(
     if (min > 0) {
       return TextSpan(children: [
         TextSpan(text: min.toString(), style: valueStyle),
-        TextSpan(
-            text: longUnits ? "min " : "m ",
-            style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
+        TextSpan(text: longUnits ? "min " : "m ", style: resolveSmallerStyle(unitStyle, valueStyle)),
         TextSpan(text: sec.toString(), style: valueStyle),
-        TextSpan(
-            text: longUnits ? "sec" : "s",
-            style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
+        TextSpan(text: longUnits ? "sec" : "s", style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     } else {
       return TextSpan(children: [
         TextSpan(text: sec.toString(), style: valueStyle),
-        TextSpan(text: "sec", style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
+        TextSpan(text: "sec", style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     }
   }
@@ -362,8 +354,6 @@ TextSpan richValue(UnitType type, double value,
             autoDecimalThresh: autoDecimalThresh,
             removeZeros: removeZeros),
         style: valueStyle),
-    TextSpan(
-        text: " ${getUnitStr(type)}",
-        style: unitStyle ?? valueStyle?.merge(TextStyle(fontSize: valueStyle.fontSize! * 0.6))),
+    TextSpan(text: " ${getUnitStr(type)}", style: resolveSmallerStyle(unitStyle, valueStyle)),
   ]);
 }

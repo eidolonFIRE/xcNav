@@ -151,7 +151,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
     }
 
     return Dialog(
-      insetPadding: const EdgeInsets.only(top: 100, left: 10, right: 10),
+      insetPadding: const EdgeInsets.only(top: 90),
       alignment: Alignment.topCenter,
       child: ListView(
         shrinkWrap: true,
@@ -205,7 +205,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                         ]),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.only(top: 8, bottom: 8),
                         child: ElevatedButton.icon(
                             onPressed: () {
                               if (wind.samples.length > 10) {

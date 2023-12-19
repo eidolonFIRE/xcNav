@@ -21,6 +21,15 @@ void setSystemUI() {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
 }
 
+/// a or b but smaller by a factor
+TextStyle? resolveSmallerStyle(TextStyle? a, TextStyle? b, {double factor = 0.6}) {
+  if (a != null || b != null) {
+    return a ?? b?.merge(TextStyle(fontSize: b.fontSize != null ? (b.fontSize! * factor) : null));
+  } else {
+    return null;
+  }
+}
+
 /// int, double, or String -> String
 String? parseAsString(dynamic value) {
   if (value is String) return value;

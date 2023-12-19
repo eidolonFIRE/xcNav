@@ -165,12 +165,9 @@ class _PlanEditorState extends State<PlanEditor> {
       mapBounds = plan!.getBounds() ??
           padLatLngBounds(LatLngBounds.fromPoints([center.latlng, center.latlng..longitude += 0.05]), 2);
     }
-    return WillPopScope(
-      onWillPop: () {
-        if (plan != null) {
-          Provider.of<Plans>(context, listen: false).setPlan(plan!);
-        }
-        return Future.value(true);
+    return PopScope(
+      onPopInvoked: (_) {
+        Provider.of<Plans>(context, listen: false).setPlan(plan!);
       },
       child: Scaffold(
         appBar: AppBar(

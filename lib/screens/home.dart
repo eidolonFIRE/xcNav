@@ -159,8 +159,8 @@ class _MyHomePageState extends State<MyHomePage> {
       DatadogSdk.instance.rum?.startView("/home/${pageIndexNames[viewPageIndex]}");
     }
 
-    return WillPopScope(
-        onWillPop: () async => false,
+    return PopScope(
+        canPop: false,
         child: Scaffold(
           key: scaffoldKey,
           appBar: AppBar(

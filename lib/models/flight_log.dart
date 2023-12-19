@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:bisection/bisect.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/log_store.dart';
 import 'package:xcnav/models/gear.dart';
@@ -232,6 +233,10 @@ class FlightLog {
   }
 
   // =========================================
+  LatLngBounds getBounds({double pad = 0.2}) {
+    return padLatLngBounds(LatLngBounds.fromPoints(samples.map((e) => e.latlng).toList()), pad);
+  }
+
   void resetFuelStatCache() {
     _fuelStats = null;
     _sumFuelStat = null;
