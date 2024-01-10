@@ -43,7 +43,7 @@ TileLayer getMapTileLayer(MapTileSrc tileSrc) {
       return TileLayer(
         urlTemplate: 'https://vfrmap.com/20231130/tiles/vfrc/{z}/{y}/{x}.jpg',
         tileProvider: makeTileProvider(tileName),
-        maxNativeZoom: 12,
+        maxNativeZoom: 11,
         tms: true,
         evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
         errorTileCallback: (tile, error, stackTrace) {
