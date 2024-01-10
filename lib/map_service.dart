@@ -22,9 +22,11 @@ TileProvider? makeTileProvider(String instanceName) {
   try {
     return FMTC.instance(instanceName).getTileProvider(
           FMTCTileProviderSettings(
-            behavior: CacheBehavior.cacheFirst,
-            cachedValidDuration: const Duration(days: 30),
-          ),
+              behavior: CacheBehavior.cacheFirst,
+              cachedValidDuration: const Duration(days: 30),
+              errorHandler: (error) {
+                debugPrint("FMTC browsing error ($instanceName): $error");
+              }),
         );
   } catch (e, trace) {
     debugPrint("Error making tile provider $instanceName : $e $trace");
@@ -39,41 +41,68 @@ TileLayer getMapTileLayer(MapTileSrc tileSrc) {
   switch (tileSrc) {
     case MapTileSrc.sectional:
       return TileLayer(
-          urlTemplate: 'http://wms.chartbundle.com/tms/v1.0/sec/{z}/{x}/{y}.png?type=google',
-          tileProvider: makeTileProvider(tileName),
-          maxNativeZoom: 13,
-          minZoom: 4);
+        urlTemplate: 'https://vfrmap.com/20231130/tiles/vfrc/{z}/{y}/{x}.jpg',
+        tileProvider: makeTileProvider(tileName),
+        maxNativeZoom: 12,
+        tms: true,
+        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
+        errorTileCallback: (tile, error, stackTrace) {
+          debugPrint("$tileName: error: ${tile.imageInfo?.debugLabel ?? "?"}, $error, $stackTrace");
+        },
+      );
     case MapTileSrc.satellite:
       return TileLayer(
-          urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          tileProvider: makeTileProvider(tileName),
-          maxNativeZoom: 19,
-          minZoom: 2);
+        urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        tileProvider: makeTileProvider(tileName),
+        maxNativeZoom: 19,
+        minZoom: 2,
+        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
+        errorTileCallback: (tile, error, stackTrace) {
+          debugPrint("$tileName: error: $tile, $error, $stackTrace");
+        },
+      );
     // https://docs.openaip.net/?urls.primaryName=Tiles%20API
     case MapTileSrc.airspace:
       return TileLayer(
-          urlTemplate: 'https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey={apiKey}',
-          tileProvider: makeTileProvider(tileName),
-          backgroundColor: Colors.transparent,
-          // maxZoom: 11,
-          maxNativeZoom: 11,
-          minZoom: 7,
-          additionalOptions: const {"apiKey": aipClientToken});
+        urlTemplate: 'https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey={apiKey}',
+        tileProvider: makeTileProvider(tileName),
+        backgroundColor: Colors.transparent,
+        // maxZoom: 11,
+        maxNativeZoom: 11,
+        minZoom: 7,
+        additionalOptions: const {"apiKey": aipClientToken},
+        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
+        errorTileCallback: (tile, error, stackTrace) {
+          debugPrint("$tileName: error: $tile, $error, $stackTrace");
+        },
+      );
     case MapTileSrc.airports:
       return TileLayer(
-          urlTemplate: 'https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey={apiKey}',
-          tileProvider: makeTileProvider(tileName),
-          backgroundColor: Colors.transparent,
-          maxZoom: 11,
-          minZoom: 9,
-          additionalOptions: const {"apiKey": aipClientToken});
+        urlTemplate: 'https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey={apiKey}',
+        tileProvider: makeTileProvider(tileName),
+        backgroundColor: Colors.transparent,
+        maxZoom: 11,
+        minZoom: 9,
+        additionalOptions: const {"apiKey": aipClientToken},
+        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
+        errorTileCallback: (tile, error, stackTrace) {
+          debugPrint("$tileName: error: $tile, $error, $stackTrace");
+        },
+      );
     default:
       return TileLayer(
-          urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-          // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
-          tileProvider: makeTileProvider(tileName),
-          maxNativeZoom: 14,
-          minZoom: 2);
+        urlTemplate: "https://tile.tracestrack.com/topo__/{z}/{x}/{y}.png?key={apiKey}",
+        fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+        // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
+        tileProvider: makeTileProvider(tileName),
+        maxNativeZoom: 17,
+        // minZoom: 2,
+        additionalOptions: const {"apiKey": "d9344714a8fbf28773ce4c955ea8adfb"},
+        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
+        errorTileCallback: (tile, error, stackTrace) {
+          debugPrint("$tileName: error: $tile, $error, $stackTrace");
+        },
+      );
   }
 }
 
@@ -111,9 +140,9 @@ Future initMapCache() async {
       defaultTileProviderSettings:
           FMTCTileProviderSettings(behavior: CacheBehavior.cacheFirst, cachedValidDuration: const Duration(days: 30)),
     ),
-    // errorHandler: (error) {
-    //   DatadogSdk.instance.logs?.error("FMTC: init error", errorMessage: error.toString());
-    // },
+    errorHandler: (error) {
+      DatadogSdk.instance.logs?.error("FMTC: init error", errorMessage: error.toString());
+    },
     debugMode: true,
   );
 

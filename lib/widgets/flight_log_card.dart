@@ -13,7 +13,6 @@ import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class FlightLogCard extends StatelessWidget {

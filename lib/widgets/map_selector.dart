@@ -40,16 +40,15 @@ class MapSelector extends StatelessWidget {
                         labelWidget: SizedBox(
                       height: 40,
                       child: ToggleButtons(
-                          isSelected: opacityLevels.sublist(layerIndex).map((e) => false).toList(),
+                          isSelected: opacityLevels.map((e) => false).toList(),
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
                           borderWidth: 1,
                           borderColor: Colors.black45,
                           onPressed: ((index) {
-                            onChanged(tileSrc, opacityLevels.sublist(layerIndex)[index]);
+                            onChanged(tileSrc, opacityLevels[index]);
                             isMapDialOpen.value = false;
                           }),
                           children: opacityLevels
-                              .sublist(layerIndex)
                               .map(
                                 (e) => SizedBox(
                                     key: Key("mapSelector_${tileSrc.toString().split(".").last}_${(e * 100).toInt()}"),
