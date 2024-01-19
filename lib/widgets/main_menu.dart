@@ -200,6 +200,19 @@ class _MainMenuState extends State<MainMenu> {
           ]),
         ),
 
+        ListTile(
+          minVerticalPadding: 10,
+          onTap: () => {Navigator.popAndPushNamed(context, "/servoTune")},
+          leading: const Icon(
+            Icons.settings_applications_sharp,
+            size: 30,
+          ),
+          title: Text(
+            "Tune",
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+        ),
+
         Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 
         // Group
