@@ -122,6 +122,11 @@ class TtsService {
           break;
         }
       }
+
+      if (msgQueue.length > 20) {
+        // Too many messages, drop the last one
+        msgQueue.removeLast();
+      }
     }
 
     // debugPrint("Speak queue length: ${msgQueue.length}");

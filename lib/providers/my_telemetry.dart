@@ -349,11 +349,15 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
       if (geo != null) {
         if (!settingsMgr.groundMode.value || settingsMgr.groundModeTelem.value) {
-          if (group.activePilots.isNotEmpty || client.telemetrySkips > 20) {
+          // Telemetry enabled
+          if ((group.activePilots.isEmpty && client.telemetrySkips < 10) ||
+              (group.activePilots.length > 20 && client.telemetrySkips < (group.activePilots.length - 20) * 2)) {
+            // This message skipped
+            client.telemetrySkips++;
+          } else {
+            // Sending telemetry
             client.sendTelemetry(geo!);
             client.telemetrySkips = 0;
-          } else {
-            client.telemetrySkips++;
           }
         }
 
