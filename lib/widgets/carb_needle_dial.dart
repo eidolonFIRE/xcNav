@@ -2,22 +2,13 @@ import 'package:dart_numerics/dart_numerics.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/models/carb_needle.dart';
 
-class CarbNeedleDialLabel {
-  final Widget label;
-  final double mixture;
-
-  CarbNeedleDialLabel({required this.label, required this.mixture});
-}
-
 class CarbNeedleDial extends StatelessWidget {
   final CarbNeedle needle;
   final double size;
-  final List<CarbNeedleDialLabel> labels;
-  final Widget? label;
+  final String? label;
   final VoidCallback? onUp;
 
-  const CarbNeedleDial(this.needle, this.size, {this.labels = const [], this.label, this.onUp, Key? key})
-      : super(key: key);
+  const CarbNeedleDial(this.needle, this.size, {this.label, this.onUp, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +21,7 @@ class CarbNeedleDial extends StatelessWidget {
 
             // Endstop tick
             Transform.rotate(
-              angle: -needle.dof / 2,
+              angle: -needle.config.fov / 2,
               child: Transform.translate(
                 offset: Offset(0, -size * 0.6),
                 child: Container(
@@ -42,7 +33,7 @@ class CarbNeedleDial extends StatelessWidget {
               ),
             ),
             Transform.rotate(
-              angle: needle.dof / 2,
+              angle: needle.config.fov / 2,
               child: Transform.translate(
                 offset: Offset(0, -size * 0.6),
                 child: Container(
@@ -55,24 +46,24 @@ class CarbNeedleDial extends StatelessWidget {
             ),
             // Endstop Labels
             Transform.translate(
-                offset: Offset.fromDirection(-piOver2 - needle.dof / 2, size * 0.85),
+                offset: Offset.fromDirection(-piOver2 - needle.config.fov / 2, size * 0.85),
                 child: const Text(
                   "Rich",
                   style: TextStyle(color: Colors.lightBlue, fontSize: 20),
                 )),
 
             Transform.translate(
-                offset: Offset.fromDirection(-piOver2 + needle.dof / 2, size * 0.85),
+                offset: Offset.fromDirection(-piOver2 + needle.config.fov / 2, size * 0.85),
                 child: const Text(
                   "Lean",
                   style: TextStyle(color: Colors.redAccent, fontSize: 20),
                 )),
           ] +
 
-          // --- Labels: tick
-          labels
+          // --- Preset Labels: tick
+          needle.config.presets.values
               .map((e) => Transform.rotate(
-                    angle: e.mixture * needle.dof - needle.dof / 2,
+                    angle: e * needle.config.fov - needle.config.fov / 2,
                     child: Transform.translate(
                       offset: Offset(0, -size * 0.6),
                       child: Container(
@@ -83,12 +74,13 @@ class CarbNeedleDial extends StatelessWidget {
                     ),
                   ))
               .toList() +
-          // --- Labels: widget
-          labels
+          // --- Preset Labels: widget
+          needle.config.presets.entries
               .map(
                 (e) => Transform.translate(
-                    offset: Offset.fromDirection(e.mixture * needle.dof - needle.dof / 2 - piOver2, size * 0.8),
-                    child: e.label),
+                    offset:
+                        Offset.fromDirection(e.value * needle.config.fov - needle.config.fov / 2 - piOver2, size * 0.8),
+                    child: Text(e.key)),
               )
               .toList() +
           [
@@ -105,7 +97,7 @@ class CarbNeedleDial extends StatelessWidget {
                 if (needle.pointerDown) {
                   final delta = Offset(size / 2, size / 2) - event.localPosition;
                   final dir = (delta.direction + piOver2) % pi2 - piOver2;
-                  needle.mixture = (dir - piOver2 + needle.dof / 2) / needle.dof;
+                  needle.mixture = (dir - piOver2 + needle.config.fov / 2) / needle.config.fov;
                   // debugPrint("${needle.mixture}");
                 }
               },
@@ -127,7 +119,7 @@ class CarbNeedleDial extends StatelessWidget {
                         listenable: needle,
                         builder: (context, _) {
                           return Transform.rotate(
-                            angle: needle.mixture * needle.dof - needle.dof / 2,
+                            angle: needle.mixture * needle.config.fov - needle.config.fov / 2,
                             child: Center(
                               child: Container(
                                 width: size / 10,
@@ -151,7 +143,14 @@ class CarbNeedleDial extends StatelessWidget {
 
             if (label != null)
               IgnorePointer(
-                child: label,
+                child: Text(
+                  label!,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 40,
+                      color: Colors.black,
+                      shadows: [BoxShadow(color: Colors.white, blurRadius: 30)]),
+                ),
               ),
 
             // Left arrow
@@ -163,7 +162,7 @@ class CarbNeedleDial extends StatelessWidget {
                   },
                   icon: const Icon(
                     Icons.arrow_back_ios,
-                    color: Colors.blueAccent,
+                    color: Colors.lightBlue,
                   )),
             ),
             Padding(

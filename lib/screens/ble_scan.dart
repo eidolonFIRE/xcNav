@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:xcnav/screens/device_screen.dart';
+import 'package:xcnav/servo_carb_service.dart';
 import 'package:xcnav/widgets/scan_result_tile.dart';
 import 'package:xcnav/snackbar.dart';
 import 'package:xcnav/widgets/system_device_tile.dart';
@@ -43,6 +43,9 @@ class _ScanScreenState extends State<ScanScreen> {
         setState(() {});
       }
     });
+
+    // auto start a scan
+    onScanPressed();
   }
 
   @override
@@ -80,15 +83,20 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
-  void onConnectPressed(BluetoothDevice device) {
+  void onConnectPressed(BluetoothDevice device) async {
     // device.connectAndUpdateStream().catchError((e) {
-    device.connect().catchError((e) {
+    await device.connect().catchError((e) {
       debugPrint(e);
       SnackbarTools.show(ABC.c, prettyException("Connect Error:", e), success: false);
     });
-    MaterialPageRoute route = MaterialPageRoute(
-        builder: (context) => DeviceScreen(device: device), settings: RouteSettings(name: '/DeviceScreen'));
-    Navigator.push(context, route);
+
+    await device.discoverServices();
+
+    attachBLEdevice(device);
+
+    // MaterialPageRoute route = MaterialPageRoute(
+    //     builder: (context) => DeviceScreen(device: device), settings: RouteSettings(name: '/DeviceScreen'));
+    // Navigator.push(context, route);
     // Navigator.of(context).pushNamed("/ble_device", device);
   }
 
@@ -99,18 +107,18 @@ class _ScanScreenState extends State<ScanScreen> {
     if (mounted) {
       setState(() {});
     }
-    return Future.delayed(Duration(milliseconds: 500));
+    return Future.delayed(const Duration(milliseconds: 500));
   }
 
   Widget buildScanButton(BuildContext context) {
     if (FlutterBluePlus.isScanningNow) {
       return FloatingActionButton(
-        child: const Icon(Icons.stop),
         onPressed: onStopPressed,
         backgroundColor: Colors.red,
+        child: const Icon(Icons.stop),
       );
     } else {
-      return FloatingActionButton(child: const Text("SCAN"), onPressed: onScanPressed);
+      return FloatingActionButton(onPressed: onScanPressed, child: const Text("SCAN"));
     }
   }
 
@@ -119,12 +127,16 @@ class _ScanScreenState extends State<ScanScreen> {
         .map(
           (d) => SystemDeviceTile(
             device: d,
-            onOpen: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => DeviceScreen(device: d),
-                settings: RouteSettings(name: '/DeviceScreen'),
-              ),
-            ),
+            // onOpen: () => Navigator.of(context).push(
+            //   MaterialPageRoute(
+            //     builder: (context) => DeviceScreen(device: d),
+            //     settings: RouteSettings(name: '/DeviceScreen'),
+            //   ),
+            // ),
+            onDisconnect: () {
+              d.disconnect();
+              onScanPressed();
+            },
             onConnect: () => onConnectPressed(d),
           ),
         )
@@ -145,22 +157,28 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final items = <Widget>[
+      ..._buildSystemDeviceTiles(context),
+      ..._buildScanResultTiles(context),
+    ];
+
     return ScaffoldMessenger(
       // key: SnackBar.snackBarKeyB,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Find Devices'),
         ),
-        body: RefreshIndicator(
-          onRefresh: onRefresh,
-          child: ListView(
-            children: <Widget>[
-              ..._buildSystemDeviceTiles(context),
-              ..._buildScanResultTiles(context),
-            ],
-          ),
-        ),
-        floatingActionButton: buildScanButton(context),
+        body: items.isNotEmpty
+            ? RefreshIndicator(
+                onRefresh: onRefresh,
+                child: ListView(
+                  children: items,
+                ),
+              )
+            : const Center(
+                child: Text("No ServoCarb devices found."),
+              ),
+        // floatingActionButton: buildScanButton(context),
       ),
     );
   }
