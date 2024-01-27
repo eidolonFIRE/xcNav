@@ -33,7 +33,7 @@ class _GroupDetailsState extends State<GroupDetails> {
 
   static const valueStyle = TextStyle(fontSize: 20, color: Colors.white);
   static const unitStyle = TextStyle(fontSize: 16, color: Colors.white);
-  static final fillStyle = TextStyle(fontSize: 14, color: Colors.grey.shade600);
+  static const fillStyle = TextStyle(fontSize: 14, color: Colors.grey);
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +73,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                                 title: Row(children: [
                                   Text(
                                     p.name,
-                                    style: Theme.of(context).textTheme.headlineMedium,
+                                    style: Theme.of(context).textTheme.headlineSmall,
                                   ),
                                 ]),
                                 subtitle: (group.activePilots.contains(p))
