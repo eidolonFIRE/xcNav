@@ -227,6 +227,7 @@ class XCNav extends StatelessWidget {
             bodyLarge: TextStyle(fontSize: 18),
             headlineLarge: TextStyle(color: Colors.white),
             headlineMedium: TextStyle(color: Colors.white)),
+        dropdownMenuTheme: const DropdownMenuThemeData(textStyle: TextStyle(color: Colors.white)),
 
         brightness: Brightness.dark,
         bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
@@ -254,7 +255,9 @@ class XCNav extends StatelessWidget {
             selectedColor: Colors.white,
             selectedBorderColor: Colors.blue,
             fillColor: Colors.black54),
-        popupMenuTheme: PopupMenuThemeData(textStyle: Theme.of(context).textTheme.bodyMedium),
+        popupMenuTheme: PopupMenuThemeData(
+          textStyle: Theme.of(context).textTheme.bodyMedium!.merge(const TextStyle(color: Colors.white)),
+        ),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
             foregroundColor: MaterialStateProperty.all(Colors.white),
