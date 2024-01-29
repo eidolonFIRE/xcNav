@@ -242,30 +242,61 @@ class FlightLog {
     _sumFuelStat = null;
   }
 
+  /// Does this flight log contain this timestamp?
   bool containsTime(DateTime time) {
     return time == startTime || time == endTime || (time.isAfter(startTime!) && time.isBefore(endTime!));
   }
 
-  bool insertFuelReport(double amount, DateTime time) {
-    if (containsTime(time) && !_fuelReports.map((e) => e.time).contains(time) && amount >= 0) {
-      _fuelReports.insert(
-          bisect(_fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch),
-          FuelReport(time, amount));
-      unsaved = true;
-      resetFuelStatCache();
-      return true;
-    } else {
-      // Fuel Report couldn't be added
-      return false;
-    }
-  }
-
+  /// Simple update of an existing fuel report
   void updateFuelReport(int index, double amount) {
     if (index >= 0 && index < _fuelReports.length) {
       _fuelReports[index] = FuelReport(_fuelReports[index].time, amount);
       resetFuelStatCache();
       unsaved = true;
     }
+  }
+
+  /// Find overlapping fuel report.
+  /// If the time is close to two reports, the earlier index will be returned.
+  /// Null is returned if no matches within tolerance are found.
+  int? findFuelReportIndex(DateTime time, {Duration tolerance = const Duration(minutes: 5)}) {
+    final index =
+        bisect_left<int>(fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
+    if (index > 0 && fuelReports[index - 1].time.difference(time).abs().compareTo(tolerance) < 1) {
+      return index - 1;
+    } else if (index < fuelReports.length && fuelReports[index].time.difference(time).abs().compareTo(tolerance) < 1) {
+      return index;
+    } else {
+      return null;
+    }
+  }
+
+  /// Insert a fuel report into the sorted list.
+  /// If the new report is within tolerance of another report, it will be replaced.
+  void insertFuelReport(DateTime time, double? amount,
+      {Duration tolerance = const Duration(minutes: 5), useNewTime = true}) {
+    final overwriteIndex = findFuelReportIndex(time, tolerance: tolerance);
+
+    if (overwriteIndex != null) {
+      if (amount != null) {
+        // edit existing
+        fuelReports[overwriteIndex] = FuelReport(useNewTime ? time : fuelReports[overwriteIndex].time, amount);
+      } else {
+        // remove existing
+        fuelReports.removeAt(overwriteIndex);
+      }
+    } else {
+      if (amount != null) {
+        // Insert new
+        final insertIndex = bisect_left<int>(
+            fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
+        fuelReports.insert(insertIndex, FuelReport(time, amount));
+      }
+    }
+
+    // reset internal calculations
+    resetFuelStatCache();
+    unsaved = true;
   }
 
   void removeFuelReport(int index) {

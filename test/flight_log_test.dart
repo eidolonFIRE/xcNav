@@ -158,13 +158,11 @@ void main() {
       Geo(lat: 34.4, lng: 120.2, alt: 0.3, spd: 24.0537096, timestamp: const Duration(minutes: 80).inMilliseconds),
     ]);
 
-    expect(
-        log.insertFuelReport(12, DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 2).inMilliseconds)), true);
+    log.insertFuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 2).inMilliseconds), 12);
 
     expect(log.sumFuelStat, null);
 
-    expect(log.insertFuelReport(10, DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 12).inMilliseconds)),
-        true);
+    log.insertFuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 12).inMilliseconds), 10);
 
     expect(log.fuelStats.length, 1);
 

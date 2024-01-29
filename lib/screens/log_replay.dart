@@ -390,7 +390,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                             .then((newReport) {
                           if (newReport != null) {
                             setState(() {
-                              log.insertFuelReport(newReport.amount, newReport.time);
+                              log.insertFuelReport(newReport.time, newReport.amount);
                             });
                           }
                         });
