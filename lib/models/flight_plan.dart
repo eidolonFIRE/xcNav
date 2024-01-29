@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/airports.dart';
@@ -253,6 +254,23 @@ class FlightPlan {
                     icon = iconIds[iconID];
                   }
                 }
+              }
+            }
+          }
+
+          // Auto icons
+          const autoIconMap = {
+            "airport": "airport airprt",
+            "fuel": "fuel gas chevron valero shell BP arco mobil 76",
+            "sleep": "hotel motel bed sleep",
+            "camp": "camp tent",
+            "camera": "picture monument",
+          };
+          if (icon == null && name.isNotEmpty) {
+            for (final each in autoIconMap.entries) {
+              if (tokenSetPartialRatio(each.value, name.toLowerCase()) > 75) {
+                icon = each.key;
+                break;
               }
             }
           }

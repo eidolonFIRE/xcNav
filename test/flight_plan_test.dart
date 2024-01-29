@@ -10,6 +10,7 @@ void main() {
     String data = File.fromUri(Uri.file("assets/airports.json")).readAsStringSync();
     loadAirports(data);
   });
+
   test('iFlightPlanner - first negative', () {
     const str =
         "https://www.iFlightPlanner.com/AviationCharts/?Map=sectional&GS=26&Route=-36.0605/-121.8563-36.9684/-120.3372-36.8597/-120.263-36.8684/-120.3839-36.6836/-120.4525-36.5282/-120.3949--37.3918/-120.9283-3O1";
