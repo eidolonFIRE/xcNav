@@ -146,7 +146,7 @@ Future initMapCache() async {
     debugMode: true,
   );
 
-  await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
+  //await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
 
   await initDemCache();
 
