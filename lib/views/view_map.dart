@@ -511,7 +511,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         DragMarker(
                             point: draggingLatLng ?? plan.waypoints[editingWp]!.latlng.first,
                             size: const Size(60 * 0.8, 60 * 0.8),
-                            // useLongPress: true,
                             onTap: (_) => plan.selectedWp = editingWp,
                             onDragEnd: (p0, p1) {
                               plan.moveWaypoint(editingWp!, [p1]);
@@ -527,7 +526,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               });
                             },
                             rotateMarker: true,
-                            builder: (context, latlng, isDragging) => Stack(
+                            builder: (context, latlng, isDragging) {
+                              if (editingWp != null &&
+                                  plan.waypoints.containsKey(editingWp) &&
+                                  plan.waypoints[editingWp]!.latlng.length == 1) {
+                                return Stack(
                                   children: [
                                     Container(
                                         transformAlignment: const Alignment(0, 0),
@@ -541,7 +544,15 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           color: Colors.black,
                                         )),
                                   ],
-                                ))
+                                );
+                              } else {
+                                // editingWp must've been removed while being drug.
+                                setState(() {
+                                  editingWp = null;
+                                });
+                                return Container();
+                              }
+                            })
                       ]),
 
                     // --- draggable waypoint mode buttons
