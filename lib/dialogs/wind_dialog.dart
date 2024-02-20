@@ -521,10 +521,10 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                                   height: 60 * 0.8,
                                                                   width: 40 * 0.8,
                                                                   rotate: true,
-                                                                  anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
-                                                                  rotateOrigin: const Offset(0, 30 * 0.8),
-                                                                  builder: (context) =>
-                                                                      WaypointMarker(selectedWp, 60 * 0.8))
+                                                                  // TODO: fix me
+                                                                  // anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
+                                                                  // rotateOrigin: const Offset(0, 30 * 0.8),
+                                                                  child: WaypointMarker(selectedWp, 60 * 0.8))
                                                             ]),
                                                           // Next waypoint: marker
                                                           if (selectedWp != null &&
@@ -569,7 +569,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                                     width: 25.0,
                                                                     height: 25.0,
                                                                     point: myTelemetry.geo!.latlng,
-                                                                    builder: (ctx) => Container(
+                                                                    child: Container(
                                                                       transformAlignment: const Alignment(0, 0),
                                                                       transform:
                                                                           Matrix4.rotationZ(myTelemetry.geo!.hdg),
@@ -590,7 +590,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                                   width: 40,
                                                                   height: 40,
                                                                   point: fuelIntercept.latlng,
-                                                                  builder: (context) => const Stack(
+                                                                  child: const Stack(
                                                                     children: [
                                                                       Center(
                                                                         child: Icon(

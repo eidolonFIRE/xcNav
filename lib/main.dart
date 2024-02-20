@@ -10,8 +10,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:xcnav/datadog.dart';
 
 // providers
@@ -182,7 +182,7 @@ class XCNav extends StatelessWidget {
   Widget build(BuildContext context) {
     DefaultAssetBundle.of(context).loadString("assets/airports.json").then((value) => loadAirports(value));
 
-    Wakelock.enable();
+    WakelockPlus.enable;
 
     configLocalNotification();
 

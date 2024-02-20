@@ -6,9 +6,9 @@ import 'dart:ui';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
+import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -48,7 +48,7 @@ import 'package:xcnav/models/tfr.dart';
 
 // misc
 import 'package:xcnav/units.dart';
-import 'package:xcnav/tappable_polyline.dart';
+// import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/main.dart';
 import 'package:xcnav/map_service.dart';
@@ -419,32 +419,24 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             .map((e) =>
                                 TaggedPolyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), tag: e.id))
                             .toList(),
-                        onTap: (p0, tapPosition) {
+                        onTap: (lines, tapPosition) {
+                          final p0 = lines.first;
+
                           // which end is nearer the tap?
                           final wp = plan.waypoints[p0.tag];
                           if (wp != null) {
-                            bool tapEnd = tapPosition.relative != null
-                                ? (tapPosition.relative! - p0.offsets.first).distance >
-                                    (tapPosition.relative! - p0.offsets.last).distance
-                                : false;
-
                             // Select this path waypoint
-                            if (focusMode == FocusMode.measurement) {
-                              for (final each in (tapEnd ? wp.latlng.reversed : wp.latlng)) {
-                                measurementEditor.add(measurementPolyline.points, each);
-                              }
-                            } else {
+                            if (focusMode != FocusMode.measurement) {
                               if (plan.selectedWp == p0.tag) {
                                 wp.toggleDirection();
-                              } else {
-                                wp.isReversed = tapEnd;
                               }
                               plan.selectedWp = p0.tag;
                             }
                           }
                         },
-                        onLongPress: ((p0, tapPosition) {
+                        onLongPress: ((lines, tapPosition) {
                           // Start editing path waypoint
+                          final p0 = lines.first;
                           if (plan.waypoints.containsKey(p0.tag)) {
                             beginEditingLine(plan.waypoints[p0.tag]!);
                           }
@@ -460,13 +452,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   point: e.latlng,
                                   width: 20,
                                   height: 20,
-                                  builder: (ctx) => IgnorePointer(
-                                        child: Container(
-                                            transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.rotationZ(e.hdg),
-                                            child:
-                                                SvgPicture.asset("assets/images/chevron.svg", color: Colors.black87)),
-                                      )))
+                                  child: IgnorePointer(
+                                    child: Container(
+                                        transformAlignment: const Alignment(0, 0),
+                                        transform: Matrix4.rotationZ(e.hdg),
+                                        child: SvgPicture.asset("assets/images/chevron.svg", color: Colors.black87)),
+                                  )))
                               .toList()),
 
                     // Waypoint markers
@@ -478,24 +469,25 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               height: 60 * 0.8,
                               width: 40 * 0.8,
                               rotate: true,
-                              anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
-                              rotateOrigin: const Offset(0, 30 * 0.8),
-                              builder: (context) => GestureDetector(
-                                    onTap: () {
-                                      if (focusMode == FocusMode.measurement) {
-                                        measurementEditor.add(measurementPolyline.points, e.latlng.first);
-                                      } else {
-                                        plan.selectedWp = e.id;
-                                      }
-                                    },
-                                    onLongPress: () {
-                                      setState(() {
-                                        editingWp = e.id;
-                                        draggingLatLng = null;
-                                      });
-                                    },
-                                    child: WaypointMarker(e, 60 * 0.8),
-                                  )))
+                              // TODO: FIX THIS
+                              // anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
+                              // rotateOrigin: const Offset(0, 30 * 0.8),
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (focusMode == FocusMode.measurement) {
+                                    measurementEditor.add(measurementPolyline.points, e.latlng.first);
+                                  } else {
+                                    plan.selectedWp = e.id;
+                                  }
+                                },
+                                onLongPress: () {
+                                  setState(() {
+                                    editingWp = e.id;
+                                    draggingLatLng = null;
+                                  });
+                                },
+                                child: WaypointMarker(e, 60 * 0.8),
+                              )))
                           .toList(),
                     ),
 
@@ -561,41 +553,41 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               rotate: true,
                               height: 240,
                               point: plan.waypoints[editingWp]!.latlng.first,
-                              builder: (context) => Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        height: 140,
-                                      ),
-                                      FloatingActionButton.small(
-                                        heroTag: "editWaypoint",
-                                        backgroundColor: Colors.lightBlue,
-                                        onPressed: () {
-                                          editWaypoint(context, plan.waypoints[editingWp]!,
-                                                  isNew: focusMode == FocusMode.addPath,
-                                                  isPath: plan.waypoints[editingWp]!.isPath)
-                                              ?.then((newWaypoint) {
-                                            if (newWaypoint != null) {
-                                              plan.updateWaypoint(newWaypoint);
-                                            }
-                                          });
-                                          editingWp = null;
-                                        },
-                                        child: const Icon(Icons.edit),
-                                      ),
-                                      FloatingActionButton.small(
-                                        heroTag: "deleteWaypoint",
-                                        backgroundColor: Colors.red,
-                                        onPressed: () {
-                                          setState(() {
-                                            plan.removeWaypoint(editingWp!);
-                                            editingWp = null;
-                                          });
-                                        },
-                                        child: const Icon(Icons.delete),
-                                      ),
-                                    ],
-                                  ))
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    height: 140,
+                                  ),
+                                  FloatingActionButton.small(
+                                    heroTag: "editWaypoint",
+                                    backgroundColor: Colors.lightBlue,
+                                    onPressed: () {
+                                      editWaypoint(context, plan.waypoints[editingWp]!,
+                                              isNew: focusMode == FocusMode.addPath,
+                                              isPath: plan.waypoints[editingWp]!.isPath)
+                                          ?.then((newWaypoint) {
+                                        if (newWaypoint != null) {
+                                          plan.updateWaypoint(newWaypoint);
+                                        }
+                                      });
+                                      editingWp = null;
+                                    },
+                                    child: const Icon(Icons.edit),
+                                  ),
+                                  FloatingActionButton.small(
+                                    heroTag: "deleteWaypoint",
+                                    backgroundColor: Colors.red,
+                                    onPressed: () {
+                                      setState(() {
+                                        plan.removeWaypoint(editingWp!);
+                                        editingWp = null;
+                                      });
+                                    },
+                                    child: const Icon(Icons.delete),
+                                  ),
+                                ],
+                              ))
                         ],
                       ),
 
@@ -610,7 +602,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   width: 50.0,
                                   height: 50.0,
                                   point: e.latlng,
-                                  builder: (ctx) => Container(
+                                  child: Container(
                                     transformAlignment: const Alignment(0, 0),
                                     transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
                                     child: Opacity(
@@ -679,7 +671,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               point: pilot.geo!.latlng,
                               width: 40,
                               height: 40,
-                              builder: (ctx) => Container(
+                              child: Container(
                                   transformAlignment: const Alignment(0, 0),
                                   transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
                                   child: PilotMarker(
@@ -711,7 +703,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 width: 50,
                                 height: 50,
                                 point: fuelIntercept.latlng,
-                                builder: (context) => const Stack(
+                                child: const Stack(
                                   children: [
                                     Padding(
                                       padding: EdgeInsets.only(top: 10),
@@ -760,7 +752,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               width: 50.0,
                               height: 50.0,
                               point: myTelemetry.geo!.latlng,
-                              builder: (ctx) => Container(
+                              child: Container(
                                 transformAlignment: const Alignment(0, 0),
                                 transform: Matrix4.rotationZ(myTelemetry.geo!.hdg),
                                 child: Image.asset("assets/images/red_arrow.png"),

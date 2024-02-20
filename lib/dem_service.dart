@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dart_numerics/dart_numerics.dart' as math;
@@ -12,28 +12,19 @@ TileLayer? _demTileLayer;
 
 Future initDemCache() async {
   // init elevation map (dem = digital elevation map)
-  final StoreDirectory demStore = FMTC.instance("dem");
-  await demStore.manage.createAsync();
+  const demStore = FMTCStore("dem");
+  await demStore.manage.create();
   await demStore.metadata
-      .addAsync(key: 'sourceURL', value: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png');
-  await demStore.metadata.addAsync(
-    key: 'validDuration',
-    value: '60',
-  );
-  await demStore.metadata.addAsync(
-    key: 'behaviour',
-    value: 'cacheFirst',
-  );
+      .set(key: 'sourceURL', value: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png');
 
   // set the layer
   _demTileLayer = TileLayer(
     urlTemplate: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
-    tileProvider: FMTC.instance("dem").getTileProvider(
-          FMTCTileProviderSettings(
-            behavior: CacheBehavior.cacheFirst,
-            cachedValidDuration: const Duration(days: 60),
-          ),
-        ),
+    tileProvider: const FMTCStore("dem").getTileProvider(
+      settings: FMTCTileProviderSettings(
+        cachedValidDuration: const Duration(days: 60),
+      ),
+    ),
   );
 }
 

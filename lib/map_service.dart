@@ -1,8 +1,11 @@
 import 'dart:math';
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:path_provider/path_provider.dart';
+
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/secrets.dart';
@@ -20,14 +23,7 @@ bool mapServiceIsInit = false;
 TileProvider? makeTileProvider(String instanceName) {
   if (!mapServiceIsInit) return null;
   try {
-    return FMTC.instance(instanceName).getTileProvider(
-          FMTCTileProviderSettings(
-              behavior: CacheBehavior.cacheFirst,
-              cachedValidDuration: const Duration(days: 30),
-              errorHandler: (error) {
-                debugPrint("FMTC browsing error ($instanceName): $error");
-              }),
-        );
+    return FMTCStore(instanceName).getTileProvider();
   } catch (e, trace) {
     error("FMTC: Error making tile provider",
         errorMessage: e.toString(), errorStackTrace: trace, attributes: {"layerName": instanceName});
@@ -134,35 +130,18 @@ final Map<MapTileSrc, Image> mapTileThumbnails = {
 };
 
 Future initMapCache() async {
-  await FlutterMapTileCaching.initialise(
-    settings: FMTCSettings(
-      defaultTileProviderSettings:
-          FMTCTileProviderSettings(behavior: CacheBehavior.cacheFirst, cachedValidDuration: const Duration(days: 30)),
-    ),
-    debugMode: true,
-  );
-
-  //await FMTC.instance.rootDirectory.migrator.fromV6(urlTemplates: []);
-
-  await initDemCache();
+  await FMTCObjectBoxBackend().initialise(rootDirectory: (await getApplicationDocumentsDirectory()).path);
 
   for (final tileSrc in mapTileThumbnails.keys) {
     final tileName = tileSrc.toString().split(".").last;
-    final StoreDirectory store = FMTC.instance(tileName);
-    await store.manage.createAsync();
-    await store.metadata.addAsync(key: 'sourceURL', value: getMapTileLayer(tileSrc).urlTemplate!);
-    await store.metadata.addAsync(
-      key: 'validDuration',
-      value: '30',
-    );
-    await store.metadata.addAsync(
-      key: 'behaviour',
-      value: 'cacheFirst',
-    );
+    final store = FMTCStore(tileName);
+    await store.manage.create();
+    await store.metadata.set(key: 'sourceURL', value: getMapTileLayer(tileSrc).urlTemplate!);
+    // Do a regular purge of old tiles
+    store.manage.removeTilesOlderThan(expiry: clock.now().subtract(const Duration(days: 16)));
   }
 
-  // Do a regular purge of old tiles
-  // purgeMapTileCache();
+  await initDemCache();
 
   mapServiceIsInit = true;
 }
@@ -175,56 +154,21 @@ String asReadableSize(double value) {
 }
 
 Future<String> getMapTileCacheSize() async {
-  // Add together the cache size for all base map layers
-  double sum = 0;
-  for (final tileSrc in mapTileThumbnails.keys) {
-    final tileName = tileSrc.toString().split(".").last;
-    final StoreDirectory store = FMTC.instance(tileName);
-    sum += (await store.stats.storeSizeAsync) * 1024;
-  }
-
-  // Also add the elevation map
-  final StoreDirectory demStore = FMTC.instance("dem");
-  sum += (await demStore.stats.storeSizeAsync) * 1024;
-
+  final sum = await FMTCRoot.stats.rootSize;
   return asReadableSize(sum);
 }
 
-// void purgeMapTileCache() async {
-//   final threshhold = DateTime.now().subtract(const Duration(days: 30));
-//   for (final tileSrc in mapTileThumbnails.keys) {
-//     final tileName = tileSrc.toString().split(".").last;
-//     final StoreDirectory store = FMTC.instance(tileName);
-
-//     int countDelete = 0;
-//     int countRemain = 0;
-//     for (final tile in store.access.tiles.listSync()) {
-//       if (tile.statSync().changed.isBefore(threshhold)) {
-//         // debugPrint("Deleting Tile: ${tile.path}");
-//         tile.deleteSync();
-//         countDelete++;
-//       } else {
-//         countRemain++;
-//       }
-//     }
-//     debugPrint("Scanned $tileName and deleted $countDelete / ${countRemain + countDelete} tiles.");
-//     store.stats.invalidateCachedStatistics();
-//   }
-// }
-
 void emptyMapTileCache() {
   // Empty elevation map cache
-  final StoreDirectory demStore = FMTC.instance("dem");
+  const demStore = FMTCStore("dem");
   debugPrint("Clear Map Cache: dem");
   demStore.manage.reset();
 
   // Empty standard map caches
   for (final tileSrc in mapTileThumbnails.keys) {
     final tileName = tileSrc.toString().split(".").last;
-    final StoreDirectory store = FMTC.instance(tileName);
+    final store = FMTCStore(tileName);
     debugPrint("Clear Map Cache: $tileName");
     store.manage.reset();
   }
-
-  // FMTC.instance.rootDirectory.manage.reset();
 }

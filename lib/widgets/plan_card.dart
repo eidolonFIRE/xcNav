@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:provider/provider.dart';
 
 // --- Dialogs
@@ -17,7 +18,6 @@ import 'package:xcnav/providers/plans.dart';
 // --- Misc
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/flight_plan.dart';
-import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
@@ -307,6 +307,7 @@ class _PlanCardState extends State<PlanCard> {
                                   mapReady = true;
                                 },
                               ),
+                          // TODO: FIX ME
                           bounds: widget.plan.getBounds(),
                           interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       children: [
@@ -324,7 +325,8 @@ class _PlanCardState extends State<PlanCard> {
                                   strokeWidth: checkedElements.contains(e.id) ? 6.0 : 3.0,
                                   color: e.getColor()))
                               .toList(),
-                          onTap: (p0, tapPosition) {
+                          onTap: (lines, tapPosition) {
+                            final p0 = lines.first;
                             if (p0.tag != null) {
                               setState(
                                 () {
@@ -345,7 +347,7 @@ class _PlanCardState extends State<PlanCard> {
                                       point: e.latlng[0],
                                       height: isChecked ? 40 : 30,
                                       width: (isChecked ? 40 : 30) * 2 / 3,
-                                      builder: (context) => Container(
+                                      child: Container(
                                           transform: Matrix4.translationValues(0, isChecked ? (-15 * 4 / 3) : -15, 0),
                                           child: GestureDetector(
                                               onTap: () => setState(() => toggleItem(e.id)),

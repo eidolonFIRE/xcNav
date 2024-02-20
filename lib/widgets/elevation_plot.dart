@@ -25,7 +25,7 @@ class ElevSample {
 
 ui.Image? _arrow;
 
-final Map<String, DrawableRoot> loadedSvgs = {};
+// final Map<String, DrawableRoot> loadedSvgs = {};
 
 class ElevationPlotPainter extends CustomPainter {
   late final Paint _paintGround;
@@ -44,7 +44,7 @@ class ElevationPlotPainter extends CustomPainter {
   final Waypoint? waypoint;
   final ETA? waypointETA;
 
-  DrawableRoot? svgPin;
+  PictureInfo? svgPin;
 
   final bool showPilotIcon;
 
@@ -90,42 +90,46 @@ class ElevationPlotPainter extends CustomPainter {
     //   ..color = Colors.grey.shade800
     //   ..style = PaintingStyle.fill;
 
-    if (waypoint != null) {
-      void setSvgPin() {
-        svgPin = loadedSvgs["pin_master"]!.mergeStyle(DrawableStyle(
-            fill: DrawablePaint(ui.PaintingStyle.fill, color: waypoint!.getColor()),
-            stroke: DrawablePaint(ui.PaintingStyle.stroke, color: waypoint!.getColor())));
-      }
+    // if (waypoint != null) {
+    //   void setSvgPin() {
+    //     svgPin = loadedSvgs["pin_master"]!.mergeStyle(DrawableStyle(
+    //         fill: DrawablePaint(ui.PaintingStyle.fill, color: waypoint!.getColor()),
+    //         stroke: DrawablePaint(ui.PaintingStyle.stroke, color: waypoint!.getColor())));
+    //   }
 
-      if (loadedSvgs["pin_master"] == null) {
-        rootBundle.loadString("assets/images/pin.svg").then((svgRaw) {
-          svg.fromSvgString(svgRaw, "pinsvg").then((value) {
-            loadedSvgs["pin_master"] = value;
-            setSvgPin();
-          });
-        });
-      } else {
-        setSvgPin();
-      }
-    }
+    //   if (loadedSvgs["pin_master"] == null) {
+    //     rootBundle.loadString("assets/images/pin.svg").then((svgRaw) {
+    //       svg.fromSvgString(svgRaw, "pinsvg").then((value) {
+    //         loadedSvgs["pin_master"] = value;
+    //         setSvgPin();
+    //       });
+    //     });
+    //   } else {
+    //     setSvgPin();
+    //   }
+    // }
+
+    rootBundle.loadString("assets/images/pin.svg").then((svg) {
+      vg.loadPicture(SvgStringLoader(svg), null).then((value) => svgPin = value);
+    });
 
     if (_arrow == null) {
       loadUiImage("./assets/images/red_arrow.png").then((value) => _arrow = value);
     }
   }
 
-  DrawableRoot? getLoadedSvg(String assetName) {
-    if (loadedSvgs[assetName] == null) {
-      rootBundle.loadString(assetName).then((svgRaw) {
-        svg.fromSvgString(svgRaw, assetName).then((value) {
-          loadedSvgs[assetName] = value.mergeStyle(const DrawableStyle(
-              fill: DrawablePaint(ui.PaintingStyle.fill, color: Colors.white),
-              stroke: DrawablePaint(ui.PaintingStyle.stroke, color: Colors.white)));
-        });
-      });
-    }
-    return loadedSvgs[assetName];
-  }
+  // DrawableRoot? getLoadedSvg(String assetName) {
+  //   if (loadedSvgs[assetName] == null) {
+  //     rootBundle.loadString(assetName).then((svgRaw) {
+  //       svg.fromSvgString(svgRaw, assetName).then((value) {
+  //         loadedSvgs[assetName] = value.mergeStyle(const DrawableStyle(
+  //             fill: DrawablePaint(ui.PaintingStyle.fill, color: Colors.white),
+  //             stroke: DrawablePaint(ui.PaintingStyle.stroke, color: Colors.white)));
+  //       });
+  //     });
+  //   }
+  //   return loadedSvgs[assetName];
+  // }
 
   Future<ui.Image> loadUiImage(String imageAssetPath) async {
     final ByteData data = await rootBundle.load(imageAssetPath);
@@ -302,7 +306,8 @@ class ElevationPlotPainter extends CustomPainter {
         final dx = scaleX((waypointETA!.distance * distScale + geoData.last.time).round()) - 20;
         final dy = scaleY(waypoint!.elevation[0]) - 60;
         canvas.translate(dx, dy);
-        svgPin!.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 100, height: 100));
+        // svgPin!.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 100, height: 100));
+        canvas.drawPicture(svgPin!.picture);
 
         dynamic icon = waypoint != null ? iconOptions[waypoint!.icon] : null;
         if (waypoint?.icon != null && icon != null) {
@@ -318,9 +323,9 @@ class ElevationPlotPainter extends CustomPainter {
             // Render svg
             debugPrint("Render SVG");
             canvas.translate(3, 1);
-            // getLoadedSvg(icon)?.scaleCanvasToViewBox(canvas, const Size(32, 32));
             canvas.scale(2.5, 2.5);
-            getLoadedSvg(icon)?.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 32, height: 32));
+            // TODO: fix me
+            // getLoadedSvg(icon)?.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 32, height: 32));
             canvas.scale(1 / 2.5, 1 / 2.5);
             canvas.translate(-3, -1);
           }
