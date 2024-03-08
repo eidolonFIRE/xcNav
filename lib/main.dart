@@ -50,7 +50,7 @@ import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/secrets.dart';
 import 'package:xcnav/airports.dart';
 
-LatLng lastKnownLatLng = LatLng(37, -122);
+LatLng lastKnownLatLng = const LatLng(37, -122);
 
 void main() async {
   runZonedGuarded(() async {

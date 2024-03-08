@@ -14,8 +14,8 @@ enum MapTileSrc {
   topo,
   sectional,
   satellite,
-  airspace,
-  airports,
+  // airspace,
+  // airports,
 }
 
 bool mapServiceIsInit = false;
@@ -57,33 +57,23 @@ TileLayer getMapTileLayer(MapTileSrc tileSrc) {
         },
       );
     // https://docs.openaip.net/?urls.primaryName=Tiles%20API
-    case MapTileSrc.airspace:
-      return TileLayer(
-        urlTemplate: 'https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey={apiKey}',
-        tileProvider: makeTileProvider(tileName),
-        backgroundColor: Colors.transparent,
-        // maxZoom: 11,
-        maxNativeZoom: 11,
-        minZoom: 7,
-        additionalOptions: const {"apiKey": aipClientToken},
-        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
-        errorTileCallback: (tile, error, stackTrace) {
-          debugPrint("$tileName: error: $tile, $error, $stackTrace");
-        },
-      );
-    case MapTileSrc.airports:
-      return TileLayer(
-        urlTemplate: 'https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey={apiKey}',
-        tileProvider: makeTileProvider(tileName),
-        backgroundColor: Colors.transparent,
-        maxZoom: 11,
-        minZoom: 9,
-        additionalOptions: const {"apiKey": aipClientToken},
-        evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
-        errorTileCallback: (tile, error, stackTrace) {
-          debugPrint("$tileName: error: $tile, $error, $stackTrace");
-        },
-      );
+    // case MapTileSrc.airspace:
+    //   return TileLayer(
+    //       urlTemplate: 'https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey={apiKey}',
+    //       tileProvider: makeTileProvider(tileName),
+    //       // backgroundColor: Colors.transparent,
+    //       // maxZoom: 11,
+    //       maxNativeZoom: 11,
+    //       minZoom: 7,
+    //       additionalOptions: const {"apiKey": aipClientToken});
+    // case MapTileSrc.airports:
+    //   return TileLayer(
+    //       urlTemplate: 'https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey={apiKey}',
+    //       tileProvider: makeTileProvider(tileName),
+    //       // backgroundColor: Colors.transparent,
+    //       maxZoom: 11,
+    //       minZoom: 9,
+    //       additionalOptions: const {"apiKey": aipClientToken});
     default:
       return TileLayer(
         urlTemplate: "https://tile.tracestrack.com/topo__/{z}/{x}/{y}.png?key={apiKey}",
@@ -117,16 +107,16 @@ final Map<MapTileSrc, Image> mapTileThumbnails = {
     filterQuality: FilterQuality.high,
     fit: BoxFit.cover,
   ),
-  MapTileSrc.airspace: Image.asset(
-    "assets/images/sectional.png",
-    filterQuality: FilterQuality.high,
-    fit: BoxFit.cover,
-  ),
-  MapTileSrc.airports: Image.asset(
-    "assets/images/sectional.png",
-    filterQuality: FilterQuality.high,
-    fit: BoxFit.cover,
-  )
+  // MapTileSrc.airspace: Image.asset(
+  //   "assets/images/sectional.png",
+  //   filterQuality: FilterQuality.high,
+  //   fit: BoxFit.cover,
+  // ),
+  // MapTileSrc.airports: Image.asset(
+  //   "assets/images/sectional.png",
+  //   filterQuality: FilterQuality.high,
+  //   fit: BoxFit.cover,
+  // )
 };
 
 Future initMapCache() async {

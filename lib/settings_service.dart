@@ -194,8 +194,8 @@ class SettingsMgr {
   late final SettingConfig<double> altimeterVsiThresh;
   late final SettingConfig<bool> mapControlsRightSide;
   late final SettingConfig<bool> showPilotNames;
-  late final SettingConfig<bool> showWeatherOverlay;
-  late final SettingConfig<bool> showAirspaceOverlay;
+  // late final SettingConfig<bool> showWeatherOverlay;
+  // late final SettingConfig<bool> showAirspaceOverlay;
   late final SettingConfig<bool> groupViewWaypoint;
 
   // --- Display Units
@@ -257,14 +257,14 @@ class SettingsMgr {
     showPilotNames = SettingConfig(this, prefs, "UI", "showPilotNames", false,
         title: "Always show pilot names", description: "", icon: const Icon(Icons.abc));
 
-    showWeatherOverlay = SettingConfig(this, prefs, "UI", "showWeatherOverlay", false,
-        title: "Show weather overlay", description: "", icon: const Icon(Icons.cloud));
-    showAirspaceOverlay = SettingConfig(this, prefs, "UI", "showAirspaceOverlay", true,
-        title: "Show airspace overlay",
-        icon: SvgPicture.asset(
-          "assets/images/airspace.svg",
-          color: Colors.grey.shade400,
-        ));
+    // showWeatherOverlay = SettingConfig(this, prefs, "UI", "showWeatherOverlay", false,
+    //     title: "Show weather overlay", description: "", icon: const Icon(Icons.cloud));
+    // showAirspaceOverlay = SettingConfig(this, prefs, "UI", "showAirspaceOverlay", true,
+    //     title: "Show airspace overlay",
+    //     icon: SvgPicture.asset(
+    //       "assets/images/airspace.svg",
+    //       color: Colors.grey.shade400,
+    //     ));
     groupViewWaypoint = SettingConfig(this, prefs, "UI", "groupViewWaypoint", false,
         title: "Group view includes waypoint", icon: const Icon(Icons.pin_drop));
 

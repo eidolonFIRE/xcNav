@@ -18,7 +18,7 @@ import 'package:xcnav/widgets/waypoint_marker.dart';
 class FlightLogCard extends StatelessWidget {
   final String logKey;
 
-  const FlightLogCard(this.logKey, {Key? key}) : super(key: key);
+  const FlightLogCard(this.logKey, {super.key});
 
   /// Recover waypoints from log and put them into a new flight plan.
   void restoreWaypoints(BuildContext context) {

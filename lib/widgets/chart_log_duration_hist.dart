@@ -21,7 +21,7 @@ class ChartLogDurationHist extends StatelessWidget {
   late final Duration longest;
   final Duration baseScale = const Duration(minutes: 5);
 
-  ChartLogDurationHist({Key? key, required this.logs}) : super(key: key) {
+  ChartLogDurationHist({super.key, required this.logs}) {
     longest = maxBy<Duration, int>(logs.map((e) => e.durationTime), (e) => e.inSeconds) ?? const Duration(hours: 1);
     // bucketSizeDur = Duration(minutes: max(5, min(15, 5 * (1 / logs.length * longest.inMinutes).ceil())));
     buildTotals(logs.map((e) => e.durationTime));

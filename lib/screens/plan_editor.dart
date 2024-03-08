@@ -31,7 +31,7 @@ import 'package:xcnav/dialogs/tap_point.dart';
 import 'package:xcnav/map_service.dart';
 
 class PlanEditor extends StatefulWidget {
-  const PlanEditor({Key? key}) : super(key: key);
+  const PlanEditor({super.key});
 
   @override
   State<PlanEditor> createState() => _PlanEditorState();
@@ -174,9 +174,7 @@ class _PlanEditorState extends State<PlanEditor> {
     if (plan == null) {
       plan = ModalRoute.of(context)!.settings.arguments as FlightPlan;
       final center = Provider.of<MyTelemetry>(context, listen: false).geo ?? defaultGeo;
-      mapBounds = plan!.getBounds();
-      // TODO: fix me
-      // ?? padLatLngBounds(LatLngBounds.fromPoints([center.latlng, center.latlng..longitude += 0.05]), 2);
+      mapBounds = padLatLngBounds(LatLngBounds.fromPoints([center.latlng, LatLng(center.lat, center.lng + 0.05)]), 2);
     }
     return PopScope(
       onPopInvoked: (_) {
@@ -196,20 +194,22 @@ class _PlanEditorState extends State<PlanEditor> {
                       options: MapOptions(
                         onMapReady: () {
                           setState(() {
+                            mapController.fitCamera(CameraFit.bounds(bounds: mapBounds!));
                             mapReady = true;
                           });
                         },
-                        bounds: mapBounds,
-                        interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                        initialCameraFit: mapBounds != null ? CameraFit.bounds(bounds: mapBounds!) : null,
+                        interactionOptions:
+                            const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                         onTap: (tapPos, latlng) => onMapTap(context, latlng),
                         onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                       ),
                       children: [
                         Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
-                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                          getMapTileLayer(MapTileSrc.airspace),
-                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                          getMapTileLayer(MapTileSrc.airports),
+                        // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                        //   getMapTileLayer(MapTileSrc.airspace),
+                        // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                        //   getMapTileLayer(MapTileSrc.airports),
 
                         // Flight plan markers
                         TappablePolylineLayer(
@@ -523,7 +523,7 @@ class _PlanEditorState extends State<PlanEditor> {
                             items.sort((a, b) => a.name.compareTo(b.name));
                             return Slidable(
                               dragStartBehavior: DragStartBehavior.start,
-                              key: ValueKey(plan!.waypoints[i]),
+                              key: ValueKey(items[i]),
                               startActionPane: ActionPane(extentRatio: 0.14, motion: const ScrollMotion(), children: [
                                 SlidableAction(
                                   onPressed: (e) {

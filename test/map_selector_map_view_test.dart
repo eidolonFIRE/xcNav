@@ -32,7 +32,6 @@ void main() {
   SharedPreferences.setMockInitialValues({});
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
-    settingsMgr.showAirspaceOverlay.value = false;
   });
 
   Widget makeApp(ActivePlan activePlan, MockPlans plans) {

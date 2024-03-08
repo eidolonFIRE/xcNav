@@ -137,7 +137,8 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
       }
 
       if (mapReady && (mapKey.currentState?.mounted ?? false)) {
-        mapController.fitBounds(padLatLngBounds(LatLngBounds.fromPoints((routePoints ?? []) + (points ?? [])), 0.1));
+        mapController.fitCamera(CameraFit.bounds(
+            bounds: padLatLngBounds(LatLngBounds.fromPoints((routePoints ?? []) + (points ?? [])), 0.1)));
       } else {
         // Map was disposed and not ready yet
         mapReady = false;
@@ -500,15 +501,18 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                         key: mapKey,
                                                         mapController: mapController,
                                                         options: MapOptions(
-                                                            onMapReady: () {
-                                                              mapReady = true;
-                                                              refreshRoute(points);
-                                                            },
-                                                            bounds: padLatLngBounds(
-                                                                LatLngBounds.fromPoints(
-                                                                    (routePoints ?? []) + (points ?? [])),
-                                                                0.1),
-                                                            interactiveFlags: InteractiveFlag.none),
+                                                          onMapReady: () {
+                                                            mapReady = true;
+                                                            refreshRoute(points);
+                                                          },
+                                                          initialCameraFit: CameraFit.bounds(
+                                                              bounds: padLatLngBounds(
+                                                                  LatLngBounds.fromPoints(
+                                                                      (routePoints ?? []) + (points ?? [])),
+                                                                  0.1)),
+                                                          interactionOptions:
+                                                              const InteractionOptions(flags: InteractiveFlag.none),
+                                                        ),
                                                         children: [
                                                           getMapTileLayer(MapTileSrc.topo),
 
@@ -521,9 +525,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                                   height: 60 * 0.8,
                                                                   width: 40 * 0.8,
                                                                   rotate: true,
-                                                                  // TODO: fix me
-                                                                  // anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
-                                                                  // rotateOrigin: const Offset(0, 30 * 0.8),
+                                                                  alignment: Alignment.topCenter,
                                                                   child: WaypointMarker(selectedWp, 60 * 0.8))
                                                             ]),
                                                           // Next waypoint: marker

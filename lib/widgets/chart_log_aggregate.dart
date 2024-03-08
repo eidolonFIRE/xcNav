@@ -15,7 +15,7 @@ enum ChartLogAggregateMode {
 }
 
 class ChartLogAggregate extends StatelessWidget {
-  ChartLogAggregate({Key? key, required this.logs, required this.mode}) : super(key: key);
+  ChartLogAggregate({super.key, required this.logs, required this.mode});
 
   final Iterable<FlightLog> logs;
   final ChartLogAggregateMode mode;

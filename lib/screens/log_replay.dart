@@ -216,10 +216,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
 
                       // Airspace overlay
-                      if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        getMapTileLayer(MapTileSrc.airspace),
-                      if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        getMapTileLayer(MapTileSrc.airports),
+                      // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                      //   getMapTileLayer(MapTileSrc.airspace),
+                      // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                      //   getMapTileLayer(MapTileSrc.airports),
 
                       // Waypoints: paths
                       PolylineLayer(
@@ -240,9 +240,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   height: 60 * 0.8,
                                   width: 40 * 0.8,
                                   rotate: true,
-                                  //  TODO: fix me!
-                                  // anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
-                                  // rotateOrigin: const Offset(0, 30 * 0.8),
+                                  alignment: Alignment.topCenter,
                                   child: WaypointMarker(e, 60 * 0.8)))
                               .toList()),
 
@@ -259,8 +257,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       MarkerLayer(
                         markers: log.fuelReports
                             .mapIndexed((index, e) => Marker(
-                                // TODO: fix me
-                                // anchorPos: AnchorPos.align(AnchorAlign.right),
+                                alignment: Alignment.topCenter,
                                 height: 40,
                                 width: 60,
                                 point: log.samples[log.timeToSampleIndex(e.time)].latlng,

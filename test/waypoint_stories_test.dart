@@ -91,7 +91,6 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       SharedPreferences.getInstance().then((prefs) {
         settingsMgr = SettingsMgr(prefs);
-        settingsMgr.showAirspaceOverlay.value = false;
       });
 
       // --- Setup stubs and initial configs
@@ -148,7 +147,6 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     SharedPreferences.getInstance().then((prefs) {
       settingsMgr = SettingsMgr(prefs);
-      settingsMgr.showAirspaceOverlay.value = false;
     });
 
     // --- Setup stubs and initial configs

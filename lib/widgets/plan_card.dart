@@ -301,15 +301,17 @@ class _PlanCardState extends State<PlanCard> {
                   FlutterMap(
                       mapController: mapController,
                       options: MapOptions(
-                          onMapReady: () => setState(
-                                () {
-                                  debugPrint("Mapready");
-                                  mapReady = true;
-                                },
-                              ),
-                          // TODO: FIX ME
-                          bounds: widget.plan.getBounds(),
-                          interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+                        onMapReady: () => setState(
+                          () {
+                            debugPrint("Mapready");
+                            mapReady = true;
+                          },
+                        ),
+                        initialCameraFit:
+                            widget.plan.getBounds() != null ? CameraFit.bounds(bounds: widget.plan.getBounds()!) : null,
+                        interactionOptions:
+                            const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+                      ),
                       children: [
                         getMapTileLayer(MapTileSrc.topo),
 

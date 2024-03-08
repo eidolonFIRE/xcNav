@@ -291,10 +291,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         mapReady = true;
                       });
                     },
-                    interactiveFlags: InteractiveFlag.all &
-                        (settingsMgr.northlockMap.value ? ~InteractiveFlag.rotate : InteractiveFlag.all),
-                    center: Provider.of<MyTelemetry>(context, listen: false).geo?.latlng ?? lastKnownLatLng,
-                    zoom: 12.0,
+                    interactionOptions: InteractionOptions(
+                        flags: InteractiveFlag.all &
+                            (settingsMgr.northlockMap.value ? ~InteractiveFlag.rotate : InteractiveFlag.all)),
+                    initialCenter: Provider.of<MyTelemetry>(context, listen: false).geo?.latlng ?? lastKnownLatLng,
+                    initialZoom: 12.0,
                     minZoom: 2,
                     onTap: (tapPosition, point) => onMapTap(context, point),
                     onLongPress: (tapPosition, point) => onMapLongPress(context, point),
@@ -323,12 +324,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         child: getMapTileLayer(settingsMgr.mainMapTileSrc.value)),
 
                     // Airspace overlay
-                    if (settingsMgr.showAirspaceOverlay.value &&
-                        settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                      getMapTileLayer(MapTileSrc.airspace),
-                    if (settingsMgr.showAirspaceOverlay.value &&
-                        settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                      getMapTileLayer(MapTileSrc.airports),
+                    // if (settingsMgr.showAirspaceOverlay.value &&
+                    //     settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
+                    //   getMapTileLayer(MapTileSrc.airspace),
+                    // if (settingsMgr.showAirspaceOverlay.value &&
+                    //     settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
+                    //   getMapTileLayer(MapTileSrc.airports),
 
                     // TFRs
                     FutureBuilder<List<TFR>?>(
@@ -359,17 +360,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         }),
 
                     // https://nowcoast.noaa.gov/help/#!section=map-service-list
-                    if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
-                      Opacity(
-                        opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.zoom : 0)) / 10.0)),
-                        child: TileLayer(
-                            backgroundColor: Colors.transparent,
-                            wmsOptions: WMSTileLayerOptions(
-                              layers: ["1"],
-                              baseUrl:
-                                  "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
-                            )),
-                      ),
+                    // if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
+                    //   Opacity(
+                    //     opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.zoom : 0)) / 10.0)),
+                    //     child: TileLayer(
+                    //         backgroundColor: Colors.transparent,
+                    //         wmsOptions: WMSTileLayerOptions(
+                    //           layers: ["1"],
+                    //           baseUrl:
+                    //               "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
+                    //         )),
+                    //   ),
 
                     // Other Pilot path trace
                     PolylineLayer(
@@ -469,9 +470,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               height: 60 * 0.8,
                               width: 40 * 0.8,
                               rotate: true,
-                              // TODO: FIX THIS
-                              // anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
-                              // rotateOrigin: const Offset(0, 30 * 0.8),
+                              alignment: Alignment.topCenter,
                               child: GestureDetector(
                                 onTap: () {
                                   if (focusMode == FocusMode.measurement) {

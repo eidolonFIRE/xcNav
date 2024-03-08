@@ -5,7 +5,7 @@ import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/units.dart';
 
 class BasicLogAggregate extends StatelessWidget {
-  const BasicLogAggregate({Key? key, required this.logs}) : super(key: key);
+  const BasicLogAggregate({super.key, required this.logs});
 
   final Iterable<FlightLog> logs;
 

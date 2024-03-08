@@ -16,13 +16,13 @@ List<Marker> buildMeasurementMarkers(List<LatLng> points) {
   for (int index = 0; index < points.length; index++) {
     final e = points[index];
     final dist = latlngCalc.distance(e, prev ?? e);
+    sumDist.add((sumDist.lastOrNull ?? 0) + dist);
     retList.add(Marker(
         point: e,
         width: 75,
         height: 54,
         rotate: true,
-        // TODO: FIX ME
-        // anchorPos: AnchorPos.exactly(Anchor(80, 0)),
+        alignment: Alignment.topRight,
         child: Card(
           color: Colors.black.withAlpha(100),
           child: Padding(
@@ -63,7 +63,6 @@ List<Marker> buildMeasurementMarkers(List<LatLng> points) {
           ),
         )));
     prev = e;
-    sumDist.add((sumDist.isEmpty ? 0 : sumDist.last) + dist);
   }
 
   return retList;
