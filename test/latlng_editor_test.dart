@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:patrol/patrol.dart';
+import 'package:patrol_finders/patrol_finders.dart';
 import 'package:xcnav/widgets/latlng_editor.dart';
 
 void main() {
-  Future setup(PatrolIntegrationTester $, void Function(List<LatLng>) callback) async {
+  Future setup(PatrolTester $, void Function(List<LatLng>) callback) async {
     await $.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -15,7 +15,7 @@ void main() {
     );
   }
 
-  patrolTest('basic', ($) async {
+  patrolWidgetTest('basic', ($) async {
     List<LatLng> results = [];
     await setup($, (latlngs) {
       results = latlngs;
@@ -36,7 +36,7 @@ void main() {
     expect(results, [LatLng(0.45, 123)]);
   });
 
-  patrolTest('multiple', ($) async {
+  patrolWidgetTest('multiple', ($) async {
     List<LatLng> results = [];
     await setup($, (latlngs) {
       results = latlngs;
@@ -53,7 +53,7 @@ void main() {
     expect(results, [LatLng(45, 123.45), LatLng(-15, -170)]);
   });
 
-  patrolTest('bad_format', ($) async {
+  patrolWidgetTest('bad_format', ($) async {
     List<LatLng> results = [];
     await setup($, (latlngs) {
       results = latlngs;

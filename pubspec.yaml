@@ -92,9 +92,6 @@ dependencies:
   clock: ^1.1.1
 
 
-# temporary for fmtc v9
-# dependency_overrides:
-#   meta: ^1.11.0
 
 
 dev_dependencies:
@@ -108,7 +105,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^3.0.1
-  patrol: ^3.0.1
+  patrol_finders: any
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

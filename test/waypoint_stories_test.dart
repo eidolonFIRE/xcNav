@@ -4,10 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mockito/mockito.dart';
+import 'package:patrol_finders/patrol_finders.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter/material.dart';
-import 'package:patrol/patrol.dart';
 
 // ignore: depend_on_referenced_packages
 import 'package:permission_handler_platform_interface/permission_handler_platform_interface.dart' as perm_handler_plat;
@@ -85,7 +85,7 @@ void main() {
     await fontLoader.load();
   });
 
-  patrolTest(
+  patrolWidgetTest(
     'Create and delete a waypoint',
     ($) async {
       SharedPreferences.setMockInitialValues({});
@@ -144,7 +144,7 @@ void main() {
     },
   );
 
-  patrolTest('Save waypoint to library', ($) async {
+  patrolWidgetTest('Save waypoint to library', ($) async {
     SharedPreferences.setMockInitialValues({});
     SharedPreferences.getInstance().then((prefs) {
       settingsMgr = SettingsMgr(prefs);

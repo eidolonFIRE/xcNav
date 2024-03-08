@@ -154,7 +154,7 @@ String asReadableSize(double value) {
 }
 
 Future<String> getMapTileCacheSize() async {
-  final sum = await FMTCRoot.stats.rootSize;
+  final sum = await FMTCRoot.stats.realSize;
   return asReadableSize(sum);
 }
 
