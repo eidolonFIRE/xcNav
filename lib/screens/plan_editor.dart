@@ -241,22 +241,23 @@ class _PlanEditorState extends State<PlanEditor> {
                                   height: 60 * (e.id == selectedWp ? 0.8 : 0.6),
                                   width: 40 * (e.id == selectedWp ? 0.8 : 0.6),
                                   rotate: true,
-                                  anchorPos: AnchorPos.exactly(Anchor(20 * (e.id == selectedWp ? 0.8 : 0.6), 0)),
-                                  rotateOrigin: Offset(0, 30 * (e.id == selectedWp ? 0.8 : 0.6)),
-                                  builder: (context) => GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            selectedWp = e.id;
-                                          });
-                                        },
-                                        onLongPress: () {
-                                          setState(() {
-                                            editingWp = e.id;
-                                            draggingLatLng = null;
-                                          });
-                                        },
-                                        child: WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)),
-                                      )))
+                                  alignment: Alignment.topCenter,
+                                  // anchorPos: AnchorPos.exactly(Anchor(20 * (e.id == selectedWp ? 0.8 : 0.6), 0)),
+                                  // rotateOrigin: Offset(0, 30 * (e.id == selectedWp ? 0.8 : 0.6)),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedWp = e.id;
+                                      });
+                                    },
+                                    onLongPress: () {
+                                      setState(() {
+                                        editingWp = e.id;
+                                        draggingLatLng = null;
+                                      });
+                                    },
+                                    child: WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)),
+                                  )))
                               .toList(),
                         ),
 
@@ -313,46 +314,46 @@ class _PlanEditorState extends State<PlanEditor> {
                                   rotate: true,
                                   height: 240,
                                   point: plan!.waypoints[editingWp]!.latlng.first,
-                                  builder: (context) => Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            height: 140,
-                                          ),
-                                          FloatingActionButton.small(
-                                            heroTag: "editWaypoint",
-                                            backgroundColor: Colors.lightBlue,
-                                            onPressed: () {
-                                              editWaypoint(context, plan!.waypoints[editingWp]!,
-                                                      isNew: focusMode == FocusMode.addPath,
-                                                      isPath: plan!.waypoints[editingWp]!.isPath)
-                                                  ?.then((newWaypoint) {
-                                                if (newWaypoint != null) {
-                                                  plan!.waypoints[newWaypoint.id] = newWaypoint;
-                                                }
-                                              }).then((value) {
-                                                setState(() {
-                                                  editingWp = null;
-                                                });
-                                              });
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        height: 140,
+                                      ),
+                                      FloatingActionButton.small(
+                                        heroTag: "editWaypoint",
+                                        backgroundColor: Colors.lightBlue,
+                                        onPressed: () {
+                                          editWaypoint(context, plan!.waypoints[editingWp]!,
+                                                  isNew: focusMode == FocusMode.addPath,
+                                                  isPath: plan!.waypoints[editingWp]!.isPath)
+                                              ?.then((newWaypoint) {
+                                            if (newWaypoint != null) {
+                                              plan!.waypoints[newWaypoint.id] = newWaypoint;
+                                            }
+                                          }).then((value) {
+                                            setState(() {
+                                              editingWp = null;
+                                            });
+                                          });
 
-                                              // editingWp = null;
-                                            },
-                                            child: const Icon(Icons.edit),
-                                          ),
-                                          FloatingActionButton.small(
-                                            heroTag: "deleteWaypoint",
-                                            backgroundColor: Colors.red,
-                                            onPressed: () {
-                                              setState(() {
-                                                plan!.waypoints.remove(editingWp!);
-                                                editingWp = null;
-                                              });
-                                            },
-                                            child: const Icon(Icons.delete),
-                                          ),
-                                        ],
-                                      ))
+                                          // editingWp = null;
+                                        },
+                                        child: const Icon(Icons.edit),
+                                      ),
+                                      FloatingActionButton.small(
+                                        heroTag: "deleteWaypoint",
+                                        backgroundColor: Colors.red,
+                                        onPressed: () {
+                                          setState(() {
+                                            plan!.waypoints.remove(editingWp!);
+                                            editingWp = null;
+                                          });
+                                        },
+                                        child: const Icon(Icons.delete),
+                                      ),
+                                    ],
+                                  ))
                             ],
                           ),
 
