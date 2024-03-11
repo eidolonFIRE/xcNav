@@ -33,7 +33,7 @@ const List<String> quickchat = [
 ];
 
 class ViewChat extends StatefulWidget {
-  const ViewChat({Key? key}) : super(key: key);
+  const ViewChat({super.key});
 
   @override
   State<ViewChat> createState() => ViewChatState();

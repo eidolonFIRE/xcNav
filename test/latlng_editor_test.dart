@@ -27,13 +27,13 @@ void main() {
 
     await $(TextFormField).enterText("45, 123");
     await $.waitUntilExists($("45, 123"));
-    expect(results, [LatLng(45, 123)]);
+    expect(results, [const LatLng(45, 123)]);
 
     await $(TextFormField).enterText("0.45, 123");
-    expect(results, [LatLng(0.45, 123)]);
+    expect(results, [const LatLng(0.45, 123)]);
 
     await $(TextFormField).enterText("   0.45   ,    123   ");
-    expect(results, [LatLng(0.45, 123)]);
+    expect(results, [const LatLng(0.45, 123)]);
   });
 
   patrolWidgetTest('multiple', ($) async {
@@ -47,10 +47,10 @@ void main() {
     expect(results, []);
 
     await $(TextFormField).enterText("45, 123.45; -15,  -170;");
-    expect(results, [LatLng(45, 123.45), LatLng(-15, -170)]);
+    expect(results, [const LatLng(45, 123.45), const LatLng(-15, -170)]);
 
     await $(TextFormField).enterText("45, 123.45; -15,  -170");
-    expect(results, [LatLng(45, 123.45), LatLng(-15, -170)]);
+    expect(results, [const LatLng(45, 123.45), const LatLng(-15, -170)]);
   });
 
   patrolWidgetTest('bad_format', ($) async {

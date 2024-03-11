@@ -12,7 +12,7 @@ import 'package:xcnav/widgets/chart_log_fuel_insights.dart';
 import 'package:xcnav/widgets/flight_log_card.dart';
 
 class FlightLogViewer extends StatefulWidget {
-  const FlightLogViewer({Key? key}) : super(key: key);
+  const FlightLogViewer({super.key});
 
   @override
   State<FlightLogViewer> createState() => _FlightLogViewerState();

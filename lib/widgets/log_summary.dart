@@ -5,9 +5,9 @@ import 'package:xcnav/units.dart';
 
 class LogSummary extends StatelessWidget {
   LogSummary({
-    Key? key,
+    super.key,
     required this.log,
-  }) : super(key: key);
+  });
 
   final FlightLog log;
   final dateFormat = DateFormat("h:mm a");

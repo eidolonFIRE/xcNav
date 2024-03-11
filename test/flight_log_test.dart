@@ -20,8 +20,8 @@ void main() {
       Geo(lat: 34, lng: 120.1, alt: 0.2, spd: 15.3974637, timestamp: const Duration(minutes: 10).inMilliseconds),
       Geo(lat: 34.1, lng: 120.2, alt: 0.3, spd: 24.0537096, timestamp: const Duration(minutes: 20).inMilliseconds),
     ], waypoints: [
-      Waypoint(name: "test", latlngs: [LatLng(35, 121)], icon: "star", color: 0xFFD0E1B2),
-      Waypoint(name: "test_path", latlngs: [LatLng(35, 121), LatLng(35.2, 121)], color: 0xFFA5C130)
+      Waypoint(name: "test", latlngs: [const LatLng(35, 121)], icon: "star", color: 0xFFD0E1B2),
+      Waypoint(name: "test_path", latlngs: [const LatLng(35, 121), const LatLng(35.2, 121)], color: 0xFFA5C130)
     ], fuelReports: [
       FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 1).inMilliseconds), 10.0),
       FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 10).inMilliseconds), 5.0),

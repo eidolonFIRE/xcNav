@@ -20,7 +20,7 @@ import 'package:xcnav/widgets/elevation_plot.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class ViewElevation extends StatefulWidget {
-  const ViewElevation({Key? key}) : super(key: key);
+  const ViewElevation({super.key});
 
   @override
   State<ViewElevation> createState() => ViewElevationState();
@@ -262,7 +262,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                       isSelected: lookAheadOptions.map((e) => e == lookAhead).toList(),
                       children: lookAheadOptions.map((e) {
                         switch (e.runtimeType) {
-                          case double:
+                          case const (double):
                             return e == lookAheadOptions.first
                                 ? Text.rich(richValue(UnitType.distCoarse, e,
                                     unitStyle: const TextStyle(fontSize: 10, color: Colors.grey)))
@@ -270,7 +270,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                                     printValue(UnitType.distCoarse, e, digits: 3, decimals: 0, autoDecimalThresh: 1) ??
                                         "");
 
-                          case WaypointID:
+                          case const (WaypointID):
                             final selectedWp = activePlan.getSelectedWp();
                             if (selectedWp == null) {
                               return Container();

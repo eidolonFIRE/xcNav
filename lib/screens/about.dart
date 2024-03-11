@@ -4,7 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class About extends StatefulWidget {
-  const About({Key? key}) : super(key: key);
+  const About({super.key});
 
   @override
   State<About> createState() => _AboutState();

@@ -9,8 +9,7 @@ class LatLngEditor extends StatelessWidget {
   final formKeyLatlng = GlobalKey<FormState>();
   final void Function(List<LatLng> latlngs) onLatLngs;
 
-  LatLngEditor({Key? key, required this.onLatLngs, String? initialText, List<LatLng>? initialLatlngs})
-      : super(key: key) {
+  LatLngEditor({super.key, required this.onLatLngs, String? initialText, List<LatLng>? initialLatlngs}) {
     if (initialText != null) {
       controller.text = initialText;
     } else if (initialLatlngs != null) {

@@ -8,8 +8,8 @@ class MapButton extends StatelessWidget {
   final double size;
   final bool selected;
 
-  const MapButton({required this.child, required this.size, required this.onPressed, required this.selected, Key? key})
-      : super(key: key);
+  const MapButton(
+      {required this.child, required this.size, required this.onPressed, required this.selected, super.key});
 
   @override
   Widget build(BuildContext context) {

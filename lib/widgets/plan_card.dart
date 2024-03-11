@@ -25,7 +25,7 @@ import 'package:xcnav/widgets/waypoint_card.dart';
 class PlanCard extends StatefulWidget {
   final FlightPlan plan;
 
-  const PlanCard(this.plan, {Key? key}) : super(key: key);
+  const PlanCard(this.plan, {super.key});
 
   @override
   State<PlanCard> createState() => _PlanCardState();

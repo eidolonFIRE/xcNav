@@ -168,8 +168,8 @@ class FlightLogCard extends StatelessWidget {
                   key: GlobalKey(debugLabel: "flight_log_card:${log.startTime?.millisecondsSinceEpoch.toString()}"),
                   mapController: mapController,
                   options: MapOptions(
-                    bounds: mapBounds,
-                    interactiveFlags: InteractiveFlag.none,
+                    initialCameraFit: mapBounds != null ? CameraFit.bounds(bounds: mapBounds) : null,
+                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                     onTap: (tapPosition, point) {
                       if (log.goodFile) {
                         Navigator.pushNamed(context, "/logReplay", arguments: {"logKey": logKey});

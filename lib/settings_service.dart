@@ -76,25 +76,25 @@ class SettingConfig<T> {
         } else {
           switch (T) {
             // NOTE: Need to add each supporte enum here
-            case DisplayUnitsDist:
+            case const (DisplayUnitsDist):
               _value = ValueNotifier<T>(DisplayUnitsDist.values[loadedInt] as T);
               break;
-            case DisplayUnitsSpeed:
+            case const (DisplayUnitsSpeed):
               _value = ValueNotifier<T>(DisplayUnitsSpeed.values[loadedInt] as T);
               break;
-            case DisplayUnitsVario:
+            case const (DisplayUnitsVario):
               _value = ValueNotifier<T>(DisplayUnitsVario.values[loadedInt] as T);
               break;
-            case DisplayUnitsFuel:
+            case const (DisplayUnitsFuel):
               _value = ValueNotifier<T>(DisplayUnitsFuel.values[loadedInt] as T);
               break;
-            case AltimeterMode:
+            case const (AltimeterMode):
               _value = ValueNotifier<T>(AltimeterMode.values[loadedInt] as T);
               break;
-            case ProximitySize:
+            case const (ProximitySize):
               _value = ValueNotifier<T>(ProximitySize.values[loadedInt] as T);
               break;
-            case MapTileSrc:
+            case const (MapTileSrc):
               _value = ValueNotifier<T>(MapTileSrc.values[loadedInt] as T);
               break;
             default:

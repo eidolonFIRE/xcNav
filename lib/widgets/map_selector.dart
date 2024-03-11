@@ -14,10 +14,10 @@ class MapSelector extends StatelessWidget {
     required this.curLayer,
     required this.curOpacity,
     required this.onChanged,
-    Key? key,
+    super.key,
     required this.isMapDialOpen,
     this.leftAlign = false,
-  }) : super(key: key);
+  });
 
   final ValueNotifier<bool> isMapDialOpen;
 

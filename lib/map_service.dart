@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
-import 'package:xcnav/secrets.dart';
 
 enum MapTileSrc {
   topo,

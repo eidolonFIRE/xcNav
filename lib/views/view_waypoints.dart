@@ -24,7 +24,7 @@ import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 class ViewWaypoints extends StatefulWidget {
-  const ViewWaypoints({Key? key}) : super(key: key);
+  const ViewWaypoints({super.key});
 
   @override
   State<ViewWaypoints> createState() => ViewWaypointsState();

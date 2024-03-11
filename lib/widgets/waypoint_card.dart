@@ -15,7 +15,7 @@ import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class WaypointCard extends StatefulWidget {
   const WaypointCard({
-    Key? key,
+    super.key,
     required this.waypoint,
     required this.index,
     required this.onSelect,
@@ -23,7 +23,7 @@ class WaypointCard extends StatefulWidget {
     this.refLatlng,
     this.onDoubleTap,
     this.showPilots = true,
-  }) : super(key: key);
+  });
 
   final Waypoint waypoint;
   final int index;

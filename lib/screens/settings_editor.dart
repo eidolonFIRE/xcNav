@@ -18,7 +18,7 @@ import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/map_service.dart';
 
 class SettingsEditor extends StatefulWidget {
-  const SettingsEditor({Key? key}) : super(key: key);
+  const SettingsEditor({super.key});
 
   @override
   State<SettingsEditor> createState() => _SettingsEditorState();
@@ -188,11 +188,11 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                           Widget? trailing;
                                           // Select trailing
                                           switch (e.config!.value.runtimeType) {
-                                            case bool:
+                                            case const (bool):
                                               trailing = Switch.adaptive(
                                                   value: value as bool, onChanged: (value) => e.config!.value = value);
                                               break;
-                                            case double:
+                                            case const (double):
                                               trailing = SizedBox(
                                                 width: 80,
                                                 child: TextFormField(
@@ -202,7 +202,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                     onChanged: (value) => e.config!.value = parseAsDouble(value) ?? 0),
                                               );
                                               break;
-                                            case DisplayUnitsDist:
+                                            case const (DisplayUnitsDist):
                                               trailing = DropdownButton<DisplayUnitsDist>(
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
@@ -214,7 +214,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                         value: DisplayUnitsDist.metric, child: Text("Metric")),
                                                   ]);
                                               break;
-                                            case DisplayUnitsSpeed:
+                                            case const (DisplayUnitsSpeed):
                                               trailing = DropdownButton<DisplayUnitsSpeed>(
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
@@ -226,7 +226,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                     DropdownMenuItem(value: DisplayUnitsSpeed.mps, child: Text("m/s")),
                                                   ]);
                                               break;
-                                            case DisplayUnitsVario:
+                                            case const (DisplayUnitsVario):
                                               trailing = DropdownButton<DisplayUnitsVario>(
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
@@ -236,7 +236,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                     DropdownMenuItem(value: DisplayUnitsVario.mps, child: Text("m/s")),
                                                   ]);
                                               break;
-                                            case DisplayUnitsFuel:
+                                            case const (DisplayUnitsFuel):
                                               trailing = DropdownButton<DisplayUnitsFuel>(
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
@@ -246,7 +246,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                     DropdownMenuItem(value: DisplayUnitsFuel.gal, child: Text("Gal")),
                                                   ]);
                                               break;
-                                            case AltimeterMode:
+                                            case const (AltimeterMode):
                                               trailing = DropdownButton<AltimeterMode>(
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
@@ -256,7 +256,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                     DropdownMenuItem(value: AltimeterMode.msl, child: Text("MSL")),
                                                   ]);
                                               break;
-                                            case ProximitySize:
+                                            case const (ProximitySize):
                                               trailing = DropdownButton<ProximitySize>(
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
