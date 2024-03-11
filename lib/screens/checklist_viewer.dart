@@ -8,7 +8,7 @@ import 'package:xcnav/models/checklist.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 
 class ChecklistViewer extends StatefulWidget {
-  const ChecklistViewer({Key? key}) : super(key: key);
+  const ChecklistViewer({super.key});
 
   @override
   State<ChecklistViewer> createState() => _ChecklistViewerState();

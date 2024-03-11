@@ -16,7 +16,6 @@ import 'package:xcnav/models/waypoint.dart';
 // --- Providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
 
 // --- Widgets

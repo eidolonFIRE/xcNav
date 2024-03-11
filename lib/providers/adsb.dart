@@ -259,11 +259,11 @@ class ADSB with ChangeNotifier {
   void testWarning() {
     ProximityConfig config = proximityProfileOptions[settingsMgr.adsbProximitySize.value]!;
     var rand = Random(DateTime.now().millisecondsSinceEpoch);
-    var observer = LatLng(0, 0);
+    var observer = const LatLng(0, 0);
 
     var ga = GA(
         "",
-        latlngCalc.offset(LatLng(0, 0), 10 + rand.nextDouble() * 3000, rand.nextDouble() * 360),
+        latlngCalc.offset(const LatLng(0, 0), 10 + rand.nextDouble() * 3000, rand.nextDouble() * 360),
         rand.nextDouble() * 200 - 100,
         35 + rand.nextDouble() * 50,
         rand.nextDouble() * 360,

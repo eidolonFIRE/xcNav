@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ADSBhelp extends StatefulWidget {
-  const ADSBhelp({Key? key}) : super(key: key);
+  const ADSBhelp({super.key});
 
   @override
   State<ADSBhelp> createState() => _ADSBhelpState();
