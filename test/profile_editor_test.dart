@@ -2,10 +2,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mockito/mockito.dart';
+import 'package:patrol_finders/patrol_finders.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter/material.dart';
-import 'package:patrol/patrol.dart';
 
 // ignore: depend_on_referenced_packages
 import 'package:permission_handler_platform_interface/permission_handler_platform_interface.dart' as perm_handler_plat;
@@ -84,7 +84,7 @@ void main() {
     await fontLoader.load();
   });
 
-  patrolTest(
+  patrolWidgetTest(
     'Get to profile editor',
     ($) async {
       // --- override size

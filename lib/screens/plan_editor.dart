@@ -205,10 +205,10 @@ class _PlanEditorState extends State<PlanEditor> {
                       ),
                       children: [
                         Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
-                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                          getMapTileLayer(MapTileSrc.airspace),
-                        if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                          getMapTileLayer(MapTileSrc.airports),
+                        // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                        //   getMapTileLayer(MapTileSrc.airspace),
+                        // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                        //   getMapTileLayer(MapTileSrc.airports),
 
                         // Flight plan markers
                         TappablePolylineLayer(

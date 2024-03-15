@@ -327,12 +327,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         child: getMapTileLayer(settingsMgr.mainMapTileSrc.value)),
 
                     // Airspace overlay
-                    if (settingsMgr.showAirspaceOverlay.value &&
-                        settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                      getMapTileLayer(MapTileSrc.airspace),
-                    if (settingsMgr.showAirspaceOverlay.value &&
-                        settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                      getMapTileLayer(MapTileSrc.airports),
+                    // if (settingsMgr.showAirspaceOverlay.value &&
+                    //     settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
+                    //   getMapTileLayer(MapTileSrc.airspace),
+                    // if (settingsMgr.showAirspaceOverlay.value &&
+                    //     settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
+                    //   getMapTileLayer(MapTileSrc.airports),
 
                     // TFRs
                     FutureBuilder<List<TFR>?>(
@@ -363,17 +363,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         }),
 
                     // https://nowcoast.noaa.gov/help/#!section=map-service-list
-                    if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
-                      Opacity(
-                        opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.zoom : 0)) / 10.0)),
-                        child: TileLayer(
-                            backgroundColor: Colors.transparent,
-                            wmsOptions: WMSTileLayerOptions(
-                              layers: ["1"],
-                              baseUrl:
-                                  "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
-                            )),
-                      ),
+                    // if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
+                    //   Opacity(
+                    //     opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.zoom : 0)) / 10.0)),
+                    //     child: TileLayer(
+                    //         backgroundColor: Colors.transparent,
+                    //         wmsOptions: WMSTileLayerOptions(
+                    //           layers: ["1"],
+                    //           baseUrl:
+                    //               "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
+                    //         )),
+                    //   ),
 
                     // Other Pilot path trace
                     PolylineLayer(

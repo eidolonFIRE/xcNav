@@ -216,10 +216,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
 
                       // Airspace overlay
-                      if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        getMapTileLayer(MapTileSrc.airspace),
-                      if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        getMapTileLayer(MapTileSrc.airports),
+                      // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                      //   getMapTileLayer(MapTileSrc.airspace),
+                      // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
+                      //   getMapTileLayer(MapTileSrc.airports),
 
                       // Waypoints: paths
                       PolylineLayer(
