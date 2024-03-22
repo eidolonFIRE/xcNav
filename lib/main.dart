@@ -34,7 +34,7 @@ import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/screens/plan_editor.dart';
 import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
-import 'package:xcnav/screens/servo_tune.dart';
+import 'package:xcnav/screens/servo_carb.dart';
 import 'package:xcnav/screens/settings_editor.dart';
 import 'package:xcnav/screens/flight_log_viewer.dart';
 import 'package:xcnav/screens/plans_viewer.dart';
