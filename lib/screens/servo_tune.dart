@@ -5,14 +5,14 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:xcnav/servo_carb_service.dart';
 import 'package:xcnav/widgets/carb_needle_dial.dart';
 
-class ServoTune extends StatefulWidget {
-  const ServoTune({Key? key}) : super(key: key);
+class ServoCarb extends StatefulWidget {
+  const ServoCarb({Key? key}) : super(key: key);
 
   @override
-  State<ServoTune> createState() => _ServoTuneState();
+  State<ServoCarb> createState() => _ServoCarbState();
 }
 
-class _ServoTuneState extends State<ServoTune> {
+class _ServoCarbState extends State<ServoCarb> {
   BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
   late StreamSubscription<BluetoothAdapterState> _adapterStateStateSubscription;
 

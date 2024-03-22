@@ -287,7 +287,7 @@ class XCNav extends StatelessWidget {
         "/adsbHelp": (context) => const ADSBhelp(),
         "/checklist": (context) => const ChecklistViewer(),
         "/logReplay": (context) => const LogReplay(),
-        "/servoTune": (context) => const ServoTune(),
+        "/servoCarb": (context) => const ServoCarb(),
         "/bleScan": (context) => const ScanScreen(),
       },
     );

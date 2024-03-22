@@ -8,6 +8,7 @@ import 'package:xcnav/dialogs/edit_gear.dart';
 import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 
 class MainMenu extends StatefulWidget {
@@ -200,18 +201,22 @@ class _MainMenuState extends State<MainMenu> {
           ]),
         ),
 
-        ListTile(
-          minVerticalPadding: 10,
-          onTap: () => {Navigator.popAndPushNamed(context, "/servoTune")},
-          leading: const Icon(
-            Icons.settings_applications_sharp,
-            size: 30,
+        // EXPERIMENTAL SERVO CARB
+        if (settingsMgr.showServoCarbMenu.value)
+          ListTile(
+            iconColor: Colors.amber,
+            textColor: Colors.amber,
+            minVerticalPadding: 10,
+            onTap: () => {Navigator.popAndPushNamed(context, "/servoCarb")},
+            leading: const Icon(
+              Icons.settings_applications_sharp,
+              size: 30,
+            ),
+            title: Text(
+              "ServoCarb",
+              style: Theme.of(context).textTheme.headlineSmall!.merge(const TextStyle(color: Colors.amber)),
+            ),
           ),
-          title: Text(
-            "Tune",
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-        ),
 
         Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 

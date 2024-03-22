@@ -323,10 +323,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_blue_plus
-      sha256: aaeaea38bc6d697092ff8c9224dc5046e38682b6257515d971bb078567e4efcb
+      sha256: af326029061bc2aac4fff3e50d6cbf1a1cda037e2373ac959a838b4b0aaac960
       url: "https://pub.dev"
     source: hosted
-    version: "1.31.7"
+    version: "1.31.17"
   flutter_colorpicker:
     dependency: "direct main"
     description:
@@ -451,10 +451,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_native_splash
-      sha256: "558f10070f03ee71f850a78f7136ab239a67636a294a44a06b6b7345178edb1e"
+      sha256: edf39bcf4d74aca1eb2c1e43c3e445fd9f494013df7f0da752fefe72020eedc0
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.10"
+    version: "2.4.0"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -549,10 +549,10 @@ packages:
     dependency: transitive
     description:
       name: geolocator_apple
-      sha256: "2f2d4ee16c4df269e93c0e382be075cc01d5db6703c3196e4af20a634fe49ef4"
+      sha256: bc2aca02423ad429cb0556121f56e60360a2b7d694c8570301d06ea0c00732fd
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.6"
+    version: "2.3.7"
   geolocator_platform_interface:
     dependency: transitive
     description:
@@ -977,6 +977,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
+  patrol:
+    dependency: "direct dev"
+    description:
+      name: patrol
+      sha256: "6112dd3b0a4b6d0fd1b77868d79d6dd5ef371a0186d6d6d41c821cf72e4b7e7e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.1"
   patrol_finders:
     dependency: "direct main"
     description:
@@ -1005,10 +1013,10 @@ packages:
     dependency: transitive
     description:
       name: permission_handler_apple
-      sha256: bdafc6db74253abb63907f4e357302e6bb786ab41465e8635f362ee71fd8707b
+      sha256: "92861b0f0c2443dd8898398c2baa4f1ae925109b5909ae4a17d0108a6a788932"
       url: "https://pub.dev"
     source: hosted
-    version: "9.4.0"
+    version: "9.4.2"
   permission_handler_html:
     dependency: transitive
     description:
@@ -1149,10 +1157,10 @@ packages:
     dependency: transitive
     description:
       name: share_plus_platform_interface
-      sha256: df08bc3a07d01f5ea47b45d03ffcba1fa9cd5370fb44b3f38c70e42cced0f956
+      sha256: "251eb156a8b5fa9ce033747d73535bf53911071f8d3b6f4f0b578505ce0d4496"
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.1"
+    version: "3.4.0"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -1209,6 +1217,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  shelf:
+    dependency: transitive
+    description:
+      name: shelf
+      sha256: ad29c505aee705f41a4d8963641f91ac4cee3c8fad5947e033390a7bd8180fa4
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.1"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -1527,5 +1543,5 @@ packages:
     source: hosted
     version: "3.1.2"
 sdks:
-  dart: ">=3.2.0 <4.0.0"
-  flutter: ">=3.16.0"
+  dart: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"

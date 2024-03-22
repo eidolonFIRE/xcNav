@@ -16,7 +16,7 @@ It includes:
 # Why?
 
 This helps tremendously while making decisions around UI design.
-We can learn what is used the most, or what is never used. This that nobody uses can be removed or burried a little deeper while more important things are brought to the surface.
+We can learn what is used the most, or what is never used. Anything that nobody uses can be removed or burried a little deeper while more important things are brought to the surface.
 
 # Opt-out?
 
