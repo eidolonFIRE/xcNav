@@ -30,6 +30,11 @@ class _SettingsEditorState extends State<SettingsEditor> {
 
   Map<String, List<SettingMgrItem>> slices = {};
 
+  final catagoryColors = {
+    "Experimental": Colors.amber,
+    "Debug Tools": Colors.red,
+  };
+
   @override
   Widget build(BuildContext context) {
     if (slices.isEmpty) {
@@ -276,10 +281,14 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                             title: Text(e.title),
                                             subtitle: e.config!.subtitle,
                                             trailing: trailing,
+                                            textColor: catagoryColors[key],
+                                            iconColor: catagoryColors[key],
                                           );
                                         })
                                     // --- Actions
                                     : ListTile(
+                                        textColor: catagoryColors[key],
+                                        iconColor: catagoryColors[key],
                                         title: Text(e.title),
                                         trailing: IconButton(
                                             icon: e.action!.actionIcon ?? const Icon(Icons.navigate_next),

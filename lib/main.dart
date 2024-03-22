@@ -24,6 +24,7 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
+import 'package:xcnav/screens/ble_scan.dart';
 
 // screens
 import 'package:xcnav/screens/log_replay.dart';
@@ -33,6 +34,7 @@ import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/screens/plan_editor.dart';
 import 'package:xcnav/screens/profile_editor.dart';
 import 'package:xcnav/screens/qr_scanner.dart';
+import 'package:xcnav/screens/servo_carb.dart';
 import 'package:xcnav/screens/settings_editor.dart';
 import 'package:xcnav/screens/flight_log_viewer.dart';
 import 'package:xcnav/screens/plans_viewer.dart';
@@ -42,6 +44,7 @@ import 'package:xcnav/screens/weather_viewer.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
+import 'package:xcnav/servo_carb_service.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/map_service.dart';
@@ -60,6 +63,8 @@ void main() async {
 
     final prefs = await SharedPreferences.getInstance();
     settingsMgr = SettingsMgr(prefs);
+
+    initCarbNeedles(prefs);
 
     final configuration = DdSdkConfiguration(
       clientToken: datadogToken,
@@ -282,6 +287,8 @@ class XCNav extends StatelessWidget {
         "/adsbHelp": (context) => const ADSBhelp(),
         "/checklist": (context) => const ChecklistViewer(),
         "/logReplay": (context) => const LogReplay(),
+        "/servoCarb": (context) => const ServoCarb(),
+        "/bleScan": (context) => const ScanScreen(),
       },
     );
   }

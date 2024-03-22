@@ -209,6 +209,9 @@ class SettingsMgr {
   late final SettingAction adsbTestAudio;
   late final SettingConfig<bool> rumOptOut;
 
+  // --- ServoCarb
+  late final SettingConfig<bool> showServoCarbMenu;
+
   // --- Debug Tools
   late final SettingConfig<bool> spoofLocation;
   late final SettingAction clearMapCache;
@@ -317,31 +320,31 @@ class SettingsMgr {
                 })
         ])));
 
+    // --- ServoCarb
+    showServoCarbMenu = SettingConfig(this, prefs, "Experimental", "showServoCarbMenu", false,
+        title: "Show ServoCarb Menu", icon: const Icon(Icons.settings_applications_sharp));
+
     // --- Debug Tools
     spoofLocation = SettingConfig(this, prefs, "Debug Tools", "", false,
         title: "Spoof Location",
         icon: const Icon(
           Icons.location_off,
-          color: Colors.red,
         ),
         description: "Useful for test driving while on the ground.");
     clearMapCache = SettingAction(this, "Debug Tools", () {},
         title: "Clear Map Cache",
         actionIcon: const Icon(
           Icons.map,
-          color: Colors.red,
         ));
     clearAvatarCache = SettingAction(this, "Debug Tools", () => null,
         title: "Clear Cached Avatars",
         actionIcon: const Icon(
           Icons.account_circle,
-          color: Colors.red,
         ));
     eraseIdentity = SettingAction(this, "Debug Tools", () => null,
         title: "Erase Identity",
         actionIcon: const Icon(
           Icons.badge,
-          color: Colors.red,
         ));
 
     // --- Hidden
