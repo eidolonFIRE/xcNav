@@ -21,7 +21,7 @@ import 'package:xcnav/widgets/plan_card.dart';
 import 'package:xml/xml.dart';
 
 class PlansViewer extends StatefulWidget {
-  const PlansViewer({Key? key}) : super(key: key);
+  const PlansViewer({super.key});
 
   @override
   State<PlansViewer> createState() => _PlansViewerState();

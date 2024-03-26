@@ -9,7 +9,7 @@ import 'package:xcnav/snackbar.dart';
 import 'package:xcnav/widgets/system_device_tile.dart';
 
 class ScanScreen extends StatefulWidget {
-  const ScanScreen({Key? key}) : super(key: key);
+  const ScanScreen({super.key});
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();

@@ -6,7 +6,7 @@ class DashedLine extends StatefulWidget {
   final Color color;
   final double width;
 
-  const DashedLine(this.color, this.width, {Key? key}) : super(key: key);
+  const DashedLine(this.color, this.width, {super.key});
 
   @override
   State<StatefulWidget> createState() => _LineState();

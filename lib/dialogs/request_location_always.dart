@@ -3,8 +3,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 class RequestLocationDialog extends StatelessWidget {
   const RequestLocationDialog({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

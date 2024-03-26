@@ -8,7 +8,7 @@ import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class WaypointNavBar extends StatelessWidget {
   final ActivePlan activePlan;
-  const WaypointNavBar({Key? key, required this.activePlan}) : super(key: key);
+  const WaypointNavBar({super.key, required this.activePlan});
 
   @override
   Widget build(BuildContext context) {

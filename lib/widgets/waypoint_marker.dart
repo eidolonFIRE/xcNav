@@ -70,7 +70,7 @@ class WaypointMarker extends StatelessWidget {
   final Waypoint waypoint;
   final double size;
 
-  const WaypointMarker(this.waypoint, this.size, {Key? key}) : super(key: key);
+  const WaypointMarker(this.waypoint, this.size, {super.key});
 
   @override
   Widget build(BuildContext context) {

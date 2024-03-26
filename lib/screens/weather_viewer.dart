@@ -8,7 +8,7 @@ import 'package:xcnav/widgets/sounding_plot_therm.dart';
 import 'package:xcnav/widgets/sounding_plot_wind.dart';
 
 class WeatherViewer extends StatefulWidget {
-  const WeatherViewer({Key? key}) : super(key: key);
+  const WeatherViewer({super.key});
 
   @override
   State<WeatherViewer> createState() => _WeatherViewerState();

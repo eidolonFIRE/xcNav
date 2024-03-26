@@ -15,7 +15,6 @@ import 'package:xcnav/models/waypoint.dart';
 // --- Providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
 
 // --- Widgets
@@ -31,7 +30,7 @@ import 'package:xcnav/dialogs/tap_point.dart';
 import 'package:xcnav/map_service.dart';
 
 class PlanEditor extends StatefulWidget {
-  const PlanEditor({Key? key}) : super(key: key);
+  const PlanEditor({super.key});
 
   @override
   State<PlanEditor> createState() => _PlanEditorState();
@@ -522,7 +521,7 @@ class _PlanEditorState extends State<PlanEditor> {
                             items.sort((a, b) => a.name.compareTo(b.name));
                             return Slidable(
                               dragStartBehavior: DragStartBehavior.start,
-                              key: ValueKey(plan!.waypoints[i]),
+                              key: ValueKey(items[i]),
                               startActionPane: ActionPane(extentRatio: 0.14, motion: const ScrollMotion(), children: [
                                 SlidableAction(
                                   onPressed: (e) {

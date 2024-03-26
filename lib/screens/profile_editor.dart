@@ -14,7 +14,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:xcnav/providers/profile.dart';
 
 class ProfileEditor extends StatefulWidget {
-  const ProfileEditor({Key? key}) : super(key: key);
+  const ProfileEditor({super.key});
 
   @override
   State<ProfileEditor> createState() => _ProfileEditorState();

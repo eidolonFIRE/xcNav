@@ -14,7 +14,7 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 
 class GroupDetails extends StatefulWidget {
-  const GroupDetails({Key? key}) : super(key: key);
+  const GroupDetails({super.key});
 
   @override
   State<GroupDetails> createState() => _GroupDetailsState();

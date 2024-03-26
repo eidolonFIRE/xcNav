@@ -8,7 +8,7 @@ class CarbNeedleDial extends StatelessWidget {
   final String? label;
   final VoidCallback? onUp;
 
-  const CarbNeedleDial(this.needle, this.size, {this.label, this.onUp, Key? key}) : super(key: key);
+  const CarbNeedleDial(this.needle, this.size, {this.label, this.onUp, super.key});
 
   @override
   Widget build(BuildContext context) {

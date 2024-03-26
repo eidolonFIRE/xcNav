@@ -196,7 +196,9 @@ class ADSB with ChangeNotifier {
             heartbeat();
             final ga = gdl90.decodeGDL90(dg.data);
             if (ga != null) {
-              planes[ga.id] = ga;
+              if (!settingsMgr.adsbFilters.value.contains(ga.id)) {
+                planes[ga.id] = ga;
+              }
             }
           }
         }, onError: (error) {

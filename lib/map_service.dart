@@ -5,7 +5,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:xcnav/dem_service.dart';
-import 'package:xcnav/secrets.dart';
 
 enum MapTileSrc {
   topo,

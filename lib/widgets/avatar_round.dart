@@ -4,7 +4,7 @@ class AvatarRound extends StatelessWidget {
   final Widget? avatar;
   final double radius;
 
-  const AvatarRound(this.avatar, this.radius, {Key? key}) : super(key: key);
+  const AvatarRound(this.avatar, this.radius, {super.key});
 
   @override
   Widget build(BuildContext context) {

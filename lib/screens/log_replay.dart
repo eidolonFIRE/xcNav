@@ -13,7 +13,6 @@ import 'package:xcnav/dialogs/edit_gear.dart';
 import 'package:xcnav/dialogs/edit_fuel_report.dart';
 import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/widgets/elevation_plot.dart';
@@ -23,7 +22,7 @@ import 'package:xcnav/widgets/map_selector.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class LogReplay extends StatefulWidget {
-  const LogReplay({Key? key}) : super(key: key);
+  const LogReplay({super.key});
 
   @override
   State<LogReplay> createState() => _LogReplayState();
@@ -690,11 +689,11 @@ class _ThumbShape extends RoundSliderThumbShape {
 
 class LabelFlag extends StatelessWidget {
   const LabelFlag({
-    Key? key,
+    super.key,
     required this.direction,
     required this.color,
     required this.text,
-  }) : super(key: key);
+  });
 
   final TextDirection direction;
   final Widget text;

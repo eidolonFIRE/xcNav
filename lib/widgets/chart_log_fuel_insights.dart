@@ -20,11 +20,11 @@ enum ChartFuelModeX {
 
 class ChartLogFuelInsights extends StatelessWidget {
   const ChartLogFuelInsights({
-    Key? key,
+    super.key,
     required this.logsSlice,
     required this.chartFuelModeX,
     required this.chartFuelModeY,
-  }) : super(key: key);
+  });
 
   final Iterable<FlightLog> logsSlice;
   final ChartFuelModeX chartFuelModeX;

@@ -6,7 +6,7 @@ import 'package:xcnav/servo_carb_service.dart';
 import 'package:xcnav/widgets/carb_needle_dial.dart';
 
 class ServoCarb extends StatefulWidget {
-  const ServoCarb({Key? key}) : super(key: key);
+  const ServoCarb({super.key});
 
   @override
   State<ServoCarb> createState() => _ServoCarbState();

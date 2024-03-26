@@ -10,8 +10,7 @@ class ChatBubble extends StatelessWidget {
   final int? timestamp;
   final double? maxWidth;
 
-  const ChatBubble(this.isMe, this.text, this.user, this.pilotName, this.timestamp, {Key? key, this.maxWidth})
-      : super(key: key);
+  const ChatBubble(this.isMe, this.text, this.user, this.pilotName, this.timestamp, {super.key, this.maxWidth});
 
   @override
   Widget build(BuildContext context) {

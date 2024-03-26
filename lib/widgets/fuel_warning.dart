@@ -3,26 +3,22 @@ import 'package:flutter/material.dart';
 class FuelWarning extends StatefulWidget {
   final double size;
 
-  const FuelWarning(this.size, {Key? key}) : super(key: key);
+  const FuelWarning(this.size, {super.key});
 
   @override
   State<FuelWarning> createState() => _FuelWarningState();
 }
 
-class _FuelWarningState extends State<FuelWarning>
-    with SingleTickerProviderStateMixin {
+class _FuelWarningState extends State<FuelWarning> with SingleTickerProviderStateMixin {
   late final AnimationController controller;
   late final Animation<Color?> animation;
 
   @override
   void initState() {
     super.initState();
-    controller = AnimationController(
-        duration: const Duration(milliseconds: 1000), vsync: this);
-    final CurvedAnimation curve =
-        CurvedAnimation(parent: controller, curve: Curves.linear);
-    animation =
-        ColorTween(begin: Colors.amberAccent, end: Colors.red).animate(curve);
+    controller = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
+    final CurvedAnimation curve = CurvedAnimation(parent: controller, curve: Curves.linear);
+    animation = ColorTween(begin: Colors.amberAccent, end: Colors.red).animate(curve);
     animation.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         controller.reverse();

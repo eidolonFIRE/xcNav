@@ -7,7 +7,7 @@ class AltimeterBadge extends StatelessWidget {
   final double size;
   final String text;
 
-  const AltimeterBadge(this.text, {this.size = 1.0, Key? key}) : super(key: key);
+  const AltimeterBadge(this.text, {this.size = 1.0, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -42,8 +42,7 @@ class Altimeter extends StatelessWidget {
       this.unitStyle,
       this.unitTag,
       this.isPrimary = true,
-      Key? key})
-      : super(key: key);
+      super.key});
 
   @override
   Widget build(BuildContext context) {

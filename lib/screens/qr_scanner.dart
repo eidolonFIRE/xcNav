@@ -13,7 +13,7 @@ import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 
 class QRScanner extends StatefulWidget {
-  const QRScanner({Key? key}) : super(key: key);
+  const QRScanner({super.key});
 
   @override
   State<QRScanner> createState() => _QRScannerState();

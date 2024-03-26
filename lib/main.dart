@@ -176,7 +176,7 @@ void main() async {
 }
 
 class XCNav extends StatelessWidget {
-  const XCNav({Key? key}) : super(key: key);
+  const XCNav({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -12,7 +12,7 @@ import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 
 class MainMenu extends StatefulWidget {
-  const MainMenu({Key? key}) : super(key: key);
+  const MainMenu({super.key});
 
   @override
   State<MainMenu> createState() => _MainMenuState();

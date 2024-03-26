@@ -50,7 +50,7 @@ class Geo {
   Geo.fromPosition(Position location, Geo? prev, BarometerValue? baro, BarometerValue? baroAmbient) {
     lat = location.latitude;
     lng = location.longitude;
-    time = location.timestamp?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch;
+    time = location.timestamp.millisecondsSinceEpoch;
 
     if (prev != null && prev.time < time) {
       // prefer our own calculations

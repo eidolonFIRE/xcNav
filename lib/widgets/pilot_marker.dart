@@ -14,7 +14,7 @@ class PilotMarker extends StatelessWidget {
   final double? hdg;
   final double? relAlt;
 
-  const PilotMarker(this.pilot, this.radius, {Key? key, this.hdg, this.relAlt}) : super(key: key);
+  const PilotMarker(this.pilot, this.radius, {super.key, this.hdg, this.relAlt});
 
   @override
   Widget build(BuildContext context) {

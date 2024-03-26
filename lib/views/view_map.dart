@@ -53,7 +53,6 @@ import 'package:xcnav/models/tfr.dart';
 // misc
 import 'package:xcnav/units.dart';
 import 'package:xcnav/tappable_polyline.dart';
-import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/main.dart';
 import 'package:xcnav/map_service.dart';
 
@@ -68,7 +67,7 @@ enum FocusMode {
 }
 
 class ViewMap extends StatefulWidget {
-  const ViewMap({Key? key}) : super(key: key);
+  const ViewMap({super.key});
 
   @override
   State<ViewMap> createState() => ViewMapState();

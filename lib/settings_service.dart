@@ -25,6 +25,8 @@ class SettingConfig<T> {
   late ValueNotifier<T> _value;
   T defaultValue;
 
+  final T Function(T value)? setter;
+
   ValueListenable<T> get listenable => _value;
 
   T get value {
@@ -32,7 +34,12 @@ class SettingConfig<T> {
   }
 
   set value(T newValue) {
-    _value.value = newValue;
+    if (setter != null) {
+      // use custom setter
+      _value.value = setter!(newValue);
+    } else {
+      _value.value = newValue;
+    }
     if (id == "") return;
     if (value is Enum) {
       // Handle enum type
@@ -60,7 +67,7 @@ class SettingConfig<T> {
   }
 
   SettingConfig(SettingsMgr mgr, this._prefsInstance, this.catagory, this.id, this.defaultValue,
-      {required this.title, this.description, this.icon, bool hidden = false, this.subtitle}) {
+      {required this.title, this.description, this.icon, bool hidden = false, this.subtitle, this.setter}) {
     if (id.startsWith("settings.")) {
       throw "Setting ID automatically starts with \"settings.\"";
     }
@@ -74,27 +81,27 @@ class SettingConfig<T> {
         if (loadedInt == null) {
           _value = ValueNotifier<T>(defaultValue);
         } else {
-          switch (T) {
+          switch (T.toString()) {
             // NOTE: Need to add each supporte enum here
-            case DisplayUnitsDist:
+            case "DisplayUnitsDist":
               _value = ValueNotifier<T>(DisplayUnitsDist.values[loadedInt] as T);
               break;
-            case DisplayUnitsSpeed:
+            case "DisplayUnitsSpeed":
               _value = ValueNotifier<T>(DisplayUnitsSpeed.values[loadedInt] as T);
               break;
-            case DisplayUnitsVario:
+            case "DisplayUnitsVario":
               _value = ValueNotifier<T>(DisplayUnitsVario.values[loadedInt] as T);
               break;
-            case DisplayUnitsFuel:
+            case "DisplayUnitsFuel":
               _value = ValueNotifier<T>(DisplayUnitsFuel.values[loadedInt] as T);
               break;
-            case AltimeterMode:
+            case "AltimeterMode":
               _value = ValueNotifier<T>(AltimeterMode.values[loadedInt] as T);
               break;
-            case ProximitySize:
+            case "ProximitySize":
               _value = ValueNotifier<T>(ProximitySize.values[loadedInt] as T);
               break;
-            case MapTileSrc:
+            case "MapTileSrc":
               _value = ValueNotifier<T>(MapTileSrc.values[loadedInt] as T);
               break;
             default:
@@ -206,6 +213,7 @@ class SettingsMgr {
 
   // --- Misc
   late final SettingConfig<ProximitySize> adsbProximitySize;
+  late final SettingConfig<List<String>> adsbFilters;
   late final SettingAction adsbTestAudio;
   late final SettingConfig<bool> rumOptOut;
 
@@ -303,6 +311,10 @@ class SettingsMgr {
     // --- Misc
     adsbProximitySize = SettingConfig(this, prefs, "Misc", "adsbProximitySize", ProximitySize.medium,
         title: "ADSB Proximity Profile", icon: const Icon(Icons.radar));
+    adsbFilters = SettingConfig(this, prefs, "Misc", "adsbFilters", [],
+        title: "Filter tail number(s)",
+        icon: const Icon(Icons.filter_alt),
+        setter: (value) => value.map((e) => e.toUpperCase()).toList());
     adsbTestAudio =
         SettingAction(this, "Misc", () => null, title: "Test Audio Cues", actionIcon: const Icon(Icons.volume_up));
     rumOptOut = SettingConfig(this, prefs, "Misc", "rumOptOut", false,
