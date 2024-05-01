@@ -74,7 +74,7 @@ int crcAccumulateBuffer(int crcAccum, Uint8List buffer, int length) {
 /// 0x12: SERVICE_SURFACE_TYPE
 /// 0x13: POINT_OBSTACLE_TYPE
 GA? _decodeTraffic(Uint8List data) {
-  final id = String.fromCharCodes(data.sublist(27, 27 + 8)).trim();
+  final id = String.fromCharCodes(data.sublist(27, 27 + 8)).trim().toUpperCase();
   final lat = _decode32bit(data, 4) / 1e7;
   final lng = _decode32bit(data, 8) / 1e7;
   // TODO: check altitude type

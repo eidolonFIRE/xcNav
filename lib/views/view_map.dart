@@ -620,12 +620,24 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                       opacity: getGAtransparency(
                                           e.alt - (Provider.of<MyTelemetry>(context, listen: false).geo?.alt ?? 0)),
                                       child: Stack(
+                                        clipBehavior: Clip.none,
                                         children: [
                                           /// --- GA icon
                                           Container(
                                             transformAlignment: const Alignment(0, 0),
                                             transform: Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
                                             child: e.getIcon(),
+                                          ),
+
+                                          Container(
+                                            transform: Matrix4.translationValues(50, 20, 0),
+                                            transformAlignment: const Alignment(0, 0),
+                                            child: Text(
+                                              e.id,
+                                              maxLines: 1,
+                                              style: const TextStyle(
+                                                  color: Colors.black, fontSize: 11, overflow: TextOverflow.visible),
+                                            ),
                                           ),
 
                                           /// --- Relative Altitude
