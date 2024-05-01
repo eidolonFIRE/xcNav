@@ -406,12 +406,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             baseTiles: settingsMgr.mainMapTileSrc.value),
                       ),
 
-                    // Measurement: yellow line
-                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                      PolylineLayer(polylines: [measurementPolyline]),
-
                     // Waypoints: paths
                     TappablePolylineLayer(
+                        isEnabled: focusMode != FocusMode.measurement,
                         pointerDistanceTolerance: 30,
                         polylineCulling: true,
                         polylines: plan.waypoints.values
@@ -497,6 +494,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   )))
                           .toList(),
                     ),
+
+                    // Measurement: yellow line
+                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
+                      PolylineLayer(polylines: [measurementPolyline]),
 
                     // --- Draggable waypoints
                     if (editingWp != null &&

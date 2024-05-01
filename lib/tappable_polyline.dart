@@ -52,14 +52,17 @@ class TappablePolylineLayer extends PolylineLayer {
   /// Callback when polyline has long press
   final void Function(TaggedPolyline, TapPosition tapPosition)? onLongPress;
 
+  final bool isEnabled;
+
   const TappablePolylineLayer({
-    Key? key,
+    super.key,
     this.polylines = const [],
     this.onTap,
     this.onLongPress,
     this.pointerDistanceTolerance = 15,
+    this.isEnabled = true,
     polylineCulling = false,
-  }) : super(key: key, polylines: polylines, polylineCulling: polylineCulling);
+  }) : super(polylines: polylines, polylineCulling: polylineCulling);
 
   @override
   Widget build(BuildContext context) {
@@ -89,13 +92,13 @@ class TappablePolylineLayer extends PolylineLayer {
 
         return GestureDetector(
             onLongPressEnd: ((details) {
-              if (!_handlePolylineTap(details.localPosition, details.globalPosition, onLongPress)) {
+              if (!isEnabled || !_handlePolylineTap(details.localPosition, details.globalPosition, onLongPress)) {
                 // Only forward the call on to the map if we didn't hit a single polyline
                 _forwardCallToMapOptions(CallType.longPress, details.localPosition, details.globalPosition, context);
               }
             }),
             onTapUp: (TapUpDetails details) {
-              if (!_handlePolylineTap(details.localPosition, details.globalPosition, onTap)) {
+              if (!isEnabled || _handlePolylineTap(details.localPosition, details.globalPosition, onTap)) {
                 // Only forward the call on to the map if we didn't hit a single polyline
                 _forwardCallToMapOptions(CallType.tap, details.localPosition, details.globalPosition, context);
               }
