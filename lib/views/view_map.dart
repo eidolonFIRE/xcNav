@@ -432,11 +432,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 : false;
 
                             // Select this path waypoint
-                            if (focusMode == FocusMode.measurement) {
-                              for (final each in (tapEnd ? wp.latlng.reversed : wp.latlng)) {
-                                measurementEditor.add(measurementPolyline.points, each);
-                              }
-                            } else {
+                            if (focusMode != FocusMode.measurement) {
                               if (plan.selectedWp == p0.tag) {
                                 wp.toggleDirection();
                               } else {
