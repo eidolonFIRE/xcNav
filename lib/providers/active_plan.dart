@@ -96,6 +96,13 @@ class ActivePlan with ChangeNotifier {
   }
 
   void parseWaypointsSync(Map<String, dynamic> planData) {
+    // Attempt to preserve orientation of paths so selected
+    // paths don't get flipped back each time server syncs.
+    Map<String, bool> isReversed = {};
+    for (final each in waypoints.values.where((e) => e.isPath)) {
+      isReversed[each.id] = each.isReversed;
+    }
+
     // Only remove waypoints that aren't emphemeral
     waypoints.removeWhere((key, value) => !value.ephemeral);
     // add back each waypoint
@@ -103,6 +110,10 @@ class ActivePlan with ChangeNotifier {
       final wp = Waypoint.fromJson(each);
       if (wp.validate()) {
         waypoints[wp.id] = wp;
+        // Restore orientation
+        if (isReversed.containsKey(wp.id)) {
+          waypoints[wp.id]!.isReversed = isReversed[wp.id] ?? false;
+        }
       }
     }
     notifyListeners();
