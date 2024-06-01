@@ -13,7 +13,7 @@ int _decode24bit(Uint8List data) {
 }
 
 GA? _decodeTraffic(Uint8List data) {
-  final String id = String.fromCharCodes(data.sublist(18, 18 + 8)).trim();
+  final String id = String.fromCharCodes(data.sublist(18, 18 + 8)).trim().toUpperCase();
 
   final double lat = _decode24bit(data.sublist(4, 7)) * 180.0 / 0x7fffff;
   final double lng = _decode24bit(data.sublist(7, 10)) * 180.0 / 0x7fffff;

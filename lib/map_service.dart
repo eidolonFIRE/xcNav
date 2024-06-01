@@ -20,7 +20,7 @@ enum MapTileSrc {
 bool mapServiceIsInit = false;
 
 TileProvider? _makeTileProvider(String instanceName) {
-  debugPrint("------ make tile provider ----");
+  debugPrint("------ make tile provider \"$instanceName\" ----");
   if (!mapServiceIsInit) return null;
   try {
     return FMTCStore(instanceName).getTileProvider();
@@ -61,27 +61,37 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
     // https://docs.openaip.net/?urls.primaryName=Tiles%20API
     // case MapTileSrc.airspace:
     //   return TileLayer(
-    //       urlTemplate: 'https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey={apiKey}',
-    //       tileProvider: _makeTileProvider(tileName),
-    //       // backgroundColor: Colors.transparent,
-    //       // maxZoom: 11,
-    //       maxNativeZoom: 11,
-    //       minZoom: 7,
-    //       additionalOptions: const {"apiKey": aipClientToken});
+    //     urlTemplate: 'https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey={apiKey}',
+    //     tileProvider: _makeTileProvider(tileName),
+    //     backgroundColor: Colors.transparent,
+    //     // maxZoom: 11,
+    //     maxNativeZoom: 11,
+    //     minZoom: 7,
+    //     additionalOptions: const {"apiKey": aipClientToken},
+    //     evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
+    //     errorTileCallback: (tile, error, stackTrace) {
+    //       debugPrint("$tileName: error: $tile, $error, $stackTrace");
+    //     },
+    //   );
     // case MapTileSrc.airports:
     //   return TileLayer(
-    //       urlTemplate: 'https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey={apiKey}',
-    //       tileProvider: _makeTileProvider(tileName),
-    //       // backgroundColor: Colors.transparent,
-    //       maxZoom: 11,
-    //       minZoom: 9,
-    //       additionalOptions: const {"apiKey": aipClientToken});
+    //     urlTemplate: 'https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey={apiKey}',
+    //     tileProvider: _makeTileProvider(tileName),
+    //     backgroundColor: Colors.transparent,
+    //     maxZoom: 11,
+    //     minZoom: 9,
+    //     additionalOptions: const {"apiKey": aipClientToken},
+    //     evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
+    //     errorTileCallback: (tile, error, stackTrace) {
+    //       debugPrint("$tileName: error: $tile, $error, $stackTrace");
+    //     },
+    //   );
     default:
       debugPrint("------ make tile layer ----");
       return TileLayer(
-        urlTemplate: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+        urlTemplate: "https://tile.opentopomap.org/{z}/{x}/{y}.png",
         // urlTemplate: "https://tile.tracestrack.com/topo__/{z}/{x}/{y}.png?key={apiKey}",
-        fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+        // fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
         // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 17,

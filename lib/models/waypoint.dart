@@ -147,6 +147,7 @@ class Waypoint {
     return _length ??= lengthBetweenIndexs(0, latlng.length - 1);
   }
 
+  bool get isReversed => _isReversed;
   set isReversed(bool newValue) {
     _isReversed = newValue;
     _latlngOriented = null;

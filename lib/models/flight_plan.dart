@@ -259,10 +259,10 @@ class FlightPlan {
 
           // Auto icons
           const autoIconMap = {
-            "airport": "airport airprt",
-            "fuel": "fuel gas chevron valero shell BP arco mobil 76",
+            "airport": "airport airprt arprt arpt heli strip",
+            "fuel": "fuel gas chevron valero shell BP arco mobil 76 sinclair 711 7-eleven flyingj",
             "sleep": "hotel motel bed sleep",
-            "camp": "camp tent",
+            "camp": "camp tent campground",
             "camera": "picture monument",
           };
           if (icon == null && name.isNotEmpty) {

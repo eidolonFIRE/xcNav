@@ -48,7 +48,7 @@ import 'package:xcnav/models/tfr.dart';
 
 // misc
 import 'package:xcnav/units.dart';
-// import 'package:xcnav/tappable_polyline.dart';
+import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/main.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/datadog.dart';
@@ -403,12 +403,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             baseTiles: settingsMgr.mainMapTileSrc.value),
                       ),
 
-                    // Measurement: yellow line
-                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                      PolylineLayer(polylines: [measurementPolyline]),
-
                     // Waypoints: paths
                     TappablePolylineLayer(
+                        isEnabled: focusMode != FocusMode.measurement,
                         pointerDistanceTolerance: 30,
                         polylineCulling: true,
                         polylines: plan.waypoints.values
@@ -488,6 +485,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               )))
                           .toList(),
                     ),
+
+                    // Measurement: yellow line
+                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
+                      PolylineLayer(polylines: [measurementPolyline]),
 
                     // --- Draggable waypoints
                     if (editingWp != null &&
@@ -607,12 +608,24 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                       opacity: getGAtransparency(
                                           e.alt - (Provider.of<MyTelemetry>(context, listen: false).geo?.alt ?? 0)),
                                       child: Stack(
+                                        clipBehavior: Clip.none,
                                         children: [
                                           /// --- GA icon
                                           Container(
                                             transformAlignment: const Alignment(0, 0),
                                             transform: Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
                                             child: e.getIcon(),
+                                          ),
+
+                                          Container(
+                                            transform: Matrix4.translationValues(50, 20, 0),
+                                            transformAlignment: const Alignment(0, 0),
+                                            child: Text(
+                                              e.id,
+                                              maxLines: 1,
+                                              style: const TextStyle(
+                                                  color: Colors.black, fontSize: 11, overflow: TextOverflow.visible),
+                                            ),
                                           ),
 
                                           /// --- Relative Altitude
