@@ -278,8 +278,8 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                               child: northlockWind
                                                   ? SvgPicture.asset(
                                                       "assets/images/compass_north.svg",
-                                                      // fit: BoxFit.none,
-                                                      color: Colors.white,
+                                                      colorFilter:
+                                                          const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                                                     )
                                                   : Transform.scale(
                                                       scale: 1.4,

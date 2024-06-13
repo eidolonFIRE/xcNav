@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/datadog.dart';
 
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/units.dart';
@@ -24,13 +25,15 @@ GA? _decodeTraffic(Uint8List data) {
   final double hdg = data[16] * 360 / 256.0;
   final double spd = ((data[13] << 4) + (data[14] >> 4)) * 0.51444;
 
-  // TODO: why are we getting really high IDs? (reserved IDs)
   GAtype type = GAtype.large;
   final i = data[17];
   if (i == 1 || i == 9 || i == 10) {
     type = GAtype.small;
   } else if (i == 7) {
     type = GAtype.heli;
+  } else {
+    // report some other code
+    error("Unknown ADSB type", attributes: {"id": id, "latlng": LatLng(lat, lng).toString(), "alt": alt, "type": i});
   }
 
   if (type.index > 0 && type.index < 22 && (lat != 0 || lng != 0) && (lat < 90 && lat > -90)) {

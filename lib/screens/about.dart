@@ -75,23 +75,21 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                   ),
                 ),
 
+                SizedBox(
+                    width: MediaQuery.of(context).size.width / 2,
+                    child: const Divider(
+                      color: Colors.white,
+                    )),
+
                 /// --- Links to external resources
-                Column(
-                  mainAxisSize: MainAxisSize.min,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    const Text(
-                      "Give Back",
-                      style: TextStyle(fontSize: 24),
-                    ),
-                    SizedBox(
-                        width: MediaQuery.of(context).size.width / 2,
-                        child: const Divider(
-                          color: Colors.white,
-                        )),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    Container(),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(),
+                        Text("Patreon", style: Theme.of(context).textTheme.headlineSmall),
                         SizedBox(
                           width: MediaQuery.of(context).size.width / 5,
                           height: MediaQuery.of(context).size.width / 5,
@@ -103,6 +101,12 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                                 width: MediaQuery.of(context).size.width / 10,
                               )),
                         ),
+                      ],
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text("Code", style: Theme.of(context).textTheme.headlineSmall),
                         SizedBox(
                           width: MediaQuery.of(context).size.width / 5,
                           height: MediaQuery.of(context).size.width / 5,
@@ -112,6 +116,12 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                               child: Image.asset("assets/external/GitHub-Mark-120px-plus.png",
                                   width: MediaQuery.of(context).size.width / 10)),
                         ),
+                      ],
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text("Chat", style: Theme.of(context).textTheme.headlineSmall),
                         SizedBox(
                           width: MediaQuery.of(context).size.width / 5,
                           height: MediaQuery.of(context).size.width / 5,
@@ -122,11 +132,17 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                                 "assets/external/icon_clyde_white_RGB.svg",
                               )),
                         ),
-                        Container()
                       ],
                     ),
+                    Container()
                   ],
                 ),
+                SizedBox(
+                    width: MediaQuery.of(context).size.width / 2,
+                    child: const Divider(
+                      color: Colors.white,
+                    )),
+
                 FutureBuilder<PackageInfo>(
                     future: PackageInfo.fromPlatform(),
                     builder: (context, version) => Text(

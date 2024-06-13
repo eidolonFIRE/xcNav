@@ -191,7 +191,7 @@ class _PlansViewerState extends State<PlansViewer> {
                           child: ListTile(
                             leading: SvgPicture.asset(
                               "assets/external/iFlightPlanner-Mark-White.svg",
-                              color: Colors.white,
+                              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                               height: 24,
                             ),
                             title: const Text("iFlightPlanner URL"),

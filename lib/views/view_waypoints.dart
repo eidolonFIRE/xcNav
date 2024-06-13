@@ -129,18 +129,6 @@ class ViewWaypointsState extends State<ViewWaypoints> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // // --- Filter Distance
-                // Switch(
-                //   value: filterDist,
-                //   inactiveThumbImage: IconImageProvider(Icons.straighten),
-                //   activeThumbImage: IconImageProvider(Icons.straighten, color: Colors.black),
-                //   onChanged: (value) {
-                //     setState(() {
-                //       filterDist = value;
-                //     });
-                //   },
-                // ),
-
                 // --- Filter Color
                 DropdownButtonHideUnderline(
                   child: DropdownButton<Color?>(

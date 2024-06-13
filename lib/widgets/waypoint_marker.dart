@@ -29,10 +29,8 @@ Widget getWpIcon(String? name, double size, Color? color) {
     return SizedBox(
         width: size,
         height: size,
-        child: SvgPicture.asset(
-          "assets/images/path.svg",
-          color: color ?? Colors.white,
-        ));
+        child: SvgPicture.asset("assets/images/path.svg",
+            colorFilter: ColorFilter.mode(color ?? Colors.white, BlendMode.srcIn)));
   }
 
   if (icon is IconData || icon == null) {
@@ -46,7 +44,7 @@ Widget getWpIcon(String? name, double size, Color? color) {
       width: size,
       child: SvgPicture.asset(
         icon,
-        color: color ?? Colors.white,
+        colorFilter: ColorFilter.mode(color ?? Colors.white, BlendMode.srcIn),
         width: size,
         height: size,
       ),
@@ -76,10 +74,9 @@ class WaypointMarker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(children: [
       Center(
-        child: SvgPicture.asset(
-          "assets/images/pin.svg",
-          color: waypoint.color == null ? Colors.black : Color(waypoint.color!),
-        ),
+        child: SvgPicture.asset("assets/images/pin.svg",
+            colorFilter:
+                ColorFilter.mode(waypoint.color == null ? Colors.black : Color(waypoint.color!), BlendMode.srcIn)),
       ),
       if (waypoint.icon != null)
         Center(

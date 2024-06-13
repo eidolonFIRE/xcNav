@@ -2,20 +2,20 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="120"
    height="120"
-   viewBox="0 0 31.75 31.75"
+   viewBox="0 0 120 120"
    version="1.1"
    id="svg8"
-   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="compass_north.svg">
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   sodipodi:docname="compass_north.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="4.3279845"
-     inkscape:cx="33.958337"
-     inkscape:cy="105.77569"
+     inkscape:zoom="8.655969"
+     inkscape:cx="39.568071"
+     inkscape:cy="64.290896"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -36,7 +36,10 @@
      inkscape:window-x="219"
      inkscape:window-y="242"
      inkscape:window-maximized="0"
-     units="px">
+     units="px"
+     inkscape:showpageshadow="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1">
     <inkscape:grid
        type="xygrid"
        id="grid817"
@@ -52,7 +55,6 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -62,14 +64,14 @@
      id="layer1"
      transform="translate(0,-265.25)">
     <path
-       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.93591052;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="M 10.781768,280.17013 15.875,265.77917 20.968229,280.17013 15.875,279.14219 Z"
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:3.43589;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 41.301852,322.08173 60,269.25 78.698136,322.08173 60,318.30798 Z"
        id="path819"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccc" />
     <path
-       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.24762632px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 10.583333,297 0,-13.22917 2.513541,-0.0199 5.953126,10.6032 v -10.58334 h 2.116667 l 0,13.22917 -2.513542,-0.007 L 12.7,286.41667 12.7,297 Z"
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.909078px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 40.573363,383.86714 v -48.5666 l 9.22765,-0.0731 21.854968,38.92621 v -38.85331 h 7.770656 v 48.56661 l -9.227653,-0.0256 -21.854966,-38.82741 v 38.85326 z"
        id="path824"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccccc" />

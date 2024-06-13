@@ -331,10 +331,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_blue_plus
-      sha256: af326029061bc2aac4fff3e50d6cbf1a1cda037e2373ac959a838b4b0aaac960
+      sha256: c762a694c2f67b1f492ef19ead2a30ed3254650bafd852cb8933823d13d7c89f
       url: "https://pub.dev"
     source: hosted
-    version: "1.31.17"
+    version: "1.32.7"
   flutter_colorpicker:
     dependency: "direct main"
     description:
@@ -452,10 +452,10 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: e8a61d72e643fae06913089310a88b9d274b2106
+      resolved-ref: ac4864b013aaef691bc074a781d3606ac90994b0
       url: "git@github.com:eidolonFIRE/flutter_map_tappable_polyline.git"
     source: git
-    version: "6.0.1"
+    version: "6.1.1"
   flutter_map_tile_caching:
     dependency: "direct main"
     description:
@@ -998,10 +998,10 @@ packages:
     dependency: transitive
     description:
       name: permission_handler_apple
-      sha256: e9ad66020b89ff1b63908f247c2c6f931c6e62699b756ef8b3c4569350cd8662
+      sha256: e6f6d73b12438ef13e648c4ae56bd106ec60d17e90a59c4545db6781229082a0
       url: "https://pub.dev"
     source: hosted
-    version: "9.4.4"
+    version: "9.4.5"
   permission_handler_html:
     dependency: transitive
     description:
@@ -1299,10 +1299,10 @@ packages:
     dependency: "direct main"
     description:
       name: url_launcher
-      sha256: "6ce1e04375be4eed30548f10a315826fd933c1e493206eab82eed01f438c8d2e"
+      sha256: "21b704ce5fa560ea9f3b525b43601c678728ba46725bab9b01187b4831377ed3"
       url: "https://pub.dev"
     source: hosted
-    version: "6.2.6"
+    version: "6.3.0"
   url_launcher_android:
     dependency: transitive
     description:

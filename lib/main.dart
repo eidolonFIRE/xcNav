@@ -218,10 +218,6 @@ class XCNav extends StatelessWidget {
           settingsMgr.rumOptOut.value ? [] : [DatadogNavigationObserver(datadogSdk: DatadogSdk.instance)],
       title: 'xcNav',
       debugShowCheckedModeBanner: false,
-      builder: (context, child) => MediaQuery(
-          // Limit how big system text modifier can be
-          data: MediaQuery.of(context).copyWith(textScaleFactor: min(1.5, MediaQuery.of(context).textScaleFactor)),
-          child: child!),
       darkTheme: ThemeData(
         useMaterial3: false,
         fontFamily: "roboto-condensed",

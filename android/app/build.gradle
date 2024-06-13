@@ -48,9 +48,9 @@ android {
 
     defaultConfig {
         applicationId "com.xcnav"
-        minSdkVersion 29
+        minSdkVersion 30
         targetSdkVersion 33
-        compileSdkVersion 33
+        compileSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
 

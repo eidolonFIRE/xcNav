@@ -196,11 +196,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     key: mapKey,
                     mapController: mapController,
                     options: MapOptions(
-                      bounds: log.getBounds(),
+                      initialCameraFit: CameraFit.bounds(bounds: log.getBounds()),
                       onMapReady: () {
                         setState(() {
                           mapReady = true;
-                          mapController.fitBounds(log.getBounds());
+                          mapController.fitCamera(CameraFit.bounds(bounds: log.getBounds()));
                         });
                       },
                       interactionOptions: InteractionOptions(

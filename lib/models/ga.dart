@@ -52,11 +52,11 @@ class GA {
 
     switch (type) {
       case GAtype.small:
-        return SvgPicture.asset("assets/images/ga_small.svg", color: color);
+        return SvgPicture.asset("assets/images/ga_small.svg", colorFilter: ColorFilter.mode(color, BlendMode.srcIn));
       case GAtype.heli:
-        return SvgPicture.asset("assets/images/ga_heli.svg", color: color);
+        return SvgPicture.asset("assets/images/ga_heli.svg", colorFilter: ColorFilter.mode(color, BlendMode.srcIn));
       default:
-        return SvgPicture.asset("assets/images/ga_large.svg", color: color);
+        return SvgPicture.asset("assets/images/ga_large.svg", colorFilter: ColorFilter.mode(color, BlendMode.srcIn));
     }
   }
 

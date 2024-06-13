@@ -38,7 +38,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
   switch (tileSrc) {
     case MapTileSrc.sectional:
       return TileLayer(
-        urlTemplate: 'https://vfrmap.com/20231130/tiles/vfrc/{z}/{y}/{x}.jpg',
+        urlTemplate: 'http://vfrmap.com/20231130/tiles/vfrc/{z}/{y}/{x}.jpg',
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 11,
         tms: true,
@@ -49,7 +49,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
       );
     case MapTileSrc.satellite:
       return TileLayer(
-        urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        urlTemplate: 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 19,
         minZoom: 2,
@@ -168,7 +168,7 @@ String asReadableSize(double value) {
 }
 
 Future<String> getMapTileCacheSize() async {
-  final sum = await FMTCRoot.stats.realSize;
+  final sum = await FMTCRoot.stats.realSize * 1000;
   return asReadableSize(sum);
 }
 
