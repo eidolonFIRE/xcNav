@@ -38,7 +38,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
   switch (tileSrc) {
     case MapTileSrc.sectional:
       return TileLayer(
-        urlTemplate: 'http://vfrmap.com/20231130/tiles/vfrc/{z}/{y}/{x}.jpg',
+        urlTemplate: 'http://vfrmap.com/20240711/tiles/vfrc/{z}/{y}/{x}.jpg',
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 11,
         tms: true,

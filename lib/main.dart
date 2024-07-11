@@ -186,7 +186,7 @@ class XCNav extends StatelessWidget {
   Widget build(BuildContext context) {
     DefaultAssetBundle.of(context).loadString("assets/airports.json").then((value) => loadAirports(value));
 
-    WakelockPlus.enable;
+    WakelockPlus.enable();
 
     configLocalNotification();
 
