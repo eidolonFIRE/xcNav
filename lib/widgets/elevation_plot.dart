@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_svg/svg.dart';
 // import 'package:intl/intl.dart' as intl;
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/eta.dart';
@@ -25,7 +26,7 @@ class ElevSample {
 
 ui.Image? _arrow;
 
-final Map<String, DrawableRoot> loadedSvgs = {};
+final Map<String, ui.Image> loadedSvgs = {};
 
 class ElevationPlotPainter extends CustomPainter {
   late final Paint _paintGround;
@@ -34,6 +35,8 @@ class ElevationPlotPainter extends CustomPainter {
   late final Paint _paintGrid;
   late final Paint _paintVarioTrend;
   late final Paint _paintPath;
+  late final Paint _paintWaypoint;
+  late final Paint _paintFilterWhite;
   // late final Paint _paintCard;
 
   final List<Geo> geoData;
@@ -43,8 +46,6 @@ class ElevationPlotPainter extends CustomPainter {
 
   final Waypoint? waypoint;
   final ETA? waypointETA;
-
-  DrawableRoot? svgPin;
 
   final bool showPilotIcon;
 
@@ -90,23 +91,14 @@ class ElevationPlotPainter extends CustomPainter {
     //   ..color = Colors.grey.shade800
     //   ..style = PaintingStyle.fill;
 
-    if (waypoint != null) {
-      void setSvgPin() {
-        svgPin = loadedSvgs["pin_master"]!.mergeStyle(DrawableStyle(
-            fill: DrawablePaint(ui.PaintingStyle.fill, color: waypoint!.getColor()),
-            stroke: DrawablePaint(ui.PaintingStyle.stroke, color: waypoint!.getColor())));
-      }
+    _paintFilterWhite = Paint()
+      ..colorFilter = const ui.ColorFilter.mode(Colors.white, BlendMode.srcIn)
+      ..filterQuality = FilterQuality.high;
 
-      if (loadedSvgs["pin_master"] == null) {
-        rootBundle.loadString("assets/images/pin.svg").then((svgRaw) {
-          svg.fromSvgString(svgRaw, "pinsvg").then((value) {
-            loadedSvgs["pin_master"] = value;
-            setSvgPin();
-          });
-        });
-      } else {
-        setSvgPin();
-      }
+    if (waypoint != null) {
+      _paintWaypoint = Paint()
+        ..colorFilter = ui.ColorFilter.mode(waypoint!.getColor(), BlendMode.srcIn)
+        ..filterQuality = FilterQuality.high;
     }
 
     if (_arrow == null) {
@@ -114,16 +106,20 @@ class ElevationPlotPainter extends CustomPainter {
     }
   }
 
-  DrawableRoot? getLoadedSvg(String assetName) {
-    if (loadedSvgs[assetName] == null) {
-      rootBundle.loadString(assetName).then((svgRaw) {
-        svg.fromSvgString(svgRaw, assetName).then((value) {
-          loadedSvgs[assetName] = value.mergeStyle(const DrawableStyle(
-              fill: DrawablePaint(ui.PaintingStyle.fill, color: Colors.white),
-              stroke: DrawablePaint(ui.PaintingStyle.stroke, color: Colors.white)));
-        });
+  ui.Image? getLoadedSvg(String assetName, int width, int height) {
+    // if (loadedSvgs[assetName] == null) {
+    rootBundle.loadString(assetName).then((svgRaw) {
+      // debugPrint(svgRaw);
+
+      vg.loadPicture(SvgStringLoader(svgRaw), null).then((value) {
+        // value.
+
+        debugPrint("${value.size}");
+        loadedSvgs[assetName] = value.picture.toImageSync(width, height);
+        debugPrint("Loaded asset: $assetName");
       });
-    }
+    });
+    // }
     return loadedSvgs[assetName];
   }
 
@@ -138,7 +134,7 @@ class ElevationPlotPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // debugPrint("PAINT ELEVATION PLOT");
+    debugPrint("PAINT ELEVATION PLOT");
 
     if (geoData.isEmpty) return;
 
@@ -256,34 +252,36 @@ class ElevationPlotPainter extends CustomPainter {
       }
     }
 
-    // --- Draw Sample Label
-    if (labelIndex != null) {
-      final t = geoData[labelIndex!].time;
-      final x = scaleX(t);
+    // // --- Draw Sample Label
+    // if (labelIndex != null) {
+    //   final t = geoData[labelIndex!].time;
+    //   final x = scaleX(t);
 
-      // Line
-      canvas.drawLine(Offset(x, scaleY(geoData[labelIndex!].alt)), Offset(x, 0), _paintVarioTrend);
+    //   // Line
+    //   canvas.drawLine(Offset(x, scaleY(geoData[labelIndex!].alt)), Offset(x, 0), _paintVarioTrend);
 
-      //   // Text
-      //   TextSpan span = TextSpan(
-      //       style: const TextStyle(color: Colors.white),
-      //       text: intl.DateFormat("h:mm a").format(DateTime.fromMillisecondsSinceEpoch(t)));
-      //   TextPainter tp = TextPainter(text: span, textAlign: TextAlign.center, textDirection: TextDirection.ltr);
-      //   tp.layout();
+    //   // Text
+    //   TextSpan span = TextSpan(
+    //       style: const TextStyle(color: Colors.white),
+    //       text: intl.DateFormat("h:mm a").format(DateTime.fromMillisecondsSinceEpoch(t)));
+    //   TextPainter tp = TextPainter(text: span, textAlign: TextAlign.center, textDirection: TextDirection.ltr);
+    //   tp.layout();
 
-      //   final xDynamic = x - (labelIndex! > geoData.length / 2 ? tp.width + 4 : -4);
+    //   final xDynamic = x - (labelIndex! > geoData.length / 2 ? tp.width + 4 : -4);
 
-      //   // Background card
-      //   canvas.drawRRect(
-      //       RRect.fromRectAndRadius(
-      //           Rect.fromLTWH(xDynamic - 4, 0, tp.width + 8, tp.height + 8), const Radius.circular(10)),
-      //       _paintCard);
+    //   // Background card
+    //   canvas.drawRRect(
+    //       RRect.fromRectAndRadius(
+    //           Rect.fromLTWH(xDynamic - 4, 0, tp.width + 8, tp.height + 8), const Radius.circular(10)),
+    //       _paintCard);
 
-      //   tp.paint(canvas, Offset(xDynamic, 4));
-    }
+    //   tp.paint(canvas, Offset(xDynamic, 4));
+    // }
 
     // --- Draw Waypoint
-    if (waypoint != null && svgPin != null && waypointETA?.time != null) {
+    final svgPin = getLoadedSvg("assets/images/pin.svg", 160, 240);
+    // debugPrint("Should print waypoint: ${waypoint != null}, ${svgPin != null}, ${waypointETA?.distance != null}");
+    if (waypoint != null && svgPin != null && waypointETA?.distance != null) {
       if (waypoint!.isPath) {
         // --- Waypoint: Path
         final List<Offset> points = [];
@@ -302,7 +300,10 @@ class ElevationPlotPainter extends CustomPainter {
         final dx = scaleX((waypointETA!.distance * distScale + geoData.last.time).round()) - 20;
         final dy = scaleY(waypoint!.elevation[0]) - 60;
         canvas.translate(dx, dy);
-        svgPin!.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 100, height: 100));
+        const scaleFactor = 0.266;
+        canvas.scale(scaleFactor, scaleFactor);
+        canvas.drawImage(svgPin, Offset.zero, _paintWaypoint);
+        canvas.scale(1 / scaleFactor, 1 / scaleFactor);
 
         dynamic icon = waypoint != null ? iconOptions[waypoint!.icon] : null;
         if (waypoint?.icon != null && icon != null) {
@@ -313,16 +314,19 @@ class ElevationPlotPainter extends CustomPainter {
                 text: String.fromCharCode(icon.codePoint),
                 style: TextStyle(fontSize: 30.0, fontFamily: icon.fontFamily));
             textPainter.layout();
-            textPainter.paint(canvas, const Offset(5.0, 6.0));
+            textPainter.paint(canvas, const Offset(6.0, 6.0));
           } else if (icon is String) {
             // Render svg
-            debugPrint("Render SVG");
-            canvas.translate(3, 1);
-            // getLoadedSvg(icon)?.scaleCanvasToViewBox(canvas, const Size(32, 32));
-            canvas.scale(2.5, 2.5);
-            getLoadedSvg(icon)?.draw(canvas, Rect.fromCenter(center: Offset.zero, width: 32, height: 32));
-            canvas.scale(1 / 2.5, 1 / 2.5);
-            canvas.translate(-3, -1);
+            canvas.translate(6, 4);
+            const scaleFactor = 0.6;
+            canvas.scale(scaleFactor, scaleFactor);
+            final svg = getLoadedSvg(icon, 50, 50);
+
+            if (svg != null) {
+              canvas.drawImage(svg, Offset.zero, _paintFilterWhite);
+            }
+            canvas.scale(1 / scaleFactor, 1 / scaleFactor);
+            canvas.translate(-6, -4);
           }
         }
         canvas.translate(-dx, -dy);
@@ -343,8 +347,7 @@ class ElevationPlotPainter extends CustomPainter {
     if (showPilotIcon) {
       TextPainter tp = TextPainter(
           text: richValue(UnitType.vario, geoData.last.varioSmooth,
-              valueStyle: const TextStyle(fontSize: 30),
-              unitStyle: const TextStyle(fontSize: 14, color: Colors.grey, fontStyle: FontStyle.italic)),
+              valueStyle: const TextStyle(fontSize: 30), unitStyle: const TextStyle(fontSize: 14, color: Colors.grey)),
           textAlign: TextAlign.right,
           textDirection: TextDirection.ltr);
       tp.layout(minWidth: 60);

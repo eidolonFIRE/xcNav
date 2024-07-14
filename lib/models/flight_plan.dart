@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/airports.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xml/xml.dart';
@@ -65,7 +65,7 @@ class FlightPlan {
       goodFile = true;
     } catch (err, trace) {
       goodFile = false;
-      DatadogSdk.instance.logs?.error("Failed to parse FlightPlan",
+      error("Failed to parse FlightPlan",
           errorMessage: err.toString(),
           errorStackTrace: trace,
           attributes: {"filename": name, "data": data.toString()});
@@ -115,8 +115,7 @@ class FlightPlan {
           waypoints[waypoint.id] = waypoint;
         } else {
           final msg = "Couldn't find airport $airportCode.";
-          debugPrint("Error: $msg");
-          DatadogSdk.instance.logs?.error(msg, attributes: {"url": url});
+          error(msg, attributes: {"url": url});
           goodFile = false;
           return;
         }
@@ -302,9 +301,8 @@ class FlightPlan {
 
       goodFile = true;
     } catch (err, trace) {
-      debugPrint("Error loading kml file: ${err.toString()}");
       goodFile = false;
-      DatadogSdk.instance.logs?.error("Failed to import KML",
+      error("Failed to import KML",
           errorMessage: err.toString(), errorStackTrace: trace, attributes: {"filename": name});
       rethrow;
     }

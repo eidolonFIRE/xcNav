@@ -1,8 +1,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
+import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:collection/collection.dart';
@@ -25,7 +26,6 @@ import 'package:xcnav/widgets/map_selector.dart';
 // --- Misc
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/views/view_map.dart';
-import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
 import 'package:xcnav/map_service.dart';
 
@@ -173,8 +173,7 @@ class _PlanEditorState extends State<PlanEditor> {
     if (plan == null) {
       plan = ModalRoute.of(context)!.settings.arguments as FlightPlan;
       final center = Provider.of<MyTelemetry>(context, listen: false).geo ?? defaultGeo;
-      mapBounds = plan!.getBounds() ??
-          padLatLngBounds(LatLngBounds.fromPoints([center.latlng, center.latlng..longitude += 0.05]), 2);
+      mapBounds = padLatLngBounds(LatLngBounds.fromPoints([center.latlng, LatLng(center.lat, center.lng + 0.05)]), 2);
     }
     return PopScope(
       onPopInvoked: (_) {
@@ -194,11 +193,13 @@ class _PlanEditorState extends State<PlanEditor> {
                       options: MapOptions(
                         onMapReady: () {
                           setState(() {
+                            mapController.fitCamera(CameraFit.bounds(bounds: mapBounds!));
                             mapReady = true;
                           });
                         },
-                        bounds: mapBounds,
-                        interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                        initialCameraFit: mapBounds != null ? CameraFit.bounds(bounds: mapBounds!) : null,
+                        interactionOptions:
+                            const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                         onTap: (tapPos, latlng) => onMapTap(context, latlng),
                         onLongPress: (tapPosition, point) => onMapLongPress(context, point),
                       ),
@@ -220,14 +221,14 @@ class _PlanEditorState extends State<PlanEditor> {
                                     strokeWidth: e.id == selectedWp ? 8.0 : 4.0,
                                     color: e.getColor()))
                                 .toList(),
-                            onTap: (p0, tapPosition) {
+                            onTap: (lines, tapPosition) {
                               setState(() {
-                                selectedWp = p0.tag;
+                                selectedWp = lines.first.tag;
                               });
                             },
-                            onLongPress: (p0, tapPosition) {
-                              if (plan!.waypoints.containsKey(p0.tag)) {
-                                beginEditingLine(plan!.waypoints[p0.tag]!);
+                            onLongPress: (lines, tapPosition) {
+                              if (plan!.waypoints.containsKey(lines.first.tag)) {
+                                beginEditingLine(plan!.waypoints[lines.first.tag]!);
                               }
                             }),
 
@@ -240,22 +241,23 @@ class _PlanEditorState extends State<PlanEditor> {
                                   height: 60 * (e.id == selectedWp ? 0.8 : 0.6),
                                   width: 40 * (e.id == selectedWp ? 0.8 : 0.6),
                                   rotate: true,
-                                  anchorPos: AnchorPos.exactly(Anchor(20 * (e.id == selectedWp ? 0.8 : 0.6), 0)),
-                                  rotateOrigin: Offset(0, 30 * (e.id == selectedWp ? 0.8 : 0.6)),
-                                  builder: (context) => GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            selectedWp = e.id;
-                                          });
-                                        },
-                                        onLongPress: () {
-                                          setState(() {
-                                            editingWp = e.id;
-                                            draggingLatLng = null;
-                                          });
-                                        },
-                                        child: WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)),
-                                      )))
+                                  alignment: Alignment.topCenter,
+                                  // anchorPos: AnchorPos.exactly(Anchor(20 * (e.id == selectedWp ? 0.8 : 0.6), 0)),
+                                  // rotateOrigin: Offset(0, 30 * (e.id == selectedWp ? 0.8 : 0.6)),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedWp = e.id;
+                                      });
+                                    },
+                                    onLongPress: () {
+                                      setState(() {
+                                        editingWp = e.id;
+                                        draggingLatLng = null;
+                                      });
+                                    },
+                                    child: WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)),
+                                  )))
                               .toList(),
                         ),
 
@@ -312,46 +314,46 @@ class _PlanEditorState extends State<PlanEditor> {
                                   rotate: true,
                                   height: 240,
                                   point: plan!.waypoints[editingWp]!.latlng.first,
-                                  builder: (context) => Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            height: 140,
-                                          ),
-                                          FloatingActionButton.small(
-                                            heroTag: "editWaypoint",
-                                            backgroundColor: Colors.lightBlue,
-                                            onPressed: () {
-                                              editWaypoint(context, plan!.waypoints[editingWp]!,
-                                                      isNew: focusMode == FocusMode.addPath,
-                                                      isPath: plan!.waypoints[editingWp]!.isPath)
-                                                  ?.then((newWaypoint) {
-                                                if (newWaypoint != null) {
-                                                  plan!.waypoints[newWaypoint.id] = newWaypoint;
-                                                }
-                                              }).then((value) {
-                                                setState(() {
-                                                  editingWp = null;
-                                                });
-                                              });
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        height: 140,
+                                      ),
+                                      FloatingActionButton.small(
+                                        heroTag: "editWaypoint",
+                                        backgroundColor: Colors.lightBlue,
+                                        onPressed: () {
+                                          editWaypoint(context, plan!.waypoints[editingWp]!,
+                                                  isNew: focusMode == FocusMode.addPath,
+                                                  isPath: plan!.waypoints[editingWp]!.isPath)
+                                              ?.then((newWaypoint) {
+                                            if (newWaypoint != null) {
+                                              plan!.waypoints[newWaypoint.id] = newWaypoint;
+                                            }
+                                          }).then((value) {
+                                            setState(() {
+                                              editingWp = null;
+                                            });
+                                          });
 
-                                              // editingWp = null;
-                                            },
-                                            child: const Icon(Icons.edit),
-                                          ),
-                                          FloatingActionButton.small(
-                                            heroTag: "deleteWaypoint",
-                                            backgroundColor: Colors.red,
-                                            onPressed: () {
-                                              setState(() {
-                                                plan!.waypoints.remove(editingWp!);
-                                                editingWp = null;
-                                              });
-                                            },
-                                            child: const Icon(Icons.delete),
-                                          ),
-                                        ],
-                                      ))
+                                          // editingWp = null;
+                                        },
+                                        child: const Icon(Icons.edit),
+                                      ),
+                                      FloatingActionButton.small(
+                                        heroTag: "deleteWaypoint",
+                                        backgroundColor: Colors.red,
+                                        onPressed: () {
+                                          setState(() {
+                                            plan!.waypoints.remove(editingWp!);
+                                            editingWp = null;
+                                          });
+                                        },
+                                        child: const Icon(Icons.delete),
+                                      ),
+                                    ],
+                                  ))
                             ],
                           ),
 

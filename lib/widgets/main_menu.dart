@@ -169,7 +169,7 @@ class _MainMenuState extends State<MainMenu> {
               padding: const EdgeInsets.only(right: 8),
               child: SvgPicture.asset(
                 "assets/external/text_to_speech.svg",
-                color: Colors.white,
+                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 width: 30,
               ),
             ),

@@ -4,12 +4,11 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:clock/clock.dart';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
+import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -23,10 +22,7 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat_messages.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/adsb.dart';
-import 'package:xcnav/tfr_service.dart';
-import 'package:xcnav/util.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -52,9 +48,12 @@ import 'package:xcnav/models/tfr.dart';
 
 // misc
 import 'package:xcnav/units.dart';
-import 'package:xcnav/tappable_polyline.dart';
 import 'package:xcnav/main.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/datadog.dart';
+import 'package:xcnav/tfr_service.dart';
+import 'package:xcnav/settings_service.dart';
+import 'package:xcnav/util.dart';
 
 enum FocusMode {
   unlocked,
@@ -113,7 +112,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
     // zoomMainMapToLatLng.stream.listen((latlng) {
     //   debugPrint("Map zoom to: $latlng");
-    //   mapController.move(latlng, mapController.zoom);
+    //   mapController.move(latlng, mapController.camera.zoom);
     //   setFocusMode(FocusMode.unlocked);
     // });
 
@@ -141,10 +140,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       callbackRefresh: () => {setState(() {})},
     );
 
-    if (!settingsMgr.rumOptOut.value) {
-      DatadogSdk.instance.rum?.addAttribute("view_map_focusMode", focusMode.name);
-      DatadogSdk.instance.rum?.addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
-    }
+    addAttribute("view_map_focusMode", focusMode.name);
+    addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
   }
 
   @override
@@ -171,9 +168,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       if (mode == FocusMode.group) lastMapChange = null;
       debugPrint("FocusMode = $mode");
 
-      if (!settingsMgr.rumOptOut.value) {
-        DatadogSdk.instance.rum?.addAttribute("view_map_focusMode", mode.name);
-      }
+      addAttribute("view_map_focusMode", mode.name);
     });
     refreshMapView();
   }
@@ -190,7 +185,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       }
       // --- Move to center
       if (focusMode == FocusMode.me) {
-        centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.zoom);
+        centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.camera.zoom);
       } else if (focusMode == FocusMode.group) {
         List<LatLng> points =
             Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
@@ -201,11 +196,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         }
         if (lastMapChange == null ||
             (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
-          centerZoom = mapController.centerZoomFitBounds(LatLngBounds.fromPoints(points),
-              options: const FitBoundsOptions(padding: EdgeInsets.all(100), maxZoom: 13, inside: false));
+          final camFit =
+              CameraFit.bounds(bounds: LatLngBounds.fromPoints(points), padding: const EdgeInsets.all(100), maxZoom: 13)
+                  .fit(mapController.camera);
+          centerZoom = CenterZoom(center: camFit.center, zoom: camFit.zoom);
         } else {
           // Preserve zoom if it has been recently overriden
-          centerZoom = CenterZoom(center: LatLngBounds.fromPoints(points).center, zoom: mapController.zoom);
+          centerZoom = CenterZoom(center: LatLngBounds.fromPoints(points).center, zoom: mapController.camera.zoom);
         }
       }
       if (centerZoom != null) {
@@ -216,17 +213,18 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   }
 
   bool markerIsInView(LatLng point) {
-    if (mapReady && mapController.bounds != null && mapAspectRatio != null) {
+    if (mapReady && mapAspectRatio != null) {
       // transform point into north-up reference frame
-      final vectorHdg = latlngCalc.bearing(mapController.center, point) + mapController.rotation;
-      final vectorHypo = latlngCalc.distance(mapController.center, point);
-      final transformedPoint = latlngCalc.offset(mapController.center, vectorHypo, ((vectorHdg + 180) % 360) - 180);
-      final center = mapController.center;
-      final theta = (((mapController.rotation.abs() % 180) - 90).abs() - 90).abs() * pi / 180;
+      final vectorHdg = latlngCalc.bearing(mapController.camera.center, point) + mapController.camera.rotation;
+      final vectorHypo = latlngCalc.distance(mapController.camera.center, point);
+      final transformedPoint =
+          latlngCalc.offset(mapController.camera.center, vectorHypo, ((vectorHdg + 180) % 360) - 180);
+      final center = mapController.camera.center;
+      final theta = (((mapController.camera.rotation.abs() % 180) - 90).abs() - 90).abs() * pi / 180;
 
       // super bounding box
-      final bw = (mapController.bounds!.west - mapController.bounds!.east).abs();
-      final bh = (mapController.bounds!.north - mapController.bounds!.south).abs();
+      final bw = (mapController.camera.visibleBounds.west - mapController.camera.visibleBounds.east).abs();
+      final bh = (mapController.camera.visibleBounds.north - mapController.camera.visibleBounds.south).abs();
 
       // solve for inscribed rectangle
       final a = mapAspectRatio!;
@@ -294,10 +292,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         mapReady = true;
                       });
                     },
-                    interactiveFlags: InteractiveFlag.all &
-                        (settingsMgr.northlockMap.value ? ~InteractiveFlag.rotate : InteractiveFlag.all),
-                    center: Provider.of<MyTelemetry>(context, listen: false).geo?.latlng ?? lastKnownLatLng,
-                    zoom: 12.0,
+                    interactionOptions: InteractionOptions(
+                        flags: InteractiveFlag.all &
+                            (settingsMgr.northlockMap.value ? ~InteractiveFlag.rotate : InteractiveFlag.all)),
+                    initialCenter: Provider.of<MyTelemetry>(context, listen: false).geo?.latlng ?? lastKnownLatLng,
+                    initialZoom: 12.0,
                     minZoom: 2,
                     onTap: (tapPosition, point) => onMapTap(context, point),
                     onLongPress: (tapPosition, point) => onMapLongPress(context, point),
@@ -364,7 +363,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     // https://nowcoast.noaa.gov/help/#!section=map-service-list
                     // if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
                     //   Opacity(
-                    //     opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.zoom : 0)) / 10.0)),
+                    //     opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.camera.zoom : 0)) / 10.0)),
                     //     child: TileLayer(
                     //         backgroundColor: Colors.transparent,
                     //         wmsOptions: WMSTileLayerOptions(
@@ -408,7 +407,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                     // Waypoints: paths
                     TappablePolylineLayer(
-                        isEnabled: focusMode != FocusMode.measurement,
+                        enabled: focusMode != FocusMode.measurement,
                         pointerDistanceTolerance: 30,
                         polylineCulling: true,
                         polylines: plan.waypoints.values
@@ -419,28 +418,24 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             .map((e) =>
                                 TaggedPolyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), tag: e.id))
                             .toList(),
-                        onTap: (p0, tapPosition) {
+                        onTap: (lines, tapPosition) {
+                          final p0 = lines.first;
+
                           // which end is nearer the tap?
                           final wp = plan.waypoints[p0.tag];
                           if (wp != null) {
-                            bool tapEnd = tapPosition.relative != null
-                                ? (tapPosition.relative! - p0.offsets.first).distance >
-                                    (tapPosition.relative! - p0.offsets.last).distance
-                                : false;
-
                             // Select this path waypoint
                             if (focusMode != FocusMode.measurement) {
                               if (plan.selectedWp == p0.tag) {
                                 wp.toggleDirection();
-                              } else {
-                                wp.isReversed = tapEnd;
                               }
                               plan.selectedWp = p0.tag;
                             }
                           }
                         },
-                        onLongPress: ((p0, tapPosition) {
+                        onLongPress: ((lines, tapPosition) {
                           // Start editing path waypoint
+                          final p0 = lines.first;
                           if (plan.waypoints.containsKey(p0.tag)) {
                             beginEditingLine(plan.waypoints[p0.tag]!);
                           }
@@ -456,13 +451,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   point: e.latlng,
                                   width: 20,
                                   height: 20,
-                                  builder: (ctx) => IgnorePointer(
-                                        child: Container(
-                                            transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.rotationZ(e.hdg),
-                                            child:
-                                                SvgPicture.asset("assets/images/chevron.svg", color: Colors.black87)),
-                                      )))
+                                  child: IgnorePointer(
+                                    child: Container(
+                                        transformAlignment: const Alignment(0, 0),
+                                        transform: Matrix4.rotationZ(e.hdg),
+                                        child: SvgPicture.asset("assets/images/chevron.svg",
+                                            colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
+                                  )))
                               .toList()),
 
                     // Waypoint markers
@@ -474,24 +469,25 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               height: 60 * 0.8,
                               width: 40 * 0.8,
                               rotate: true,
-                              anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
-                              rotateOrigin: const Offset(0, 30 * 0.8),
-                              builder: (context) => GestureDetector(
-                                    onTap: () {
-                                      if (focusMode == FocusMode.measurement) {
-                                        measurementEditor.add(measurementPolyline.points, e.latlng.first);
-                                      } else {
-                                        plan.selectedWp = e.id;
-                                      }
-                                    },
-                                    onLongPress: () {
-                                      setState(() {
-                                        editingWp = e.id;
-                                        draggingLatLng = null;
-                                      });
-                                    },
-                                    child: WaypointMarker(e, 60 * 0.8),
-                                  )))
+                              alignment: Alignment.topCenter,
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (focusMode == FocusMode.measurement) {
+                                    measurementEditor.add(measurementPolyline.points, e.latlng.first);
+                                  } else {
+                                    plan.selectedWp = e.id;
+                                  }
+                                },
+                                onLongPress: () {
+                                  if (!e.ephemeral) {
+                                    setState(() {
+                                      editingWp = e.id;
+                                      draggingLatLng = null;
+                                    });
+                                  }
+                                },
+                                child: WaypointMarker(e, 60 * 0.8),
+                              )))
                           .toList(),
                     ),
 
@@ -561,41 +557,41 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               rotate: true,
                               height: 240,
                               point: plan.waypoints[editingWp]!.latlng.first,
-                              builder: (context) => Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        height: 140,
-                                      ),
-                                      FloatingActionButton.small(
-                                        heroTag: "editWaypoint",
-                                        backgroundColor: Colors.lightBlue,
-                                        onPressed: () {
-                                          editWaypoint(context, plan.waypoints[editingWp]!,
-                                                  isNew: focusMode == FocusMode.addPath,
-                                                  isPath: plan.waypoints[editingWp]!.isPath)
-                                              ?.then((newWaypoint) {
-                                            if (newWaypoint != null) {
-                                              plan.updateWaypoint(newWaypoint);
-                                            }
-                                          });
-                                          editingWp = null;
-                                        },
-                                        child: const Icon(Icons.edit),
-                                      ),
-                                      FloatingActionButton.small(
-                                        heroTag: "deleteWaypoint",
-                                        backgroundColor: Colors.red,
-                                        onPressed: () {
-                                          setState(() {
-                                            plan.removeWaypoint(editingWp!);
-                                            editingWp = null;
-                                          });
-                                        },
-                                        child: const Icon(Icons.delete),
-                                      ),
-                                    ],
-                                  ))
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    height: 140,
+                                  ),
+                                  FloatingActionButton.small(
+                                    heroTag: "editWaypoint",
+                                    backgroundColor: Colors.lightBlue,
+                                    onPressed: () {
+                                      editWaypoint(context, plan.waypoints[editingWp]!,
+                                              isNew: focusMode == FocusMode.addPath,
+                                              isPath: plan.waypoints[editingWp]!.isPath)
+                                          ?.then((newWaypoint) {
+                                        if (newWaypoint != null) {
+                                          plan.updateWaypoint(newWaypoint);
+                                        }
+                                      });
+                                      editingWp = null;
+                                    },
+                                    child: const Icon(Icons.edit),
+                                  ),
+                                  FloatingActionButton.small(
+                                    heroTag: "deleteWaypoint",
+                                    backgroundColor: Colors.red,
+                                    onPressed: () {
+                                      setState(() {
+                                        plan.removeWaypoint(editingWp!);
+                                        editingWp = null;
+                                      });
+                                    },
+                                    child: const Icon(Icons.delete),
+                                  ),
+                                ],
+                              ))
                         ],
                       ),
 
@@ -610,9 +606,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   width: 50.0,
                                   height: 50.0,
                                   point: e.latlng,
-                                  builder: (ctx) => Container(
+                                  child: Container(
                                     transformAlignment: const Alignment(0, 0),
-                                    transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                    transform: Matrix4.rotationZ(-mapController.camera.rotation * pi / 180),
                                     child: Opacity(
                                       opacity: getGAtransparency(
                                           e.alt - (Provider.of<MyTelemetry>(context, listen: false).geo?.alt ?? 0)),
@@ -622,7 +618,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           /// --- GA icon
                                           Container(
                                             transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.rotationZ((mapController.rotation + e.hdg) * pi / 180),
+                                            transform:
+                                                Matrix4.rotationZ((mapController.camera.rotation + e.hdg) * pi / 180),
                                             child: e.getIcon(),
                                           ),
 
@@ -691,13 +688,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               point: pilot.geo!.latlng,
                               width: 40,
                               height: 40,
-                              builder: (ctx) => Container(
+                              child: Container(
                                   transformAlignment: const Alignment(0, 0),
-                                  transform: Matrix4.rotationZ(-mapController.rotation * pi / 180),
+                                  transform: Matrix4.rotationZ(-mapController.camera.rotation * pi / 180),
                                   child: PilotMarker(
                                     pilot,
                                     20,
-                                    hdg: pilot.geo!.hdg + mapController.rotation * pi / 180,
+                                    hdg: pilot.geo!.hdg + mapController.camera.rotation * pi / 180,
                                     relAlt: pilot.geo!.alt - Provider.of<MyTelemetry>(context, listen: false).geo!.alt,
                                   ))))
                           .toList(),
@@ -723,7 +720,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 width: 50,
                                 height: 50,
                                 point: fuelIntercept.latlng,
-                                builder: (context) => const Stack(
+                                child: const Stack(
                                   children: [
                                     Padding(
                                       padding: EdgeInsets.only(top: 10),
@@ -772,7 +769,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               width: 50.0,
                               height: 50.0,
                               point: myTelemetry.geo!.latlng,
-                              builder: (ctx) => Container(
+                              child: Container(
                                 transformAlignment: const Alignment(0, 0),
                                 transform: Matrix4.rotationZ(myTelemetry.geo!.hdg),
                                 child: Image.asset("assets/images/red_arrow.png"),
@@ -811,13 +808,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           .activePilots
                           .where((e) => !markerIsInView(e.geo!.latlng))
                           .map((e) => Builder(builder: (context) {
-                                final theta = (latlngCalc.bearing(mapController.center, e.geo!.latlng) +
-                                        mapController.rotation -
+                                final theta = (latlngCalc.bearing(mapController.camera.center, e.geo!.latlng) +
+                                        mapController.camera.rotation -
                                         90) *
                                     pi /
                                     180;
                                 final hypo = MediaQuery.of(context).size.width * 0.8 - 40;
-                                final dist = latlngCalc.distance(mapController.center, e.geo!.latlng);
+                                final dist = latlngCalc.distance(mapController.camera.center, e.geo!.latlng);
 
                                 return Opacity(
                                     opacity: 0.5,
@@ -1121,10 +1118,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               () {
                                 settingsMgr.northlockMap.value = !settingsMgr.northlockMap.value;
                                 if (settingsMgr.northlockMap.value) mapController.rotate(0);
-                                if (!settingsMgr.rumOptOut.value) {
-                                  DatadogSdk.instance.rum
-                                      ?.addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
-                                }
+
+                                addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
                               },
                             )
                           },
@@ -1135,10 +1130,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             builder: (context, event) => Container(
                                   transformAlignment: const Alignment(0, 0),
                                   transform: mapReady
-                                      ? Matrix4.rotationZ(mapController.rotation * pi / 180)
+                                      ? Matrix4.rotationZ(mapController.camera.rotation * pi / 180)
                                       : Matrix4.rotationZ(0),
                                   child: settingsMgr.northlockMap.value
-                                      ? SvgPicture.asset("assets/images/compass_north.svg", fit: BoxFit.none)
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: SvgPicture.asset("assets/images/compass_north.svg"),
+                                        )
                                       : SvgPicture.asset("assets/images/compass.svg", fit: BoxFit.cover),
                                 )),
                       ])),
@@ -1149,7 +1147,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       MapButton(
                         size: buttonSize,
                         selected: focusMode == FocusMode.me,
-                        child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2.0),
+                            child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
+                          ),
+                        ),
                         onPressed: () => setFocusMode(FocusMode.me),
                       ),
 
@@ -1165,7 +1169,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         size: buttonSize,
                         selected: focusMode == FocusMode.group,
                         onPressed: () => setFocusMode(FocusMode.group),
-                        child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                        child: Padding(
+                          padding: const EdgeInsets.all(3.0),
+                          child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
+                        ),
                       ),
                     ],
                   ),
@@ -1175,11 +1182,14 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       size: buttonSize,
                       selected: false,
                       onPressed: () {
-                        mapController.move(mapController.center, mapController.zoom + 1);
-                        debugPrint("Map Zoom: ${mapController.zoom}");
+                        mapController.move(mapController.camera.center, mapController.camera.zoom + 1);
+                        debugPrint("Map Zoom: ${mapController.camera.zoom}");
                         lastMapChange = DateTime.now();
                       },
-                      child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
+                      ),
                     ),
                     //
                     SizedBox(
@@ -1193,11 +1203,14 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       size: buttonSize,
                       selected: false,
                       onPressed: () {
-                        mapController.move(mapController.center, mapController.zoom - 1);
-                        debugPrint("Map Zoom: ${mapController.zoom}");
+                        mapController.move(mapController.camera.center, mapController.camera.zoom - 1);
+                        debugPrint("Map Zoom: ${mapController.camera.zoom}");
                         lastMapChange = DateTime.now();
                       },
-                      child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
+                      ),
                     ),
                   ]),
 

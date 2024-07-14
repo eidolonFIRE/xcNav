@@ -10,8 +10,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakelock/wakelock.dart';
 import 'package:focus_detector/focus_detector.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:xcnav/datadog.dart';
 
 // providers
 import 'package:xcnav/providers/adsb.dart';
@@ -52,7 +53,7 @@ import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/secrets.dart';
 import 'package:xcnav/airports.dart';
 
-LatLng lastKnownLatLng = LatLng(37, -122);
+LatLng lastKnownLatLng = const LatLng(37, -122);
 
 void main() async {
   runZonedGuarded(() async {
@@ -63,29 +64,33 @@ void main() async {
 
     final prefs = await SharedPreferences.getInstance();
     settingsMgr = SettingsMgr(prefs);
-
     initCarbNeedles(prefs);
 
-    final configuration = DdSdkConfiguration(
+    final configuration = DatadogConfiguration(
       clientToken: datadogToken,
       env: kDebugMode ? "debug" : "release",
       site: DatadogSite.us3,
-      trackingConsent: TrackingConsent.granted,
+
       nativeCrashReportEnabled: true,
-      loggingConfiguration: LoggingConfiguration(
-        loggerName: "xcNav: ${version.version}  -  ( build ${version.buildNumber} )",
-        printLogsToConsole: true,
-      ),
-      rumConfiguration: RumConfiguration(
+      // loggingConfiguration: DatadogLoggingConfiguration(
+      //   loggerName: "xcNav: ${version.version}  -  ( build ${version.buildNumber} )",
+      //   printLogsToConsole: true,
+      // ),
+      rumConfiguration: DatadogRumConfiguration(
         applicationId: datadogRumAppId,
         detectLongTasks: true,
       ),
     );
 
-    await DatadogSdk.instance.initialize(configuration);
+    await DatadogSdk.instance
+        .initialize(configuration, settingsMgr.rumOptOut.value ? TrackingConsent.notGranted : TrackingConsent.granted);
 
     final ddsdk = DatadogSdk.instance;
-    ddsdk.sdkVerbosity = Verbosity.verbose;
+    // ddsdk.sdkVerbosity = Verbosity.verbose;
+
+    ddLogger = ddsdk.logs?.createLogger(DatadogLoggerConfiguration(
+      name: "xcNav: ${version.version}  -  ( build ${version.buildNumber} )",
+    ));
 
     // Set up an anonymous ID for logging and usage statistics.
     // This ID will be uncorrelated to any ID on the server and is therefore anonymous.
@@ -98,14 +103,14 @@ void main() async {
     ddsdk.setUserInfo(id: settingsMgr.datadogSdkId.value);
 
     FlutterError.onError = (FlutterErrorDetails details) {
-      ddsdk.logs?.error(details.toString(), errorStackTrace: details.stack);
+      error(details.toString(), errorStackTrace: details.stack);
       ddsdk.rum?.handleFlutterError(details);
       FlutterError.presentError(details);
     };
 
     // Let datadog know we will not be participating.
     if (settingsMgr.rumOptOut.value) {
-      DatadogSdk.instance.rum?.addUserAction(RumUserActionType.custom, "opt-out");
+      info("rum opt-out");
     }
 
     // Load last known LatLng
@@ -118,8 +123,7 @@ void main() async {
         debugPrint("Last known LatLng: ${lastKnownLatLng.toString()}");
       } catch (err, trace) {
         final msg = 'Parsing last known LatLng from "$raw"';
-        debugPrint("Error: $msg, $err, $trace");
-        DatadogSdk.instance.logs?.error(msg, errorMessage: err.toString(), errorStackTrace: trace);
+        error(msg, errorMessage: err.toString(), errorStackTrace: trace);
       }
     }
     await initMapCache();
@@ -182,7 +186,7 @@ class XCNav extends StatelessWidget {
   Widget build(BuildContext context) {
     DefaultAssetBundle.of(context).loadString("assets/airports.json").then((value) => loadAirports(value));
 
-    Wakelock.enable();
+    WakelockPlus.enable();
 
     configLocalNotification();
 
@@ -214,10 +218,6 @@ class XCNav extends StatelessWidget {
           settingsMgr.rumOptOut.value ? [] : [DatadogNavigationObserver(datadogSdk: DatadogSdk.instance)],
       title: 'xcNav',
       debugShowCheckedModeBanner: false,
-      builder: (context, child) => MediaQuery(
-          // Limit how big system text modifier can be
-          data: MediaQuery.of(context).copyWith(textScaleFactor: min(1.5, MediaQuery.of(context).textScaleFactor)),
-          child: child!),
       darkTheme: ThemeData(
         useMaterial3: false,
         fontFamily: "roboto-condensed",

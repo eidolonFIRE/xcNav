@@ -2,20 +2,20 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="200"
    height="200"
-   viewBox="0 0 52.916666 52.916666"
+   viewBox="0 0 200 200"
    version="1.1"
    id="svg825"
-   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="pilot_direction_arrow.svg">
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   sodipodi:docname="pilot_direction_arrow.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs819" />
   <sodipodi:namedview
@@ -26,8 +26,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="5.6568542"
-     inkscape:cx="76.413258"
-     inkscape:cy="69.620575"
+     inkscape:cx="68.50097"
+     inkscape:cy="110.57382"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -36,7 +36,10 @@
      inkscape:window-x="297"
      inkscape:window-y="333"
      inkscape:window-maximized="0"
-     units="px">
+     units="px"
+     inkscape:showpageshadow="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1">
     <inkscape:grid
        type="xygrid"
        id="grid1373"
@@ -52,7 +55,6 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -62,8 +64,8 @@
      id="layer1"
      transform="translate(0,-244.08333)">
     <path
-       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.00146556;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 26.499999,246.20073 c 0,0 25.249268,19.10711 25.249268,40.33724 0,10.61507 -50.4985342,10.61507 -50.4985342,0 0,-21.23013 25.2492662,-40.33724 25.2492662,-40.33724 z"
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:7.61512;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 99.999997,252.08333 c 0,0 96.067453,72.698 96.067453,153.47358 0,40.38781 -192.1348872,40.38781 -192.1348872,0 0,-80.77558 96.0674342,-153.47358 96.0674342,-153.47358 z"
        id="path1377"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cssc" />

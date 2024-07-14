@@ -15,10 +15,11 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.6.8+109
+version: 2.7.1+122
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.2.0 <4.0.0"
+  flutter: ">=3.19.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -35,40 +36,45 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: any
   provider: any
-  flutter_map: ^4.0.0
-  wakelock: ^0.6.1+1
   http: any
   intl: any
-  flutter_map_line_editor: ^5.0.0
+  
+  flutter_map: ^6.1.0
+  flutter_map_tile_caching: ^9.0.0
+  flutter_map_tappable_polyline:
+    git:
+      url: git@github.com:eidolonFIRE/flutter_map_tappable_polyline.git
+
+  flutter_map_line_editor: ^6.0.0
+
   shared_preferences: ^2.0.13
-  fullscreen: ^1.0.3
   image_picker: ^1.0.4
   custom_image_crop: any
   qr_code_scanner: ^1.0.0
   qr_flutter: ^4.0.0
-  share_plus: ^6.0.0
-  web_socket_channel: ^2.1.0
+  share_plus: ^9.0.0
+  web_socket_channel: ^3.0.0
   flutter_image_compress: ^2.0.4
   path_provider: ^2.0.9
-  flutter_svg: ^1.0.3
-  geolocator: ^10.0.1
-  flutter_local_notifications: ^15.1.1
+  flutter_svg: ^2.0.9
+  geolocator: ^12.0.0
+  flutter_local_notifications: ^17.1.2
   focus_detector: ^2.0.1
-  file_picker: ^5.2.2
+  file_picker: ^8.0.3
   xml: ^6.1.0
   permission_handler: ^11.0.0
-  flutter_tts: ^3.6.3
+  flutter_tts: ^4.0.2
   flutter_barometer:
     git:
       url: git@github.com:eidolonFIRE/flutter_barometer.git
-  package_info_plus: ^3.0.2
+  wakelock_plus: ^1.1.4
+  package_info_plus: ^8.0.0
   flutter_slidable: ^3.0.0
-  network_info_plus: ^3.0.1
+  network_info_plus: ^5.0.3
   url_launcher: ^6.1.2
-  email_validator: ^2.0.1
   crypto: ^3.0.2
   usb_serial: ^0.5.1
-  latlong2: ^0.8.1
+  latlong2: ^0.9.0
   collection: ^1.16.0
   better_open_file: any
   dart_numerics: ^0.0.6
@@ -78,13 +84,13 @@ dependencies:
   flutter_map_dragmarker: any
   flutter_colorpicker: ^1.0.3
   screenshot: ^2.0.0
-  fl_chart: ^0.63.0
-  datadog_flutter_plugin: 1.4.0
+  fl_chart: ^0.68.0
+  datadog_flutter_plugin: ^2.1.0
   flutter_native_splash: ^2.2.18
-  flutter_map_tile_caching: ^8.0.1
   clock: ^1.1.1
-  patrol_finders: ^2.0.2
   flutter_blue_plus: ^1.31.7
+
+
 
 
 dev_dependencies:
@@ -97,8 +103,8 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^3.0.1
-  patrol: ^3.0.1
+  flutter_lints: ^4.0.0
+  patrol_finders: any
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

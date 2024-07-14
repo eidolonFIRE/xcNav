@@ -141,7 +141,7 @@ class MockPermissionHandlerPlatform extends Mock
 }
 
 class MockClient extends Client {
-  MockClient(globalContext) : super(globalContext);
+  MockClient(super.globalContext);
 
   @override
   void connect() async {

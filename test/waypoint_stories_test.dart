@@ -174,7 +174,7 @@ void main() {
     await $.waitUntilExists($(Scaffold));
 
     // --- Inject a waypoint
-    activePlan.updateWaypoint(Waypoint(latlngs: [LatLng(10, 10)], name: "my test waypoint"));
+    activePlan.updateWaypoint(Waypoint(latlngs: [const LatLng(10, 10)], name: "my test waypoint"));
 
     // --- Save waypoint collection
     final bottomBarRect = $.tester.getRect($(BottomNavigationBar));

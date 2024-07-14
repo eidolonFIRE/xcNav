@@ -3,12 +3,12 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:usb_serial/transaction.dart';
 import 'package:usb_serial/usb_serial.dart';
+import 'package:xcnav/datadog.dart';
 
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/geo.dart';
@@ -119,8 +119,7 @@ class ADSB with ChangeNotifier {
       debugPrint("USB PORT CONNECTED");
       return true;
     } catch (err, trace) {
-      debugPrint("USB SERIAL GENERAL ERROR: ${err.toString()}");
-      DatadogSdk.instance.logs?.error("USB error (adsb)", errorMessage: err.toString(), errorStackTrace: trace);
+      error("USB error (adsb)", errorMessage: err.toString(), errorStackTrace: trace);
       return false;
     }
   }
@@ -264,11 +263,11 @@ class ADSB with ChangeNotifier {
   void testWarning() {
     ProximityConfig config = proximityProfileOptions[settingsMgr.adsbProximitySize.value]!;
     var rand = Random(DateTime.now().millisecondsSinceEpoch);
-    var observer = LatLng(0, 0);
+    var observer = const LatLng(0, 0);
 
     var ga = GA(
         "",
-        latlngCalc.offset(LatLng(0, 0), 10 + rand.nextDouble() * 3000, rand.nextDouble() * 360),
+        latlngCalc.offset(const LatLng(0, 0), 10 + rand.nextDouble() * 3000, rand.nextDouble() * 360),
         rand.nextDouble() * 200 - 100,
         35 + rand.nextDouble() * 50,
         rand.nextDouble() * 360,

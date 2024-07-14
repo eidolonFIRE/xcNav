@@ -77,7 +77,6 @@ GA? _decodeTraffic(Uint8List data) {
   final id = String.fromCharCodes(data.sublist(27, 27 + 8)).trim().toUpperCase();
   final lat = _decode32bit(data, 4) / 1e7;
   final lng = _decode32bit(data, 8) / 1e7;
-  // TODO: check altitude type
   final alt = _decode32bit(data, 12) / 1e3;
   final spd = _decode16bit(data, 18) / 1e2;
   final hdg = _decode16bit(data, 16) / 1e2;

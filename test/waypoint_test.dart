@@ -12,15 +12,20 @@ void main() {
   test("hash", () {
     final Map<WaypointID, Waypoint> waypoints = {};
 
-    waypoints["1"] = (Waypoint(newId: "1", name: "test", latlngs: [LatLng(37.3, -121.123456789)]));
+    waypoints["1"] = (Waypoint(newId: "1", name: "test", latlngs: [const LatLng(37.3, -121.123456789)]));
     expect(hashWaypointsData(waypoints), "8ebbbb");
-    waypoints["2a"] = (Waypoint(newId: "2a", name: "", latlngs: [LatLng(3, 1), LatLng(1, 0)], color: 0, icon: "PATH"));
+    waypoints["2a"] =
+        (Waypoint(newId: "2a", name: "", latlngs: [const LatLng(3, 1), const LatLng(1, 0)], color: 0, icon: "PATH"));
     expect(hashWaypointsData(waypoints), "b8e2af");
   });
 
   test("segment lengths", () {
-    final waypoint =
-        Waypoint(name: "", latlngs: [LatLng(37, -121), LatLng(36.5, -121), LatLng(36.5, -121.5), LatLng(37, -121.25)]);
+    final waypoint = Waypoint(name: "", latlngs: [
+      const LatLng(37, -121),
+      const LatLng(36.5, -121),
+      const LatLng(36.5, -121.5),
+      const LatLng(37, -121.25)
+    ]);
     expect(waypoint.lengthBetweenIndexs(0, 3), closeTo(160091.44, 0.01));
     expect(waypoint.lengthBetweenIndexs(0, 1), closeTo(55486.48, 0.01));
     expect(waypoint.lengthBetweenIndexs(2, 3), closeTo(59809.46, 0.01));
@@ -33,8 +38,12 @@ void main() {
   });
 
   test("interpolate", () {
-    final waypoint =
-        Waypoint(name: "", latlngs: [LatLng(37, -121), LatLng(36.5, -121), LatLng(36.5, -121.5), LatLng(37, -121.25)]);
+    final waypoint = Waypoint(name: "", latlngs: [
+      const LatLng(37, -121),
+      const LatLng(36.5, -121),
+      const LatLng(36.5, -121.5),
+      const LatLng(37, -121.25)
+    ]);
     expect(waypoint.interpolate(0, 0).hdg, closeTo(3.14, 0.01));
     expect(waypoint.interpolate(0, 0).latlng.toString(), "LatLng(latitude:37.0, longitude:-121.0)");
     expect(waypoint.interpolate(10000, 0).hdg, closeTo(3.14, 0.01));
@@ -67,9 +76,13 @@ void main() {
   });
 
   test("interpolate with initial start latlng", () {
-    final initial = LatLng(37.25, -121);
-    final waypoint =
-        Waypoint(name: "", latlngs: [LatLng(37, -121), LatLng(36.5, -121), LatLng(36.5, -121.5), LatLng(37, -121.25)]);
+    const initial = LatLng(37.25, -121);
+    final waypoint = Waypoint(name: "", latlngs: [
+      const LatLng(37, -121),
+      const LatLng(36.5, -121),
+      const LatLng(36.5, -121.5),
+      const LatLng(37, -121.25)
+    ]);
     expect(waypoint.interpolate(0, 0, initialLatlng: initial).hdg, closeTo(3.14, 0.01));
     expect(waypoint.interpolate(0, 0, initialLatlng: initial).latlng.toString(),
         "LatLng(latitude:37.25, longitude:-121.0)");
@@ -97,7 +110,7 @@ void main() {
   });
 
   test("Eta - Point", () {
-    final waypoint = Waypoint(name: "", latlngs: [LatLng(37, -121)]);
+    final waypoint = Waypoint(name: "", latlngs: [const LatLng(37, -121)]);
     final eta = waypoint.eta(Geo(lat: 37.2, lng: -121), 10);
     expect(eta.distance, closeTo(22195.9, 0.1));
     expect(eta.time?.inSeconds, closeTo(2219, 0.1));
@@ -107,7 +120,7 @@ void main() {
   });
 
   test("Eta - Path", () {
-    final waypoint = Waypoint(name: "", latlngs: [LatLng(37, -121.1), LatLng(37, -121.2)]);
+    final waypoint = Waypoint(name: "", latlngs: [const LatLng(37, -121.1), const LatLng(37, -121.2)]);
     final eta = waypoint.eta(Geo(lat: 37.2, lng: -121), 10);
     expect(eta.distance, closeTo(32811.01, 0.1));
     expect(eta.time?.inSeconds, closeTo(3281, 0.1));

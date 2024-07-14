@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/timezones.dart';
 import 'package:xml/xml.dart';
 
@@ -36,14 +37,14 @@ class TFR {
         if (lat != 0 && lng != 0) {
           latlngs.add(LatLng(lat, lng));
         } else {
-          // TODO: raise error
+          error("TFR shape can't be zero.", attributes: {"raw text": notamText});
         }
       }
       if (latlngs.isNotEmpty) shapes.add(latlngs);
     }
 
     if (shapes.isEmpty) {
-      // TODO: raise error, no shapes found
+      error("No TFR shape found.", attributes: {"raw text": notamText});
     }
 
     // --- Parse Active time

@@ -1,6 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
-final stateCentroids = {
+const stateCentroids = {
   "AL": LatLng(32.806671, -86.791130),
   "AK": LatLng(61.370716, -152.404419),
   "AZ": LatLng(33.729759, -111.431221),

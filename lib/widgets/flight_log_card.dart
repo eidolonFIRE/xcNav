@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:better_open_file/better_open_file.dart';
-import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -168,8 +168,8 @@ class FlightLogCard extends StatelessWidget {
                   key: GlobalKey(debugLabel: "flight_log_card:${log.startTime?.millisecondsSinceEpoch.toString()}"),
                   mapController: mapController,
                   options: MapOptions(
-                    bounds: mapBounds,
-                    interactiveFlags: InteractiveFlag.none,
+                    initialCameraFit: mapBounds != null ? CameraFit.bounds(bounds: mapBounds) : null,
+                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                     onTap: (tapPosition, point) {
                       if (log.goodFile) {
                         Navigator.pushNamed(context, "/logReplay", arguments: {"logKey": logKey});
@@ -196,7 +196,7 @@ class FlightLogCard extends StatelessWidget {
                               point: e.latlng[0],
                               height: 60 * 0.5,
                               width: 40 * 0.5,
-                              builder: (context) => Container(
+                              child: Container(
                                   transformAlignment: const Alignment(0, 0),
                                   transform: Matrix4.translationValues(0, -30 * 0.5, 0),
                                   child: WaypointMarker(e, 60 * 0.5))))

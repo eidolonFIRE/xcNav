@@ -196,15 +196,15 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     key: mapKey,
                     mapController: mapController,
                     options: MapOptions(
-                      bounds: log.getBounds(),
+                      initialCameraFit: CameraFit.bounds(bounds: log.getBounds()),
                       onMapReady: () {
                         setState(() {
                           mapReady = true;
-                          mapController.fitBounds(log.getBounds());
+                          mapController.fitCamera(CameraFit.bounds(bounds: log.getBounds()));
                         });
                       },
-                      interactiveFlags:
-                          InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all),
+                      interactionOptions: InteractionOptions(
+                          flags: InteractiveFlag.all & (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all)),
                       onPositionChanged: (mapPosition, hasGesture) {
                         if (hasGesture) {
                           isMapDialOpen.value = false;
@@ -239,9 +239,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   height: 60 * 0.8,
                                   width: 40 * 0.8,
                                   rotate: true,
-                                  anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
-                                  rotateOrigin: const Offset(0, 30 * 0.8),
-                                  builder: (context) => WaypointMarker(e, 60 * 0.8)))
+                                  alignment: Alignment.topCenter,
+                                  child: WaypointMarker(e, 60 * 0.8)))
                               .toList()),
 
                       // --- Log Line
@@ -257,47 +256,43 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       MarkerLayer(
                         markers: log.fuelReports
                             .mapIndexed((index, e) => Marker(
-                                  anchorPos: AnchorPos.align(AnchorAlign.right),
-                                  height: 40,
-                                  width: 60,
-                                  point: log.samples[log.timeToSampleIndex(e.time)].latlng,
-                                  builder: (context) {
-                                    return Container(
-                                      transform: Matrix4.translationValues(-2, -20, 0),
-                                      child: GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              sampleIndex.value = log.timeToSampleIndex(e.time);
-                                            });
-                                          },
-                                          onLongPress: () {
-                                            editFuelReport(context, e.time, e.amount).then((newReport) {
-                                              setState(() {
-                                                if (newReport != null) {
-                                                  if (newReport.amount == 0 &&
-                                                      newReport.time.millisecondsSinceEpoch == 0) {
-                                                    // Report was deleted
-                                                    log.removeFuelReport(index);
-                                                  } else {
-                                                    // Edit fuel report amount
-                                                    log.updateFuelReport(index, newReport.amount);
-                                                  }
-                                                }
-                                              });
-                                            });
-                                          },
+                                alignment: Alignment.topCenter,
+                                height: 40,
+                                width: 60,
+                                point: log.samples[log.timeToSampleIndex(e.time)].latlng,
+                                child: Container(
+                                  transform: Matrix4.translationValues(-2, -20, 0),
+                                  child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          sampleIndex.value = log.timeToSampleIndex(e.time);
+                                        });
+                                      },
+                                      onLongPress: () {
+                                        editFuelReport(context, e.time, e.amount).then((newReport) {
+                                          setState(() {
+                                            if (newReport != null) {
+                                              if (newReport.amount == 0 && newReport.time.millisecondsSinceEpoch == 0) {
+                                                // Report was deleted
+                                                log.removeFuelReport(index);
+                                              } else {
+                                                // Edit fuel report amount
+                                                log.updateFuelReport(index, newReport.amount);
+                                              }
+                                            }
+                                          });
+                                        });
+                                      },
 
-                                          // Fuel Report Marker
-                                          child: LabelFlag(
-                                              direction: TextDirection.ltr,
-                                              text: Text.rich(
-                                                richValue(UnitType.fuel, e.amount, decimals: 1),
-                                                style: const TextStyle(color: Colors.white),
-                                              ),
-                                              color: Colors.blue)),
-                                    );
-                                  },
-                                ))
+                                      // Fuel Report Marker
+                                      child: LabelFlag(
+                                          direction: TextDirection.ltr,
+                                          text: Text.rich(
+                                            richValue(UnitType.fuel, e.amount, decimals: 1),
+                                            style: const TextStyle(color: Colors.white),
+                                          ),
+                                          color: Colors.blue)),
+                                )))
                             .toList(),
                       ),
 
@@ -311,7 +306,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   width: 30.0,
                                   height: 30.0,
                                   point: log.samples[value].latlng,
-                                  builder: (ctx) => Container(
+                                  child: Container(
                                     transformAlignment: const Alignment(0, 0),
                                     transform: Matrix4.rotationZ(log.samples[value].hdg),
                                     child: Image.asset("assets/images/red_arrow.png"),

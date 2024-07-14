@@ -2,23 +2,23 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="160"
-   height="241"
-   viewBox="0 0 42.333332 63.764578"
+   height="240"
+   viewBox="0 0 160 240"
    version="1.1"
    id="svg8"
-   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
    sodipodi:docname="pin.svg"
    inkscape:export-filename="/home/caleb/projects/xcNav/assets/images/pin.png"
    inkscape:export-xdpi="40.639999"
-   inkscape:export-ydpi="40.639999">
+   inkscape:export-ydpi="40.639999"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -29,24 +29,29 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="5.6568542"
-     inkscape:cx="100.80144"
-     inkscape:cy="107.25555"
+     inkscape:cx="90.951611"
+     inkscape:cy="121.53398"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:window-width="2880"
      inkscape:window-height="1796"
      inkscape:window-x="594"
-     inkscape:window-y="281"
+     inkscape:window-y="236"
      inkscape:window-maximized="0"
      showguides="false"
-     units="px">
+     units="px"
+     inkscape:showpageshadow="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1">
     <inkscape:grid
        type="xygrid"
        id="grid814"
        units="px"
        spacingx="1.0583333"
-       spacingy="1.0583333" />
+       spacingy="1.0583333"
+       originx="0"
+       originy="0" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -56,7 +61,6 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -66,20 +70,20 @@
      id="layer1"
      transform="translate(0,-233.23547)">
     <path
-       style="fill:#000000;fill-opacity:0.99866662;stroke:none;stroke-width:0.28152856;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="M 21.186602,297 C 15.874743,297 15.675543,286.49179 3.0083741,265.24713 13.92347,279.08003 28.462777,278.9314 39.294758,265.24178 26.661014,286.39286 26.498462,297 21.186602,297 Z"
+       style="fill:#000000;fill-opacity:0.998667;stroke:none;stroke-width:1.06311;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 80.345302,472.73269 c -20.058591,0 -20.810808,-39.681 -68.644449,-119.90488 41.21748,52.23566 96.120677,51.67441 137.024297,-0.0202 C 101.01773,432.67812 100.4039,472.7327 80.345302,472.7327 Z"
        id="path815"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="zccz"
        inkscape:export-xdpi="67.290001"
        inkscape:export-ydpi="67.290001" />
     <circle
-       style="opacity:1;fill:#010101;fill-opacity:0.62933332;fill-rule:nonzero;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+       style="opacity:1;fill:#010101;fill-opacity:0.629333;fill-rule:nonzero;stroke:#000000;stroke-width:7.55238;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
        id="path817"
-       cx="21.15"
-       cy="254.70006"
+       cx="80.207077"
+       cy="313.00006"
        inkscape:export-xdpi="67.290001"
        inkscape:export-ydpi="67.290001"
-       r="20" />
+       r="75.523804" />
   </g>
 </svg>

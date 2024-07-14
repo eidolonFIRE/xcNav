@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:bisection/bisect.dart';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -14,6 +13,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/fake_path.dart';
 import 'package:xcnav/models/flight_log.dart';
@@ -461,8 +461,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       lastSavedLog = DateTime.now();
     } else {
       const msg = "Recording was too short, skipping save.";
-      debugPrint(msg);
-      DatadogSdk.instance.logs!.warn(msg, attributes: {"record_length": recordGeo.length});
+      warn(msg, attributes: {"record_length": recordGeo.length});
     }
   }
 
@@ -535,8 +534,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         });
       }
     } catch (err, trace) {
-      debugPrint("Failed to fetch weatherkitdata: $err $trace");
-      DatadogSdk.instance.logs?.error("WeatherKit",
+      error("WeatherKit",
           errorMessage: err.toString(),
           errorStackTrace: trace,
           attributes: {"lat": latlng.latitude.toStringAsFixed(5), "lng": latlng.longitude.toStringAsFixed(5)});
@@ -555,8 +553,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         geo!.ground = value;
       }
     }).timeout(const Duration(milliseconds: 1000), onTimeout: () {
-      debugPrint("DEM SERVICE TIMEOUT! ${geo!.latlng}");
-      DatadogSdk.instance.logs?.warn("DEM service timeout", attributes: {"lat": geo!.lat, "lng": geo!.lng});
+      warn("DEM service timeout", attributes: {"lat": geo!.lat, "lng": geo!.lng});
     });
 
     recordGeo.add(geo!);

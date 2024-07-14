@@ -4,6 +4,7 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
@@ -27,11 +28,8 @@ def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
-
 android {
-    namespace "com.xcnav"
-    compileSdk flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    compileSdkVersion flutter.compileSdkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -48,14 +46,14 @@ android {
 
     defaultConfig {
         applicationId "com.xcnav"
-        minSdkVersion 30
-        targetSdkVersion 34
-        compileSdkVersion 34
+        minSdkVersion 29
+        targetSdkVersion 33
+        compileSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
 
-        // testInstrumentationRunner "pl.leancode.patrol.PatrolJUnitRunner"
-        // testInstrumentationRunnerArguments clearPackageData: "true"
+        testInstrumentationRunner "pl.leancode.patrol.PatrolJUnitRunner"
+        testInstrumentationRunnerArguments clearPackageData: "true"
     }
 
     signingConfigs {
@@ -75,10 +73,14 @@ android {
     testOptions {
         execution "ANDROIDX_TEST_ORCHESTRATOR"
     }
+
 }
 
 flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+    implementation "org.jetbrains.kotlin:1.9.23"
+    androidTestUtil "androidx.test:orchestrator:1.4.2"
+}

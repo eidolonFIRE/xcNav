@@ -9,7 +9,7 @@ class Endpoint {
   Endpoint({required this.apiUrl, required this.token, required this.cert});
 }
 
-LatLng latlngAtLoading = LatLng(0, 0);
+LatLng latlngAtLoading = const LatLng(0, 0);
 Endpoint? serverEndpoint;
 String localeZone = "unset";
 

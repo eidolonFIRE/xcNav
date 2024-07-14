@@ -69,7 +69,7 @@ Widget topInstruments(BuildContext context) {
                                         ? SvgPicture.asset(
                                             "assets/images/compass_north.svg",
                                             // fit: BoxFit.none,
-                                            color: Colors.white,
+                                            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                                           )
                                         : Transform.scale(
                                             scale: 1.4,
@@ -148,15 +148,16 @@ Widget topInstruments(BuildContext context) {
                         children: [
                           if ((myTelemetry.geo?.varioSmooth ?? 0).abs() > settingsMgr.altimeterVsiThresh.value)
                             Padding(
-                              padding: const EdgeInsets.only(right: 20),
-                              child: RotatedBox(
-                                  quarterTurns: (myTelemetry.geo?.varioSmooth ?? 0) > 0 ? 0 : 2,
-                                  child: SvgPicture.asset("assets/images/arrow.svg",
-                                      height: topInstrumentsHeight / 5,
-                                      color: (myTelemetry.geo?.varioSmooth ?? 0) > 0
-                                          ? Colors.lightGreen
-                                          : Colors.redAccent)),
-                            ),
+                                padding: const EdgeInsets.only(right: 20),
+                                child: RotatedBox(
+                                    quarterTurns: (myTelemetry.geo?.varioSmooth ?? 0) > 0 ? 0 : 2,
+                                    child: SvgPicture.asset("assets/images/arrow.svg",
+                                        height: topInstrumentsHeight / 5,
+                                        colorFilter: ColorFilter.mode(
+                                            (myTelemetry.geo?.varioSmooth ?? 0) > 0
+                                                ? Colors.lightGreen
+                                                : Colors.redAccent,
+                                            BlendMode.srcIn)))),
                           Altimeter(
                             primaryAltimeter != AltimeterMode.msl
                                 ? myTelemetry.geo?.alt

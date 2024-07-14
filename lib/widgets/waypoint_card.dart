@@ -110,7 +110,7 @@ class _WaypointCardState extends State<WaypointCard> {
                               child: widget.waypoint.isPath
                                   ? SvgPicture.asset(
                                       "assets/images/path.svg",
-                                      color: widget.waypoint.getColor(),
+                                      colorFilter: ColorFilter.mode(widget.waypoint.getColor(), BlendMode.srcIn),
                                       width: 30,
                                     )
                                   : getWpIcon(

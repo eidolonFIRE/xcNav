@@ -1,13 +1,13 @@
 import 'dart:math';
 
 import 'package:clock/clock.dart';
-import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/providers/active_plan.dart';
@@ -65,10 +65,8 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
     mapController = MapController();
     _tabController = TabController(vsync: this, length: myTabs.length);
 
-    if (!settingsMgr.rumOptOut.value) {
-      DatadogSdk.instance.rum?.startView("/home/wind_dialog");
-      DatadogSdk.instance.rum?.addAttribute("view_map_northLockWind", settingsMgr.northlockWind.value);
-    }
+    startView("/home/wind_dialog");
+    addAttribute("view_map_northLockWind", settingsMgr.northlockWind.value);
   }
 
   @override
@@ -76,9 +74,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
     _tabController.dispose();
     super.dispose();
 
-    if (!settingsMgr.rumOptOut.value) {
-      DatadogSdk.instance.rum?.stopView("/home/wind_dialog");
-    }
+    stopView("/home/wind_dialog");
   }
 
   @override
@@ -141,7 +137,8 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
       }
 
       if (mapReady && (mapKey.currentState?.mounted ?? false)) {
-        mapController.fitBounds(padLatLngBounds(LatLngBounds.fromPoints((routePoints ?? []) + (points ?? [])), 0.1));
+        mapController.fitCamera(CameraFit.bounds(
+            bounds: padLatLngBounds(LatLngBounds.fromPoints((routePoints ?? []) + (points ?? [])), 0.1)));
       } else {
         // Map was disposed and not ready yet
         mapReady = false;
@@ -212,9 +209,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                 wind.samples.removeRange(0, wind.samples.length - 10);
                                 wind.clearResult();
                               }
-                              if (!settingsMgr.rumOptOut.value) {
-                                DatadogSdk.instance.rum?.addUserAction(RumUserActionType.tap, "Reset Wind Detector");
-                              }
+                              addTapAction("Reset Wind Detector");
                             },
                             icon: const Icon(
                               Icons.clear,
@@ -270,10 +265,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                             size: 40,
                                             onPressed: () {
                                               settingsMgr.northlockWind.value = !northlockWind;
-                                              if (!settingsMgr.rumOptOut.value) {
-                                                DatadogSdk.instance.rum?.addAttribute(
-                                                    "view_map_northLockWind", settingsMgr.northlockWind.value);
-                                              }
+                                              addAttribute("view_map_northLockWind", settingsMgr.northlockWind.value);
                                             },
                                             selected: false,
                                             child: Container(
@@ -286,8 +278,8 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                               child: northlockWind
                                                   ? SvgPicture.asset(
                                                       "assets/images/compass_north.svg",
-                                                      // fit: BoxFit.none,
-                                                      color: Colors.white,
+                                                      colorFilter:
+                                                          const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                                                     )
                                                   : Transform.scale(
                                                       scale: 1.4,
@@ -509,15 +501,18 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                         key: mapKey,
                                                         mapController: mapController,
                                                         options: MapOptions(
-                                                            onMapReady: () {
-                                                              mapReady = true;
-                                                              refreshRoute(points);
-                                                            },
-                                                            bounds: padLatLngBounds(
-                                                                LatLngBounds.fromPoints(
-                                                                    (routePoints ?? []) + (points ?? [])),
-                                                                0.1),
-                                                            interactiveFlags: InteractiveFlag.none),
+                                                          onMapReady: () {
+                                                            mapReady = true;
+                                                            refreshRoute(points);
+                                                          },
+                                                          initialCameraFit: CameraFit.bounds(
+                                                              bounds: padLatLngBounds(
+                                                                  LatLngBounds.fromPoints(
+                                                                      (routePoints ?? []) + (points ?? [])),
+                                                                  0.1)),
+                                                          interactionOptions:
+                                                              const InteractionOptions(flags: InteractiveFlag.none),
+                                                        ),
                                                         children: [
                                                           getMapTileLayer(MapTileSrc.topo),
 
@@ -530,10 +525,8 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                                   height: 60 * 0.8,
                                                                   width: 40 * 0.8,
                                                                   rotate: true,
-                                                                  anchorPos: AnchorPos.exactly(Anchor(20 * 0.8, 0)),
-                                                                  rotateOrigin: const Offset(0, 30 * 0.8),
-                                                                  builder: (context) =>
-                                                                      WaypointMarker(selectedWp, 60 * 0.8))
+                                                                  alignment: Alignment.topCenter,
+                                                                  child: WaypointMarker(selectedWp, 60 * 0.8))
                                                             ]),
                                                           // Next waypoint: marker
                                                           if (selectedWp != null &&
@@ -578,7 +571,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                                     width: 25.0,
                                                                     height: 25.0,
                                                                     point: myTelemetry.geo!.latlng,
-                                                                    builder: (ctx) => Container(
+                                                                    child: Container(
                                                                       transformAlignment: const Alignment(0, 0),
                                                                       transform:
                                                                           Matrix4.rotationZ(myTelemetry.geo!.hdg),
@@ -599,7 +592,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                                   width: 40,
                                                                   height: 40,
                                                                   point: fuelIntercept.latlng,
-                                                                  builder: (context) => const Stack(
+                                                                  child: const Stack(
                                                                     children: [
                                                                       Center(
                                                                         child: Icon(

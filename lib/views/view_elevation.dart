@@ -279,7 +279,10 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                                 width: 30,
                                 height: 32,
                                 child: selectedWp.isPath
-                                    ? SvgPicture.asset("assets/images/path.svg", color: selectedWp.getColor())
+                                    ? SvgPicture.asset(
+                                        "assets/images/path.svg",
+                                        colorFilter: ColorFilter.mode(selectedWp.getColor(), BlendMode.srcIn),
+                                      )
                                     : WaypointMarker(selectedWp, 30),
                               );
                             }
