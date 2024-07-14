@@ -62,7 +62,7 @@ class Profile with ChangeNotifier {
     }
     updateAvatarHash();
 
-    debugPrint("Loaded Profile: $name, $id, $secretID, avatar: ${_avatarRaw?.length ?? 0}");
+    debugPrint("Loaded Profile: $name, $id, $secretID, avatar size: ${_avatarRaw?.length ?? 0}");
 
     hash = _hash();
 
@@ -130,7 +130,7 @@ class Profile with ChangeNotifier {
     return http
         .post(Uri.parse("https://$profileStoreUrl"),
             headers: {"Content-Type": "application/json", "authorizationToken": profileStoreToken},
-            body: jsonEncode({"pilot_id": id, "avatar": base64Encode(avatarRaw!)}))
+            body: jsonEncode({"pilot_id": id?.toLowerCase(), "avatar": base64Encode(avatarRaw!)}))
         .then((http.Response response) {
       final int statusCode = response.statusCode;
 

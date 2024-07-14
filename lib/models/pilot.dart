@@ -134,7 +134,8 @@ class Pilot {
   }
 
   Future _fetchS3asset(String pilotID) async {
-    Uri uri = Uri.https(profileStoreUrl.split("/").first, profileStoreUrl.split("/").last, {"pilot_id": pilotID});
+    Uri uri = Uri.https(
+        profileStoreUrl.split("/").first, profileStoreUrl.split("/").last, {"pilot_id": pilotID.toLowerCase()});
     return http.get(uri, headers: {"authorizationToken": profileStoreToken}).then((http.Response response) {
       final int statusCode = response.statusCode;
 
