@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:bisection/bisect.dart';
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
@@ -512,7 +514,29 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     _sumFuelStat = null;
   }
 
-  void fetchAmbPressure(LatLng latlng) {
+  void fetchAmbPressure(LatLng latlng, {force = false}) async {
+    // First check if we've recently
+    if (!force) {
+      final prefs = await SharedPreferences.getInstance();
+      final lastTime = prefs.getInt("weatherKit.last.time");
+      if (lastTime != null &&
+          clock.now().difference(DateTime.fromMillisecondsSinceEpoch(lastTime)) > const Duration(minutes: 10)) {
+        final lastLat = prefs.getDouble("weatherKit.last.lat");
+        final lastLng = prefs.getDouble("weatherKit.last.lng");
+        if (lastLng != null && lastLat != null) {
+          if (latlngCalc.distance(LatLng(lastLat, lastLng), latlng) < 1000) {
+            // Recent query available!
+            final lastValue = prefs.getDouble("weatherKit.last.value");
+            if (lastValue != null) {
+              baroAmbient = BarometerValue(lastValue);
+              debugPrint("Baro pulled from memory. Skipped weatherKit call.");
+              return;
+            }
+          }
+        }
+      }
+    }
+
     try {
       if (!baroAmbientRequested) {
         baroAmbientRequested = true;
@@ -529,6 +553,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             ambientTemperature = payload["currentWeather"]["temperature"] * 9 / 5 + 32;
             debugPrint("Ambient pressure found: ${baroAmbient?.hectpascal} ( ${ambientTemperature}F )");
             baroFromWeatherkit = true;
+
+            // Save for later
+            SharedPreferences.getInstance().then((prefs) {
+              prefs.setInt("weatherKit.last.time", clock.now().millisecondsSinceEpoch);
+              prefs.setDouble("weatherKit.last.lat", latlng.latitude);
+              prefs.setDouble("weatherKit.last.lng", latlng.longitude);
+              prefs.setDouble("weatherKit.last.value", baroAmbient!.hectpascal);
+            });
           }
           baroAmbientRequested = false;
         });
