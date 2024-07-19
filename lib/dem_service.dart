@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -42,42 +44,69 @@ Point3 _unproject(LatLng latlng, int zoom) {
   return Point3(xtile, ytile, zoom.toDouble());
 }
 
+final Queue<String> _tileCacheQueue = Queue();
+final Map<String, ByteData> _tileCacheData = {};
+final Map<String, int> _tileCacheWidth = {};
+
+double _sampleByteData(ByteData data, int w, double x, double y) {
+  // debugPrint("offset: $x, $y ($s) ( ${(x + y * s) * 4} / ${imgInfo.sizeBytes} )");
+  final bitPos = (((x % 1) * w).toInt() + ((y % 1) * w * w).toInt()) * 4;
+  final r = data.getUint8(bitPos + 0);
+  final g = data.getUint8(bitPos + 1);
+  final b = data.getUint8(bitPos + 2);
+  // final a = value.getUint8(bitPos + 3);
+  // debugPrint("rgba : $r $g $b $a");
+  return ((r * 256 + g + b.toDouble() / 256) - 32768);
+}
+
 /// Sample the DEM layer. (digital elevation map)
 /// Returns elevation in Meters
-Future<double?> sampleDem(LatLng latlng, bool highRes, {double offset = 0}) {
+Future<double?> sampleDem(LatLng latlng, bool highRes) {
   // early out
   if (_demTileLayer == null) {
     return Future.value(null);
   }
 
-  Completer<double?> completer = Completer();
   final point = _unproject(latlng, highRes ? 12 : 10);
-  final pointInt = TileCoordinates(point.x.toInt(), point.y.toInt(), point.z.toInt());
-  final img = _demTileLayer!.tileProvider.getImage(pointInt, _demTileLayer!);
-  // debugPrint("Fetch pointInt(${pointInt.x}, ${pointInt.y}, ${pointInt.z})");
+  final pointTile = TileCoordinates(point.x.toInt(), point.y.toInt(), point.z.toInt());
+  final pointAddress = "${pointTile.x},${pointTile.y},${pointTile.z}";
+
+  // Check cache first
+  if (_tileCacheData.containsKey(pointAddress)) {
+    return Future.value(
+        _sampleByteData(_tileCacheData[pointAddress]!, _tileCacheWidth[pointAddress]!, point.x, point.y));
+  }
+
+  // Query the image
+  Completer<double?> completer = Completer();
+  final img = _demTileLayer!.tileProvider.getImage(pointTile, _demTileLayer!);
+  // debugPrint("Fetch pointTile(${pointTile.x}, ${pointTile.y}, ${pointTile.z})");
   final imgStream = img.resolve(ImageConfiguration.empty);
   imgStream.addListener(ImageStreamListener((imgInfo, state) {
     // debugPrint("$state ${imgInfo.toString()}");
     if (!state) {
-      // TODO: re-cache this
-      imgInfo.image.toByteData().then((value) {
-        if (value != null) {
-          int s = imgInfo.image.width;
-          int x = ((point.x % 1.0) * s).toInt();
-          int y = ((point.y % 1.0) * s).toInt();
-          // debugPrint("offset: $x, $y ($s) ( ${(x + y * s) * 4} / ${imgInfo.sizeBytes} )");
-          final bitPos = (x + y * s) * 4;
-          final r = value.getUint8(bitPos + 0);
-          final g = value.getUint8(bitPos + 1);
-          final b = value.getUint8(bitPos + 2);
-          // final a = value.getUint8(bitPos + 3);
-          // debugPrint("rgba : $r $g $b $a");
-          final elev = ((r * 256 + g + b.toDouble() / 256) - 32768);
+      imgInfo.image.toByteData().then((data) {
+        if (data != null) {
+          final w = imgInfo.image.width;
           // debugPrint("Elevation: $elev meters");
-
+          final elev = _sampleByteData(data, w, point.x, point.y);
           // Note: use this line to test lag
           // Timer(Duration(seconds: 10), () => {completer.complete(elev + offset)});
-          completer.complete(elev + offset);
+
+          completer.complete(elev);
+
+          // store back to cache
+          _tileCacheWidth[pointAddress] = w;
+          _tileCacheQueue.add(pointAddress);
+          _tileCacheData[pointAddress] = data;
+
+          // clean cache
+          if (_tileCacheQueue.length > 10) {
+            final oldest = _tileCacheQueue.first;
+            _tileCacheQueue.removeFirst();
+            _tileCacheData.remove(oldest);
+            _tileCacheWidth.remove(oldest);
+          }
         } else {
           completer.complete(null);
         }
