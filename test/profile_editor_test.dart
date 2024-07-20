@@ -1,7 +1,9 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mocktail_image_network/mocktail_image_network.dart';
 import 'package:patrol_finders/patrol_finders.dart';
 import 'package:provider/provider.dart';
 
@@ -103,14 +105,19 @@ void main() {
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
       // --- When profile isn't set...
-      // SharedPreferences.setMockInitialValues({
-      //   "profile.name": "Mr Test",
-      //   "profile.id": "1234",
-      //   "profile.secretID": "1234abcd",
-      // });
+      SharedPreferences.setMockInitialValues({
+        "weatherKit.last.time": clock.now().millisecondsSinceEpoch - 10000,
+        "weatherKit.last.value": 1351.0,
+        "weatherKit.last.lat": 37.0,
+        "weatherKit.last.lng": -121.0,
+        // "profile.name": "Mr Test",
+        // "profile.id": "1234",
+        // "profile.secretID": "1234abcd",
+      });
 
       // --- Build App
-      await $.pumpWidget(makeApp());
+      await mockNetworkImages(() async => $.pumpWidget(makeApp()));
+      // await $.pumpWidget(makeApp());
       await $.waitUntilExists($(Scaffold));
 
       //

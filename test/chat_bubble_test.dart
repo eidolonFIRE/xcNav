@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mocktail_image_network/mocktail_image_network.dart';
 import 'package:patrol_finders/patrol_finders.dart';
 import 'package:provider/provider.dart';
 
@@ -89,7 +91,15 @@ void main() {
   patrolWidgetTest(
     'Check chat bubble appears and clears',
     ($) async {
-      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues({
+        "weatherKit.last.time": clock.now().millisecondsSinceEpoch - 10000,
+        "weatherKit.last.value": 1351.0,
+        "weatherKit.last.lat": 37.0,
+        "weatherKit.last.lng": -121.0,
+        "profile.name": "Mr Test",
+        "profile.id": "1234",
+        "profile.secretID": "1234abcd",
+      });
       SharedPreferences.getInstance().then((prefs) {
         settingsMgr = SettingsMgr(prefs);
         // settingsMgr.showAirspaceOverlay.value = false;
@@ -105,17 +115,13 @@ void main() {
         timeLimit: null,
       ))).thenAnswer((_) => Stream.value(mockPosition));
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-      SharedPreferences.setMockInitialValues({
-        "profile.name": "Mr Test",
-        "profile.id": "1234",
-        "profile.secretID": "1234abcd",
-      });
       final activePlan = ActivePlan();
       final plans = MockPlans();
       final clientCompleter = Completer<MockClient>();
 
       // --- Build App
-      await $.pumpWidget(makeApp(activePlan, plans, clientCompleter));
+      await mockNetworkImages(() async => $.pumpWidget(makeApp(activePlan, plans, clientCompleter)));
+      // await $.pumpWidget(makeApp(activePlan, plans, clientCompleter));
       await $.waitUntilExists($(Scaffold));
 
       final client = await clientCompleter.future;
@@ -125,7 +131,7 @@ void main() {
         "status": 0,
         "secretToken": "1234abcd",
         "pilot_id": "1234",
-        "pilotMetaHash": "cb3b4",
+        "pilotMetaHash": "a938aa",
         "apiVersion": 7,
         "group_id": "6f3a49"
       });
