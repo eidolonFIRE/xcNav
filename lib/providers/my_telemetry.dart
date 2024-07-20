@@ -299,11 +299,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             distanceFilter: 0,
             forceLocationManager: false,
             intervalDuration: const Duration(seconds: 3),
-            //(Optional) Set foreground notification config to keep the app alive
-            //when going to the background
             foregroundNotificationConfig: const ForegroundNotificationConfig(
                 notificationText: "Still sending your position to the group.",
                 notificationTitle: "xcNav",
+                setOngoing: true,
                 enableWakeLock: true));
       } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
@@ -520,7 +519,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       final prefs = await SharedPreferences.getInstance();
       final lastTime = prefs.getInt("weatherKit.last.time");
       if (lastTime != null &&
-          clock.now().difference(DateTime.fromMillisecondsSinceEpoch(lastTime)) > const Duration(minutes: 10)) {
+          clock.now().difference(DateTime.fromMillisecondsSinceEpoch(lastTime)) < const Duration(minutes: 10)) {
         final lastLat = prefs.getDouble("weatherKit.last.lat");
         final lastLng = prefs.getDouble("weatherKit.last.lng");
         if (lastLng != null && lastLat != null) {
