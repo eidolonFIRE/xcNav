@@ -8,6 +8,8 @@ bool currentlyCheckingPermissions = false;
 
 Future<bool?> checkPermissions(BuildContext context) async {
   if (!currentlyCheckingPermissions) {
+    Permission.notification.request();
+
     currentlyCheckingPermissions = true;
     if (Platform.isIOS) {
       await Permission.camera.request();

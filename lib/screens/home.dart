@@ -42,14 +42,6 @@ class _MyHomePageState extends State<MyHomePage> {
   int viewPageIndex = 1;
   final pageIndexNames = ["Menu", "Map", "Side", "Points", "Chat"];
 
-  final features = [
-    "focusOnMe",
-    "focusOnGroup",
-    "instruments",
-    "flightPlan",
-    "qrScanner",
-  ];
-
   @override
   _MyHomePageState();
 
