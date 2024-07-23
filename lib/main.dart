@@ -23,7 +23,6 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
-import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/screens/ble_scan.dart';
 
@@ -132,10 +131,6 @@ void main() async {
         providers: [
           ChangeNotifierProvider(
             create: (_) => MyTelemetry(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Weather(),
             lazy: false,
           ),
           ChangeNotifierProvider(

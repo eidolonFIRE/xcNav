@@ -249,17 +249,15 @@ class _MainMenuState extends State<MainMenu> {
           onTap: () => {Navigator.popAndPushNamed(context, "/checklist")},
         ),
 
-        // NOTE: Weather is only available in NorthAmerica until more weather sources can be added
-        if (localeZone == "NA")
-          ListTile(
-            minVerticalPadding: 10,
-            leading: const Icon(
-              Icons.cloudy_snowing,
-              size: 30,
-            ),
-            title: Text("Weather", style: Theme.of(context).textTheme.headlineSmall),
-            onTap: () => {Navigator.popAndPushNamed(context, "/weather")},
+        ListTile(
+          minVerticalPadding: 10,
+          leading: Image.asset(
+            "assets/external/report_ppg.png",
+            height: 30,
           ),
+          title: Text("Weather", style: Theme.of(context).textTheme.headlineSmall),
+          onTap: () => {Navigator.popAndPushNamed(context, "/weather")},
+        ),
 
         ListTile(
             minVerticalPadding: 10,

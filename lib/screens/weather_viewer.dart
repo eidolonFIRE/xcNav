@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
-import 'package:xcnav/providers/weather.dart';
-import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/sounding_plot_therm.dart';
-import 'package:xcnav/widgets/sounding_plot_wind.dart';
 
 class WeatherViewer extends StatefulWidget {
   const WeatherViewer({super.key});
@@ -16,187 +13,48 @@ class WeatherViewer extends StatefulWidget {
 
 class _WeatherViewerState extends State<WeatherViewer> {
   double? selectedY;
+  final WebViewController controller = WebViewController();
+
+  @override
+  void initState() {
+    super.initState();
+    final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+
+    PackageInfo.fromPlatform().then((version) {
+      controller
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onNavigationRequest: (NavigationRequest request) {
+              return NavigationDecision.prevent;
+            },
+          ),
+        );
+      controller.loadRequest(Uri.parse("https://ppg.report/${myTelemetry.geo?.lat},${myTelemetry.geo?.lng}"),
+          headers: {"xcNav": "${version.version}  -  ( build ${version.buildNumber}"});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Weather"),
-      ),
-      body:
-
-          /// === View Sounding at current geo
-          FutureBuilder<Sounding?>(
-              future: Provider.of<Weather>(context, listen: false)
-                  .getSounding(Provider.of<MyTelemetry>(context, listen: false).geo!.latlng),
-              builder: (context, sounding) {
-                if (sounding.hasData && sounding.data != null) {
-                  double myBaro = Provider.of<MyTelemetry>(context, listen: false).baro?.hectpascal ??
-                      pressureFromElevation(Provider.of<MyTelemetry>(context, listen: false).geo?.alt ?? 0, 1013.25);
-                  // Get the sample from selection
-                  SoundingSample? sample;
-                  if (selectedY != null) {
-                    sample = sounding.data!.sampleBaro(pressureFromElevation(
-                        (MediaQuery.of(context).size.width - selectedY!) / (MediaQuery.of(context).size.width) * 6000.0,
-                        1013.25));
-                  } else {
-                    sample = sounding.data!.sampleBaro(myBaro);
-                  }
-
-                  return Column(
-                    // crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(30.0),
-                        child: Text(
-                          "Current Sounding",
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                      ),
-
-                      // Divider(),
-
-                      /// --- Isobar values (values at altitude)
-                      Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Flex(
-                            direction: Axis.horizontal,
-                            children: [
-                              Flexible(
-                                  fit: FlexFit.tight,
-                                  flex: 3,
-                                  child: Text.rich(
-                                    TextSpan(children: [
-                                      richValue(UnitType.distFine, getElevation(sample.baroAlt, 1013.25), digits: 5),
-                                      const TextSpan(text: ",  "),
-                                      TextSpan(
-                                          style: const TextStyle(color: Colors.blue),
-                                          text: sample.dpt == null ? "?" : "${cToF(sample.dpt)!.toStringAsFixed(0)} F"),
-                                      const TextSpan(text: ",  "),
-                                      TextSpan(
-                                          style: const TextStyle(color: Colors.red),
-                                          text: sample.tmp == null ? "?" : "${cToF(sample.tmp)!.toStringAsFixed(0)} F"),
-                                    ]),
-                                    style: const TextStyle(fontSize: 24),
-                                    textAlign: TextAlign.center,
-                                  )),
-                              Flexible(
-                                  fit: FlexFit.tight,
-                                  flex: 1,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 10),
-                                    child: Stack(children: [
-                                      if (sample.wHdg != null)
-                                        Container(
-                                          transformAlignment: const Alignment(0, 0),
-                                          transform: Matrix4.rotationZ(sample.wHdg!),
-                                          child: SvgPicture.asset(
-                                            "assets/images/wind_sock.svg",
-                                            width: 100,
-                                            height: 100,
-                                            // color: Colors.blue,
-                                          ),
-                                        ),
-                                      Align(
-                                        alignment: Alignment.center,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(top: 42, bottom: 42),
-                                          child: Text(
-                                            printValue(UnitType.speed, sample.wVel, digits: 2, decimals: 0) ?? "",
-                                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
-                                    ]),
-                                  )),
-                            ],
-                          )),
-
-                      /// --- Graph plots
-                      Padding(
-                        padding: const EdgeInsets.only(left: 10, right: 10),
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          height: MediaQuery.of(context).size.width,
-                          child: Listener(
-                              behavior: HitTestBehavior.opaque,
-                              onPointerDown: (e) => setState(() {
-                                    selectedY = e.localPosition.dy;
-                                  }),
-                              onPointerMove: (e) => setState(() {
-                                    selectedY = e.localPosition.dy;
-                                  }),
-                              child: Stack(fit: StackFit.loose, children: [
-                                Flex(
-                                  direction: Axis.horizontal,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Flexible(
-                                      fit: FlexFit.tight,
-                                      flex: 3,
-                                      child: ClipRect(
-                                        child: CustomPaint(
-                                          painter: SoundingPlotThermPainter(sounding.data!, selectedY, myBaro),
-                                        ),
-                                      ),
-                                    ),
-                                    Flexible(
-                                      fit: FlexFit.tight,
-                                      flex: 1,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(left: 10),
-                                        child: ClipRRect(
-                                          child: CustomPaint(
-                                            painter: SoundingPlotWindPainter(sounding.data!, selectedY, myBaro),
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                                if (selectedY == null)
-                                  const Align(
-                                    alignment: Alignment.center,
-                                    child: Text.rich(
-                                      TextSpan(children: [
-                                        WidgetSpan(
-                                            child: Icon(
-                                          Icons.touch_app,
-                                          size: 26,
-                                        )),
-                                        TextSpan(text: "  Select an Altitude")
-                                      ]),
-                                      style: TextStyle(
-                                          fontSize: 18, shadows: [Shadow(color: Colors.black, blurRadius: 20)]),
-                                    ),
-                                  ),
-                              ])),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Text(
-                          "NAM-NEST-conus updated  ${DateTime.now().difference(Provider.of<Weather>(context, listen: false).lastPull ?? DateTime.now()).inMinutes.toString()}  minutes ago.",
-                          style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
-                        ),
-                      )
-                    ],
-                  );
-                } else {
-                  return const Center(
-                      child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(10.0),
-                        child: Text("Fetching"),
-                      ),
-                      CircularProgressIndicator.adaptive(),
-                    ],
-                  ));
-                }
-              }),
-    );
+        body: Stack(
+      children: [
+        WebViewWidget(
+          controller: controller,
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, top: 20),
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: IconButton(
+              iconSize: 30,
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
+      ],
+    ));
   }
 }

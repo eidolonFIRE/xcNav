@@ -23,7 +23,6 @@ import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
-import 'package:xcnav/providers/weather.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
@@ -41,10 +40,6 @@ void main() {
     return MultiProvider(providers: [
       ChangeNotifierProvider(
         create: (_) => MyTelemetry(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => Weather(),
         lazy: false,
       ),
       ChangeNotifierProvider(
