@@ -220,12 +220,12 @@ class FlightLogCard extends StatelessWidget {
                 bottom: 4,
                 child: Text.rich(
                   TextSpan(children: [
-                    TextSpan(text: log.startTime != null ? DateFormat("h:mm a").format(log.startTime!) : "-"),
+                    TextSpan(text: log.startTime != null ? DateFormat("h:mm a").format(log.startTimeOriginal!) : "-"),
                     const TextSpan(text: "  ( "),
                     richHrMin(duration: log.durationTime),
                     const TextSpan(text: " )  "),
                     TextSpan(
-                      text: log.endTime != null ? DateFormat("h:mm a").format(log.endTime!) : "-",
+                      text: log.endTime != null ? DateFormat("h:mm a").format(log.endTimeOriginal!) : "-",
                     )
                   ]),
                   style: const TextStyle(color: Colors.black),
@@ -235,7 +235,7 @@ class FlightLogCard extends StatelessWidget {
 
             // --- Title bar
             Container(
-              color: Colors.white38,
+              color: Colors.white54,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 // mainAxisSize: MainAxisSize.max,
@@ -255,6 +255,11 @@ class FlightLogCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (log.imported != null)
+                    Text(
+                      "Imported from: ${log.imported!}",
+                      style: const TextStyle(color: Colors.red),
+                    ),
                   PopupMenuButton(
                       icon: const Icon(
                         Icons.more_vert,

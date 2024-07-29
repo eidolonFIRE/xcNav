@@ -443,6 +443,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Future saveFlight() async {
     if (recordGeo.length > 10) {
       final log = FlightLog(
+          timezone: DateTime.now().timeZoneOffset.inHours,
           samples: recordGeo.toList(),
           waypoints: globalContext != null
               ? Provider.of<ActivePlan>(globalContext!, listen: false)

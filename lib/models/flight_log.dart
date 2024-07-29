@@ -43,6 +43,18 @@ class FlightLog {
   }
 
   // =========================================
+  String? _imported;
+
+  /// If log is imported from another program, which one.
+  String? get imported => _imported;
+
+  // =========================================
+  int? _timezone;
+
+  /// Timezone offset
+  int? get timezone => _timezone;
+
+  // =========================================
   Gear? _gear;
   Gear? get gear => _gear;
   set gear(newGear) {
@@ -140,6 +152,26 @@ class FlightLog {
   String? get filename => _filename;
   DateTime? get startTime => samples.isEmpty ? null : DateTime.fromMillisecondsSinceEpoch(samples.first.time);
   DateTime? get endTime => samples.isEmpty ? null : DateTime.fromMillisecondsSinceEpoch(samples.last.time);
+
+  /// In original timezone
+  DateTime? get startTimeOriginal {
+    if (timezone != null) {
+      // timezone adjusted
+      return startTime?.add(DateTime.now().timeZoneOffset).subtract(Duration(hours: timezone!));
+    } else {
+      return startTime;
+    }
+  }
+
+  /// In original timezone
+  DateTime? get endTimeOriginal {
+    if (timezone != null) {
+      // timezone adjusted
+      return endTime?.add(DateTime.now().timeZoneOffset).subtract(Duration(hours: timezone!));
+    } else {
+      return endTime;
+    }
+  }
 
   // =========================================
   int speedHistOffset = 0;
@@ -376,13 +408,36 @@ class FlightLog {
         waypoints: waypoints,
         fuelReports: newFuelReports,
         gear: gear,
-        filename: filename);
+        filename: filename,
+        imported: _imported,
+        timezone: _timezone);
     return newLog;
+  }
+
+  void _calculateSpeeds() {
+    // --- Fill in speeds
+    for (int t = 0; t < samples.length - 1; t++) {
+      if (samples[t + 1].spd == 0 && samples[t].time < samples[t + 1].time) {
+        final double dist = latlngCalc.distance(samples[t].latlng, samples[t + 1].latlng);
+        samples[t + 1].spd = dist / (samples[t + 1].time - samples[t].time) * 1000;
+      }
+    }
+  }
+
+  void _calculateHdgs() {
+    // --- Fill in headings
+    for (int t = 0; t < samples.length - 1; t++) {
+      if (samples[t + 1].hdg == 0 && samples[t].time < samples[t + 1].time) {
+        samples[t + 1].hdg = latlngCalc.bearing(samples[t].latlng, samples[t + 1].latlng) / 180 * pi;
+      }
+    }
   }
 
   FlightLog(
       {this.samples = const [],
       this.waypoints = const [],
+      String? imported,
+      int? timezone,
       List<FuelReport> fuelReports = const [],
       Gear? gear,
       String? filename}) {
@@ -390,6 +445,8 @@ class FlightLog {
       goodFile = false;
       throw "Creating FlightLog without samples";
     }
+    _timezone = timezone;
+    _imported = imported;
     _filename = filename;
     _fuelReports = fuelReports.where((each) => containsTime(each.time)).toList();
     _gear = gear;
@@ -401,6 +458,17 @@ class FlightLog {
     unsaved = false;
 
     try {
+      // --- Misc
+      final maybeImported = data["imported"];
+      if (maybeImported != null) {
+        _imported = data["imported"];
+      }
+
+      final maybeTimezone = data["timezone"];
+      if (maybeTimezone != null) {
+        _timezone = data["timezone"];
+      }
+
       // --- Parse Gear
       final rawGear = data["gear"];
       if (rawGear != null) {
@@ -415,13 +483,7 @@ class FlightLog {
         throw "No samples in log";
       }
 
-      // --- Fill in speeds
-      for (int t = 0; t < samples.length - 1; t++) {
-        if (samples[t + 1].spd == 0 && samples[t].time < samples[t + 1].time) {
-          final double dist = latlngCalc.distance(samples[t].latlng, samples[t + 1].latlng);
-          samples[t + 1].spd = dist / (samples[t + 1].time - samples[t].time) * 1000;
-        }
-      }
+      _calculateSpeeds();
 
       // --- Try load waypoints
       if (data.containsKey("waypoints")) {
@@ -452,14 +514,112 @@ class FlightLog {
     }
   }
 
+  FlightLog.fromIGC(String data, {this.rawJson}) {
+    // Spec: https://xp-soaring.github.io/igc_file_format/index.html
+    unsaved = false;
+    samples = [];
+
+    DateTime? dateOffset;
+
+    try {
+      for (final line in data.split("\n")) {
+        // parse each line
+        if (line.startsWith("HFDTE")) {
+          // (HFDTEDDMMYY) UTC date this file was recorded
+          dateOffset = DateTime(int.parse(line.substring(9, 11)) + 2000, int.parse(line.substring(7, 9)),
+              int.parse(line.substring(5, 7)));
+        } else if (line.startsWith("HFTZNTIMEZONE:")) {
+          // Timezone offset
+          _timezone = int.parse(line.substring(("HFTZNTIMEZONE:").length));
+          assert(dateOffset != null);
+          dateOffset!.subtract(Duration(hours: timezone!));
+        } else if (line.startsWith("HFGTYGLIDERTYPE:")) {
+          // Glider type
+          gear ??= Gear();
+          gear!.wingMakeModel = line.substring(("HFGTYGLIDERTYPE:").length);
+        } else if (line.startsWith("HFGIDGLIDERID:")) {
+          // Glider ID (tail number)
+          gear ??= Gear();
+          gear!.other = line.substring(("HFGIDGLIDERID:").length);
+        } else if (line.startsWith("HFFTYFRTYPE:")) {
+          // Logger free-text manufacturer and model
+          _imported = line.substring(("HFFTYFRTYPE:").length);
+        } else if (line.startsWith("B")) {
+          // Geo
+
+          // BHH MM SS DD MMMMM N DDD MMMMM E V PPPPP GGGGG AAA SS NNN RRR
+
+          final maybeLat = RegExp(r"([\d]{2})([\d]{5})(N|S)").firstMatch(line);
+          assert(maybeLat != null);
+          final lat = (double.parse(maybeLat!.group(1)!) + double.parse(maybeLat.group(2)!) / 60000.0) *
+              (maybeLat.group(3) == "N" ? 1 : -1);
+
+          final maybeLng = RegExp(r"([\d]{3})([\d]{5})(E|W)").firstMatch(line);
+          assert(maybeLng != null);
+          final lng = (double.parse(maybeLng!.group(1)!) + double.parse(maybeLng.group(2)!) / 60000.0) *
+              (maybeLng.group(3) == "E" ? 1 : -1);
+
+          assert(lat.abs() <= 90);
+          assert(lng <= 360);
+          assert(lng >= -180);
+
+          final alt = double.parse(line.substring(30, 30 + 5));
+
+          assert(dateOffset != null);
+          final newGeo = Geo(
+              lat: lat,
+              lng: lng,
+              alt: alt,
+              timestamp: dateOffset!
+                  .add(Duration(
+                      hours: int.parse(line.substring(1, 3)),
+                      minutes: int.parse(line.substring(3, 5)),
+                      seconds: int.parse(line.substring(5, 7))))
+                  .millisecondsSinceEpoch);
+          // debugPrint("Geo ${newGeo.lat}, ${newGeo.lng}, ${newGeo.alt}");
+
+          if (samples.isEmpty || newGeo.time > samples.last.time) {
+            samples.add(newGeo);
+          }
+        }
+      }
+
+      if (samples.isEmpty) {
+        throw "No samples in log";
+      }
+
+      _calculateSpeeds();
+      _calculateHdgs();
+      waypoints = [];
+      _fuelReports = [];
+      goodFile = true;
+    } catch (e, trace) {
+      samples = [];
+      waypoints = [];
+      _fuelReports = [];
+      goodFile = false;
+      error("Broken Import",
+          errorMessage: e.toString(),
+          errorStackTrace: trace,
+          attributes: {"filename": filename, "dataLength": rawJson?.length});
+    }
+  }
+
   String toJson() {
-    return jsonEncode({
+    final dict = {
       "samples": samples.map((e) => e.toJson()).toList(),
       "waypoints":
           waypoints.where((element) => (!element.ephemeral && element.validate())).map((e) => e.toJson()).toList(),
       "fuelReports": fuelReports.map((e) => e.toJson()).toList(),
-      "gear": gear?.toJson()
-    });
+      "gear": gear?.toJson(),
+    };
+    if (imported != null) {
+      dict["imported"] = imported;
+    }
+    if (timezone != null) {
+      dict["timezone"] = timezone;
+    }
+    return jsonEncode(dict);
   }
 
   String toKML() {

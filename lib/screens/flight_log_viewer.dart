@@ -1,6 +1,9 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/dialogs/edit_log_filters.dart';
 import 'package:xcnav/log_store.dart';
+import 'package:xcnav/models/flight_log.dart';
 
 // Models
 import 'package:xcnav/widgets/basic_log_aggregate.dart';
@@ -85,6 +88,38 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
         title: const Text(
           "Flight Logs",
         ),
+        actions: [
+          PopupMenuButton<String>(
+              onSelected: (value) async {
+                switch (value) {
+                  case "import":
+                    final defaultDir = await getDownloadsDirectory();
+
+                    final results = await FilePicker.platform
+                        .pickFiles(initialDirectory: defaultDir?.path, allowMultiple: true, type: FileType.any);
+                    if (results != null) {
+                      for (final file in results.files) {
+                        if (file.name.toLowerCase().endsWith("igc")) {
+                          final rawStr = await file.xFile.readAsString();
+                          final newLog = FlightLog.fromIGC(rawStr);
+                          await newLog.save();
+                        }
+                      }
+                      logStore.refreshLogsFromDirectory();
+                    }
+                    break;
+                }
+              },
+              itemBuilder: (context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem(
+                      value: "import",
+                      child: ListTile(
+                        leading: Icon(Icons.file_open),
+                        title: Text("Import IGC"),
+                      ),
+                    ),
+                  ])
+        ],
         bottom: TabBar(controller: mainTabController, tabs: const [
           Row(
             mainAxisSize: MainAxisSize.min,
