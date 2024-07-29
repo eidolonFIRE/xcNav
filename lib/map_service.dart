@@ -42,6 +42,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 11,
         tms: true,
+        panBuffer: 0,
         evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
         errorTileCallback: (tile, error, stackTrace) {
           debugPrint("$tileName: error: ${tile.imageInfo?.debugLabel ?? "?"}, $error, $stackTrace");
@@ -53,6 +54,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 19,
         minZoom: 2,
+        panBuffer: 0,
         evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
         errorTileCallback: (tile, error, stackTrace) {
           debugPrint("$tileName: error: $tile, $error, $stackTrace");
@@ -95,6 +97,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
         // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 17,
+        panBuffer: 0,
         // minZoom: 2,
         // additionalOptions: const {"apiKey": "d9344714a8fbf28773ce4c955ea8adfb"},
         evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
