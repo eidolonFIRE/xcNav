@@ -3,18 +3,70 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/timezones.dart';
+import 'package:xcnav/util.dart';
 import 'package:xml/xml.dart';
 
 class TFR {
   late String notamText;
   late List<List<LatLng>> shapes;
-  // late List<LatLng> latlngs;
   late DateTimeRange activeTime;
   late String? purpose;
 
   bool isActive(Duration buffer) {
     final now = DateTime.now();
     return now.isAfter(activeTime.start.subtract(buffer)) && now.isBefore(activeTime.end.add(buffer));
+  }
+
+  bool containsPoint(LatLng point) {
+    for (final shape in shapes) {
+      if (polygonContainsPoint(point, shape)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void showInfoDialog(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text("TFR info"),
+              content: Scrollbar(
+                thumbVisibility: true,
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width - 40,
+                  height: MediaQuery.of(context).size.width - 100,
+                  child: ListView(shrinkWrap: true, children: [
+                    Text(
+                      notamText,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    )
+                  ]),
+                ),
+              ),
+            ));
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "notamText": notamText,
+      "shapes": shapes.map((e) => e.map((f) => latlngToJson(f)).toList()).toList(),
+      "activeTime.start": activeTime.start.millisecondsSinceEpoch,
+      "activeTime.end": activeTime.end.millisecondsSinceEpoch,
+      "purpose": purpose,
+    };
+  }
+
+  TFR.fromJson(Map<String, dynamic> data) {
+    notamText = data["notamText"];
+    activeTime = DateTimeRange(
+        start: DateTime.fromMillisecondsSinceEpoch(data["activeTime.start"]),
+        end: DateTime.fromMillisecondsSinceEpoch(data["activeTime.end"]));
+    purpose = data["purpose"];
+    shapes = [];
+    for (final poly in data["shapes"]) {
+      shapes.add((poly as List<dynamic>).map((e) => latlngFromJson(e)).whereNotNull().toList());
+    }
   }
 
   TFR.fromXML(XmlDocument document) {

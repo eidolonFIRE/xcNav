@@ -255,6 +255,15 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     } else if (focusMode == FocusMode.measurement) {
       // Add point to measurement
       measurementEditor.add(measurementPolyline.points, latlng);
+    } else {
+      // check tap on TFR
+      for (final tfr in getLoadedTFRs() ?? <TFR>[]) {
+        if (tfr.containsPoint(latlng)) {
+          // Tap on TFR
+          tfr.showInfoDialog(context);
+          break;
+        }
+      }
     }
   }
 

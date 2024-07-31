@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xml/xml.dart';
 
@@ -3513,6 +3515,12 @@ void main() {
 
       // print(tfr.activeTime);
       // print(tfr.activeTime.start.timeZoneOffset);
+
+      // Check json round trip idempotency
+      final json = tfr.toJson();
+      final back = TFR.fromJson(json);
+      final json2 = back.toJson();
+      expect(jsonEncode(json), jsonEncode(json2));
     }
   });
 }

@@ -187,3 +187,73 @@ PathIntercept? interpolateWithWind(List<LatLng> latlngs, double spd, double wind
   // No intercept found
   return null;
 }
+
+/// Return true if point is inside the polygon
+bool polygonContainsPoint(LatLng point, List<LatLng> polygon) {
+  final int numPoints = polygon.length;
+  final double x = point.longitude, y = point.latitude;
+  bool inside = false;
+
+  // Store the first point in the polygon and initialize
+  // the second point
+  LatLng p1 = polygon[0];
+  LatLng p2;
+
+  if (numPoints < 3) return false;
+
+  // Loop through each edge in the polygon
+  for (int i = 1; i <= numPoints; i++) {
+    // Get the next point in the polygon
+    p2 = polygon[i % numPoints];
+
+    // Check if the point is above the minimum y
+    // coordinate of the edge
+    if (y > min(p1.latitude, p2.latitude)) {
+      // Check if the point is below the maximum y
+      // coordinate of the edge
+      if (y <= max(p1.latitude, p2.latitude)) {
+        // Check if the point is to the left of the
+        // maximum x coordinate of the edge
+        if (x <= max(p1.longitude, p2.longitude)) {
+          // Calculate the x-intersection of the
+          // line connecting the point to the edge
+          double xInter =
+              (y - p1.latitude) * (p2.longitude - p1.longitude) / (p2.latitude - p1.latitude) + p1.longitude;
+
+          // Check if the point is on the same
+          // line as the edge or to the left of
+          // the x-intersection
+          if (p1.longitude == p2.longitude || x <= xInter) {
+            // Flip the inside flag
+            inside = !inside;
+          }
+        }
+      }
+    }
+
+    // Store the current point as the first point for
+    // the next iteration
+    p1 = p2;
+  }
+
+  // Return the value of the inside flag
+  return inside;
+}
+
+Map<String, num> latlngToJson(LatLng latlng) {
+  return {
+    "lat": latlng.latitude,
+    "lng": latlng.longitude,
+  };
+}
+
+LatLng? latlngFromJson(Map<String, num> data) {
+  final lat = parseAsDouble(data["lat"]);
+  final lng = parseAsDouble(data["lng"]);
+  if (lat != null && lng != null) {
+    return LatLng(lat, lng);
+  } else {
+    warn("Couldn't parse latlng", attributes: data);
+    return null;
+  }
+}

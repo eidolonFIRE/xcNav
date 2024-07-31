@@ -1,34 +1,92 @@
 // ignore_for_file: depend_on_referenced_packages
 
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:clock/clock.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as parser;
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:xcnav/datadog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xml/xml.dart';
 
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/models/tfr.dart';
 import 'package:xcnav/state_centroids.dart';
 import 'package:xcnav/util.dart';
-import 'package:xml/xml.dart';
 
 final _notamIdExpr = RegExp(r"(\d/[\d]{4})");
 final dateFormat = DateFormat("mm/dd/yyyy");
 
 List<TFR>? _loadedTFRs;
 DateTime? _loadedTFRsTime;
+DateTime? _lastFetched;
 
+/// Get TFRs, if not already loaded, fetch from online resource.
 Future<List<TFR>?> getTFRs(LatLng center) async {
-  if (_loadedTFRsTime == null || _loadedTFRsTime!.isBefore(DateTime.now().subtract(const Duration(hours: 1)))) {
-    _loadedTFRsTime = DateTime.now();
-    _loadedTFRs = (await _fetchTfrs(center)).whereNotNull().toList();
+  if (_loadedTFRsTime == null || _loadedTFRsTime!.isBefore(clock.now().subtract(const Duration(hours: 2)))) {
+    // check cache
+    final cached = await getCachedTFRs();
 
-    debugPrint("Loaded ${_loadedTFRs?.length} TFRs.");
+    if (cached != null && _loadedTFRs == null) {
+      _loadedTFRs = cached;
+      debugPrint("Loaded ${_loadedTFRs?.length} TFRs from cache.");
+      _loadedTFRsTime = clock.now();
+    } else {
+      // try fetch
+      final fetched = (await _fetchTfrs(center))?.whereNotNull().toList();
+      if (fetched != null) {
+        _loadedTFRs = fetched;
+        debugPrint("Fetched ${_loadedTFRs?.length} TFRs.");
+        _loadedTFRsTime = clock.now();
+        saveTFRsCache(fetched);
+      }
+    }
   }
   return _loadedTFRs;
+}
+
+/// Best effort to return currently loaded TFRs synchronously.
+List<TFR>? getLoadedTFRs() {
+  return _loadedTFRs;
+}
+
+Future<List<TFR>?> getCachedTFRs() async {
+  final prefs = await SharedPreferences.getInstance();
+  if (DateTime.fromMillisecondsSinceEpoch(prefs.getInt("tfr_cache.time") ?? clock.now().millisecondsSinceEpoch)
+      .isBefore(clock.now().subtract(const Duration(hours: 10)))) {
+    try {
+      final data = prefs.getStringList("tfr_cache.data");
+      if (data != null) {
+        List<TFR> tfrs = [];
+        for (final each in data) {
+          final parsed = jsonDecode(each);
+          tfrs.add(TFR.fromJson(parsed));
+        }
+        return tfrs;
+      } else {
+        // no data
+        return null;
+      }
+    } catch (err, trace) {
+      error("Couldn't load TFR cache", errorMessage: err.toString(), errorStackTrace: trace);
+      return null;
+    }
+  } else {
+    // data no longer valid
+    return null;
+  }
+}
+
+void saveTFRsCache(List<TFR>? data) async {
+  if (data != null && data.isNotEmpty) {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setInt("tfr_cache.time", clock.now().millisecondsSinceEpoch);
+    prefs.setStringList("tfr_cache.data", data.map((e) => jsonEncode(e.toJson())).toList());
+  }
 }
 
 /// Helper to DateFormat
@@ -43,8 +101,19 @@ extension DateFormatTryParse on DateFormat {
 }
 
 /// List all TFRs available on https://tfr.faa.gov
-Future<List<TFR?>> _fetchTfrs(LatLng center) async {
+Future<List<TFR?>?> _fetchTfrs(LatLng center) async {
+  if (_lastFetched != null && (_lastFetched?.isAfter(clock.now().subtract(const Duration(minutes: 10))) ?? true)) {
+    // Fetching too soon since last request.
+    return null;
+  }
+  _lastFetched = clock.now();
+
   final listResponse = await http.get(Uri.parse('https://tfr.faa.gov/tfr2/list.jsp'));
+
+  if (listResponse.statusCode != 200) {
+    debugPrint("Couldn't get TFRs from online resource.");
+    return null;
+  }
 
   final document = parser.parse(listResponse.body);
 
@@ -82,6 +151,5 @@ Future<List<TFR?>> _fetchTfrs(LatLng center) async {
       completer.complete(null);
     }
   });
-
   return await Future.wait<TFR?>(completers.map((e) => e.future).toList());
 }
