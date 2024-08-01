@@ -5,6 +5,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
@@ -33,18 +35,22 @@ TileProvider? _makeTileProvider(String instanceName) {
 
 Map<MapTileSrc, TileLayer> _tileLayersCache = {};
 
+bool _fetchingVfrVersion = false;
+String? _vfrVersion;
+
 TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
   final tileName = tileSrc.toString().split(".").last;
   switch (tileSrc) {
     case MapTileSrc.sectional:
       return TileLayer(
-        urlTemplate: 'http://vfrmap.com/20240711/tiles/vfrc/{z}/{y}/{x}.jpg',
+        urlTemplate: 'http://vfrmap.com/${_vfrVersion ?? "20240711"}/tiles/vfrc/{z}/{y}/{x}.jpg',
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 11,
         tms: true,
         panBuffer: 0,
         evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
         errorTileCallback: (tile, error, stackTrace) {
+          fetchVFRversion();
           debugPrint("$tileName: error: ${tile.imageInfo?.debugLabel ?? "?"}, $error, $stackTrace");
         },
       );
@@ -146,7 +152,40 @@ final Map<MapTileSrc, Image> mapTileThumbnails = {
   // )
 };
 
+Future fetchVFRversion() async {
+  if (!_fetchingVfrVersion) {
+    _fetchingVfrVersion = true;
+    final resp = await http.get(Uri.parse("https://vfrmap.com/js/map.js?1"));
+    _fetchingVfrVersion = false;
+
+    if (resp.statusCode == 200) {
+      final dateMatch = RegExp(r"var [\w]{1,2}='(20[\d]{6})';").firstMatch(resp.body);
+      if (dateMatch != null) {
+        final date = dateMatch.group(1);
+        if (date != null) {
+          _vfrVersion = date;
+          debugPrint("Fetched VFR map version: $_vfrVersion");
+          SharedPreferences.getInstance().then((value) => value.setString("vfrVersion", date));
+        }
+      }
+    }
+  }
+}
+
+Future initVFRversion() async {
+  final prefs = await SharedPreferences.getInstance();
+  final cached = prefs.getString("vfrVersion");
+  if (cached != null) {
+    _vfrVersion = cached;
+    debugPrint("Loaded VFR map version: $_vfrVersion");
+  } else {
+    fetchVFRversion();
+  }
+}
+
 Future initMapCache() async {
+  await initVFRversion();
+
   await FMTCObjectBoxBackend().initialise(rootDirectory: (await getApplicationDocumentsDirectory()).path);
 
   for (final tileSrc in mapTileThumbnails.keys) {
