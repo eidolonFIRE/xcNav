@@ -16,8 +16,7 @@ Check the [wiki](https://github.com/eidolonFIRE/xcNav/wiki) for guiding develope
 
 PRs welcome!
 
-**NOTES:**   
-* This app was written with Flutter version 3.16.0.  Please ensure you `git checkout 3.16.0` from within your flutter SDK directory otherwise the application will fail to build.  
+**NOTES:**
 * lib/secrets.dart is required.  An example is provided in lib/secrets.dart.example.
 
 
