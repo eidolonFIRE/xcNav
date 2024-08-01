@@ -198,8 +198,8 @@ class _ChecklistViewerState extends State<ChecklistViewer> {
                                           Transform.scale(
                                             scale: 1.5,
                                             child: Checkbox(
-                                              fillColor: MaterialStateProperty.resolveWith<Color>((states) =>
-                                                  states.contains(MaterialState.selected)
+                                              fillColor: WidgetStateProperty.resolveWith<Color>((states) =>
+                                                  states.contains(WidgetState.selected)
                                                       ? Colors.black
                                                       : Colors.black.withAlpha(170)),
                                               checkColor: Colors.amber,
@@ -229,8 +229,8 @@ class _ChecklistViewerState extends State<ChecklistViewer> {
                                               scale: 1.5,
                                               child: Checkbox(
                                                   value: item.isChecked,
-                                                  fillColor: MaterialStateProperty.resolveWith<Color>((states) =>
-                                                      states.contains(MaterialState.selected)
+                                                  fillColor: WidgetStateProperty.resolveWith<Color>((states) =>
+                                                      states.contains(WidgetState.selected)
                                                           ? Colors.greenAccent
                                                           : Colors.black),
                                                   checkColor: Colors.black,

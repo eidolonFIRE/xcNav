@@ -188,8 +188,8 @@ class ViewChatState extends State<ViewChat> {
             ElevatedButton(
                 onPressed: () => {sendChatMessage(chatInput.text)},
                 style: ButtonStyle(
-                  side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.blue)),
-                  backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.blue),
+                  side: WidgetStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.blue)),
+                  backgroundColor: WidgetStateProperty.resolveWith<Color>((states) => Colors.blue),
                 ),
                 child: const Icon(Icons.send)),
           ],

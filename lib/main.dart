@@ -220,7 +220,7 @@ class XCNav extends StatelessWidget {
         // scaffoldBackgroundColor: Color.fromRGBO(48, 57, 68, 1),
         // primaryColorLight: primaryDarkColor,
 
-        colorScheme: const ColorScheme.dark(background: darkColor, primary: Colors.lightBlue),
+        colorScheme: const ColorScheme.dark(surface: darkColor, primary: Colors.lightBlue),
         appBarTheme: const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40), backgroundColor: darkColor),
 
         textTheme: const TextTheme(
@@ -235,18 +235,18 @@ class XCNav extends StatelessWidget {
         dialogTheme: DialogTheme(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
-            foregroundColor: MaterialStateProperty.resolveWith<Color>(
-                (states) => states.contains(MaterialState.disabled) ? Colors.grey.shade600 : Colors.white),
-            iconColor: MaterialStateProperty.resolveWith<Color>(
-                (states) => states.contains(MaterialState.disabled) ? Colors.grey.shade600 : Colors.white),
-            side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.black)),
-            backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.grey.shade900),
-            minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
-            padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(12)),
-            shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
+            foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                (states) => states.contains(WidgetState.disabled) ? Colors.grey.shade600 : Colors.white),
+            iconColor: WidgetStateProperty.resolveWith<Color>(
+                (states) => states.contains(WidgetState.disabled) ? Colors.grey.shade600 : Colors.white),
+            side: WidgetStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.black)),
+            backgroundColor: WidgetStateProperty.resolveWith<Color>((states) => Colors.grey.shade900),
+            minimumSize: WidgetStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
+            padding: WidgetStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(12)),
+            shape: WidgetStateProperty.resolveWith<OutlinedBorder>((_) {
               return RoundedRectangleBorder(borderRadius: BorderRadius.circular(10));
             }),
-            textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+            textStyle: WidgetStateProperty.resolveWith<TextStyle>(
                 (states) => const TextStyle(color: Colors.white, fontSize: 20)),
           ),
         ),
@@ -260,8 +260,8 @@ class XCNav extends StatelessWidget {
         ),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
-            foregroundColor: MaterialStateProperty.all(Colors.white),
-            textStyle: MaterialStateProperty.resolveWith<TextStyle>(
+            foregroundColor: WidgetStateProperty.all(Colors.white),
+            textStyle: WidgetStateProperty.resolveWith<TextStyle>(
                 (states) => const TextStyle(color: Colors.white, fontSize: 20)),
           ),
         ),

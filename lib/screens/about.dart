@@ -18,15 +18,15 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
   final paleColor = const Color.fromARGB(20, 255, 255, 255);
 
   final ButtonStyle externalBtn = ButtonStyle(
-    side: MaterialStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.white)),
-    backgroundColor: MaterialStateProperty.resolveWith<Color>((states) => Colors.white),
-    // minimumSize: MaterialStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
-    padding: MaterialStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(20)),
-    shape: MaterialStateProperty.resolveWith<OutlinedBorder>((_) {
+    side: WidgetStateProperty.resolveWith<BorderSide>((states) => const BorderSide(color: Colors.white)),
+    backgroundColor: WidgetStateProperty.resolveWith<Color>((states) => Colors.white),
+    // minimumSize: WidgetStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
+    padding: WidgetStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(20)),
+    shape: WidgetStateProperty.resolveWith<OutlinedBorder>((_) {
       return RoundedRectangleBorder(borderRadius: BorderRadius.circular(4));
     }),
     textStyle:
-        MaterialStateProperty.resolveWith<TextStyle>((states) => const TextStyle(color: Colors.white, fontSize: 22)),
+        WidgetStateProperty.resolveWith<TextStyle>((states) => const TextStyle(color: Colors.white, fontSize: 22)),
   );
 
   @override

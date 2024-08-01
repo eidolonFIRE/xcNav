@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
 import 'package:xcnav/dialogs/edit_gear.dart';
-import 'package:xcnav/endpoint.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/settings_service.dart';

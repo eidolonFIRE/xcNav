@@ -26,7 +26,7 @@ void selectPastGroup(BuildContext context) {
                     itemCount: pastGroupsSorted.length,
                     itemBuilder: (context, index) {
                       return Card(
-                          color: Theme.of(context).colorScheme.background,
+                          color: Theme.of(context).colorScheme.surface,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [

@@ -19,7 +19,7 @@ Widget topInstruments(BuildContext context) {
   return Padding(
     padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
     child: Container(
-      color: Theme.of(context).colorScheme.background,
+      color: Theme.of(context).colorScheme.surface,
       child: Consumer<MyTelemetry>(
         builder: (context, myTelemetry, child) => Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           // const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
