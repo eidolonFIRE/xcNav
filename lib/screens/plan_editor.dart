@@ -63,6 +63,8 @@ class _PlanEditorState extends State<PlanEditor> {
 
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
 
+  final mapKey = GlobalKey(debugLabel: "planEditorMap");
+
   @override
   void initState() {
     super.initState();
@@ -188,7 +190,7 @@ class _PlanEditorState extends State<PlanEditor> {
           child: Stack(
             children: [
                   FlutterMap(
-                      key: const Key("planEditorMap"),
+                      key: mapKey,
                       mapController: mapController,
                       options: MapOptions(
                         onMapReady: () {
@@ -200,8 +202,26 @@ class _PlanEditorState extends State<PlanEditor> {
                         initialCameraFit: mapBounds != null ? CameraFit.bounds(bounds: mapBounds!) : null,
                         interactionOptions:
                             const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
-                        onTap: (tapPos, latlng) => onMapTap(context, latlng),
-                        onLongPress: (tapPosition, point) => onMapLongPress(context, point),
+                        onTap: (tapPosition, point) {
+                          // WORKAROUND - calculate relative offset ourselves
+                          final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
+                          if (widgetBox != null) {
+                            final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
+                            final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
+                            // outgoing call...
+                            onMapTap(context, correctedLatLng);
+                          }
+                        },
+                        onLongPress: (tapPosition, point) {
+                          // WORKAROUND - calculate relative offset ourselves
+                          final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
+                          if (widgetBox != null) {
+                            final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
+                            final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
+                            // outgoing call...
+                            onMapLongPress(context, correctedLatLng);
+                          }
+                        },
                       ),
                       children: [
                         Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),

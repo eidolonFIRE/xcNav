@@ -452,10 +452,10 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: ac4864b013aaef691bc074a781d3606ac90994b0
+      resolved-ref: "484452b46cd568c4dbc11e347dbb22b0b85540ea"
       url: "git@github.com:eidolonFIRE/flutter_map_tappable_polyline.git"
     source: git
-    version: "6.1.1"
+    version: "6.1.2"
   flutter_map_tile_caching:
     dependency: "direct main"
     description:

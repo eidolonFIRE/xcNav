@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.7.5+129
+version: 2.7.6+131
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
@@ -39,13 +39,13 @@ dependencies:
   http: any
   intl: any
   
-  flutter_map: ^6.1.0
+  flutter_map: ^6.0.0
   flutter_map_tile_caching: ^9.0.0
   flutter_map_tappable_polyline:
     git:
       url: git@github.com:eidolonFIRE/flutter_map_tappable_polyline.git
-
-  flutter_map_line_editor: ^6.0.0
+  flutter_map_dragmarker: any
+  flutter_map_line_editor: any
 
   shared_preferences: ^2.0.13
   image_picker: ^1.0.4
@@ -81,7 +81,6 @@ dependencies:
   fuzzywuzzy: ^1.1.2
   bisection: ^0.4.3+1
   flutter_speed_dial: ^7.0.0
-  flutter_map_dragmarker: any
   flutter_colorpicker: ^1.0.3
   screenshot: ^3.0.0
   fl_chart: ^0.68.0

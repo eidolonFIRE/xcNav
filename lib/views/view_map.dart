@@ -307,8 +307,26 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     initialCenter: Provider.of<MyTelemetry>(context, listen: false).geo?.latlng ?? lastKnownLatLng,
                     initialZoom: 12.0,
                     minZoom: 2,
-                    onTap: (tapPosition, point) => onMapTap(context, point),
-                    onLongPress: (tapPosition, point) => onMapLongPress(context, point),
+                    onTap: (tapPosition, point) {
+                      // WORKAROUND - calculate relative offset ourselves
+                      final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
+                      if (widgetBox != null) {
+                        final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
+                        final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
+                        // outgoing call...
+                        onMapTap(context, correctedLatLng);
+                      }
+                    },
+                    onLongPress: (tapPosition, point) {
+                      // WORKAROUND - calculate relative offset ourselves
+                      final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
+                      if (widgetBox != null) {
+                        final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
+                        final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
+                        // outgoing call...
+                        onMapLongPress(context, correctedLatLng);
+                      }
+                    },
                     onPositionChanged: (mapPosition, hasGesture) {
                       if (lastSavedLastKnownLatLng == null ||
                           lastSavedLastKnownLatLng!.difference(DateTime.now()).abs() > const Duration(minutes: 2)) {
