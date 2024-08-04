@@ -23,6 +23,7 @@ class WaypointCard extends StatefulWidget {
     this.refLatlng,
     this.onDoubleTap,
     this.showPilots = true,
+    this.scale = 1.0,
   });
 
   final Waypoint waypoint;
@@ -35,6 +36,8 @@ class WaypointCard extends StatefulWidget {
   // callbacks
   final VoidCallback onSelect;
   final VoidCallback? onDoubleTap;
+
+  final double scale;
 
   @override
   State<WaypointCard> createState() => _WaypointCardState();
@@ -50,19 +53,19 @@ class _WaypointCardState extends State<WaypointCard> {
       color: widget.isSelected ? Colors.grey.shade200 : Colors.grey.shade900,
       key: ValueKey(widget.waypoint),
       margin: const EdgeInsets.all(0),
-      constraints: const BoxConstraints(maxHeight: 100),
+      constraints: BoxConstraints(maxHeight: 100 * widget.scale),
       child: IntrinsicHeight(
         child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           if (widget.refLatlng != null)
             Container(
-              constraints: const BoxConstraints(minWidth: 40),
+              constraints: BoxConstraints(minWidth: 40 * widget.scale),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   if (widget.refLatlng != null)
                     Padding(
-                      padding: const EdgeInsets.all(4.0),
+                      padding: EdgeInsets.all(4.0 * widget.scale),
                       child: Text.rich(
                         richValue(
                             UnitType.distCoarse,
@@ -70,8 +73,10 @@ class _WaypointCardState extends State<WaypointCard> {
                                 .getIntercept(widget.waypoint.latlngOriented)
                                 .dist,
                             digits: 3,
-                            valueStyle: TextStyle(color: widget.isSelected ? Colors.black : Colors.white, fontSize: 18),
-                            unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12)),
+                            valueStyle: TextStyle(
+                                color: widget.isSelected ? Colors.black : Colors.white, fontSize: 18 * widget.scale),
+                            unitStyle: TextStyle(
+                                color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12 * widget.scale)),
                         textAlign: TextAlign.end,
                       ),
                     ),
@@ -89,6 +94,9 @@ class _WaypointCardState extends State<WaypointCard> {
               children: [
                 Expanded(
                   child: TextButton(
+                    style: ButtonStyle(
+                      visualDensity: widget.scale < 1 ? VisualDensity.compact : VisualDensity.standard,
+                    ),
                     onPressed: () {
                       final delta = _lastSelect != null ? DateTime.now().difference(_lastSelect!) : null;
                       if (delta == null || delta.inMilliseconds > 300) {
@@ -111,35 +119,42 @@ class _WaypointCardState extends State<WaypointCard> {
                                   ? SvgPicture.asset(
                                       "assets/images/path.svg",
                                       colorFilter: ColorFilter.mode(widget.waypoint.getColor(), BlendMode.srcIn),
-                                      width: 30,
+                                      width: 30 * widget.scale,
                                     )
                                   : getWpIcon(
                                       widget.waypoint.icon,
-                                      24,
+                                      24 * widget.scale,
                                       widget.waypoint.getColor(),
                                     ),
                             ),
                           if (widget.waypoint.icon != null) const TextSpan(text: " "),
+
                           // --- Name
                           TextSpan(
                               text: widget.waypoint.name,
                               style: TextStyle(
                                   color: widget.waypoint.ephemeral ? Colors.grey.shade600 : textColor,
-                                  fontSize: 24,
+                                  fontSize: 24 * widget.scale,
                                   fontStyle: widget.waypoint.ephemeral ? FontStyle.italic : FontStyle.normal)),
                           // --- Length
                           if (widget.waypoint.latlng.length > 1)
-                            TextSpan(text: " (", style: TextStyle(color: textColor.withAlpha(100), fontSize: 18)),
+                            TextSpan(
+                                text: " (",
+                                style: TextStyle(color: textColor.withAlpha(100), fontSize: 18 * widget.scale)),
                           if (widget.waypoint.latlng.length > 1)
                             richValue(UnitType.distCoarse, widget.waypoint.length,
                                 digits: 3,
                                 decimals: 1,
-                                valueStyle: TextStyle(color: textColor.withAlpha(100), fontSize: 18),
+                                valueStyle: TextStyle(color: textColor.withAlpha(100), fontSize: 18 * widget.scale),
                                 unitStyle: TextStyle(
-                                    color: textColor.withAlpha(100), fontSize: 12, fontStyle: FontStyle.italic)),
+                                    color: textColor.withAlpha(100),
+                                    fontSize: 12 * widget.scale,
+                                    fontStyle: FontStyle.italic)),
 
                           if (widget.waypoint.latlng.length > 1)
-                            TextSpan(text: ")", style: TextStyle(color: textColor.withAlpha(100), fontSize: 18)),
+                            TextSpan(
+                                text: ")",
+                                style: TextStyle(color: textColor.withAlpha(100), fontSize: 18 * widget.scale)),
                         ]),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
@@ -158,16 +173,17 @@ class _WaypointCardState extends State<WaypointCard> {
 
                     final width =
                         min(MediaQuery.of(context).size.width / 3, pilots.length * 48 / pow(pilots.length, 0.3))
-                            .toDouble();
+                                .toDouble() *
+                            widget.scale;
                     return SizedBox(
                       width: width,
-                      height: 48,
+                      height: 48 * widget.scale,
                       child: Stack(
                         children: pilots
-                            .map((e) => AvatarRound(e.avatar, 24))
+                            .map((e) => AvatarRound(e.avatar, 24 * widget.scale))
                             .mapIndexed(
                               (index, element) => Positioned(
-                                left: (width - 48) / max(1, pilots.length - 1) * index,
+                                left: (width - 48 * widget.scale) / max(1, pilots.length - 1) * index,
                                 child: element,
                               ),
                             )

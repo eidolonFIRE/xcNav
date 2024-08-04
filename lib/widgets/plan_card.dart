@@ -36,6 +36,7 @@ class _PlanCardState extends State<PlanCard> {
   bool isExpanded = false;
   Set<WaypointID> checkedElements = {};
 
+  final scrollController = ScrollController();
   final mapController = MapController();
   bool mapReady = false;
 
@@ -393,23 +394,31 @@ class _PlanCardState extends State<PlanCard> {
           if (isExpanded)
             Container(
               constraints: const BoxConstraints(maxHeight: 250),
-              child: ListView.builder(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  itemCount: widget.plan.waypoints.length,
-                  itemBuilder: (context, index) => WaypointCard(
-                        index: index,
-                        waypoint: widget.plan.waypoints.values.toList()[index],
-                        onSelect: () {
-                          setState(
-                            () {
-                              toggleItem(widget.plan.waypoints.values.toList()[index].id);
-                            },
-                          );
-                        },
-                        isSelected: checkedElements.contains(widget.plan.waypoints.values.toList()[index].id),
-                        showPilots: false,
-                      )),
+              child: Scrollbar(
+                controller: scrollController,
+                thumbVisibility: true,
+                trackVisibility: true,
+                child: ListView.builder(
+                    controller: scrollController,
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: widget.plan.waypoints.length,
+                    itemBuilder: (context, index) => WaypointCard(
+                          index: index,
+                          waypoint: widget.plan.waypoints.values.toList()[index],
+                          onSelect: () {
+                            setState(
+                              () {
+                                final wp = widget.plan.waypoints.values.toList()[index];
+                                mapController.move(wp.latlng.first, mapController.camera.zoom);
+                                toggleItem(wp.id);
+                              },
+                            );
+                          },
+                          isSelected: checkedElements.contains(widget.plan.waypoints.values.toList()[index].id),
+                          showPilots: false,
+                        )),
+              ),
             ),
         ]),
       ),

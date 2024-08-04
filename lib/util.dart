@@ -247,7 +247,7 @@ Map<String, num> latlngToJson(LatLng latlng) {
   };
 }
 
-LatLng? latlngFromJson(Map<String, num> data) {
+LatLng? latlngFromJson(Map<String, dynamic> data) {
   final lat = parseAsDouble(data["lat"]);
   final lng = parseAsDouble(data["lng"]);
   if (lat != null && lng != null) {

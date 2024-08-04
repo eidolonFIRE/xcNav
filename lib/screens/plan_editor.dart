@@ -37,7 +37,6 @@ class PlanEditor extends StatefulWidget {
 }
 
 class _PlanEditorState extends State<PlanEditor> {
-  LatLngBounds? mapBounds;
   FlightPlan? plan;
   WaypointID? selectedWp;
   ScrollController scrollController = ScrollController();
@@ -172,11 +171,11 @@ class _PlanEditorState extends State<PlanEditor> {
 
   @override
   Widget build(BuildContext context) {
-    if (plan == null) {
-      plan = ModalRoute.of(context)!.settings.arguments as FlightPlan;
-      final center = Provider.of<MyTelemetry>(context, listen: false).geo ?? defaultGeo;
-      mapBounds = padLatLngBounds(LatLngBounds.fromPoints([center.latlng, LatLng(center.lat, center.lng + 0.05)]), 2);
-    }
+    plan ??= ModalRoute.of(context)!.settings.arguments as FlightPlan;
+
+    final center = Provider.of<MyTelemetry>(context, listen: false).geo ?? defaultGeo;
+    final defaultMapBounds =
+        padLatLngBounds(LatLngBounds.fromPoints([center.latlng, LatLng(center.lat, center.lng + 0.05)]), 2);
     return PopScope(
       onPopInvoked: (_) {
         Provider.of<Plans>(context, listen: false).setPlan(plan!);
@@ -195,11 +194,10 @@ class _PlanEditorState extends State<PlanEditor> {
                       options: MapOptions(
                         onMapReady: () {
                           setState(() {
-                            mapController.fitCamera(CameraFit.bounds(bounds: mapBounds!));
                             mapReady = true;
                           });
                         },
-                        initialCameraFit: mapBounds != null ? CameraFit.bounds(bounds: mapBounds!) : null,
+                        initialCameraFit: CameraFit.bounds(bounds: plan?.getBounds() ?? defaultMapBounds),
                         interactionOptions:
                             const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                         onTap: (tapPosition, point) {
@@ -581,6 +579,7 @@ class _PlanEditorState extends State<PlanEditor> {
                                 ],
                               ),
                               child: WaypointCard(
+                                scale: 0.75,
                                 waypoint: items[i],
                                 index: i,
                                 onSelect: () {
@@ -589,6 +588,7 @@ class _PlanEditorState extends State<PlanEditor> {
                                       finishEditingPolyline();
                                     }
 
+                                    mapController.move(items[i].latlng.first, mapController.camera.zoom);
                                     selectedWp = items[i].id;
                                   });
                                 },
