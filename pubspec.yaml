@@ -91,7 +91,12 @@ dependencies:
   webview_flutter: ^4.8.0
 
 
-
+dependency_overrides:
+  url_launcher_ios:
+    git:
+      url: git@github.com:hellohuanlin/packages.git
+      path: packages/url_launcher/url_launcher_ios
+      ref: urllauncher_fix_main_actor_completion_conformance
 
 dev_dependencies:
   flutter_test:

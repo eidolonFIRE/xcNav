@@ -1,55 +1,54 @@
 PODS:
-  - _NIODataStructures (2.40.0)
   - better_open_file (0.0.1):
     - Flutter
-  - CGRPCZlib (1.8.0)
-  - CNIOAtomics (2.40.0)
-  - CNIOBoringSSL (2.19.0)
-  - CNIOBoringSSLShims (2.19.0):
-    - CNIOBoringSSL (= 2.19.0)
-  - CNIODarwin (2.40.0)
-  - CNIOHTTPParser (2.40.0)
-  - CNIOLinux (2.40.0)
-  - CNIOWindows (2.40.0)
   - datadog_flutter_plugin (0.0.1):
-    - DatadogSDK (= 1.19.0)
-    - DatadogSDKCrashReporting (= 1.19.0)
+    - DatadogCore (= 2.13.0)
+    - DatadogCrashReporting (= 2.13.0)
+    - DatadogInternal (= 2.13.0)
+    - DatadogLogs (= 2.13.0)
+    - DatadogRUM (= 2.13.0)
     - DictionaryCoder (= 1.0.8)
     - Flutter
-  - DatadogSDK (1.19.0)
-  - DatadogSDKCrashReporting (1.19.0):
-    - DatadogSDK (= 1.19.0)
-    - PLCrashReporter (~> 1.11.0)
+  - DatadogCore (2.13.0):
+    - DatadogInternal (= 2.13.0)
+  - DatadogCrashReporting (2.13.0):
+    - DatadogInternal (= 2.13.0)
+    - PLCrashReporter (~> 1.11.2)
+  - DatadogInternal (2.13.0)
+  - DatadogLogs (2.13.0):
+    - DatadogInternal (= 2.13.0)
+  - DatadogRUM (2.13.0):
+    - DatadogInternal (= 2.13.0)
   - DictionaryCoder (1.0.8)
-  - DKImagePickerController/Core (4.3.4):
+  - DKImagePickerController/Core (4.3.9):
     - DKImagePickerController/ImageDataManager
     - DKImagePickerController/Resource
-  - DKImagePickerController/ImageDataManager (4.3.4)
-  - DKImagePickerController/PhotoGallery (4.3.4):
+  - DKImagePickerController/ImageDataManager (4.3.9)
+  - DKImagePickerController/PhotoGallery (4.3.9):
     - DKImagePickerController/Core
     - DKPhotoGallery
-  - DKImagePickerController/Resource (4.3.4)
-  - DKPhotoGallery (0.0.17):
-    - DKPhotoGallery/Core (= 0.0.17)
-    - DKPhotoGallery/Model (= 0.0.17)
-    - DKPhotoGallery/Preview (= 0.0.17)
-    - DKPhotoGallery/Resource (= 0.0.17)
+  - DKImagePickerController/Resource (4.3.9)
+  - DKPhotoGallery (0.0.19):
+    - DKPhotoGallery/Core (= 0.0.19)
+    - DKPhotoGallery/Model (= 0.0.19)
+    - DKPhotoGallery/Preview (= 0.0.19)
+    - DKPhotoGallery/Resource (= 0.0.19)
     - SDWebImage
     - SwiftyGif
-  - DKPhotoGallery/Core (0.0.17):
+  - DKPhotoGallery/Core (0.0.19):
     - DKPhotoGallery/Model
     - DKPhotoGallery/Preview
     - SDWebImage
     - SwiftyGif
-  - DKPhotoGallery/Model (0.0.17):
+  - DKPhotoGallery/Model (0.0.19):
     - SDWebImage
     - SwiftyGif
-  - DKPhotoGallery/Preview (0.0.17):
+  - DKPhotoGallery/Preview (0.0.19):
     - DKPhotoGallery/Model
     - DKPhotoGallery/Resource
     - SDWebImage
     - SwiftyGif
-  - DKPhotoGallery/Resource (0.0.17):
+  - DKPhotoGallery/Resource (0.0.19):
     - SDWebImage
     - SwiftyGif
   - file_picker (0.0.1):
@@ -58,7 +57,9 @@ PODS:
   - Flutter (1.0.0)
   - flutter_barometer (0.0.2):
     - Flutter
-  - flutter_image_compress (1.0.0):
+  - flutter_blue_plus (0.0.1):
+    - Flutter
+  - flutter_image_compress_common (1.0.0):
     - Flutter
     - Mantle
     - SDWebImage
@@ -69,201 +70,60 @@ PODS:
     - Flutter
   - flutter_tts (0.0.1):
     - Flutter
-  - fullscreen (0.0.1):
-    - Flutter
   - geolocator_apple (1.2.0):
     - Flutter
-  - gRPC-Swift (1.8.0):
-    - CGRPCZlib (= 1.8.0)
-    - Logging (< 2.0.0, >= 1.4.0)
-    - SwiftNIO (< 3.0.0, >= 2.32.0)
-    - SwiftNIOExtras (< 2.0.0, >= 1.4.0)
-    - SwiftNIOHTTP2 (< 2.0.0, >= 1.22.0)
-    - SwiftNIOSSL (< 3.0.0, >= 2.14.0)
-    - SwiftNIOTransportServices (< 2.0.0, >= 1.11.1)
-    - SwiftProtobuf (< 2.0.0, >= 1.19.0)
   - image_picker_ios (0.0.1):
     - Flutter
-  - integration_test (0.0.1):
-    - Flutter
-  - libwebp (1.2.4):
-    - libwebp/demux (= 1.2.4)
-    - libwebp/mux (= 1.2.4)
-    - libwebp/webp (= 1.2.4)
-  - libwebp/demux (1.2.4):
+  - libwebp (1.3.2):
+    - libwebp/demux (= 1.3.2)
+    - libwebp/mux (= 1.3.2)
+    - libwebp/sharpyuv (= 1.3.2)
+    - libwebp/webp (= 1.3.2)
+  - libwebp/demux (1.3.2):
     - libwebp/webp
-  - libwebp/mux (1.2.4):
+  - libwebp/mux (1.3.2):
     - libwebp/demux
-  - libwebp/webp (1.2.4)
-  - Logging (1.4.0)
+  - libwebp/sharpyuv (1.3.2)
+  - libwebp/webp (1.3.2):
+    - libwebp/sharpyuv
   - Mantle (2.2.0):
     - Mantle/extobjc (= 2.2.0)
   - Mantle/extobjc (2.2.0)
-  - move_to_background (0.0.1):
-    - Flutter
   - MTBBarcodeScanner (5.0.11)
   - network_info_plus (0.0.1):
     - Flutter
+  - ObjectBox (1.9.2)
+  - objectbox_flutter_libs (0.0.1):
+    - Flutter
+    - ObjectBox (= 1.9.2)
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - patrol (0.0.1):
+  - permission_handler_apple (9.3.0):
     - Flutter
-    - gRPC-Swift (~> 1.8.0)
-  - permission_handler_apple (9.0.4):
-    - Flutter
-  - PLCrashReporter (1.11.0)
+  - PLCrashReporter (1.11.2)
   - qr_code_scanner (0.2.0):
     - Flutter
     - MTBBarcodeScanner
-  - SDWebImage (5.15.6):
-    - SDWebImage/Core (= 5.15.6)
-  - SDWebImage/Core (5.15.6)
-  - SDWebImageWebPCoder (0.11.0):
+  - SDWebImage (5.19.4):
+    - SDWebImage/Core (= 5.19.4)
+  - SDWebImage/Core (5.19.4)
+  - SDWebImageWebPCoder (0.14.6):
     - libwebp (~> 1.0)
-    - SDWebImage/Core (~> 5.15)
+    - SDWebImage/Core (~> 5.17)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - SwiftNIO (2.40.0):
-    - _NIODataStructures (= 2.40.0)
-    - CNIOAtomics (= 2.40.0)
-    - CNIODarwin (= 2.40.0)
-    - CNIOLinux (= 2.40.0)
-    - CNIOWindows (= 2.40.0)
-    - SwiftNIOConcurrencyHelpers (= 2.40.0)
-    - SwiftNIOCore (= 2.40.0)
-    - SwiftNIOEmbedded (= 2.40.0)
-    - SwiftNIOPosix (= 2.40.0)
-  - SwiftNIOConcurrencyHelpers (2.40.0):
-    - CNIOAtomics (= 2.40.0)
-  - SwiftNIOCore (2.40.0):
-    - CNIOAtomics (= 2.40.0)
-    - CNIOLinux (= 2.40.0)
-    - SwiftNIOConcurrencyHelpers (= 2.40.0)
-  - SwiftNIOEmbedded (2.40.0):
-    - _NIODataStructures (= 2.40.0)
-    - CNIOAtomics (= 2.40.0)
-    - CNIOLinux (= 2.40.0)
-    - SwiftNIOConcurrencyHelpers (= 2.40.0)
-    - SwiftNIOCore (= 2.40.0)
-  - SwiftNIOExtras (1.11.0):
-    - _NIODataStructures (< 3, >= 2.32.0)
-    - CNIOAtomics (< 3, >= 2.32.0)
-    - CNIODarwin (< 3, >= 2.32.0)
-    - CNIOLinux (< 3, >= 2.32.0)
-    - CNIOWindows (< 3, >= 2.32.0)
-    - SwiftNIO (< 3, >= 2.32.0)
-    - SwiftNIOConcurrencyHelpers (< 3, >= 2.32.0)
-    - SwiftNIOCore (< 3, >= 2.32.0)
-    - SwiftNIOEmbedded (< 3, >= 2.32.0)
-    - SwiftNIOPosix (< 3, >= 2.32.0)
-  - SwiftNIOFoundationCompat (2.40.0):
-    - _NIODataStructures (= 2.40.0)
-    - CNIOAtomics (= 2.40.0)
-    - CNIODarwin (= 2.40.0)
-    - CNIOLinux (= 2.40.0)
-    - CNIOWindows (= 2.40.0)
-    - SwiftNIO (= 2.40.0)
-    - SwiftNIOConcurrencyHelpers (= 2.40.0)
-    - SwiftNIOCore (= 2.40.0)
-    - SwiftNIOEmbedded (= 2.40.0)
-    - SwiftNIOPosix (= 2.40.0)
-  - SwiftNIOHPACK (1.22.0):
-    - _NIODataStructures (< 3, >= 2.35.0)
-    - CNIOAtomics (< 3, >= 2.35.0)
-    - CNIODarwin (< 3, >= 2.35.0)
-    - CNIOHTTPParser (< 3, >= 2.35.0)
-    - CNIOLinux (< 3, >= 2.35.0)
-    - CNIOWindows (< 3, >= 2.35.0)
-    - SwiftNIO (< 3, >= 2.35.0)
-    - SwiftNIOConcurrencyHelpers (< 3, >= 2.35.0)
-    - SwiftNIOCore (< 3, >= 2.35.0)
-    - SwiftNIOEmbedded (< 3, >= 2.35.0)
-    - SwiftNIOHTTP1 (< 3, >= 2.35.0)
-    - SwiftNIOPosix (< 3, >= 2.35.0)
-  - SwiftNIOHTTP1 (2.40.0):
-    - _NIODataStructures (= 2.40.0)
-    - CNIOAtomics (= 2.40.0)
-    - CNIODarwin (= 2.40.0)
-    - CNIOHTTPParser (= 2.40.0)
-    - CNIOLinux (= 2.40.0)
-    - CNIOWindows (= 2.40.0)
-    - SwiftNIO (= 2.40.0)
-    - SwiftNIOConcurrencyHelpers (= 2.40.0)
-    - SwiftNIOCore (= 2.40.0)
-    - SwiftNIOEmbedded (= 2.40.0)
-    - SwiftNIOPosix (= 2.40.0)
-  - SwiftNIOHTTP2 (1.22.0):
-    - _NIODataStructures (< 3, >= 2.35.0)
-    - CNIOAtomics (< 3, >= 2.35.0)
-    - CNIODarwin (< 3, >= 2.35.0)
-    - CNIOHTTPParser (< 3, >= 2.35.0)
-    - CNIOLinux (< 3, >= 2.35.0)
-    - CNIOWindows (< 3, >= 2.35.0)
-    - SwiftNIO (< 3, >= 2.35.0)
-    - SwiftNIOConcurrencyHelpers (< 3, >= 2.35.0)
-    - SwiftNIOCore (< 3, >= 2.35.0)
-    - SwiftNIOEmbedded (< 3, >= 2.35.0)
-    - SwiftNIOHPACK (= 1.22.0)
-    - SwiftNIOHTTP1 (< 3, >= 2.35.0)
-    - SwiftNIOPosix (< 3, >= 2.35.0)
-    - SwiftNIOTLS (< 3, >= 2.35.0)
-  - SwiftNIOPosix (2.40.0):
-    - _NIODataStructures (= 2.40.0)
-    - CNIOAtomics (= 2.40.0)
-    - CNIODarwin (= 2.40.0)
-    - CNIOLinux (= 2.40.0)
-    - CNIOWindows (= 2.40.0)
-    - SwiftNIOConcurrencyHelpers (= 2.40.0)
-    - SwiftNIOCore (= 2.40.0)
-  - SwiftNIOSSL (2.19.0):
-    - _NIODataStructures (< 3, >= 2.32.0)
-    - CNIOAtomics (< 3, >= 2.32.0)
-    - CNIOBoringSSL (= 2.19.0)
-    - CNIOBoringSSLShims (= 2.19.0)
-    - CNIODarwin (< 3, >= 2.32.0)
-    - CNIOLinux (< 3, >= 2.32.0)
-    - CNIOWindows (< 3, >= 2.32.0)
-    - SwiftNIO (< 3, >= 2.32.0)
-    - SwiftNIOConcurrencyHelpers (< 3, >= 2.32.0)
-    - SwiftNIOCore (< 3, >= 2.32.0)
-    - SwiftNIOEmbedded (< 3, >= 2.32.0)
-    - SwiftNIOPosix (< 3, >= 2.32.0)
-    - SwiftNIOTLS (< 3, >= 2.32.0)
-  - SwiftNIOTLS (2.40.0):
-    - _NIODataStructures (= 2.40.0)
-    - CNIOAtomics (= 2.40.0)
-    - CNIODarwin (= 2.40.0)
-    - CNIOLinux (= 2.40.0)
-    - CNIOWindows (= 2.40.0)
-    - SwiftNIO (= 2.40.0)
-    - SwiftNIOConcurrencyHelpers (= 2.40.0)
-    - SwiftNIOCore (= 2.40.0)
-    - SwiftNIOEmbedded (= 2.40.0)
-    - SwiftNIOPosix (= 2.40.0)
-  - SwiftNIOTransportServices (1.12.0):
-    - _NIODataStructures (< 3, >= 2.32.0)
-    - CNIOAtomics (< 3, >= 2.32.0)
-    - CNIODarwin (< 3, >= 2.32.0)
-    - CNIOLinux (< 3, >= 2.32.0)
-    - CNIOWindows (< 3, >= 2.32.0)
-    - SwiftNIO (< 3, >= 2.32.0)
-    - SwiftNIOConcurrencyHelpers (< 3, >= 2.32.0)
-    - SwiftNIOCore (< 3, >= 2.32.0)
-    - SwiftNIOEmbedded (< 3, >= 2.32.0)
-    - SwiftNIOFoundationCompat (< 3, >= 2.32.0)
-    - SwiftNIOPosix (< 3, >= 2.32.0)
-    - SwiftNIOTLS (< 3, >= 2.32.0)
-  - SwiftProtobuf (1.21.0)
-  - SwiftyGif (5.4.4)
+  - SwiftyGif (5.4.5)
   - url_launcher_ios (0.0.1):
     - Flutter
-  - wakelock (0.0.1):
+  - wakelock_plus (0.0.1):
+    - Flutter
+  - webview_flutter_wkwebview (0.0.1):
     - Flutter
 
 DEPENDENCIES:
@@ -272,64 +132,42 @@ DEPENDENCIES:
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - flutter_barometer (from `.symlinks/plugins/flutter_barometer/ios`)
-  - flutter_image_compress (from `.symlinks/plugins/flutter_image_compress/ios`)
+  - flutter_blue_plus (from `.symlinks/plugins/flutter_blue_plus/ios`)
+  - flutter_image_compress_common (from `.symlinks/plugins/flutter_image_compress_common/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
   - flutter_tts (from `.symlinks/plugins/flutter_tts/ios`)
-  - fullscreen (from `.symlinks/plugins/fullscreen/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
-  - integration_test (from `.symlinks/plugins/integration_test/ios`)
-  - move_to_background (from `.symlinks/plugins/move_to_background/ios`)
   - network_info_plus (from `.symlinks/plugins/network_info_plus/ios`)
+  - objectbox_flutter_libs (from `.symlinks/plugins/objectbox_flutter_libs/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
-  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/ios`)
-  - patrol (from `.symlinks/plugins/patrol/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - qr_code_scanner (from `.symlinks/plugins/qr_code_scanner/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
-  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/ios`)
+  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
-  - wakelock (from `.symlinks/plugins/wakelock/ios`)
+  - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
+  - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/ios`)
 
 SPEC REPOS:
   trunk:
-    - _NIODataStructures
-    - CGRPCZlib
-    - CNIOAtomics
-    - CNIOBoringSSL
-    - CNIOBoringSSLShims
-    - CNIODarwin
-    - CNIOHTTPParser
-    - CNIOLinux
-    - CNIOWindows
-    - DatadogSDK
-    - DatadogSDKCrashReporting
+    - DatadogCore
+    - DatadogCrashReporting
+    - DatadogInternal
+    - DatadogLogs
+    - DatadogRUM
     - DictionaryCoder
     - DKImagePickerController
     - DKPhotoGallery
-    - gRPC-Swift
     - libwebp
-    - Logging
     - Mantle
     - MTBBarcodeScanner
+    - ObjectBox
     - PLCrashReporter
     - SDWebImage
     - SDWebImageWebPCoder
-    - SwiftNIO
-    - SwiftNIOConcurrencyHelpers
-    - SwiftNIOCore
-    - SwiftNIOEmbedded
-    - SwiftNIOExtras
-    - SwiftNIOFoundationCompat
-    - SwiftNIOHPACK
-    - SwiftNIOHTTP1
-    - SwiftNIOHTTP2
-    - SwiftNIOPosix
-    - SwiftNIOSSL
-    - SwiftNIOTLS
-    - SwiftNIOTransportServices
-    - SwiftProtobuf
     - SwiftyGif
 
 EXTERNAL SOURCES:
@@ -343,32 +181,28 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_barometer:
     :path: ".symlinks/plugins/flutter_barometer/ios"
-  flutter_image_compress:
-    :path: ".symlinks/plugins/flutter_image_compress/ios"
+  flutter_blue_plus:
+    :path: ".symlinks/plugins/flutter_blue_plus/ios"
+  flutter_image_compress_common:
+    :path: ".symlinks/plugins/flutter_image_compress_common/ios"
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   flutter_native_splash:
     :path: ".symlinks/plugins/flutter_native_splash/ios"
   flutter_tts:
     :path: ".symlinks/plugins/flutter_tts/ios"
-  fullscreen:
-    :path: ".symlinks/plugins/fullscreen/ios"
   geolocator_apple:
     :path: ".symlinks/plugins/geolocator_apple/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
-  integration_test:
-    :path: ".symlinks/plugins/integration_test/ios"
-  move_to_background:
-    :path: ".symlinks/plugins/move_to_background/ios"
   network_info_plus:
     :path: ".symlinks/plugins/network_info_plus/ios"
+  objectbox_flutter_libs:
+    :path: ".symlinks/plugins/objectbox_flutter_libs/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
-    :path: ".symlinks/plugins/path_provider_foundation/ios"
-  patrol:
-    :path: ".symlinks/plugins/patrol/ios"
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   qr_code_scanner:
@@ -376,75 +210,55 @@ EXTERNAL SOURCES:
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
-    :path: ".symlinks/plugins/shared_preferences_foundation/ios"
+    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
-  wakelock:
-    :path: ".symlinks/plugins/wakelock/ios"
+  wakelock_plus:
+    :path: ".symlinks/plugins/wakelock_plus/ios"
+  webview_flutter_wkwebview:
+    :path: ".symlinks/plugins/webview_flutter_wkwebview/ios"
 
 SPEC CHECKSUMS:
-  _NIODataStructures: 3d45d8e70a1d17a15b1dc59d102c63dbc0525ffd
   better_open_file: 03cf320415d4d3f46b6e00adc4a567d76c1a399d
-  CGRPCZlib: 298dd3237ba4bd7b3eed109e7080ff3324b7d9c9
-  CNIOAtomics: 8edf08644e5e6fa0f021c239be9e8beb1cd9ef18
-  CNIOBoringSSL: 2c9c96c2e95f15e83fb8d26b9738d939cc39ae33
-  CNIOBoringSSLShims: c5c9346e7bbd1040f4f8793a35441dda7487539a
-  CNIODarwin: 93850990d29f2626b05306c6c9309f9be0d74c2f
-  CNIOHTTPParser: 8ce395236fa1d09ac3b4f4bcfba79b849b2ac684
-  CNIOLinux: 62e3505f50de558c393dc2f273dde71dcce518da
-  CNIOWindows: 3047f2d8165848a3936a0a755fee27c6b5ee479b
-  datadog_flutter_plugin: 94092c99926abf963c8c3412ca72147bdb33be9a
-  DatadogSDK: 7608b3689363f4d4b0f09fbd7d1afa0c386e5dac
-  DatadogSDKCrashReporting: 46e492d957fa454101102e70b14f67bf33a36787
+  datadog_flutter_plugin: 620cefeb0a26a9271190d918059e33309416c603
+  DatadogCore: 9390fd07a89f57a23983de66fbec5bf3c2034f7a
+  DatadogCrashReporting: 79b67b790df186524fc76d45c0b8ce751c36ef41
+  DatadogInternal: 61ab12516d2faad79e35973534c29a72b0d44382
+  DatadogLogs: 912d7b3fd3d75df856de060082b785f92f7cefe6
+  DatadogRUM: b5629479d4553d80f2a57ef9db44ce37e56f8b97
   DictionaryCoder: 5f84fff69f54cb806071538430bdafe04a89d658
-  DKImagePickerController: b512c28220a2b8ac7419f21c491fc8534b7601ac
-  DKPhotoGallery: fdfad5125a9fdda9cc57df834d49df790dbb4179
-  file_picker: ce3938a0df3cc1ef404671531facef740d03f920
-  Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
+  DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
+  DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
+  file_picker: 09aa5ec1ab24135ccd7a1621c46c84134bfd6655
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   flutter_barometer: ba1dfb508505675fe229bd09abc3d3ece7a408f5
-  flutter_image_compress: 5a5e9aee05b6553048b8df1c3bc456d0afaac433
-  flutter_local_notifications: 0c0b1ae97e741e1521e4c1629a459d04b9aec743
-  flutter_native_splash: 52501b97d1c0a5f898d687f1646226c1f93c56ef
+  flutter_blue_plus: 4837da7d00cf5d441fdd6635b3a57f936778ea96
+  flutter_image_compress_common: ec1d45c362c9d30a3f6a0426c297f47c52007e3e
+  flutter_local_notifications: 4cde75091f6327eb8517fa068a0a5950212d2086
+  flutter_native_splash: edf599c81f74d093a4daf8e17bd7a018854bc778
   flutter_tts: 0f492aab6accf87059b72354fcb4ba934304771d
-  fullscreen: d93e707e6b36120f20e64e2f814ee0726164e70b
-  geolocator_apple: cc556e6844d508c95df1e87e3ea6fa4e58c50401
-  gRPC-Swift: 74adcaaa62ac5e0a018938840328cb1fdfb09e7b
-  image_picker_ios: 4a8aadfbb6dc30ad5141a2ce3832af9214a705b5
-  integration_test: a1e7d09bd98eca2fc37aefd79d4f41ad37bdbbe5
-  libwebp: f62cb61d0a484ba548448a4bd52aabf150ff6eef
-  Logging: beeb016c9c80cf77042d62e83495816847ef108b
+  geolocator_apple: 6cbaf322953988e009e5ecb481f07efece75c450
+  image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
+  libwebp: 1786c9f4ff8a279e4dac1e8f385004d5fc253009
   Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
-  move_to_background: 39a5b79b26d577b0372cbe8a8c55e7aa9fcd3a2d
   MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
-  network_info_plus: b78876159360f5580608c2cea620d6ceffabd0ad
-  package_info_plus: 6c92f08e1f853dc01228d6f553146438dafcd14e
-  path_provider_foundation: c68054786f1b4f3343858c1e1d0caaded73f0be9
-  patrol: a7622350c42b3a944962fbfe052d07e3691789e5
-  permission_handler_apple: 44366e37eaf29454a1e7b1b7d736c2cceaeb17ce
-  PLCrashReporter: 7a9dff14a23ba5d2e28c6160f0bb6fada5e71a8d
+  network_info_plus: 9d930145451916919786087c4173226363616071
+  ObjectBox: 46757a559717ab49b1cc0612eaff82b705acf394
+  objectbox_flutter_libs: 103f3a273b594cb664255086a386740bc179f97d
+  package_info_plus: 58f0028419748fad15bf008b270aaa8e54380b1c
+  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  PLCrashReporter: 499c53b0104f95c302d94fd723ebb03c56d9bac8
   qr_code_scanner: bb67d64904c3b9658ada8c402e8b4d406d5d796e
-  SDWebImage: d47d81bea8a77187896b620dc79c3c528e8906b9
-  SDWebImageWebPCoder: 295a6573c512f54ad2dd58098e64e17dcf008499
-  share_plus: 056a1e8ac890df3e33cb503afffaf1e9b4fbae68
-  shared_preferences_foundation: 986fc17f3d3251412d18b0265f9c64113a8c2472
-  SwiftNIO: 829958aab300642625091f82fc2f49cb7cf4ef24
-  SwiftNIOConcurrencyHelpers: 697370136789b1074e4535eaae75cbd7f900370e
-  SwiftNIOCore: 473fdfe746534d7aa25766916459eeaf6f92ef49
-  SwiftNIOEmbedded: ffcb5147db67d9686c8366b7f8427b36132f2c8a
-  SwiftNIOExtras: 481f74d6bf0b0ef699905ed66439cb019c4975c9
-  SwiftNIOFoundationCompat: b9cdbea4806e4a12e9f66d9696fa3b98c4c3232b
-  SwiftNIOHPACK: e7d3ff5bd671528adfb11cd4e0c84ddfdc3c4453
-  SwiftNIOHTTP1: ef56706550a1dc135ea69d65215b9941e643c23b
-  SwiftNIOHTTP2: cc81d7a6ba70d2ddc5376f471904b27ef5d2b7b8
-  SwiftNIOPosix: b49af4bdbecaadfadd5c93dfe28594d6722b75e4
-  SwiftNIOSSL: d153c5a6fc5b2301b0519b4c4d037a9414212da6
-  SwiftNIOTLS: 598af547490133e9aac52aed0c23c4a90c31dcfc
-  SwiftNIOTransportServices: 0b2b407819d82eb63af558c5396e33c945759503
-  SwiftProtobuf: afced68785854575756db965e9da52bbf3dc45e7
-  SwiftyGif: 93a1cc87bf3a51916001cf8f3d63835fb64c819f
-  url_launcher_ios: 08a3dfac5fb39e8759aeb0abbd5d9480f30fc8b4
-  wakelock: d0fc7c864128eac40eba1617cb5264d9c940b46f
+  SDWebImage: 066c47b573f408f18caa467d71deace7c0f8280d
+  SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
+  share_plus: 8875f4f2500512ea181eef553c3e27dba5135aad
+  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
+  SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
+  url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
+  wakelock_plus: 78ec7c5b202cab7761af8e2b2b3d0671be6c4ae1
+  webview_flutter_wkwebview: 2a23822e9039b7b1bc52e5add778e5d89ad488d1
 
-PODFILE CHECKSUM: 140b9bc3c030adc20663177c386e95bdd372dac3
+PODFILE CHECKSUM: 5a565ab0b873275b9ed099f99e722a1442f28fc6
 
-COCOAPODS: 1.11.3
+COCOAPODS: 1.13.0
