@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.7.8+134
+version: 2.7.9+135
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
@@ -52,25 +52,22 @@ dependencies:
   custom_image_crop: any
   qr_code_scanner: ^1.0.0
   qr_flutter: ^4.0.0
-  share_plus: ^9.0.0
+  share_plus: ^10.0.2
   web_socket_channel: ^3.0.0
   flutter_image_compress: ^2.0.4
   path_provider: ^2.0.9
   flutter_svg: ^2.0.9
-  geolocator: ^12.0.0
+  geolocator: ^13.0.1
   flutter_local_notifications: ^17.1.2
   focus_detector: ^2.0.1
   file_picker: ^8.0.3
   xml: ^6.1.0
   permission_handler: ^11.0.0
   flutter_tts: ^4.0.2
-  flutter_barometer:
-    git:
-      url: git@github.com:eidolonFIRE/flutter_barometer.git
   wakelock_plus: ^1.1.4
   package_info_plus: ^8.0.0
   flutter_slidable: ^3.0.0
-  network_info_plus: ^5.0.3
+  network_info_plus: ^6.0.1
   url_launcher: ^6.1.2
   crypto: ^3.0.2
   usb_serial: ^0.5.1
@@ -89,14 +86,15 @@ dependencies:
   clock: ^1.1.1
   flutter_blue_plus: ^1.31.7
   webview_flutter: ^4.8.0
+  sensors_plus: ^6.0.1
 
 
-dependency_overrides:
-  url_launcher_ios:
-    git:
-      url: git@github.com:hellohuanlin/packages.git
-      path: packages/url_launcher/url_launcher_ios
-      ref: urllauncher_fix_main_actor_completion_conformance
+# dependency_overrides:
+#   url_launcher_ios:
+#     git:
+#       url: git@github.com:hellohuanlin/packages.git
+#       path: packages/url_launcher/url_launcher_ios
+#       ref: urllauncher_fix_main_actor_completion_conformance
 
 dev_dependencies:
   flutter_test:

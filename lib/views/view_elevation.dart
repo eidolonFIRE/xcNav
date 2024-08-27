@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_barometer/flutter_barometer.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -126,7 +127,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                           color: Colors.red,
                         )),
               Text(
-                printDouble(value: myTelemetry.baroAmbient?.hectpascal ?? 1013.25, digits: 4, decimals: 2),
+                printDouble(value: myTelemetry.baroAmbient?.pressure ?? 1013.25, digits: 4, decimals: 2),
                 style:
                     TextStyle(fontSize: 20, color: myTelemetry.baroFromWeatherkit ? Colors.lightGreen : Colors.white),
               ),
@@ -139,7 +140,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                         setState(() {
                           myTelemetry.baroFromWeatherkit = false;
                           myTelemetry.baroAmbient =
-                              BarometerValue((myTelemetry.baroAmbient?.hectpascal ?? 1013.25) + 0.25);
+                              BarometerEvent((myTelemetry.baroAmbient?.pressure ?? 1013.25) + 0.25, clock.now());
                         })
                       },
                   icon: const Icon(
@@ -152,7 +153,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                         setState(() {
                           myTelemetry.baroFromWeatherkit = false;
                           myTelemetry.baroAmbient =
-                              BarometerValue((myTelemetry.baroAmbient?.hectpascal ?? 1013.25) - 0.25);
+                              BarometerEvent((myTelemetry.baroAmbient?.pressure ?? 1013.25) - 0.25, clock.now());
                         })
                       },
                   icon: const Icon(

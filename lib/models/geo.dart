@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:flutter_barometer/flutter_barometer.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/path_intercept.dart';
@@ -47,7 +47,7 @@ class Geo {
     time = timestamp ?? DateTime.now().millisecondsSinceEpoch;
   }
 
-  Geo.fromPosition(Position location, Geo? prev, BarometerValue? baro, BarometerValue? baroAmbient) {
+  Geo.fromPosition(Position location, Geo? prev, BarometerEvent? baro, BarometerEvent? baroAmbient) {
     lat = location.latitude;
     lng = location.longitude;
     time = location.timestamp.millisecondsSinceEpoch;
@@ -69,8 +69,8 @@ class Geo {
 
     if (baro != null) {
       // altitude / vario filtering
-      final double amb = baroAmbient?.hectpascal ?? 1013.25;
-      alt = 145366.45 * (1 - pow(baro.hectpascal / amb, 0.190284)) / meters2Feet;
+      final double amb = baroAmbient?.pressure ?? 1013.25;
+      alt = 145366.45 * (1 - pow(baro.pressure / amb, 0.190284)) / meters2Feet;
     } else {
       alt = location.altitude;
     }

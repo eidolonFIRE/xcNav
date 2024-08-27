@@ -7,7 +7,7 @@ import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:flutter_barometer/flutter_barometer.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
@@ -39,8 +39,10 @@ import 'package:xcnav/util.dart';
 enum FlightEventType { init, takeoff, land }
 
 /// Meters
-double densityAlt(BarometerValue ambientPressure, double ambientTemp) {
-  return 145442.16 * (1 - pow(17.326 * ambientPressure.inchOfMercury / (459.67 + ambientTemp), 0.235)) / meters2Feet;
+double densityAlt(BarometerEvent ambientPressure, double ambientTemp) {
+  return 145442.16 *
+      (1 - pow(17.326 * (ambientPressure.pressure * 0.02953) / (459.67 + ambientTemp), 0.235)) /
+      meters2Feet;
 }
 
 Geo defaultGeo = Geo(lat: 37, lng: -122);
@@ -74,10 +76,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   StreamSubscription? _flightEventListener;
 
   /// Latest Barometric Reading
-  BarometerValue? baro;
+  BarometerEvent? baro;
 
   /// Ambient barometric reading fetched from web API
-  BarometerValue? baroAmbient;
+  BarometerEvent? baroAmbient;
   bool baroAmbientRequested = false;
   int baroAmbientRequestCount = 0;
   bool baroFromWeatherkit = false;
@@ -85,7 +87,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Ambient Temp in F, according to weatherkit
   double? ambientTemperature;
 
-  StreamSubscription<BarometerValue>? listenBaro;
+  StreamSubscription<BarometerEvent>? listenBaro;
 
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
   Stream<Position>? positionStream;
@@ -248,7 +250,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void _startBaroService() {
-    listenBaro = FlutterBarometer.currentPressureEvent.listen((event) {
+    listenBaro = barometerEventStream().listen((event) {
       baro = event;
     });
   }
@@ -528,7 +530,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             // Recent query available!
             final lastValue = prefs.getDouble("weatherKit.last.value");
             if (lastValue != null) {
-              baroAmbient = BarometerValue(lastValue);
+              baroAmbient = BarometerEvent(lastValue, clock.now());
               debugPrint("Baro pulled from memory. Skipped weatherKit call.");
               return;
             }
@@ -549,9 +551,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             // throw "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}";
           } else {
             final payload = jsonDecode(response.body);
-            baroAmbient = BarometerValue(payload["currentWeather"]["pressure"]);
+            baroAmbient = BarometerEvent(payload["currentWeather"]["pressure"], clock.now());
             ambientTemperature = payload["currentWeather"]["temperature"] * 9 / 5 + 32;
-            debugPrint("Ambient pressure found: ${baroAmbient?.hectpascal} ( ${ambientTemperature}F )");
+            debugPrint("Ambient pressure found: ${baroAmbient?.pressure} ( ${ambientTemperature}F )");
             baroFromWeatherkit = true;
 
             // Save for later
@@ -559,7 +561,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
               prefs.setInt("weatherKit.last.time", clock.now().millisecondsSinceEpoch);
               prefs.setDouble("weatherKit.last.lat", latlng.latitude);
               prefs.setDouble("weatherKit.last.lng", latlng.longitude);
-              prefs.setDouble("weatherKit.last.value", baroAmbient!.hectpascal);
+              prefs.setDouble("weatherKit.last.value", baroAmbient!.pressure);
             });
           }
           baroAmbientRequested = false;
