@@ -2,23 +2,23 @@ PODS:
   - better_open_file (0.0.1):
     - Flutter
   - datadog_flutter_plugin (0.0.1):
-    - DatadogCore (= 2.13.0)
-    - DatadogCrashReporting (= 2.13.0)
-    - DatadogInternal (= 2.13.0)
-    - DatadogLogs (= 2.13.0)
-    - DatadogRUM (= 2.13.0)
+    - DatadogCore (= 2.15.0)
+    - DatadogCrashReporting (= 2.15.0)
+    - DatadogInternal (= 2.15.0)
+    - DatadogLogs (= 2.15.0)
+    - DatadogRUM (= 2.15.0)
     - DictionaryCoder (= 1.0.8)
     - Flutter
-  - DatadogCore (2.13.0):
-    - DatadogInternal (= 2.13.0)
-  - DatadogCrashReporting (2.13.0):
-    - DatadogInternal (= 2.13.0)
+  - DatadogCore (2.15.0):
+    - DatadogInternal (= 2.15.0)
+  - DatadogCrashReporting (2.15.0):
+    - DatadogInternal (= 2.15.0)
     - PLCrashReporter (~> 1.11.2)
-  - DatadogInternal (2.13.0)
-  - DatadogLogs (2.13.0):
-    - DatadogInternal (= 2.13.0)
-  - DatadogRUM (2.13.0):
-    - DatadogInternal (= 2.13.0)
+  - DatadogInternal (2.15.0)
+  - DatadogLogs (2.15.0):
+    - DatadogInternal (= 2.15.0)
+  - DatadogRUM (2.15.0):
+    - DatadogInternal (= 2.15.0)
   - DictionaryCoder (1.0.8)
   - DKImagePickerController/Core (4.3.9):
     - DKImagePickerController/ImageDataManager
@@ -55,8 +55,6 @@ PODS:
     - DKImagePickerController/PhotoGallery
     - Flutter
   - Flutter (1.0.0)
-  - flutter_barometer (0.0.2):
-    - Flutter
   - flutter_blue_plus (0.0.1):
     - Flutter
   - flutter_image_compress_common (1.0.0):
@@ -107,12 +105,14 @@ PODS:
   - qr_code_scanner (0.2.0):
     - Flutter
     - MTBBarcodeScanner
-  - SDWebImage (5.19.4):
-    - SDWebImage/Core (= 5.19.4)
-  - SDWebImage/Core (5.19.4)
+  - SDWebImage (5.19.7):
+    - SDWebImage/Core (= 5.19.7)
+  - SDWebImage/Core (5.19.7)
   - SDWebImageWebPCoder (0.14.6):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
+  - sensors_plus (0.0.1):
+    - Flutter
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -131,7 +131,6 @@ DEPENDENCIES:
   - datadog_flutter_plugin (from `.symlinks/plugins/datadog_flutter_plugin/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
-  - flutter_barometer (from `.symlinks/plugins/flutter_barometer/ios`)
   - flutter_blue_plus (from `.symlinks/plugins/flutter_blue_plus/ios`)
   - flutter_image_compress_common (from `.symlinks/plugins/flutter_image_compress_common/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
@@ -145,6 +144,7 @@ DEPENDENCIES:
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - qr_code_scanner (from `.symlinks/plugins/qr_code_scanner/ios`)
+  - sensors_plus (from `.symlinks/plugins/sensors_plus/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
@@ -179,8 +179,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
     :path: Flutter
-  flutter_barometer:
-    :path: ".symlinks/plugins/flutter_barometer/ios"
   flutter_blue_plus:
     :path: ".symlinks/plugins/flutter_blue_plus/ios"
   flutter_image_compress_common:
@@ -207,6 +205,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   qr_code_scanner:
     :path: ".symlinks/plugins/qr_code_scanner/ios"
+  sensors_plus:
+    :path: ".symlinks/plugins/sensors_plus/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
@@ -220,18 +220,17 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   better_open_file: 03cf320415d4d3f46b6e00adc4a567d76c1a399d
-  datadog_flutter_plugin: 620cefeb0a26a9271190d918059e33309416c603
-  DatadogCore: 9390fd07a89f57a23983de66fbec5bf3c2034f7a
-  DatadogCrashReporting: 79b67b790df186524fc76d45c0b8ce751c36ef41
-  DatadogInternal: 61ab12516d2faad79e35973534c29a72b0d44382
-  DatadogLogs: 912d7b3fd3d75df856de060082b785f92f7cefe6
-  DatadogRUM: b5629479d4553d80f2a57ef9db44ce37e56f8b97
+  datadog_flutter_plugin: f1c320edd1a4419ab28e0fdbb141005e1a7272e1
+  DatadogCore: f865c94e837d2c30210b29a1ed3a65cd6f676df3
+  DatadogCrashReporting: 5a53d4fd725f2992765de44f0b3046c239affce4
+  DatadogInternal: 925d7f03f6d6b3ed025b458df7654381377da468
+  DatadogLogs: 54bdce940d25735e37321633072befe1b95ba8bc
+  DatadogRUM: 05308932e8fcc89bff6afeeed3527b707a496461
   DictionaryCoder: 5f84fff69f54cb806071538430bdafe04a89d658
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   file_picker: 09aa5ec1ab24135ccd7a1621c46c84134bfd6655
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_barometer: ba1dfb508505675fe229bd09abc3d3ece7a408f5
   flutter_blue_plus: 4837da7d00cf5d441fdd6635b3a57f936778ea96
   flutter_image_compress_common: ec1d45c362c9d30a3f6a0426c297f47c52007e3e
   flutter_local_notifications: 4cde75091f6327eb8517fa068a0a5950212d2086
@@ -250,8 +249,9 @@ SPEC CHECKSUMS:
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   PLCrashReporter: 499c53b0104f95c302d94fd723ebb03c56d9bac8
   qr_code_scanner: bb67d64904c3b9658ada8c402e8b4d406d5d796e
-  SDWebImage: 066c47b573f408f18caa467d71deace7c0f8280d
+  SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
+  sensors_plus: 4b7c4bd9c9be2efbd575649368fe77ef09b429ad
   share_plus: 8875f4f2500512ea181eef553c3e27dba5135aad
   shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
@@ -261,4 +261,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 5a565ab0b873275b9ed099f99e722a1442f28fc6
 
-COCOAPODS: 1.13.0
+COCOAPODS: 1.15.2
