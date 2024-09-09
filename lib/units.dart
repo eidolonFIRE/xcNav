@@ -24,6 +24,7 @@ enum DisplayUnitsSpeed {
 
 enum DisplayUnitsVario {
   fpm,
+  fps,
   mps,
 }
 
@@ -47,6 +48,7 @@ const Map<bool, Map<UnitType, dynamic>> _unitStr = {
     },
     UnitType.vario: {
       DisplayUnitsVario.fpm: "ft/m",
+      DisplayUnitsVario.fps: "ft/s",
       DisplayUnitsVario.mps: "m/s",
     },
     UnitType.distFine: {
@@ -71,6 +73,7 @@ const Map<bool, Map<UnitType, dynamic>> _unitStr = {
     },
     UnitType.vario: {
       DisplayUnitsVario.fpm: "feet per minute",
+      DisplayUnitsVario.fps: "feet per second",
       DisplayUnitsVario.mps: "meters per second",
     },
     UnitType.distFine: {
@@ -157,6 +160,9 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
     switch (vario) {
       case DisplayUnitsVario.fpm:
         unitConverters[UnitType.vario] = (double value) => value * 60 * meters2Feet;
+        break;
+      case DisplayUnitsVario.fps:
+        unitConverters[UnitType.vario] = (double value) => value * meters2Feet;
         break;
       case DisplayUnitsVario.mps:
         unitConverters[UnitType.vario] = (double value) => value;

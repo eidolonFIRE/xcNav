@@ -257,6 +257,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                   value: e.config!.value,
                                                   items: const [
                                                     DropdownMenuItem(value: DisplayUnitsVario.fpm, child: Text("ft/m")),
+                                                    DropdownMenuItem(value: DisplayUnitsVario.fps, child: Text("ft/s")),
                                                     DropdownMenuItem(value: DisplayUnitsVario.mps, child: Text("m/s")),
                                                   ]);
                                               break;
