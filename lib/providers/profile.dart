@@ -127,6 +127,11 @@ class Profile with ChangeNotifier {
   }
 
   Future pushAvatar() async {
+    if ("x$profileStoreUrl" == "xunset") {
+      debugPrint("Error while pushing avatar: secrets.dart profileStoreUrl is unset, ignoring");
+      return;
+    }
+
     return http
         .post(Uri.parse("https://$profileStoreUrl"),
             headers: {"Content-Type": "application/json", "authorizationToken": profileStoreToken},
