@@ -53,7 +53,7 @@ class _ADSBhelpState extends State<ADSBhelp> with SingleTickerProviderStateMixin
                           child: GestureDetector(
                             onTap: () => {launchUrl(Uri.parse("https://uavionix.com/products/pingusb/"))},
                             child: const Text(
-                              "pingUSB  by  uAvioni",
+                              "pingUSB  by  uAvionix",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: 18, color: Colors.lightBlue, decoration: TextDecoration.underline),
