@@ -50,7 +50,7 @@ final Map<String, int> _tileCacheWidth = {};
 
 double _sampleByteData(ByteData data, int w, double x, double y) {
   // debugPrint("offset: $x, $y ($s) ( ${(x + y * s) * 4} / ${imgInfo.sizeBytes} )");
-  final bitPos = (((x % 1) * w).toInt() + ((y % 1) * w * w).toInt()) * 4;
+  final bitPos = (((x % 1.0) * w).toInt() + (((y % 1.0) * w).toInt() * w).toInt()) * 4;
   final r = data.getUint8(bitPos + 0);
   final g = data.getUint8(bitPos + 1);
   final b = data.getUint8(bitPos + 2);

@@ -60,7 +60,9 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
         : ((waypointETA != null && waypointETA?.distance != null)
             ? min(200000, waypointETA!.distance * 1.2)
             : (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 10000.0 : 8046.72));
-    final sampleInterval = max(100, forecastDist / 30).ceil();
+    // `max` check here will only save computer for nearby points by setting min resolution to 20.
+    final sampleInterval = max(20, forecastDist / 100).ceil();
+    // debugPrint("DEM sample interval: $sampleInterval");
 
     Completer<List<ElevSample?>> samplesCompleter = Completer();
     List<Completer<ElevSample?>> completers = [];

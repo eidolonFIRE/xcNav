@@ -107,19 +107,19 @@ class ElevationPlotPainter extends CustomPainter {
   }
 
   ui.Image? getLoadedSvg(String assetName, int width, int height) {
-    // if (loadedSvgs[assetName] == null) {
-    rootBundle.loadString(assetName).then((svgRaw) {
-      // debugPrint(svgRaw);
+    if (loadedSvgs[assetName] == null) {
+      rootBundle.loadString(assetName).then((svgRaw) {
+        // debugPrint(svgRaw);
 
-      vg.loadPicture(SvgStringLoader(svgRaw), null).then((value) {
-        // value.
+        vg.loadPicture(SvgStringLoader(svgRaw), null).then((value) {
+          // value.
 
-        debugPrint("${value.size}");
-        loadedSvgs[assetName] = value.picture.toImageSync(width, height);
-        debugPrint("Loaded asset: $assetName");
+          // debugPrint("${value.size}");
+          loadedSvgs[assetName] = value.picture.toImageSync(width, height);
+          debugPrint("Loaded asset: $assetName");
+        });
       });
-    });
-    // }
+    }
     return loadedSvgs[assetName];
   }
 
@@ -134,7 +134,7 @@ class ElevationPlotPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    debugPrint("PAINT ELEVATION PLOT");
+    // debugPrint("PAINT ELEVATION PLOT");
 
     if (geoData.isEmpty) return;
 
