@@ -524,7 +524,7 @@ class FlightLog {
     try {
       for (final line in data.split("\n")) {
         // parse each line
-        if (line.startsWith("HFDTE")) {
+        if (RegExp(r"HFDTE[0-9]+").firstMatch(line) != null) {
           // (HFDTEDDMMYY) UTC date this file was recorded
           dateOffset = DateTime(int.parse(line.substring(9, 11)) + 2000, int.parse(line.substring(7, 9)),
               int.parse(line.substring(5, 7)));
