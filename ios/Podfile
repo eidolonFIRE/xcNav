@@ -36,11 +36,11 @@ end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    if target.name == "geolocator_apple"
-      target.build_configurations.each do |config|
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'BYPASS_PERMISSION_LOCATION_ALWAYS=1']
-      end
-    end
+    # if target.name == "geolocator_apple"
+    #   target.build_configurations.each do |config|
+    #     config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'BYPASS_PERMISSION_LOCATION_ALWAYS=1']
+    #   end
+    # end
 
     flutter_additional_ios_build_settings(target)
 
@@ -80,20 +80,20 @@ post_install do |installer|
         ## macro.
         ##
         ## dart: [PermissionGroup.location, PermissionGroup.locationAlways, PermissionGroup.locationWhenInUse]
-        # 'PERMISSION_LOCATION=1',
-        'PERMISSION_LOCATION_WHENINUSE=1',
+        'PERMISSION_LOCATION=1',
+        # 'PERMISSION_LOCATION_WHENINUSE=1',
 
         ## dart: PermissionGroup.notification
-        'PERMISSION_NOTIFICATIONS=0',
+        'PERMISSION_NOTIFICATIONS=1',
 
         ## dart: PermissionGroup.mediaLibrary
         'PERMISSION_MEDIA_LIBRARY=0',
 
         ## dart: PermissionGroup.sensors
-        'PERMISSION_SENSORS=0',
+        'PERMISSION_SENSORS=1',
 
         ## dart: PermissionGroup.bluetooth
-        'PERMISSION_BLUETOOTH=0',
+        'PERMISSION_BLUETOOTH=1',
 
         ## dart: PermissionGroup.appTrackingTransparency
         'PERMISSION_APP_TRACKING_TRANSPARENCY=0',

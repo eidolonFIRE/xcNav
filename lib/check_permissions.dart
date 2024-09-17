@@ -15,7 +15,7 @@ Future<bool?> checkPermissions(BuildContext context) async {
     if (Platform.isIOS) {
       await Permission.camera.request();
       await Permission.photos.request();
-
+      await Permission.locationWhenInUse.request();
       await Permission.locationAlways.request();
     } else {
       debugPrint("Checking location permissions...");
