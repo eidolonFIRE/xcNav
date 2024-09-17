@@ -312,8 +312,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           // activityType: ActivityType.fitness,
           distanceFilter: 0,
           pauseLocationUpdatesAutomatically: false,
-          // Only set to true if our app will be started up in the background.
-          showBackgroundLocationIndicator: false,
+          allowBackgroundLocationUpdates: true,
+          showBackgroundLocationIndicator: true,
         );
       } else {
         locationSettings = const LocationSettings(

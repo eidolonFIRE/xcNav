@@ -28,8 +28,8 @@
 		<true/>
 		<key>NSCameraUsageDescription</key>
 		<string>This app needs camera access to scan QR codes</string>
-		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>xcNav needs access to location for navigation and sharing your location with the group</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>xcNav needs access to location for navigation and sharing your location with the group, even while the app is not in focus.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>This app needs to be able to select an avatar picture.</string>
 		<key>UIBackgroundModes</key>

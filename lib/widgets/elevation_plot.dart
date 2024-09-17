@@ -112,8 +112,6 @@ class ElevationPlotPainter extends CustomPainter {
         // debugPrint(svgRaw);
 
         vg.loadPicture(SvgStringLoader(svgRaw), null).then((value) {
-          // value.
-
           // debugPrint("${value.size}");
           loadedSvgs[assetName] = value.picture.toImageSync(width, height);
           debugPrint("Loaded asset: $assetName");
