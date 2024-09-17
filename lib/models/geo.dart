@@ -12,6 +12,7 @@ class Geo {
 
   /// Meters
   double alt = 0;
+  double altGps = 0;
 
   /// Ground Elevation
   double? _gnd;
@@ -51,6 +52,7 @@ class Geo {
     lat = location.latitude;
     lng = location.longitude;
     time = location.timestamp.millisecondsSinceEpoch;
+    altGps = location.altitude;
 
     if (prev != null && prev.time < time) {
       // prefer our own calculations

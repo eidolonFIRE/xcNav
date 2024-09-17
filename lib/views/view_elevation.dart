@@ -196,6 +196,26 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
               ]),
             ),
 
+          // --- GPS Altitude
+          if (myTelemetry.geo != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(
+                  "GPS Altitude:",
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(
+                  width: 20,
+                ),
+                Text.rich(richValue(UnitType.distFine, myTelemetry.geo!.altGps,
+                    digits: 6,
+                    decimals: -2,
+                    valueStyle: Theme.of(context).textTheme.headlineMedium,
+                    unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)))
+              ]),
+            ),
+
           // --- Elevation Plot
           if (myTelemetry.recordGeo.length > 1)
             Expanded(
