@@ -150,6 +150,9 @@ void main() {
     configUnits(vario: DisplayUnitsVario.fpm);
     expect(richValue(UnitType.vario, 1.0, decimals: 2).children!.map((InlineSpan e) => e.toPlainText()).toList(),
         ["196.85", " ft/m"]);
+    configUnits(vario: DisplayUnitsVario.fps);
+    expect(richValue(UnitType.vario, 1.0, decimals: 2).children!.map((InlineSpan e) => e.toPlainText()).toList(),
+        ["3.28", " ft/s"]);
 
     // Dist
     configUnits(dist: DisplayUnitsDist.metric);
