@@ -10,10 +10,22 @@ import 'package:xcnav/util.dart';
 
 Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
   gear ??= Gear();
-  final formKey = GlobalKey<FormState>();
+
   return showDialog<Gear>(
       context: context,
       builder: (context) {
+        final formKey = GlobalKey<FormState>();
+
+        final controllerWingMM = TextEditingController(text: gear?.wingMakeModel);
+        final controllerWingSize = TextEditingController(text: gear?.wingSize);
+        final controllerMotorMM = TextEditingController(text: gear?.frameMakeModel);
+        final controllerEngine = TextEditingController(text: gear?.engine);
+        final controllerProp = TextEditingController(text: gear?.prop);
+        final controllerTank =
+            TextEditingController(text: gear?.tankSize == null ? null : printDoubleSimple(gear!.tankSize!));
+        final controllerBladder =
+            TextEditingController(text: gear?.bladderSize == null ? null : printDoubleSimple(gear!.bladderSize!));
+        final controllerOther = TextEditingController(text: gear?.other);
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
             content: SizedBox(
@@ -35,7 +47,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                         children: [
                           Expanded(
                             child: TextFormField(
-                              controller: TextEditingController(text: gear?.wingMakeModel),
+                              controller: controllerWingMM,
                               decoration: const InputDecoration(
                                   hintText: "make,  model", floatingLabelBehavior: FloatingLabelBehavior.always),
                               onChanged: (value) => gear?.wingMakeModel = value,
@@ -44,7 +56,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                           SizedBox(
                             width: 30,
                             child: TextFormField(
-                              controller: TextEditingController(text: gear?.wingSize),
+                              controller: controllerWingSize,
                               textAlign: TextAlign.center,
                               inputFormatters: [LengthLimitingTextInputFormatter(2)],
                               decoration: const InputDecoration(
@@ -133,7 +145,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                           Expanded(
                             flex: 2,
                             child: TextFormField(
-                              controller: TextEditingController(text: gear?.frameMakeModel),
+                              controller: controllerMotorMM,
                               decoration: const InputDecoration(
                                   hintText: "make,  model", floatingLabelBehavior: FloatingLabelBehavior.always),
                               onChanged: (value) => gear?.frameMakeModel = value,
@@ -142,7 +154,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                           Expanded(
                             flex: 1,
                             child: TextFormField(
-                              controller: TextEditingController(text: gear?.engine),
+                              controller: controllerEngine,
                               decoration: const InputDecoration(hintText: "engine"),
                               onChanged: (value) => gear?.engine = value,
                             ),
@@ -154,9 +166,9 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Expanded(
-                            flex: 2,
+                            flex: 1,
                             child: TextFormField(
-                              controller: TextEditingController(text: gear?.prop),
+                              controller: controllerProp,
                               decoration: const InputDecoration(
                                   hintText: "prop", floatingLabelBehavior: FloatingLabelBehavior.always),
                               onChanged: (value) => gear?.prop = value,
@@ -165,29 +177,29 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                           Expanded(
                             flex: 1,
                             child: TextFormField(
-                              controller: TextEditingController(
-                                  text: gear?.tankSize == null ? null : printDoubleSimple(gear!.tankSize!)),
+                              controller: controllerTank,
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.end,
                               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[0-9\.]"))],
-                              decoration: const InputDecoration(
-                                  hintText: "tank", suffixText: "L", contentPadding: EdgeInsets.only(right: 10)),
+                              decoration: InputDecoration(
+                                  hintText: "tank",
+                                  suffixText: getUnitStr(UnitType.fuel),
+                                  contentPadding: const EdgeInsets.only(right: 10)),
                               onChanged: (value) => gear?.tankSize = parseAsDouble(value),
                             ),
                           ),
                           Expanded(
                             flex: 1,
                             child: TextFormField(
-                              controller: TextEditingController(
-                                  text: gear?.bladderSize == null ? null : printDoubleSimple(gear!.bladderSize!)),
+                              controller: controllerBladder,
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.end,
                               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[0-9\.]"))],
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                   hintText: "bladder",
-                                  suffixText: "L",
+                                  suffixText: getUnitStr(UnitType.fuel),
                                   prefixText: "+",
-                                  contentPadding: EdgeInsets.only(right: 10)),
+                                  contentPadding: const EdgeInsets.only(right: 10)),
                               onChanged: (value) => gear?.bladderSize = parseAsDouble(value),
                             ),
                           ),
@@ -206,7 +218,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                       SizedBox(
                         width: double.infinity,
                         child: TextFormField(
-                          controller: TextEditingController(text: gear?.other),
+                          controller: controllerOther,
                           decoration: const InputDecoration(
                               hintText: "flight box, camping bag, etc...",
                               floatingLabelBehavior: FloatingLabelBehavior.always),
