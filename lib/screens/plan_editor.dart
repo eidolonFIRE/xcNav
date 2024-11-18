@@ -434,7 +434,7 @@ class _PlanEditorState extends State<PlanEditor> {
                         Align(
                             alignment: Alignment.bottomCenter,
                             child: Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
+                              padding: const EdgeInsets.only(bottom: 10),
                               child: Card(
                                   color: Colors.amber.shade400,
                                   child: const Padding(
@@ -455,49 +455,66 @@ class _PlanEditorState extends State<PlanEditor> {
                             )),
                         Align(
                             alignment: Alignment.bottomRight,
-                            child: Row(mainAxisSize: MainAxisSize.min, children: [
-                              IconButton(
-                                padding: EdgeInsets.zero,
-                                iconSize: 35,
-                                icon: const Icon(
-                                  Icons.cancel,
-                                  size: 35,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    // --- Cancel editing of path (don't save changes)
-                                    if (editingWp != null && plan!.waypoints[editingWp!]!.latlng.isEmpty) {
-                                      plan!.waypoints.remove(editingWp!);
-                                    }
-                                    editingWp = null;
-                                    setFocusMode(FocusMode.unlocked);
-                                  });
-                                },
-                              ),
-                              if (editablePoints.length > 1)
-                                IconButton(
-                                    padding: EdgeInsets.zero,
-                                    iconSize: 35,
-                                    icon: const Icon(
-                                      Icons.check_circle,
-                                      size: 35,
-                                      color: Colors.green,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 12),
+                                  child: CircleAvatar(
+                                    radius: 35 / 2,
+                                    backgroundColor: Colors.white,
+                                    child: IconButton(
+                                      padding: EdgeInsets.zero,
+                                      iconSize: 35,
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        size: 35,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          // --- Cancel editing of path (don't save changes)
+                                          if (editingWp != null && plan!.waypoints[editingWp!]!.latlng.isEmpty) {
+                                            plan!.waypoints.remove(editingWp!);
+                                          }
+                                          editingWp = null;
+                                          setFocusMode(FocusMode.unlocked);
+                                        });
+                                      },
                                     ),
-                                    onPressed: () {
-                                      // --- finish editing path
-                                      setState(() {
-                                        finishEditingPolyline();
-                                      });
-                                    })
-                            ])),
+                                  ),
+                                ),
+                                if (editablePoints.length > 1)
+                                  CircleAvatar(
+                                      radius: 35 / 2,
+                                      backgroundColor: Colors.white,
+                                      child: IconButton(
+                                          padding: EdgeInsets.zero,
+                                          iconSize: 35,
+                                          icon: const Icon(
+                                            Icons.check_circle,
+                                            size: 35,
+                                            color: Colors.green,
+                                          ),
+                                          onPressed: () {
+                                            // --- finish editing path
+                                            setState(() {
+                                              finishEditingPolyline();
+                                            });
+                                          }))
+                              ]),
+                            )),
                         Align(
                             alignment: Alignment.bottomLeft,
                             child: TextButton.icon(
-                              icon: const Icon(
-                                Icons.swap_horizontal_circle,
-                                color: Colors.black,
-                                size: 35,
+                              icon: const CircleAvatar(
+                                backgroundColor: Colors.white,
+                                radius: 35 / 2,
+                                child: Icon(
+                                  Icons.swap_horizontal_circle,
+                                  color: Colors.black,
+                                  size: 35,
+                                ),
                               ),
                               label: const Text("Reverse",
                                   style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),

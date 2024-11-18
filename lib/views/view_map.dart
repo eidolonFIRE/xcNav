@@ -988,37 +988,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         ],
                       )),
 
-                  // --- Measurement (X)
-                  if (focusMode == FocusMode.measurement)
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            "Measure",
-                            style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          IconButton(
-                            iconSize: 40,
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(
-                              Icons.cancel,
-                              size: 40,
-                              color: Colors.red,
-                            ),
-                            onPressed: () => {
-                              setState(() {
-                                measurementPolyline.points.clear();
-                                setFocusMode(prevFocusMode);
-                              })
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                  if (focusMode == FocusMode.addPath ||
+                      focusMode == FocusMode.editPath ||
+                      focusMode == FocusMode.measurement)
                     Align(
                       alignment: Alignment.bottomRight,
                       child: Row(
@@ -1042,42 +1014,56 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               ),
                             ),
                           ),
-                          IconButton(
-                            iconSize: 40,
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(
-                              Icons.cancel,
-                              size: 40,
-                              color: Colors.red,
-                            ),
-                            onPressed: () => {setFocusMode(prevFocusMode)},
-                          ),
-                          if (editablePoints.length > 1)
-                            IconButton(
-                              padding: EdgeInsets.zero,
-                              iconSize: 40,
-                              icon: const Icon(
-                                Icons.check_circle,
-                                size: 40,
-                                color: Colors.green,
+                          Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              maxRadius: 20,
+                              child: IconButton(
+                                iconSize: 40,
+                                padding: EdgeInsets.zero,
+                                icon: const Icon(
+                                  Icons.cancel,
+                                  size: 40,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  measurementPolyline.points.clear();
+                                  setFocusMode(prevFocusMode);
+                                },
                               ),
-                              onPressed: () {
-                                // --- finish editing path
-                                var plan = Provider.of<ActivePlan>(context, listen: false);
-                                if (editingWp == null) {
-                                  var temp = Waypoint(name: "", latlngs: editablePoints.toList());
-                                  editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
-                                      ?.then((newWaypoint) {
-                                    if (newWaypoint != null) {
-                                      plan.updateWaypoint(newWaypoint);
-                                    }
-                                  });
-                                } else {
-                                  plan.moveWaypoint(editingWp!, editablePoints.toList());
-                                  editingWp = null;
-                                }
-                                setFocusMode(prevFocusMode);
-                              },
+                            ),
+                          ),
+                          if (editablePoints.length > 1 && focusMode != FocusMode.measurement)
+                            CircleAvatar(
+                              backgroundColor: Colors.white,
+                              maxRadius: 20,
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                iconSize: 40,
+                                icon: const Icon(
+                                  Icons.check_circle,
+                                  size: 40,
+                                  color: Colors.green,
+                                ),
+                                onPressed: () {
+                                  // --- finish editing path
+                                  var plan = Provider.of<ActivePlan>(context, listen: false);
+                                  if (editingWp == null) {
+                                    var temp = Waypoint(name: "", latlngs: editablePoints.toList());
+                                    editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
+                                        ?.then((newWaypoint) {
+                                      if (newWaypoint != null) {
+                                        plan.updateWaypoint(newWaypoint);
+                                      }
+                                    });
+                                  } else {
+                                    plan.moveWaypoint(editingWp!, editablePoints.toList());
+                                    editingWp = null;
+                                  }
+                                  setFocusMode(prevFocusMode);
+                                },
+                              ),
                             ),
                         ],
                       ),
@@ -1402,7 +1388,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               }),
                               child: Icon(
                                 Icons.cancel,
-                                color: Colors.grey.withAlpha(180),
+                                color: const Color.fromARGB(255, 255, 100, 100).withAlpha(180),
                                 size: 20,
                               ),
                             ))
