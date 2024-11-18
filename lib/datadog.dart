@@ -8,22 +8,20 @@ void error(String message,
     String? errorKind,
     StackTrace? errorStackTrace,
     Map<String, Object?> attributes = const {}}) {
-  DatadogSdk.instance.rum?.addErrorInfo("$message : $errorMessage", RumErrorSource.source,
+  DatadogSdk.instance.rum?.addErrorInfo("$message : ${errorMessage ?? '(report)'}", RumErrorSource.source,
       stackTrace: errorStackTrace, errorType: errorKind, attributes: attributes);
 
   ddLogger?.error(message,
-      errorMessage: error.toString(), errorKind: errorKind, errorStackTrace: errorStackTrace, attributes: attributes);
+      errorMessage: errorMessage, errorKind: errorKind, errorStackTrace: errorStackTrace, attributes: attributes);
   debugPrint("Error: $message : $errorMessage");
 }
 
 void warn(String message,
-    {String? errorMessage,
-    String? errorKind,
-    StackTrace? errorStackTrace,
-    Map<String, Object?> attributes = const {}}) {
-  ddLogger?.warn(message,
-      errorMessage: errorMessage, errorKind: errorKind, errorStackTrace: errorStackTrace, attributes: attributes);
-  debugPrint("Warn: $message : $errorMessage");
+    {String? errorKind, StackTrace? errorStackTrace, Map<String, Object?> attributes = const {}}) {
+  DatadogSdk.instance.rum?.addErrorInfo(message, RumErrorSource.source,
+      stackTrace: errorStackTrace, errorType: errorKind, attributes: attributes);
+  ddLogger?.warn(message, errorKind: errorKind, errorStackTrace: errorStackTrace, attributes: attributes);
+  debugPrint("Warn: $message");
 }
 
 void info(String message,

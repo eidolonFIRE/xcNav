@@ -253,7 +253,7 @@ LatLng? latlngFromJson(Map<String, dynamic> data) {
   if (lat != null && lng != null) {
     return LatLng(lat, lng);
   } else {
-    warn("Couldn't parse latlng", attributes: data);
+    error("Couldn't parse latlng", attributes: data);
     return null;
   }
 }
