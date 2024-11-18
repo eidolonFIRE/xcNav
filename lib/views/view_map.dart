@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
-import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -125,7 +124,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         color: Colors.black,
       ),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
-      callbackRefresh: () => {setState(() {})},
+      callbackRefresh: (_) => {setState(() {})},
     );
 
     measurementEditor = PolyEditor(
@@ -137,7 +136,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         color: Colors.black,
       ),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
-      callbackRefresh: () => {setState(() {})},
+      callbackRefresh: (_) => {setState(() {})},
     );
 
     addAttribute("view_map_focusMode", focusMode.name);
@@ -177,7 +176,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     Geo? geo = Provider.of<MyTelemetry>(context, listen: false).geo;
 
     if (geo != null) {
-      CenterZoom? centerZoom;
+      LatLng? center;
+      double zoom = mapController.camera.zoom;
 
       // --- Orient to gps heading
       if (!settingsMgr.northlockMap.value && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
@@ -185,7 +185,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       }
       // --- Move to center
       if (focusMode == FocusMode.me) {
-        centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.camera.zoom);
+        center = geo.latlng;
       } else if (focusMode == FocusMode.group) {
         List<LatLng> points =
             Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
@@ -199,14 +199,16 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           final camFit =
               CameraFit.bounds(bounds: LatLngBounds.fromPoints(points), padding: const EdgeInsets.all(100), maxZoom: 13)
                   .fit(mapController.camera);
-          centerZoom = CenterZoom(center: camFit.center, zoom: camFit.zoom);
+          center = camFit.center;
+          zoom = camFit.zoom;
         } else {
           // Preserve zoom if it has been recently overriden
-          centerZoom = CenterZoom(center: LatLngBounds.fromPoints(points).center, zoom: mapController.camera.zoom);
+
+          center = LatLngBounds.fromPoints(points).center;
         }
       }
-      if (centerZoom != null) {
-        mapController.move(centerZoom.center, centerZoom.zoom);
+      if (center != null) {
+        mapController.move(center, zoom);
       }
       mapAspectRatio = mapKey.currentContext!.size!.aspectRatio;
     }
@@ -285,6 +287,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     // Hookup the measurement points to the active plan provider.
     Provider.of<ActivePlan>(context, listen: false).mapMeasurement = measurementPolyline.points;
 
+    final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
+
     settingsMgr.mapControlsRightSide.listenable.addListener(() => setState(() {}));
 
     return Container(
@@ -333,7 +337,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         lastSavedLastKnownLatLng = DateTime.now();
                         SharedPreferences.getInstance().then((prefs) {
                           prefs.setString("lastKnownLatLng",
-                              jsonEncode({"lat": mapPosition.center!.latitude, "lng": mapPosition.center!.longitude}));
+                              jsonEncode({"lat": mapPosition.center.latitude, "lng": mapPosition.center.longitude}));
                         });
                       }
 
@@ -373,7 +377,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 polygons.add(Polygon(
                                     points: shape,
                                     color: color.withAlpha(50),
-                                    isFilled: true,
                                     borderColor: color,
                                     borderStrokeWidth: 4));
                               }
@@ -433,40 +436,44 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ),
 
                     // Waypoints: paths
-                    TappablePolylineLayer(
-                        enabled: focusMode != FocusMode.measurement,
-                        pointerDistanceTolerance: 30,
-                        polylineCulling: true,
+                    GestureDetector(
+                      onTap: () {
+                        final p0 = polylineHit.value?.hitValues.first;
+                        if (p0 != null && focusMode != FocusMode.measurement) {
+                          final wp = plan.waypoints[p0];
+                          if (wp != null) {
+                            // Select this path waypoint
+                            if (focusMode != FocusMode.measurement) {
+                              if (plan.selectedWp == p0) {
+                                wp.toggleDirection();
+                              }
+                              plan.selectedWp = p0;
+                            }
+                          }
+                        }
+                      },
+                      onLongPress: (() {
+                        // Start editing path waypoint
+                        final p0 = polylineHit.value?.hitValues.first;
+                        if (p0 != null && focusMode != FocusMode.measurement) {
+                          if (plan.waypoints.containsKey(p0)) {
+                            beginEditingLine(plan.waypoints[p0]!);
+                          }
+                        }
+                      }),
+                      child: PolylineLayer(
+                        hitNotifier: polylineHit,
+                        minimumHitbox: 30,
                         polylines: plan.waypoints.values
                             .where((value) => value.latlng.length > 1)
                             .whereNot(
                               (element) => element.id == editingWp,
                             )
                             .map((e) =>
-                                TaggedPolyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), tag: e.id))
+                                Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), hitValue: e.id))
                             .toList(),
-                        onTap: (lines, tapPosition) {
-                          final p0 = lines.first;
-
-                          // which end is nearer the tap?
-                          final wp = plan.waypoints[p0.tag];
-                          if (wp != null) {
-                            // Select this path waypoint
-                            if (focusMode != FocusMode.measurement) {
-                              if (plan.selectedWp == p0.tag) {
-                                wp.toggleDirection();
-                              }
-                              plan.selectedWp = p0.tag;
-                            }
-                          }
-                        },
-                        onLongPress: ((lines, tapPosition) {
-                          // Start editing path waypoint
-                          final p0 = lines.first;
-                          if (plan.waypoints.containsKey(p0.tag)) {
-                            beginEditingLine(plan.waypoints[p0.tag]!);
-                          }
-                        })),
+                      ),
+                    ),
 
                     // Next waypoint: barbs
                     if (Provider.of<MyTelemetry>(context, listen: false).geo != null)

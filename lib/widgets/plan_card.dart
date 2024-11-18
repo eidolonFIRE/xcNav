@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:provider/provider.dart';
 
 // --- Dialogs
@@ -132,6 +131,7 @@ class _PlanCardState extends State<PlanCard> {
 
   @override
   Widget build(BuildContext context) {
+    final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -317,27 +317,31 @@ class _PlanCardState extends State<PlanCard> {
                         getMapTileLayer(MapTileSrc.topo),
 
                         // Flight plan paths - Polyline
-                        TappablePolylineLayer(
-                          polylines: widget.plan.waypoints.values
-                              .where(
-                                (element) => element.isPath,
-                              )
-                              .map((e) => TaggedPolyline(
-                                  points: e.latlng,
-                                  tag: e.id,
-                                  strokeWidth: checkedElements.contains(e.id) ? 6.0 : 3.0,
-                                  color: e.getColor()))
-                              .toList(),
-                          onTap: (lines, tapPosition) {
-                            final p0 = lines.first;
-                            if (p0.tag != null) {
+                        GestureDetector(
+                          onTap: () {
+                            final p0 = polylineHit.value?.hitValues.first;
+
+                            if (p0 != null) {
                               setState(
                                 () {
-                                  toggleItem(p0.tag!);
+                                  toggleItem(p0);
                                 },
                               );
                             }
                           },
+                          child: PolylineLayer(
+                            hitNotifier: polylineHit,
+                            polylines: widget.plan.waypoints.values
+                                .where(
+                                  (element) => element.isPath,
+                                )
+                                .map((e) => Polyline(
+                                    points: e.latlng,
+                                    hitValue: e.id,
+                                    strokeWidth: checkedElements.contains(e.id) ? 6.0 : 3.0,
+                                    color: e.getColor()))
+                                .toList(),
+                          ),
                         ),
 
                         // Waypoint Markers

@@ -39,11 +39,8 @@ dependencies:
   http: any
   intl: any
   
-  flutter_map: ^6.0.0
+  flutter_map: ^7.0.0
   flutter_map_tile_caching: ^9.0.0
-  flutter_map_tappable_polyline:
-    git:
-      url: git@github.com:eidolonFIRE/flutter_map_tappable_polyline.git
   flutter_map_dragmarker: any
   flutter_map_line_editor: any
 
@@ -58,7 +55,7 @@ dependencies:
   path_provider: ^2.0.9
   flutter_svg: ^2.0.9
   geolocator: ^13.0.1
-  flutter_local_notifications: ^17.1.2
+  flutter_local_notifications: ^18.0.1
   focus_detector: ^2.0.1
   file_picker: ^8.0.3
   xml: ^6.1.0
@@ -80,7 +77,7 @@ dependencies:
   flutter_speed_dial: ^7.0.0
   flutter_colorpicker: ^1.0.3
   screenshot: ^3.0.0
-  fl_chart: ^0.68.0
+  fl_chart: ^0.69.0
   datadog_flutter_plugin: ^2.1.0
   flutter_native_splash: ^2.2.18
   clock: ^1.1.1

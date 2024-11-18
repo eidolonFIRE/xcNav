@@ -653,7 +653,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Polyline buildFlightTrace() {
-    return Polyline(points: flightTrace, strokeWidth: 4, color: const Color.fromARGB(150, 255, 50, 50), isDotted: true);
+    return Polyline(
+        points: flightTrace,
+        strokeWidth: 4,
+        color: const Color.fromARGB(150, 255, 50, 50),
+        pattern: const StrokePattern.dotted());
   }
 
   List<Geo> getHistory(DateTime oldest, {Duration? interval}) {

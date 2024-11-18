@@ -557,7 +557,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                                 Polyline(
                                                                     points: routePoints!,
                                                                     color: Colors.black,
-                                                                    isDotted: true,
+                                                                    pattern: const StrokePattern.dotted(),
                                                                     strokeWidth: 4),
                                                               ],
                                                             ),

@@ -57,7 +57,8 @@ class _ScanScreenState extends State<ScanScreen> {
 
   Future onScanPressed() async {
     try {
-      _systemDevices = await FlutterBluePlus.systemDevices;
+      // TODO: fix ble
+      // _systemDevices = await FlutterBluePlus.systemDevices();
     } catch (e) {
       SnackbarTools.show(ABC.b, prettyException("System Devices Error:", e), success: false);
     }

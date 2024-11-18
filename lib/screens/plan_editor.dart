@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
-import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:collection/collection.dart';
@@ -77,7 +76,7 @@ class _PlanEditorState extends State<PlanEditor> {
         color: Colors.black,
       ),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 12, color: Colors.black),
-      callbackRefresh: () => {setState(() {})},
+      callbackRefresh: (_) => {setState(() {})},
     );
   }
 
@@ -176,8 +175,11 @@ class _PlanEditorState extends State<PlanEditor> {
     final center = Provider.of<MyTelemetry>(context, listen: false).geo ?? defaultGeo;
     final defaultMapBounds =
         padLatLngBounds(LatLngBounds.fromPoints([center.latlng, LatLng(center.lat, center.lng + 0.05)]), 2);
+
+    final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
+
     return PopScope(
-      onPopInvoked: (_) {
+      onPopInvokedWithResult: (_, __) {
         Provider.of<Plans>(context, listen: false).setPlan(plan!);
       },
       child: Scaffold(
@@ -223,32 +225,33 @@ class _PlanEditorState extends State<PlanEditor> {
                       ),
                       children: [
                         Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
-                        // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        //   getMapTileLayer(MapTileSrc.airspace),
-                        // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        //   getMapTileLayer(MapTileSrc.airports),
 
                         // Flight plan markers
-                        TappablePolylineLayer(
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedWp = polylineHit.value?.hitValues.first;
+                            });
+                          },
+                          onLongPress: () {
+                            final key = polylineHit.value?.hitValues.first;
+                            if (plan!.waypoints.containsKey(key)) {
+                              beginEditingLine(plan!.waypoints[key]!);
+                            }
+                          },
+                          child: PolylineLayer(
+                            hitNotifier: polylineHit,
                             polylines: plan!.waypoints.values
                                 .where((value) => value.isPath)
                                 .whereNot((element) => element.id == editingWp)
-                                .map((e) => TaggedPolyline(
-                                    tag: e.id,
+                                .map((e) => Polyline(
+                                    hitValue: e.id,
                                     points: e.latlng,
                                     strokeWidth: e.id == selectedWp ? 8.0 : 4.0,
                                     color: e.getColor()))
                                 .toList(),
-                            onTap: (lines, tapPosition) {
-                              setState(() {
-                                selectedWp = lines.first.tag;
-                              });
-                            },
-                            onLongPress: (lines, tapPosition) {
-                              if (plan!.waypoints.containsKey(lines.first.tag)) {
-                                beginEditingLine(plan!.waypoints[lines.first.tag]!);
-                              }
-                            }),
+                          ),
+                        ),
 
                         // Waypoint markers
                         MarkerLayer(

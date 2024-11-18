@@ -174,17 +174,17 @@ class ActivePlan with ChangeNotifier {
         case MapTileSrc.sectional:
           return [
             Polyline(points: points, color: const Color.fromARGB(180, 255, 0, 255), strokeWidth: 20),
-            Polyline(points: points, color: Colors.black, strokeWidth: 4, isDotted: true),
+            Polyline(points: points, color: Colors.black, strokeWidth: 4, pattern: const StrokePattern.dotted()),
           ];
         case MapTileSrc.satellite:
           return [
             Polyline(points: points, color: Colors.white70, strokeWidth: 20),
-            Polyline(points: points, color: Colors.black, strokeWidth: 4, isDotted: true),
+            Polyline(points: points, color: Colors.black, strokeWidth: 4, pattern: const StrokePattern.dotted()),
           ];
         default:
           return [
             Polyline(points: points, color: const Color.fromARGB(180, 255, 255, 0), strokeWidth: 20),
-            Polyline(points: points, color: Colors.black, strokeWidth: 4, isDotted: true),
+            Polyline(points: points, color: Colors.black, strokeWidth: 4, pattern: const StrokePattern.dotted()),
           ];
       }
     }

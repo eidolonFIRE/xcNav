@@ -75,7 +75,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
     final log = logStore.logs[logKey]!;
 
     return PopScope(
-      onPopInvoked: (_) {
+      onPopInvokedWithResult: (_, __) {
         if (log.goodFile && log.unsaved) {
           log.save();
         }
@@ -222,8 +222,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
                       // Waypoints: paths
                       PolylineLayer(
-                        // pointerDistanceTolerance: 30,
-                        polylineCulling: true,
                         polylines: log.waypoints
                             .where((value) => value.latlng.length > 1)
                             .map((e) => Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor()))
@@ -249,7 +247,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                             points: log.samples.map((e) => e.latlng).toList(),
                             strokeWidth: 4,
                             color: Colors.red,
-                            isDotted: true)
+                            pattern: const StrokePattern.dotted())
                       ]),
 
                       // --- Fuel reports
