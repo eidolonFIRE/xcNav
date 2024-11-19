@@ -247,43 +247,40 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       MarkerLayer(
                         markers: log.fuelReports
                             .mapIndexed((index, e) => Marker(
-                                alignment: Alignment.topCenter,
+                                alignment: Alignment.topRight,
                                 height: 40,
                                 width: 60,
                                 point: log.samples[log.timeToSampleIndex(e.time)].latlng,
-                                child: Container(
-                                  transform: Matrix4.translationValues(-2, -20, 0),
-                                  child: GestureDetector(
-                                      onTap: () {
+                                child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        sampleIndex.value = log.timeToSampleIndex(e.time);
+                                      });
+                                    },
+                                    onLongPress: () {
+                                      editFuelReport(context, e.time, e.amount).then((newReport) {
                                         setState(() {
-                                          sampleIndex.value = log.timeToSampleIndex(e.time);
-                                        });
-                                      },
-                                      onLongPress: () {
-                                        editFuelReport(context, e.time, e.amount).then((newReport) {
-                                          setState(() {
-                                            if (newReport != null) {
-                                              if (newReport.amount == 0 && newReport.time.millisecondsSinceEpoch == 0) {
-                                                // Report was deleted
-                                                log.removeFuelReport(index);
-                                              } else {
-                                                // Edit fuel report amount
-                                                log.updateFuelReport(index, newReport.amount);
-                                              }
+                                          if (newReport != null) {
+                                            if (newReport.amount == 0 && newReport.time.millisecondsSinceEpoch == 0) {
+                                              // Report was deleted
+                                              log.removeFuelReport(index);
+                                            } else {
+                                              // Edit fuel report amount
+                                              log.updateFuelReport(index, newReport.amount);
                                             }
-                                          });
+                                          }
                                         });
-                                      },
+                                      });
+                                    },
 
-                                      // Fuel Report Marker
-                                      child: LabelFlag(
-                                          direction: TextDirection.ltr,
-                                          text: Text.rich(
-                                            richValue(UnitType.fuel, e.amount, decimals: 1),
-                                            style: const TextStyle(color: Colors.white),
-                                          ),
-                                          color: Colors.blue)),
-                                )))
+                                    // Fuel Report Marker
+                                    child: LabelFlag(
+                                        direction: TextDirection.ltr,
+                                        text: Text.rich(
+                                          richValue(UnitType.fuel, e.amount, decimals: 1),
+                                          style: const TextStyle(color: Colors.white),
+                                        ),
+                                        color: Colors.blue))))
                             .toList(),
                       ),
 
