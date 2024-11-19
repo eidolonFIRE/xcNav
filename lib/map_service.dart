@@ -34,7 +34,7 @@ TileProvider? _makeTileProvider(String instanceName) {
   }
 }
 
-Map<MapTileSrc, TileLayer> _tileLayersCache = {};
+final Map<MapTileSrc, TileLayer> _tileLayersCache = {};
 
 bool _fetchingVfrVersion = false;
 String? _vfrVersion;
