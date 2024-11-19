@@ -200,7 +200,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       onMapReady: () {
                         setState(() {
                           mapReady = true;
-                          mapController.fitCamera(CameraFit.bounds(bounds: log.getBounds()));
                         });
                       },
                       interactionOptions: InteractionOptions(
@@ -213,12 +212,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     ),
                     children: [
                       Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
-
-                      // Airspace overlay
-                      // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                      //   getMapTileLayer(MapTileSrc.airspace),
-                      // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                      //   getMapTileLayer(MapTileSrc.airports),
 
                       // Waypoints: paths
                       PolylineLayer(
