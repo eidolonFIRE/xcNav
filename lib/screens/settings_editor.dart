@@ -269,6 +269,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                   items: const [
                                                     DropdownMenuItem(value: DisplayUnitsFuel.liter, child: Text("L")),
                                                     DropdownMenuItem(value: DisplayUnitsFuel.gal, child: Text("Gal")),
+                                                    DropdownMenuItem(value: DisplayUnitsFuel.kWh, child: Text("kWh")),
                                                   ]);
                                               break;
                                             case "AltimeterMode":
