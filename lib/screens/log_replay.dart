@@ -34,6 +34,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   bool mapReady = false;
   bool northLock = true;
   MapTileSrc mapTileSrc = MapTileSrc.topo;
+  bool hideWaypoints = false;
   double mapOpacity = 1.0;
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
 
@@ -214,25 +215,27 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
 
                       // Waypoints: paths
-                      PolylineLayer(
-                        polylines: log.waypoints
-                            .where((value) => value.latlng.length > 1)
-                            .map((e) => Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor()))
-                            .toList(),
-                      ),
+                      if (!hideWaypoints)
+                        PolylineLayer(
+                          polylines: log.waypoints
+                              .where((value) => value.latlng.length > 1)
+                              .map((e) => Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor()))
+                              .toList(),
+                        ),
 
                       // Waypoint markers
-                      MarkerLayer(
-                          markers: log.waypoints
-                              .where((e) => e.latlng.length == 1)
-                              .map((e) => Marker(
-                                  point: e.latlng[0],
-                                  height: 60 * 0.8,
-                                  width: 40 * 0.8,
-                                  rotate: true,
-                                  alignment: Alignment.topCenter,
-                                  child: WaypointMarker(e, 60 * 0.8)))
-                              .toList()),
+                      if (!hideWaypoints)
+                        MarkerLayer(
+                            markers: log.waypoints
+                                .where((e) => e.latlng.length == 1)
+                                .map((e) => Marker(
+                                    point: e.latlng[0],
+                                    height: 60 * 0.8,
+                                    width: 40 * 0.8,
+                                    rotate: true,
+                                    alignment: Alignment.topCenter,
+                                    child: WaypointMarker(e, 60 * 0.8)))
+                                .toList()),
 
                       // --- Log Line
                       PolylineLayer(polylines: [
@@ -284,7 +287,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                             .toList(),
                       ),
 
-                      // "ME" Live Location Marker
+                      // "ME" Location Marker
                       ValueListenableBuilder<int>(
                           valueListenable: sampleIndex,
                           builder: (context, value, _) {
@@ -316,6 +319,12 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                             isMapDialOpen: isMapDialOpen,
                             curLayer: mapTileSrc,
                             curOpacity: mapOpacity,
+                            hideWaypoints: hideWaypoints,
+                            onChangedWaypoints: (hidden) {
+                              setState(() {
+                                hideWaypoints = hidden;
+                              });
+                            },
                             onChanged: ((layerName, opacity) {
                               setState(() {
                                 mapTileSrc = layerName;

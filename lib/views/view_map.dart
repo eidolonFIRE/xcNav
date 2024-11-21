@@ -99,6 +99,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   final measurementPolyline = Polyline(color: Colors.orange, points: [], strokeWidth: 8);
 
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
+  bool hideWaypoints = false;
 
   DateTime? lastSavedLastKnownLatLng;
 
@@ -355,14 +356,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         opacity: settingsMgr.mainMapOpacity.value,
                         child: getMapTileLayer(settingsMgr.mainMapTileSrc.value)),
 
-                    // Airspace overlay
-                    // if (settingsMgr.showAirspaceOverlay.value &&
-                    //     settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                    //   getMapTileLayer(MapTileSrc.airspace),
-                    // if (settingsMgr.showAirspaceOverlay.value &&
-                    //     settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                    //   getMapTileLayer(MapTileSrc.airports),
-
                     // TFRs
                     FutureBuilder<List<TFR>?>(
                         future:
@@ -436,44 +429,45 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ),
 
                     // Waypoints: paths
-                    GestureDetector(
-                      onTap: () {
-                        final p0 = polylineHit.value?.hitValues.first;
-                        if (p0 != null && focusMode != FocusMode.measurement) {
-                          final wp = plan.waypoints[p0];
-                          if (wp != null) {
-                            // Select this path waypoint
-                            if (focusMode != FocusMode.measurement) {
-                              if (plan.selectedWp == p0) {
-                                wp.toggleDirection();
+                    if (!hideWaypoints)
+                      GestureDetector(
+                        onTap: () {
+                          final p0 = polylineHit.value?.hitValues.first;
+                          if (p0 != null && focusMode != FocusMode.measurement) {
+                            final wp = plan.waypoints[p0];
+                            if (wp != null) {
+                              // Select this path waypoint
+                              if (focusMode != FocusMode.measurement) {
+                                if (plan.selectedWp == p0) {
+                                  wp.toggleDirection();
+                                }
+                                plan.selectedWp = p0;
                               }
-                              plan.selectedWp = p0;
                             }
                           }
-                        }
-                      },
-                      onLongPress: (() {
-                        // Start editing path waypoint
-                        final p0 = polylineHit.value?.hitValues.first;
-                        if (p0 != null && focusMode != FocusMode.measurement) {
-                          if (plan.waypoints.containsKey(p0)) {
-                            beginEditingLine(plan.waypoints[p0]!);
+                        },
+                        onLongPress: (() {
+                          // Start editing path waypoint
+                          final p0 = polylineHit.value?.hitValues.first;
+                          if (p0 != null && focusMode != FocusMode.measurement) {
+                            if (plan.waypoints.containsKey(p0)) {
+                              beginEditingLine(plan.waypoints[p0]!);
+                            }
                           }
-                        }
-                      }),
-                      child: PolylineLayer(
-                        hitNotifier: polylineHit,
-                        minimumHitbox: 30,
-                        polylines: plan.waypoints.values
-                            .where((value) => value.latlng.length > 1)
-                            .whereNot(
-                              (element) => element.id == editingWp,
-                            )
-                            .map((e) =>
-                                Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), hitValue: e.id))
-                            .toList(),
+                        }),
+                        child: PolylineLayer(
+                          hitNotifier: polylineHit,
+                          minimumHitbox: 30,
+                          polylines: plan.waypoints.values
+                              .where((value) => value.latlng.length > 1)
+                              .whereNot(
+                                (element) => element.id == editingWp,
+                              )
+                              .map((e) =>
+                                  Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), hitValue: e.id))
+                              .toList(),
+                        ),
                       ),
-                    ),
 
                     // Next waypoint: barbs
                     if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
@@ -495,35 +489,36 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               .toList()),
 
                     // Waypoint markers
-                    MarkerLayer(
-                      markers: plan.waypoints.values
-                          .where((e) => e.latlng.length == 1 && e.id != editingWp)
-                          .map((e) => Marker(
-                              point: e.latlng[0],
-                              height: 60 * 0.8,
-                              width: 40 * 0.8,
-                              rotate: true,
-                              alignment: Alignment.topCenter,
-                              child: GestureDetector(
-                                onTap: () {
-                                  if (focusMode == FocusMode.measurement) {
-                                    measurementEditor.add(measurementPolyline.points, e.latlng.first);
-                                  } else {
-                                    plan.selectedWp = e.id;
-                                  }
-                                },
-                                onLongPress: () {
-                                  if (!e.ephemeral) {
-                                    setState(() {
-                                      editingWp = e.id;
-                                      draggingLatLng = null;
-                                    });
-                                  }
-                                },
-                                child: WaypointMarker(e, 60 * 0.8),
-                              )))
-                          .toList(),
-                    ),
+                    if (!hideWaypoints)
+                      MarkerLayer(
+                        markers: plan.waypoints.values
+                            .where((e) => e.latlng.length == 1 && e.id != editingWp)
+                            .map((e) => Marker(
+                                point: e.latlng[0],
+                                height: 60 * 0.8,
+                                width: 40 * 0.8,
+                                rotate: true,
+                                alignment: Alignment.topCenter,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    if (focusMode == FocusMode.measurement) {
+                                      measurementEditor.add(measurementPolyline.points, e.latlng.first);
+                                    } else {
+                                      plan.selectedWp = e.id;
+                                    }
+                                  },
+                                  onLongPress: () {
+                                    if (!e.ephemeral) {
+                                      setState(() {
+                                        editingWp = e.id;
+                                        draggingLatLng = null;
+                                      });
+                                    }
+                                  },
+                                  child: WaypointMarker(e, 60 * 0.8),
+                                )))
+                            .toList(),
+                      ),
 
                     // Measurement: yellow line
                     if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
@@ -1413,6 +1408,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 isMapDialOpen: isMapDialOpen,
                 curLayer: settingsMgr.mainMapTileSrc.value,
                 curOpacity: settingsMgr.mainMapOpacity.value,
+                hideWaypoints: hideWaypoints,
+                onChangedWaypoints: (hidden) {
+                  setState(() {
+                    hideWaypoints = hidden;
+                  });
+                },
                 onChanged: (layer, opacity) {
                   setState(() {
                     settingsMgr.mainMapTileSrc.value = layer;
