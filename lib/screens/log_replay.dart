@@ -50,7 +50,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 4, vsync: this);
+    tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -462,6 +462,12 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
             /// ------------------------------------
             Expanded(
               child: TabBarView(physics: const NeverScrollableScrollPhysics(), controller: tabController, children: [
+                // --- Summary
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                  child: LogSummary(log: log),
+                ),
+
                 // --- Elevation Plot
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -523,10 +529,81 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                   }),
                 ),
 
-                // --- Summary
+                // --- G-force timeline
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                  child: LogSummary(log: log),
+                  padding: const EdgeInsets.all(8.0),
+                  child: Builder(builder: (context) {
+                    final samples = log.samples.where((a) => a.gForce != null);
+
+                    if (samples.isNotEmpty) {
+                      final max = log.maxG()!;
+                      final maxInt = max.round() + 1;
+                      final sustained = log.maxGSustained()!;
+                      return LineChart(LineChartData(
+                          minY: 0,
+                          maxY: maxInt.toDouble(),
+                          extraLinesData: ExtraLinesData(horizontalLines: [
+                            if (max > 1.5)
+                              HorizontalLine(
+                                  label: HorizontalLineLabel(
+                                    show: true,
+                                    labelResolver: (p0) => "Max ${max.toStringAsFixed(1)}G",
+                                  ),
+                                  y: max,
+                                  color: Colors.white,
+                                  strokeWidth: 1),
+                            if (sustained > 1.5)
+                              HorizontalLine(
+                                  label: HorizontalLineLabel(
+                                    show: true,
+                                    labelResolver: (p0) => "Sustained ${sustained.toStringAsFixed(1)}G for 10s",
+                                  ),
+                                  y: sustained,
+                                  color: Colors.white,
+                                  strokeWidth: 1)
+                          ]),
+                          borderData: FlBorderData(show: false),
+                          lineBarsData: [
+                            LineChartBarData(
+                                spots: samples.map((a) => FlSpot(a.time.toDouble(), a.gForce!)).toList(),
+                                isCurved: false,
+                                barWidth: 1,
+                                color: Colors.white,
+                                dotData: const FlDotData(show: false),
+                                aboveBarData:
+                                    BarAreaData(color: Colors.blue, show: true, cutOffY: 1, applyCutOffY: true),
+                                belowBarData: BarAreaData(
+                                    gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        stops: [1 / maxInt, 3 / maxInt, 7 / maxInt],
+                                        colors: const [Colors.green, Colors.amber, Colors.red]),
+                                    show: true,
+                                    color: Colors.amber,
+                                    cutOffY: 1,
+                                    applyCutOffY: true))
+                          ],
+                          lineTouchData: const LineTouchData(enabled: false),
+                          gridData: const FlGridData(
+                              drawVerticalLine: false, drawHorizontalLine: true, horizontalInterval: 2),
+                          titlesData: const FlTitlesData(
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            topTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(interval: 1, showTitles: true),
+                            ),
+                          )));
+                    } else {
+                      return const Center(child: Text("No Data"));
+                    }
+                  }),
                 ),
 
                 // --- Fuel
@@ -601,13 +678,14 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
               ]),
             ),
 
-            TabBar(controller: tabController, tabs: const [
+            TabBar(labelPadding: const EdgeInsets.all(0), controller: tabController, tabs: const [
+              Tab(icon: Icon(Icons.info), text: "Summary"),
               Tab(
                 icon: Icon(Icons.area_chart),
                 text: "Altitude",
               ),
               Tab(icon: Icon(Icons.speed), text: "Speed"),
-              Tab(icon: Icon(Icons.info), text: "Summary"),
+              Tab(icon: Icon(Icons.g_mobiledata), text: "G force"),
               Tab(icon: Icon(Icons.local_gas_station), text: "Fuel"),
             ]),
           ],

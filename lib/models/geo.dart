@@ -42,17 +42,29 @@ class Geo {
   /// meters/sec
   double varioSmooth = 0;
 
+  /// G-force magnitude (1.0 is neutral, 0 is freefall)
+  double? gForce;
+
   LatLng get latlng => LatLng(lat, lng);
 
-  Geo({this.lat = 0, this.lng = 0, this.alt = 0, int? timestamp, this.hdg = 0, this.spd = 0, this.vario = 0}) {
+  Geo(
+      {this.lat = 0,
+      this.lng = 0,
+      this.alt = 0,
+      int? timestamp,
+      this.hdg = 0,
+      this.spd = 0,
+      this.vario = 0,
+      this.gForce}) {
     time = timestamp ?? DateTime.now().millisecondsSinceEpoch;
   }
 
-  Geo.fromPosition(Position location, Geo? prev, BarometerEvent? baro, BarometerEvent? baroAmbient) {
+  Geo.fromPosition(Position location, Geo? prev, BarometerEvent? baro, BarometerEvent? baroAmbient, double? gForceNew) {
     lat = location.latitude;
     lng = location.longitude;
     time = location.timestamp.millisecondsSinceEpoch;
     altGps = location.altitude;
+    gForce = gForceNew;
 
     if (prev != null && prev.time < time) {
       // prefer our own calculations
@@ -160,6 +172,9 @@ class Geo {
     if (ground != null) {
       dict["ground"] = ground!;
     }
+    if (gForce != null) {
+      dict["gForce"] = gForce!;
+    }
     return dict;
   }
 
@@ -172,5 +187,6 @@ class Geo {
     spd = parseAsDouble(data["spd"]) ?? 0;
     vario = parseAsDouble(data["vario"]) ?? 0;
     ground = parseAsDouble(data["ground"]);
+    gForce = parseAsDouble(data["gForce"]);
   }
 }
