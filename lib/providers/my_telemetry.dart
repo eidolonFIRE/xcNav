@@ -78,6 +78,18 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Latest Barometric Reading
   BarometerEvent? baro;
 
+  /// Latest IMU reading
+  double? gForce;
+
+  /// Microseconds since last sensor reading
+  int gForcePrevTimestamp = 0;
+  double gForceX = 0;
+  double gForceY = 0;
+  double gForceZ = 0;
+
+  /// Microseconds since last sample of `gForce`
+  int gForceCounter = 0;
+
   /// Ambient barometric reading fetched from web API
   BarometerEvent? baroAmbient;
   bool baroAmbientRequested = false;
@@ -88,6 +100,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   double? ambientTemperature;
 
   StreamSubscription<BarometerEvent>? listenBaro;
+  StreamSubscription<AccelerometerEvent>? listenIMU;
 
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
   Stream<Position>? positionStream;
@@ -152,10 +165,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   MyTelemetry() {
     WidgetsBinding.instance.addObserver(this);
     _startBaroService();
+    _startIMUService();
   }
 
   void init() {
     debugPrint("Init /MyTelemetry");
+
+    gForcePrevTimestamp = clock.now().millisecondsSinceEpoch;
 
     assert(globalContext != null, "globalContext in MyTelemetry instance hasn't been set yet!");
 
@@ -186,6 +202,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         if (timer == null) {
           // --- Spoof Location / Disable Baro
           listenBaro?.cancel();
+          listenIMU?.cancel();
           if (positionStreamStarted) {
             positionStreamStarted = !positionStreamStarted;
             _toggleListening(globalContext!);
@@ -252,6 +269,33 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   void _startBaroService() {
     listenBaro = barometerEventStream().listen((event) {
       baro = event;
+    });
+  }
+
+  void _startIMUService() {
+    listenIMU = accelerometerEventStream().listen((event) {
+      // Microsecond interval since last sample
+      // On android (Samsung S21) this was measured at 9602us. Configuring API to slow it down had no effect.
+      final interval = event.timestamp.microsecondsSinceEpoch - gForcePrevTimestamp;
+
+      // Rolling weighted average
+      final weight = pow(e, -20000.0 / interval);
+      gForceX = gForceX * (1.0 - weight) + event.x * weight;
+      gForceY = gForceY * (1.0 - weight) + event.y * weight;
+      gForceZ = gForceZ * (1.0 - weight) + event.z * weight;
+
+      // To save battery, we will only run heavy calculations every so often
+      gForceCounter += interval;
+      if (gForceCounter > const Duration(milliseconds: 100).inMicroseconds) {
+        gForceCounter = 0;
+
+        // Record max gForce from averaged components
+        // Telemetry will grab `gForce` and reset to null which will restart the maximizer
+        gForce = max(gForce ?? 0, sqrt(pow(gForceX, 2) + pow(gForceY, 2) + pow(gForceZ, 2)) / 9.80665);
+      }
+
+      // mark timer
+      gForcePrevTimestamp = event.timestamp.microsecondsSinceEpoch;
     });
   }
 
@@ -577,7 +621,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   void updateGeo(Position position, {bool bypassRecording = false}) async {
     geoPrev = geo;
-    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
+    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient, gForce);
+
+    // Clear this because it records max
+    gForce = null;
 
     if (geo == null) return;
 

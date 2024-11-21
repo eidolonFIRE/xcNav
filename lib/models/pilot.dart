@@ -73,6 +73,7 @@ class Pilot {
           ),
           geo,
           null,
+          null,
           null);
       flightTrace.add(geo!);
     } else {
