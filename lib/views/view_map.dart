@@ -1093,6 +1093,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             .map(
                               (e) => ChatBubble(
                                 false,
+                                !settingsMgr.mapControlsRightSide.value,
                                 e.text,
                                 AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20),
                                 null,
