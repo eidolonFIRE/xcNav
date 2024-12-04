@@ -30,6 +30,11 @@ TextStyle? resolveSmallerStyle(TextStyle? a, TextStyle? b, {double factor = 0.6}
   }
 }
 
+/// Round to number of digits
+double roundToDigits(double value, double digits) {
+  return (value * pow(10, digits)).round() / pow(10, digits);
+}
+
 /// int, double, or String -> String
 String? parseAsString(dynamic value) {
   if (value is String) return value;

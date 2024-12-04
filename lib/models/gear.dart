@@ -41,10 +41,14 @@ class Gear {
       "frame_make_model": frameMakeModel,
       "engine": engine,
       "prop": prop,
-      "tank_size": tankSize?.toStringAsFixed(2),
-      "blader_size": bladderSize?.toStringAsFixed(2),
       "other": other,
     };
+    if (tankSize != null) {
+      dict["tank_size"] = roundToDigits(tankSize!, 2);
+    }
+    if (bladderSize != null) {
+      dict["bladder_size"] = roundToDigits(bladderSize!, 2);
+    }
     return dict;
   }
 }
