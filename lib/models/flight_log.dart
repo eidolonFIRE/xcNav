@@ -4,24 +4,21 @@ import 'dart:math';
 import 'package:bisection/bisect.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/datadog.dart';
+import 'package:xcnav/log_store.dart';
+import 'package:xcnav/models/gear.dart';
 import 'package:xml/xml.dart';
-import 'package:collection/collection.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 
 import 'package:xcnav/util.dart';
-import 'package:xcnav/units.dart';
-
 import 'package:xcnav/douglas_peucker.dart';
-
-import 'package:xcnav/datadog.dart';
-import 'package:xcnav/log_store.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/models/gear.dart';
+import 'package:xcnav/units.dart';
 import 'package:xcnav/models/fuel_report.dart';
 
 class FlightLog {
@@ -270,38 +267,6 @@ class FlightLog {
   // =========================================
   LatLngBounds getBounds({double pad = 0.2}) {
     return padLatLngBounds(LatLngBounds.fromPoints(samples.map((e) => e.latlng).toList()), pad);
-  }
-
-  /// Peak instantanious G-force recorded
-  double? maxG() {
-    final data = samples.map((a) => a.gForce).whereNotNull();
-    return data.isNotEmpty ? data.max : null;
-  }
-
-  /// G-force sustained for 10 seconds
-  double? maxGSustained() {
-    // Sliding window search
-    final data = samples.where((a) => a.gForce != null).toList();
-    if (data.isNotEmpty) {
-      int left = 0;
-      int right = 0;
-      double max = 0;
-
-      // grow window
-      while (right < data.length) {
-        while (right < data.length && data[right].time < data[left].time + 10000) {
-          right++;
-        }
-        final window = data.sublist(left, right).map((a) => a.gForce!).toList();
-        if (window.min > max) {
-          max = window.min;
-        }
-        left++;
-      }
-      return max;
-    } else {
-      return null;
-    }
   }
 
   void resetFuelStatCache() {
