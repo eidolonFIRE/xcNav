@@ -36,6 +36,7 @@ enum DisplayUnitsDist {
 enum DisplayUnitsFuel {
   liter,
   gal,
+  kWh,
 }
 
 const Map<bool, Map<UnitType, dynamic>> _unitStr = {
@@ -62,6 +63,7 @@ const Map<bool, Map<UnitType, dynamic>> _unitStr = {
     UnitType.fuel: {
       DisplayUnitsFuel.liter: "L",
       DisplayUnitsFuel.gal: "gal",
+      DisplayUnitsFuel.kWh: "kWh",
     }
   },
   true: {
@@ -87,6 +89,7 @@ const Map<bool, Map<UnitType, dynamic>> _unitStr = {
     UnitType.fuel: {
       DisplayUnitsFuel.liter: "liters",
       DisplayUnitsFuel.gal: "gallons",
+      DisplayUnitsFuel.kWh: "kilowatt hours"
     }
   }
 };
@@ -108,7 +111,14 @@ String getUnitStr(UnitType type, {bool lexical = false}) {
   }
 }
 
-String get fuelRateStr => " ${getUnitStr(UnitType.fuel)}/hr";
+String get fuelRateStr {
+  if (_unitFuel == DisplayUnitsFuel.kWh) {
+    return " kW";
+  } else {
+    return " ${getUnitStr(UnitType.fuel)}/hr";
+  }
+}
+
 String get fuelEffStr => " ${getUnitStr(UnitType.distCoarse)}/${getUnitStr(UnitType.fuel)}";
 
 /// Map of converter functions
@@ -199,6 +209,8 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
       case DisplayUnitsFuel.liter:
         unitConverters[UnitType.fuel] = (double value) => value;
         break;
+      case DisplayUnitsFuel.kWh:
+        unitConverters[UnitType.fuel] = (double value) => value;
       default:
         Exception("Unsupported unit");
         break;

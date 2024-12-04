@@ -25,15 +25,16 @@ GA? _decodeTraffic(Uint8List data) {
   final double hdg = data[16] * 360 / 256.0;
   final double spd = ((data[13] << 4) + (data[14] >> 4)) * 0.51444;
 
+  // Default to "heavy"
   GAtype type = GAtype.large;
   final i = data[17];
   if (i == 1 || i == 9 || i == 10) {
     type = GAtype.small;
   } else if (i == 7) {
     type = GAtype.heli;
-  } else {
+  } else if (i > 19 || i == 8 || i == 13 || i == 16) {
     // report some other code
-    error("Unknown ADSB type", attributes: {"id": id, "latlng": LatLng(lat, lng).toString(), "alt": alt, "type": i});
+    warn("Unknown ADSB type", attributes: {"id": id, "latlng": LatLng(lat, lng).toString(), "alt": alt, "type": i});
   }
 
   if (type.index > 0 && type.index < 22 && (lat != 0 || lng != 0) && (lat < 90 && lat > -90)) {

@@ -112,8 +112,10 @@ class ViewChatState extends State<ViewChat> {
                       final reversedIndex = chat.messages.length - 1 - i;
                       Message msg = chat.messages[reversedIndex];
                       Pilot? pilot = Provider.of<Group>(context, listen: false).pilots[msg.pilotId];
+                      final isMe = msg.pilotId == Provider.of<Profile>(context, listen: false).id;
                       return ChatBubble(
-                        msg.pilotId == Provider.of<Profile>(context, listen: false).id,
+                        isMe,
+                        isMe,
                         msg.text,
                         AvatarRound(pilot?.avatar ?? Image.asset("assets/images/default_avatar.png"), 20),
                         Provider.of<Group>(context, listen: false).pilots[msg.pilotId]?.name,

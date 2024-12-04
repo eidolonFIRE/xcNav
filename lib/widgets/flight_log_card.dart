@@ -181,7 +181,6 @@ class FlightLogCard extends StatelessWidget {
 
                     // --- Waypoints: paths
                     PolylineLayer(
-                      polylineCulling: true,
                       polylines: log.waypoints
                           .where((value) => value.latlng.length > 1)
                           .map((e) => Polyline(points: e.latlng, strokeWidth: 3.0, color: e.getColor()))
@@ -206,10 +205,11 @@ class FlightLogCard extends StatelessWidget {
                     // --- Log Line
                     PolylineLayer(polylines: [
                       Polyline(
-                          points: log.samples.map((e) => e.latlng).toList(),
-                          strokeWidth: 4,
-                          color: Colors.red,
-                          isDotted: true)
+                        points: log.samples.map((e) => e.latlng).toList(),
+                        strokeWidth: 4,
+                        color: Colors.red,
+                        pattern: const StrokePattern.dotted(),
+                      )
                     ]),
                   ]),
 

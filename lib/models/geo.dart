@@ -149,16 +149,18 @@ class Geo {
 
   Map<String, num> toJson() {
     final dict = {
-      "lat": lat,
-      "lng": lng,
-      "alt": alt,
+      // 7-dig ~= 1cm precision
+      "lat": roundToDigits(lat, 7),
+      "lng": roundToDigits(lng, 7),
+      // 2-dig ~= 1cm
+      "alt": roundToDigits(alt, 2),
       "time": time,
-      "hdg": hdg,
-      "spd": spd,
-      "vario": vario,
+      "hdg": roundToDigits(hdg, 2),
+      "spd": roundToDigits(spd, 3),
+      "vario": roundToDigits(vario, 3),
     };
     if (ground != null) {
-      dict["ground"] = ground!;
+      dict["ground"] = roundToDigits(ground!, 2);
     }
     return dict;
   }

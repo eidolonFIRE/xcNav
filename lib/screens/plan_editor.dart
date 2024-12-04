@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
-import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:collection/collection.dart';
@@ -77,7 +76,7 @@ class _PlanEditorState extends State<PlanEditor> {
         color: Colors.black,
       ),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 12, color: Colors.black),
-      callbackRefresh: () => {setState(() {})},
+      callbackRefresh: (_) => {setState(() {})},
     );
   }
 
@@ -176,8 +175,11 @@ class _PlanEditorState extends State<PlanEditor> {
     final center = Provider.of<MyTelemetry>(context, listen: false).geo ?? defaultGeo;
     final defaultMapBounds =
         padLatLngBounds(LatLngBounds.fromPoints([center.latlng, LatLng(center.lat, center.lng + 0.05)]), 2);
+
+    final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
+
     return PopScope(
-      onPopInvoked: (_) {
+      onPopInvokedWithResult: (_, __) {
         Provider.of<Plans>(context, listen: false).setPlan(plan!);
       },
       child: Scaffold(
@@ -223,32 +225,33 @@ class _PlanEditorState extends State<PlanEditor> {
                       ),
                       children: [
                         Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
-                        // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        //   getMapTileLayer(MapTileSrc.airspace),
-                        // if (settingsMgr.showAirspaceOverlay.value && mapTileSrc != MapTileSrc.sectional)
-                        //   getMapTileLayer(MapTileSrc.airports),
 
                         // Flight plan markers
-                        TappablePolylineLayer(
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedWp = polylineHit.value?.hitValues.first;
+                            });
+                          },
+                          onLongPress: () {
+                            final key = polylineHit.value?.hitValues.first;
+                            if (plan!.waypoints.containsKey(key)) {
+                              beginEditingLine(plan!.waypoints[key]!);
+                            }
+                          },
+                          child: PolylineLayer(
+                            hitNotifier: polylineHit,
                             polylines: plan!.waypoints.values
                                 .where((value) => value.isPath)
                                 .whereNot((element) => element.id == editingWp)
-                                .map((e) => TaggedPolyline(
-                                    tag: e.id,
+                                .map((e) => Polyline(
+                                    hitValue: e.id,
                                     points: e.latlng,
                                     strokeWidth: e.id == selectedWp ? 8.0 : 4.0,
                                     color: e.getColor()))
                                 .toList(),
-                            onTap: (lines, tapPosition) {
-                              setState(() {
-                                selectedWp = lines.first.tag;
-                              });
-                            },
-                            onLongPress: (lines, tapPosition) {
-                              if (plan!.waypoints.containsKey(lines.first.tag)) {
-                                beginEditingLine(plan!.waypoints[lines.first.tag]!);
-                              }
-                            }),
+                          ),
+                        ),
 
                         // Waypoint markers
                         MarkerLayer(
@@ -431,7 +434,7 @@ class _PlanEditorState extends State<PlanEditor> {
                         Align(
                             alignment: Alignment.bottomCenter,
                             child: Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
+                              padding: const EdgeInsets.only(bottom: 10),
                               child: Card(
                                   color: Colors.amber.shade400,
                                   child: const Padding(
@@ -452,49 +455,66 @@ class _PlanEditorState extends State<PlanEditor> {
                             )),
                         Align(
                             alignment: Alignment.bottomRight,
-                            child: Row(mainAxisSize: MainAxisSize.min, children: [
-                              IconButton(
-                                padding: EdgeInsets.zero,
-                                iconSize: 35,
-                                icon: const Icon(
-                                  Icons.cancel,
-                                  size: 35,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    // --- Cancel editing of path (don't save changes)
-                                    if (editingWp != null && plan!.waypoints[editingWp!]!.latlng.isEmpty) {
-                                      plan!.waypoints.remove(editingWp!);
-                                    }
-                                    editingWp = null;
-                                    setFocusMode(FocusMode.unlocked);
-                                  });
-                                },
-                              ),
-                              if (editablePoints.length > 1)
-                                IconButton(
-                                    padding: EdgeInsets.zero,
-                                    iconSize: 35,
-                                    icon: const Icon(
-                                      Icons.check_circle,
-                                      size: 35,
-                                      color: Colors.green,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 12),
+                                  child: CircleAvatar(
+                                    radius: 35 / 2,
+                                    backgroundColor: Colors.white,
+                                    child: IconButton(
+                                      padding: EdgeInsets.zero,
+                                      iconSize: 35,
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        size: 35,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          // --- Cancel editing of path (don't save changes)
+                                          if (editingWp != null && plan!.waypoints[editingWp!]!.latlng.isEmpty) {
+                                            plan!.waypoints.remove(editingWp!);
+                                          }
+                                          editingWp = null;
+                                          setFocusMode(FocusMode.unlocked);
+                                        });
+                                      },
                                     ),
-                                    onPressed: () {
-                                      // --- finish editing path
-                                      setState(() {
-                                        finishEditingPolyline();
-                                      });
-                                    })
-                            ])),
+                                  ),
+                                ),
+                                if (editablePoints.length > 1)
+                                  CircleAvatar(
+                                      radius: 35 / 2,
+                                      backgroundColor: Colors.white,
+                                      child: IconButton(
+                                          padding: EdgeInsets.zero,
+                                          iconSize: 35,
+                                          icon: const Icon(
+                                            Icons.check_circle,
+                                            size: 35,
+                                            color: Colors.green,
+                                          ),
+                                          onPressed: () {
+                                            // --- finish editing path
+                                            setState(() {
+                                              finishEditingPolyline();
+                                            });
+                                          }))
+                              ]),
+                            )),
                         Align(
                             alignment: Alignment.bottomLeft,
                             child: TextButton.icon(
-                              icon: const Icon(
-                                Icons.swap_horizontal_circle,
-                                color: Colors.black,
-                                size: 35,
+                              icon: const CircleAvatar(
+                                backgroundColor: Colors.white,
+                                radius: 35 / 2,
+                                child: Icon(
+                                  Icons.swap_horizontal_circle,
+                                  color: Colors.black,
+                                  size: 35,
+                                ),
                               ),
                               label: const Text("Reverse",
                                   style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),

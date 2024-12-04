@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
-import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -100,6 +99,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   final measurementPolyline = Polyline(color: Colors.orange, points: [], strokeWidth: 8);
 
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
+  bool hideWaypoints = false;
 
   DateTime? lastSavedLastKnownLatLng;
 
@@ -125,7 +125,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         color: Colors.black,
       ),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
-      callbackRefresh: () => {setState(() {})},
+      callbackRefresh: (_) => {setState(() {})},
     );
 
     measurementEditor = PolyEditor(
@@ -137,7 +137,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         color: Colors.black,
       ),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
-      callbackRefresh: () => {setState(() {})},
+      callbackRefresh: (_) => {setState(() {})},
     );
 
     addAttribute("view_map_focusMode", focusMode.name);
@@ -177,7 +177,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     Geo? geo = Provider.of<MyTelemetry>(context, listen: false).geo;
 
     if (geo != null) {
-      CenterZoom? centerZoom;
+      LatLng? center;
+      double zoom = mapController.camera.zoom;
 
       // --- Orient to gps heading
       if (!settingsMgr.northlockMap.value && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
@@ -185,7 +186,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       }
       // --- Move to center
       if (focusMode == FocusMode.me) {
-        centerZoom = CenterZoom(center: LatLng(geo.lat, geo.lng), zoom: mapController.camera.zoom);
+        center = geo.latlng;
       } else if (focusMode == FocusMode.group) {
         List<LatLng> points =
             Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
@@ -199,14 +200,16 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           final camFit =
               CameraFit.bounds(bounds: LatLngBounds.fromPoints(points), padding: const EdgeInsets.all(100), maxZoom: 13)
                   .fit(mapController.camera);
-          centerZoom = CenterZoom(center: camFit.center, zoom: camFit.zoom);
+          center = camFit.center;
+          zoom = camFit.zoom;
         } else {
           // Preserve zoom if it has been recently overriden
-          centerZoom = CenterZoom(center: LatLngBounds.fromPoints(points).center, zoom: mapController.camera.zoom);
+
+          center = LatLngBounds.fromPoints(points).center;
         }
       }
-      if (centerZoom != null) {
-        mapController.move(centerZoom.center, centerZoom.zoom);
+      if (center != null) {
+        mapController.move(center, zoom);
       }
       mapAspectRatio = mapKey.currentContext!.size!.aspectRatio;
     }
@@ -285,6 +288,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     // Hookup the measurement points to the active plan provider.
     Provider.of<ActivePlan>(context, listen: false).mapMeasurement = measurementPolyline.points;
 
+    final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
+
     settingsMgr.mapControlsRightSide.listenable.addListener(() => setState(() {}));
 
     return Container(
@@ -333,7 +338,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         lastSavedLastKnownLatLng = DateTime.now();
                         SharedPreferences.getInstance().then((prefs) {
                           prefs.setString("lastKnownLatLng",
-                              jsonEncode({"lat": mapPosition.center!.latitude, "lng": mapPosition.center!.longitude}));
+                              jsonEncode({"lat": mapPosition.center.latitude, "lng": mapPosition.center.longitude}));
                         });
                       }
 
@@ -351,14 +356,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         opacity: settingsMgr.mainMapOpacity.value,
                         child: getMapTileLayer(settingsMgr.mainMapTileSrc.value)),
 
-                    // Airspace overlay
-                    // if (settingsMgr.showAirspaceOverlay.value &&
-                    //     settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                    //   getMapTileLayer(MapTileSrc.airspace),
-                    // if (settingsMgr.showAirspaceOverlay.value &&
-                    //     settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional)
-                    //   getMapTileLayer(MapTileSrc.airports),
-
                     // TFRs
                     FutureBuilder<List<TFR>?>(
                         future:
@@ -373,7 +370,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 polygons.add(Polygon(
                                     points: shape,
                                     color: color.withAlpha(50),
-                                    isFilled: true,
                                     borderColor: color,
                                     borderStrokeWidth: 4));
                               }
@@ -433,40 +429,45 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ),
 
                     // Waypoints: paths
-                    TappablePolylineLayer(
-                        enabled: focusMode != FocusMode.measurement,
-                        pointerDistanceTolerance: 30,
-                        polylineCulling: true,
-                        polylines: plan.waypoints.values
-                            .where((value) => value.latlng.length > 1)
-                            .whereNot(
-                              (element) => element.id == editingWp,
-                            )
-                            .map((e) =>
-                                TaggedPolyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), tag: e.id))
-                            .toList(),
-                        onTap: (lines, tapPosition) {
-                          final p0 = lines.first;
-
-                          // which end is nearer the tap?
-                          final wp = plan.waypoints[p0.tag];
-                          if (wp != null) {
-                            // Select this path waypoint
-                            if (focusMode != FocusMode.measurement) {
-                              if (plan.selectedWp == p0.tag) {
-                                wp.toggleDirection();
+                    if (!hideWaypoints)
+                      GestureDetector(
+                        onTap: () {
+                          final p0 = polylineHit.value?.hitValues.first;
+                          if (p0 != null && focusMode != FocusMode.measurement) {
+                            final wp = plan.waypoints[p0];
+                            if (wp != null) {
+                              // Select this path waypoint
+                              if (focusMode != FocusMode.measurement) {
+                                if (plan.selectedWp == p0) {
+                                  wp.toggleDirection();
+                                }
+                                plan.selectedWp = p0;
                               }
-                              plan.selectedWp = p0.tag;
                             }
                           }
                         },
-                        onLongPress: ((lines, tapPosition) {
+                        onLongPress: (() {
                           // Start editing path waypoint
-                          final p0 = lines.first;
-                          if (plan.waypoints.containsKey(p0.tag)) {
-                            beginEditingLine(plan.waypoints[p0.tag]!);
+                          final p0 = polylineHit.value?.hitValues.first;
+                          if (p0 != null && focusMode != FocusMode.measurement) {
+                            if (plan.waypoints.containsKey(p0)) {
+                              beginEditingLine(plan.waypoints[p0]!);
+                            }
                           }
-                        })),
+                        }),
+                        child: PolylineLayer(
+                          hitNotifier: polylineHit,
+                          minimumHitbox: 30,
+                          polylines: plan.waypoints.values
+                              .where((value) => value.latlng.length > 1)
+                              .whereNot(
+                                (element) => element.id == editingWp,
+                              )
+                              .map((e) =>
+                                  Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), hitValue: e.id))
+                              .toList(),
+                        ),
+                      ),
 
                     // Next waypoint: barbs
                     if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
@@ -488,35 +489,36 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               .toList()),
 
                     // Waypoint markers
-                    MarkerLayer(
-                      markers: plan.waypoints.values
-                          .where((e) => e.latlng.length == 1 && e.id != editingWp)
-                          .map((e) => Marker(
-                              point: e.latlng[0],
-                              height: 60 * 0.8,
-                              width: 40 * 0.8,
-                              rotate: true,
-                              alignment: Alignment.topCenter,
-                              child: GestureDetector(
-                                onTap: () {
-                                  if (focusMode == FocusMode.measurement) {
-                                    measurementEditor.add(measurementPolyline.points, e.latlng.first);
-                                  } else {
-                                    plan.selectedWp = e.id;
-                                  }
-                                },
-                                onLongPress: () {
-                                  if (!e.ephemeral) {
-                                    setState(() {
-                                      editingWp = e.id;
-                                      draggingLatLng = null;
-                                    });
-                                  }
-                                },
-                                child: WaypointMarker(e, 60 * 0.8),
-                              )))
-                          .toList(),
-                    ),
+                    if (!hideWaypoints)
+                      MarkerLayer(
+                        markers: plan.waypoints.values
+                            .where((e) => e.latlng.length == 1 && e.id != editingWp)
+                            .map((e) => Marker(
+                                point: e.latlng[0],
+                                height: 60 * 0.8,
+                                width: 40 * 0.8,
+                                rotate: true,
+                                alignment: Alignment.topCenter,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    if (focusMode == FocusMode.measurement) {
+                                      measurementEditor.add(measurementPolyline.points, e.latlng.first);
+                                    } else {
+                                      plan.selectedWp = e.id;
+                                    }
+                                  },
+                                  onLongPress: () {
+                                    if (!e.ephemeral) {
+                                      setState(() {
+                                        editingWp = e.id;
+                                        draggingLatLng = null;
+                                      });
+                                    }
+                                  },
+                                  child: WaypointMarker(e, 60 * 0.8),
+                                )))
+                            .toList(),
+                      ),
 
                     // Measurement: yellow line
                     if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
@@ -981,37 +983,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         ],
                       )),
 
-                  // --- Measurement (X)
-                  if (focusMode == FocusMode.measurement)
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            "Measure",
-                            style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          IconButton(
-                            iconSize: 40,
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(
-                              Icons.cancel,
-                              size: 40,
-                              color: Colors.red,
-                            ),
-                            onPressed: () => {
-                              setState(() {
-                                measurementPolyline.points.clear();
-                                setFocusMode(prevFocusMode);
-                              })
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                  if (focusMode == FocusMode.addPath ||
+                      focusMode == FocusMode.editPath ||
+                      focusMode == FocusMode.measurement)
                     Align(
                       alignment: Alignment.bottomRight,
                       child: Row(
@@ -1035,42 +1009,56 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               ),
                             ),
                           ),
-                          IconButton(
-                            iconSize: 40,
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(
-                              Icons.cancel,
-                              size: 40,
-                              color: Colors.red,
-                            ),
-                            onPressed: () => {setFocusMode(prevFocusMode)},
-                          ),
-                          if (editablePoints.length > 1)
-                            IconButton(
-                              padding: EdgeInsets.zero,
-                              iconSize: 40,
-                              icon: const Icon(
-                                Icons.check_circle,
-                                size: 40,
-                                color: Colors.green,
+                          Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              maxRadius: 20,
+                              child: IconButton(
+                                iconSize: 40,
+                                padding: EdgeInsets.zero,
+                                icon: const Icon(
+                                  Icons.cancel,
+                                  size: 40,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  measurementPolyline.points.clear();
+                                  setFocusMode(prevFocusMode);
+                                },
                               ),
-                              onPressed: () {
-                                // --- finish editing path
-                                var plan = Provider.of<ActivePlan>(context, listen: false);
-                                if (editingWp == null) {
-                                  var temp = Waypoint(name: "", latlngs: editablePoints.toList());
-                                  editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
-                                      ?.then((newWaypoint) {
-                                    if (newWaypoint != null) {
-                                      plan.updateWaypoint(newWaypoint);
-                                    }
-                                  });
-                                } else {
-                                  plan.moveWaypoint(editingWp!, editablePoints.toList());
-                                  editingWp = null;
-                                }
-                                setFocusMode(prevFocusMode);
-                              },
+                            ),
+                          ),
+                          if (editablePoints.length > 1 && focusMode != FocusMode.measurement)
+                            CircleAvatar(
+                              backgroundColor: Colors.white,
+                              maxRadius: 20,
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                iconSize: 40,
+                                icon: const Icon(
+                                  Icons.check_circle,
+                                  size: 40,
+                                  color: Colors.green,
+                                ),
+                                onPressed: () {
+                                  // --- finish editing path
+                                  var plan = Provider.of<ActivePlan>(context, listen: false);
+                                  if (editingWp == null) {
+                                    var temp = Waypoint(name: "", latlngs: editablePoints.toList());
+                                    editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
+                                        ?.then((newWaypoint) {
+                                      if (newWaypoint != null) {
+                                        plan.updateWaypoint(newWaypoint);
+                                      }
+                                    });
+                                  } else {
+                                    plan.moveWaypoint(editingWp!, editablePoints.toList());
+                                    editingWp = null;
+                                  }
+                                  setFocusMode(prevFocusMode);
+                                },
+                              ),
                             ),
                         ],
                       ),
@@ -1105,6 +1093,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             .map(
                               (e) => ChatBubble(
                                 false,
+                                !settingsMgr.mapControlsRightSide.value,
                                 e.text,
                                 AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20),
                                 null,
@@ -1395,7 +1384,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               }),
                               child: Icon(
                                 Icons.cancel,
-                                color: Colors.grey.withAlpha(180),
+                                color: const Color.fromARGB(255, 255, 100, 100).withAlpha(180),
                                 size: 20,
                               ),
                             ))
@@ -1420,6 +1409,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 isMapDialOpen: isMapDialOpen,
                 curLayer: settingsMgr.mainMapTileSrc.value,
                 curOpacity: settingsMgr.mainMapOpacity.value,
+                hideWaypoints: hideWaypoints,
+                onChangedWaypoints: (hidden) {
+                  setState(() {
+                    hideWaypoints = hidden;
+                  });
+                },
                 onChanged: (layer, opacity) {
                   setState(() {
                     settingsMgr.mainMapTileSrc.value = layer;

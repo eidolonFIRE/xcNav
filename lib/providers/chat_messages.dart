@@ -17,6 +17,7 @@ class ChatMessages with ChangeNotifier {
   void markAllRead(bool refresh) {
     chatLastOpened = DateTime.now().millisecondsSinceEpoch;
     numUnread = 0;
+    tryClearAll();
     if (refresh) notifyListeners();
   }
 

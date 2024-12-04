@@ -20,7 +20,7 @@ class MockFlutterTts extends Mock implements FlutterTts {
   Completer<void>? completer = Completer();
 
   @override
-  Future<dynamic> speak(String text) async {
+  Future<dynamic> speak(String text, {bool? focus}) async {
     // print("TTS: Speak: $text");
     return completer!.future;
   }

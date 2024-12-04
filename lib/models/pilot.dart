@@ -151,6 +151,6 @@ class Pilot {
         points: flightTrace.map((e) => e.latlng).toList().sublist(max(0, flightTrace.length - 60)),
         strokeWidth: 4,
         color: color.withAlpha(150),
-        isDotted: true);
+        pattern: const StrokePattern.dotted());
   }
 }

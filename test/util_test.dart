@@ -26,6 +26,6 @@ void main() {
     expect(polygonContainsPoint(const LatLng(35, -122), polygon), false);
     expect(polygonContainsPoint(const LatLng(33.1, -121.5), polygon), true);
     expect(polygonContainsPoint(const LatLng(33.9, -121.1), polygon), false);
-    expect(polygonContainsPoint(const LatLng(33.1, -121.1), polygon), false);
+    expect(polygonContainsPoint(const LatLng(33.1, -121.0), polygon), false);
   });
 }

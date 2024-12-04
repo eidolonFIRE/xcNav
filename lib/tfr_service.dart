@@ -141,11 +141,11 @@ Future<List<TFR?>?> _fetchTfrs(LatLng center) async {
             return;
           } catch (err, trace) {
             final msg = "Couldn't parse TFR: ${tfrUri.toString()}";
-            warn(msg,
+            error(msg,
                 errorMessage: err.toString(), errorStackTrace: trace, attributes: {"notamUri": tfrUri.toString()});
           }
         } else {
-          warn("Couldn't parse TFR uri", attributes: {"notamId": notamID});
+          error("Couldn't parse TFR uri", attributes: {"notamId": notamID});
         }
       }
       completer.complete(null);

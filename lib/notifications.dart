@@ -1,9 +1,12 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-bool inFocus = false;
+bool _inFocus = false;
+
+// All possibly active notifications
+final List<int> _notifications = [];
 
 void setFocus(bool focused) {
-  inFocus = focused;
+  _inFocus = focused;
 }
 
 void configLocalNotification() {
@@ -14,25 +17,36 @@ void configLocalNotification() {
   FlutterLocalNotificationsPlugin().initialize(initializationSettings);
 }
 
+void tryClearAll() {
+  for (final id in _notifications) {
+    FlutterLocalNotificationsPlugin().cancel(id);
+  }
+  _notifications.clear();
+}
+
 void showNotification(String fromPilot, String message) async {
   // Don't show any notificaitons if we're already in focus
-  if (inFocus) return;
+  if (_inFocus) return;
 
-  var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
-    'com.xcnav',
-    'xcNav',
-    channelDescription: 'message notification',
-    playSound: true,
-    enableVibration: true,
-    importance: Importance.high,
-    priority: Priority.high,
-  );
-  var iOSPlatformChannelSpecifics = const DarwinNotificationDetails();
-  var platformChannelSpecifics =
-      NotificationDetails(android: androidPlatformChannelSpecifics, iOS: iOSPlatformChannelSpecifics);
+  const platformChannelSpecifics = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'com.xcnav',
+        'xcNav',
+        channelDescription: 'message notification',
+        playSound: true,
+        enableVibration: true,
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails());
+
+  final id = _notifications.length;
+  _notifications.add(id);
+
   await FlutterLocalNotificationsPlugin().show(
-    0, "xcNav - $fromPilot",
-    message, platformChannelSpecifics,
-    // payload: jsonEncode(message)
+    id,
+    "xcNav - $fromPilot",
+    message,
+    platformChannelSpecifics,
   );
 }

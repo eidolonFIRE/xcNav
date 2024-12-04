@@ -242,9 +242,9 @@ class Waypoint {
       "name": name,
       "latlng": latlng
           .map((e) => [
-                // (reduce decimals of precision to shrink message size bloat for paths)
-                ((e.latitude * 100000).round()) / 100000,
-                ((e.longitude * 100000).round()) / 100000
+                // 6digit ~= 10cm precision
+                roundToDigits(e.latitude, 6),
+                roundToDigits(e.longitude, 6)
               ])
           .toList(),
       "icon": icon,
