@@ -7,6 +7,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'package:xcnav/dialogs/confirm_log_trim.dart';
 import 'package:xcnav/dialogs/edit_gear.dart';
@@ -47,6 +48,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   final TextStyle unitStyle = const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic);
 
   late final TabController tabController;
+
+  final PageController gForcePageController = PageController();
 
   @override
   void initState() {
@@ -191,7 +194,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
           children: [
             // --- Map
             SizedBox(
-              height: MediaQuery.of(context).size.height * 0.6,
+              height: MediaQuery.of(context).size.height * 0.55,
               child: Stack(children: [
                 FlutterMap(
                     key: mapKey,
@@ -539,88 +542,120 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 ),
 
                 // --- G-force timeline
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Builder(builder: (context) {
-                    final samples = log.samples.where((a) => a.gForce != null);
+                (log.gForceEvents.isEmpty)
+                    ? const Center(child: Text("No G-force events."))
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        // crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: PageView.builder(
+                                controller: gForcePageController,
+                                itemCount: log.gForceEvents.length,
+                                onPageChanged: (int index) {
+                                  // Map g-force event index to Geo sample index (times might not line up exactly)
+                                  final middleTime = ((log.gForceSamples[log.gForceEvents[index].start].time +
+                                              log.gForceSamples[log.gForceEvents[index].end].time) /
+                                          2)
+                                      .round();
+                                  sampleIndex.value =
+                                      log.timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(middleTime));
+                                },
+                                itemBuilder: (context, index) {
+                                  final slice = log.getGForceEvent(index);
 
-                    if (samples.isNotEmpty) {
-                      final max = log.maxG()!;
-                      final maxInt = max.round() + 1;
-                      final sustained = log.maxGSustained()!;
-                      return LineChart(LineChartData(
-                          minY: 0,
-                          maxY: maxInt.toDouble(),
-                          extraLinesData: ExtraLinesData(horizontalLines: [
-                            if (max > 1.5)
-                              HorizontalLine(
-                                  label: HorizontalLineLabel(
-                                    show: true,
-                                    labelResolver: (p0) => "Max ${max.toStringAsFixed(1)}G",
-                                  ),
-                                  y: max,
-                                  color: Colors.white,
-                                  strokeWidth: 1),
-                            if (sustained > 1.5)
-                              HorizontalLine(
-                                  label: HorizontalLineLabel(
-                                    show: true,
-                                    labelResolver: (p0) => "Sustained ${sustained.toStringAsFixed(1)}G for 10s",
-                                  ),
-                                  y: sustained,
-                                  color: Colors.white,
-                                  strokeWidth: 1)
-                          ]),
-                          borderData: FlBorderData(show: false),
-                          lineBarsData: [
-                            LineChartBarData(
-                                spots: samples.map((a) => FlSpot(a.time.toDouble(), a.gForce!)).toList(),
-                                isCurved: false,
-                                barWidth: 1,
-                                color: Colors.white,
-                                dotData: const FlDotData(show: false),
-                                aboveBarData:
-                                    BarAreaData(color: Colors.blue, show: true, cutOffY: 1, applyCutOffY: true),
-                                belowBarData: BarAreaData(
-                                    gradient: LinearGradient(
-                                        begin: Alignment.bottomCenter,
-                                        end: Alignment.topCenter,
-                                        stops: [1 / maxInt, 3 / maxInt, 7 / maxInt],
-                                        colors: const [Colors.green, Colors.amber, Colors.red]),
-                                    show: true,
-                                    color: Colors.amber,
-                                    cutOffY: 1,
-                                    applyCutOffY: true))
-                          ],
-                          lineTouchData: const LineTouchData(enabled: false),
-                          gridData: const FlGridData(
-                              drawVerticalLine: false, drawHorizontalLine: true, horizontalInterval: 2),
-                          titlesData: const FlTitlesData(
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            topTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            rightTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(interval: 1, showTitles: true),
-                            ),
-                          )));
-                    } else {
-                      return const Center(child: Text("No Data"));
-                    }
-                  }),
-                ),
+                                  return Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Builder(builder: (context) {
+                                      final maxG = log.maxG(index: index);
+                                      final maxInt = maxG.round() + 1;
+                                      final double timeInterval = max(
+                                          2000,
+                                          ((log.gForceSamples[log.gForceEvents[index].end].time -
+                                                          log.gForceSamples[log.gForceEvents[index].start].time) /
+                                                      1000)
+                                                  .round() *
+                                              100);
+                                      return LineChart(LineChartData(
+                                          minY: 0,
+                                          maxY: maxInt.toDouble(),
+                                          extraLinesData: ExtraLinesData(horizontalLines: [
+                                            if (maxG > 1.5)
+                                              HorizontalLine(
+                                                  label: HorizontalLineLabel(
+                                                    show: true,
+                                                    labelResolver: (p0) => "Max ${maxG.toStringAsFixed(1)}G",
+                                                  ),
+                                                  y: maxG,
+                                                  color: Colors.white,
+                                                  strokeWidth: 1),
+                                          ]),
+                                          borderData: FlBorderData(show: false),
+                                          lineBarsData: [
+                                            LineChartBarData(
+                                                spots: slice.map((a) => FlSpot(a.time.toDouble(), a.value)).toList(),
+                                                isCurved: false,
+                                                barWidth: 1,
+                                                color: Colors.white,
+                                                dotData: const FlDotData(show: false),
+                                                aboveBarData: BarAreaData(
+                                                    color: Colors.blue, show: true, cutOffY: 1, applyCutOffY: true),
+                                                belowBarData: BarAreaData(
+                                                    gradient: LinearGradient(
+                                                        begin: Alignment.bottomCenter,
+                                                        end: Alignment.topCenter,
+                                                        stops: [1 / maxInt, 3 / maxInt, 7 / maxInt],
+                                                        colors: const [Colors.green, Colors.amber, Colors.red]),
+                                                    show: true,
+                                                    color: Colors.amber,
+                                                    cutOffY: 1,
+                                                    applyCutOffY: true))
+                                          ],
+                                          lineTouchData: const LineTouchData(enabled: false),
+                                          gridData: const FlGridData(
+                                              drawVerticalLine: true, drawHorizontalLine: true, horizontalInterval: 2),
+                                          titlesData: FlTitlesData(
+                                            bottomTitles: AxisTitles(
+                                              sideTitles: SideTitles(
+                                                  interval: timeInterval,
+                                                  getTitlesWidget: (value, meta) => Text.rich(richMinSec(
+                                                      duration: Duration(
+                                                          milliseconds: value.round() -
+                                                              log.gForceSamples[log.gForceEvents[index].start].time))),
+                                                  showTitles: true),
+                                            ),
+                                            topTitles: const AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                            rightTitles: const AxisTitles(
+                                              sideTitles: SideTitles(showTitles: false),
+                                            ),
+                                            leftTitles: const AxisTitles(
+                                              sideTitles: SideTitles(interval: 1, showTitles: true),
+                                            ),
+                                          )));
+                                    }),
+                                  );
+                                }),
+                          ),
+                          SmoothPageIndicator(
+                            controller: gForcePageController,
+                            count: log.gForceEvents.length,
+                            effect: const SlideEffect(activeDotColor: Colors.white),
+                            onDotClicked: (index) => gForcePageController.jumpToPage(index),
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          )
+                        ],
+                      ),
 
                 // --- Fuel
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: log.fuelReports.isEmpty
                       ? const Center(
-                          child: Text("No fuel reports added..."),
+                          child: Text("No fuel reports."),
                         )
                       : Column(
                           mainAxisSize: MainAxisSize.min,
@@ -694,7 +729,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 text: "Altitude",
               ),
               Tab(icon: Icon(Icons.speed), text: "Speed"),
-              Tab(icon: Icon(Icons.g_mobiledata), text: "G force"),
+              Tab(icon: Icon(Icons.g_mobiledata), text: "G-Force"),
               Tab(icon: Icon(Icons.local_gas_station), text: "Fuel"),
             ]),
           ],

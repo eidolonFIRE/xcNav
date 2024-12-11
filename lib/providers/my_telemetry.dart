@@ -20,6 +20,7 @@ import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/fake_path.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
+import 'package:xcnav/models/g_force.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
@@ -61,6 +62,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo? geo;
   Geo? geoPrev;
 
+  final List<GForceSample> gForceRecord = [];
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
   DateTime? takeOff;
@@ -276,26 +278,27 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     listenIMU = accelerometerEventStream().listen((event) {
       // Microsecond interval since last sample
       // On android (Samsung S21) this was measured at 9602us. Configuring API to slow it down had no effect.
-      final interval = event.timestamp.microsecondsSinceEpoch - gForcePrevTimestamp;
+      // final interval = event.timestamp.microsecondsSinceEpoch - gForcePrevTimestamp;
 
       // Rolling weighted average
-      final weight = pow(e, -20000.0 / interval);
-      gForceX = gForceX * (1.0 - weight) + event.x * weight;
-      gForceY = gForceY * (1.0 - weight) + event.y * weight;
-      gForceZ = gForceZ * (1.0 - weight) + event.z * weight;
+      const weight = 10;
+      gForceX = event.x / weight;
+      gForceY = event.y / weight;
+      gForceZ = event.z / weight;
 
       // To save battery, we will only run heavy calculations every so often
-      gForceCounter += interval;
-      if (gForceCounter > const Duration(milliseconds: 100).inMicroseconds) {
+      gForceCounter += 1;
+      if (gForceCounter > weight) {
         gForceCounter = 0;
 
         // Record max gForce from averaged components
         // Telemetry will grab `gForce` and reset to null which will restart the maximizer
-        gForce = max(gForce ?? 0, sqrt(pow(gForceX, 2) + pow(gForceY, 2) + pow(gForceZ, 2)) / 9.80665);
+        gForce = sqrt(pow(gForceX, 2) + pow(gForceY, 2) + pow(gForceZ, 2));
+        gForceRecord.add(GForceSample(clock.now().millisecondsSinceEpoch, gForce!));
       }
 
       // mark timer
-      gForcePrevTimestamp = event.timestamp.microsecondsSinceEpoch;
+      // gForcePrevTimestamp = event.timestamp.microsecondsSinceEpoch;
     });
   }
 
@@ -491,6 +494,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       final log = FlightLog(
           timezone: DateTime.now().timeZoneOffset.inHours,
           samples: recordGeo.toList(),
+          gForceSamples: gForceRecord,
           waypoints: globalContext != null
               ? Provider.of<ActivePlan>(globalContext!, listen: false)
                   .waypoints
@@ -621,10 +625,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   void updateGeo(Position position, {bool bypassRecording = false}) async {
     geoPrev = geo;
-    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient, gForce);
-
-    // Clear this because it records max
-    gForce = null;
+    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
 
     if (geo == null) return;
 

@@ -270,7 +270,7 @@ TextSpan richMinSec(
     } else {
       return TextSpan(children: [
         TextSpan(text: sec.toString(), style: valueStyle),
-        TextSpan(text: "sec", style: resolveSmallerStyle(unitStyle, valueStyle)),
+        TextSpan(text: longUnits ? "sec" : "s", style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     }
   }

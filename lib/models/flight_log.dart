@@ -23,6 +23,7 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/gear.dart';
 import 'package:xcnav/models/fuel_report.dart';
+import 'package:xcnav/models/g_force.dart';
 
 class FlightLog {
   late final bool goodFile;
@@ -31,6 +32,8 @@ class FlightLog {
   String? _filename;
   late List<Geo> samples;
   late final List<Waypoint> waypoints;
+
+  late final List<GForceSample> gForceSamples;
 
   late final String? rawJson;
 
@@ -238,6 +241,11 @@ class FlightLog {
   }
 
   // =========================================
+  LatLngBounds getBounds({double pad = 0.2}) {
+    return padLatLngBounds(LatLngBounds.fromPoints(samples.map((e) => e.latlng).toList()), pad);
+  }
+
+  // =========================================
   FuelStat? _sumFuelStat;
   FuelStat? get sumFuelStat {
     if (fuelStats.isEmpty) return null;
@@ -268,42 +276,38 @@ class FlightLog {
   }
 
   // =========================================
-  LatLngBounds getBounds({double pad = 0.2}) {
-    return padLatLngBounds(LatLngBounds.fromPoints(samples.map((e) => e.latlng).toList()), pad);
+  List<GForceSlice>? _gForceEvents;
+  List<GForceSlice> get gForceEvents {
+    if (_gForceEvents == null) {
+      _gForceEvents = [];
+      // TODO: Need a real heuristic here for finding the events. This is a simple threshold.
+      for (int t = 0; t < gForceSamples.length; t++) {
+        if (gForceSamples[t].value > (maxG() - 1) * 0.5 + 1) {
+          _gForceEvents!.add(GForceSlice(max(0, t - 100), min(gForceSamples.length, t + 100)));
+          t += 100;
+        }
+      }
+    }
+
+    return _gForceEvents!;
+  }
+
+  List<GForceSample> getGForceEvent(int index) {
+    return gForceSamples.sublist(gForceEvents[index].start, gForceEvents[index].end).toList();
   }
 
   /// Peak instantanious G-force recorded
-  double? maxG() {
-    final data = samples.map((a) => a.gForce).whereNotNull();
-    return data.isNotEmpty ? data.max : null;
-  }
-
-  /// G-force sustained for 10 seconds
-  double? maxGSustained() {
-    // Sliding window search
-    final data = samples.where((a) => a.gForce != null).toList();
-    if (data.isNotEmpty) {
-      int left = 0;
-      int right = 0;
-      double max = 0;
-
-      // grow window
-      while (right < data.length) {
-        while (right < data.length && data[right].time < data[left].time + 10000) {
-          right++;
-        }
-        final window = data.sublist(left, right).map((a) => a.gForce!).toList();
-        if (window.min > max) {
-          max = window.min;
-        }
-        left++;
-      }
-      return max;
+  /// If event index not given, will return max value for the whole timeline
+  double maxG({int? index}) {
+    if (index != null) {
+      final event = getGForceEvent(index);
+      return event.map((a) => a.value).max;
     } else {
-      return null;
+      return gForceSamples.map((a) => a.value).max;
     }
   }
 
+  // =========================================
   void resetFuelStatCache() {
     _fuelStats = null;
     _sumFuelStat = null;
@@ -438,8 +442,11 @@ class FlightLog {
       }
     }
 
+    // TODO: trim g-force samples
+
     final newLog = FlightLog(
         samples: samples.sublist(startIndex, endIndex + 1).toList(),
+        gForceSamples: gForceSamples,
         waypoints: waypoints,
         fuelReports: newFuelReports,
         gear: gear,
@@ -471,6 +478,7 @@ class FlightLog {
   FlightLog(
       {this.samples = const [],
       this.waypoints = const [],
+      this.gForceSamples = const [],
       String? imported,
       int? timezone,
       List<FuelReport> fuelReports = const [],
@@ -516,6 +524,16 @@ class FlightLog {
 
       if (samples.isEmpty) {
         throw "No samples in log";
+      }
+
+      // --- Try load g-force samples
+      gForceSamples = [];
+      if (data.containsKey("gForceSamples")) {
+        final List<dynamic> gSamples = data["gForceSamples"];
+        for (int t = 0; t < gSamples.length; t += 2) {
+          gForceSamples
+              .add(GForceSample((gSamples[t] as int) + startTime!.millisecondsSinceEpoch, gSamples[t + 1] as double));
+        }
       }
 
       _calculateSpeeds();
@@ -641,12 +659,18 @@ class FlightLog {
   }
 
   String toJson() {
+    final List<num> gSamples = [];
+    for (final each in gForceSamples) {
+      gSamples.add(each.time - startTime!.millisecondsSinceEpoch);
+      gSamples.add(roundToDigits(each.value, 2));
+    }
     final dict = {
       "samples": samples.map((e) => e.toJson()).toList(),
       "waypoints":
           waypoints.where((element) => (!element.ephemeral && element.validate())).map((e) => e.toJson()).toList(),
       "fuelReports": fuelReports.map((e) => e.toJson()).toList(),
       "gear": gear?.toJson(),
+      "gForceSamples": gSamples
     };
     if (imported != null) {
       dict["imported"] = imported;
