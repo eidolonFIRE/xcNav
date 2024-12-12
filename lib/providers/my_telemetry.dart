@@ -80,9 +80,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Latest Barometric Reading
   BarometerEvent? baro;
 
-  /// Latest IMU reading
-  double? gForce;
-
   /// Microseconds since last sensor reading
   int gForcePrevTimestamp = 0;
   double gForceX = 0;
@@ -280,25 +277,26 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       // On android (Samsung S21) this was measured at 9602us. Configuring API to slow it down had no effect.
       // final interval = event.timestamp.microsecondsSinceEpoch - gForcePrevTimestamp;
 
-      // Rolling weighted average
-      const weight = 10;
-      gForceX = event.x / weight;
-      gForceY = event.y / weight;
-      gForceZ = event.z / weight;
-
-      // To save battery, we will only run heavy calculations every so often
+      // Accumulate IMU readings.
+      gForceX += event.x;
+      gForceY += event.y;
+      gForceZ += event.z;
       gForceCounter += 1;
-      if (gForceCounter > weight) {
+
+      // To save battery, we will only run heavy calculations every so often.
+      if (event.timestamp.millisecondsSinceEpoch > gForcePrevTimestamp + 100) {
+        // Average the accumulated readings and take normal vector.s
+        double magnitude =
+            sqrt(pow(gForceX / gForceCounter, 2) + pow(gForceY / gForceCounter, 2) + pow(gForceZ / gForceCounter, 2));
+        gForceRecord.add(GForceSample(event.timestamp.millisecondsSinceEpoch, magnitude));
+
+        // mark timer and reset for next couple samples
+        gForcePrevTimestamp = event.timestamp.microsecondsSinceEpoch;
         gForceCounter = 0;
-
-        // Record max gForce from averaged components
-        // Telemetry will grab `gForce` and reset to null which will restart the maximizer
-        gForce = sqrt(pow(gForceX, 2) + pow(gForceY, 2) + pow(gForceZ, 2));
-        gForceRecord.add(GForceSample(clock.now().millisecondsSinceEpoch, gForce!));
+        gForceX = 0;
+        gForceY = 0;
+        gForceZ = 0;
       }
-
-      // mark timer
-      // gForcePrevTimestamp = event.timestamp.microsecondsSinceEpoch;
     });
   }
 
