@@ -279,14 +279,7 @@ class FlightLog {
   List<GForceSlice>? _gForceEvents;
   List<GForceSlice> get gForceEvents {
     if (_gForceEvents == null) {
-      _gForceEvents = [];
-      // TODO: Need a real heuristic here for finding the events. This is a simple threshold.
-      for (int t = 0; t < gForceSamples.length; t++) {
-        if (gForceSamples[t].value > (maxG() - 1) * 0.5 + 1) {
-          _gForceEvents!.add(GForceSlice(max(0, t - 100), min(gForceSamples.length, t + 100)));
-          t += 100;
-        }
-      }
+      _gForceEvents = getGForceEvents(samples: gForceSamples, high: min(4, max(2, (maxG() - 1) * 0.5 + 1)));
     }
 
     return _gForceEvents!;
@@ -299,6 +292,9 @@ class FlightLog {
   /// Peak instantanious G-force recorded
   /// If event index not given, will return max value for the whole timeline
   double maxG({int? index}) {
+    if (gForceSamples.isEmpty) {
+      return 1;
+    }
     if (index != null) {
       final event = getGForceEvent(index);
       return event.map((a) => a.value).max;
@@ -650,6 +646,7 @@ class FlightLog {
       samples = [];
       waypoints = [];
       _fuelReports = [];
+      gForceSamples = [];
       goodFile = false;
       error("Broken Import",
           errorMessage: e.toString(),

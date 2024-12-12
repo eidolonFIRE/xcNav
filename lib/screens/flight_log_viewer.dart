@@ -33,6 +33,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
   void initState() {
     super.initState();
     mainTabController = TabController(length: 2, vsync: this);
+    logStore.loaded.value = false;
 
     // --- Generate fake logs for debugging
     // final rand = Random();

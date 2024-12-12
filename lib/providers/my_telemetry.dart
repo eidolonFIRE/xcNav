@@ -275,7 +275,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void _startIMUService() {
-    listenIMU = accelerometerEventStream().listen((event) {
+    listenIMU = accelerometerEventStream(samplingPeriod: const Duration(milliseconds: 10)).listen((event) {
       // Microsecond interval since last sample
       // On android (Samsung S21) this was measured at 9602us. Configuring API to slow it down had no effect.
       // final interval = event.timestamp.microsecondsSinceEpoch - gForcePrevTimestamp;
@@ -462,6 +462,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
       // trim the log
       recordGeo.removeRange(0, launchIndex);
+
+      // trim g-force log
+      gForceRecord.removeWhere((a) => a.time < launchGeo!.time);
 
       notifyListeners();
     }
