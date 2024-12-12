@@ -575,7 +575,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                                           log.gForceSamples[log.gForceEvents[index].start].time) /
                                                       1000)
                                                   .round() *
-                                              100);
+                                              200);
                                       return LineChart(LineChartData(
                                           minY: 0,
                                           maxY: maxInt.toDouble(),

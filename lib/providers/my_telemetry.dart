@@ -287,11 +287,12 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (event.timestamp.millisecondsSinceEpoch > gForcePrevTimestamp + 100) {
         // Average the accumulated readings and take normal vector.s
         double magnitude =
-            sqrt(pow(gForceX / gForceCounter, 2) + pow(gForceY / gForceCounter, 2) + pow(gForceZ / gForceCounter, 2));
+            sqrt(pow(gForceX / gForceCounter, 2) + pow(gForceY / gForceCounter, 2) + pow(gForceZ / gForceCounter, 2)) /
+                9.8066;
         gForceRecord.add(GForceSample(event.timestamp.millisecondsSinceEpoch, magnitude));
 
         // mark timer and reset for next couple samples
-        gForcePrevTimestamp = event.timestamp.microsecondsSinceEpoch;
+        gForcePrevTimestamp = event.timestamp.millisecondsSinceEpoch;
         gForceCounter = 0;
         gForceX = 0;
         gForceY = 0;
