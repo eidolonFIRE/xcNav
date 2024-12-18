@@ -17,10 +17,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
+import 'package:xcnav/douglas_peucker.dart';
 import 'package:xcnav/fake_path.dart';
+import 'package:xcnav/gaussian_filter.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
-import 'package:xcnav/models/g_force.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
@@ -62,7 +63,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo? geo;
   Geo? geoPrev;
 
-  final List<GForceSample> gForceRecord = [];
+  final List<TimestampDouble> gForceRecord = [];
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
   DateTime? takeOff;
@@ -289,7 +290,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         double magnitude =
             sqrt(pow(gForceX / gForceCounter, 2) + pow(gForceY / gForceCounter, 2) + pow(gForceZ / gForceCounter, 2)) /
                 9.8066;
-        gForceRecord.add(GForceSample(event.timestamp.millisecondsSinceEpoch, magnitude));
+        gForceRecord.add(TimestampDouble(event.timestamp.millisecondsSinceEpoch, magnitude));
 
         // mark timer and reset for next couple samples
         gForcePrevTimestamp = event.timestamp.millisecondsSinceEpoch;
@@ -496,7 +497,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       final log = FlightLog(
           timezone: DateTime.now().timeZoneOffset.inHours,
           samples: recordGeo.toList(),
-          gForceSamples: gForceRecord,
+          // Note: gForce samples smoothed and simplified during time of save
+          gForceSamples: douglasPeuckerTimestamped(gaussianFilterTimestamped(gForceRecord, 1, 3), 0.02),
           waypoints: globalContext != null
               ? Provider.of<ActivePlan>(globalContext!, listen: false)
                   .waypoints
@@ -504,11 +506,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                   .where((element) => (!element.ephemeral && element.validate()))
                   .toList()
               : [],
-          fuelReports: fuelReports
-              .where((e) =>
-                  e.time.millisecondsSinceEpoch >= recordGeo.first.time &&
-                  e.time.millisecondsSinceEpoch <= recordGeo.last.time)
-              .toList(),
+          fuelReports: fuelReports,
           gear: Provider.of<Profile>(globalContext!, listen: false).gear);
 
       log.save();

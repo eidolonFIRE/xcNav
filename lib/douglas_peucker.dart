@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:xcnav/util.dart';
+
 class Point {
   double x;
   double y;
@@ -43,6 +45,36 @@ List<double> douglasPeucker(List<double> points, double epsilon) {
   if (maxDistance > epsilon) {
     List<double> left = douglasPeucker(points.sublist(0, maxIndex + 1), epsilon);
     List<double> right = douglasPeucker(points.sublist(maxIndex), epsilon);
+
+    return left.sublist(0, left.length - 1) + right;
+  } else {
+    return [points.first, points.last];
+  }
+}
+
+/// 0.5 agressive
+/// 0.1 mild
+List<TimestampDouble> douglasPeuckerTimestamped(List<TimestampDouble> points, double epsilon) {
+  if (points.isEmpty || points.length == 1) {
+    return points;
+  }
+
+  int maxIndex = 0;
+  double maxDistance = 0;
+  final int length = points.length;
+
+  for (int i = 1; i < length - 1; ++i) {
+    final double distance = perpendicularDistance(Point(points[i].time.toDouble(), points[i].value),
+        Point(points.first.time.toDouble(), points.first.value), Point(points.last.time.toDouble(), points.last.value));
+    if (distance > maxDistance) {
+      maxIndex = i;
+      maxDistance = distance;
+    }
+  }
+
+  if (maxDistance > epsilon) {
+    List<TimestampDouble> left = douglasPeuckerTimestamped(points.sublist(0, maxIndex + 1), epsilon);
+    List<TimestampDouble> right = douglasPeuckerTimestamped(points.sublist(maxIndex), epsilon);
 
     return left.sublist(0, left.length - 1) + right;
   } else {

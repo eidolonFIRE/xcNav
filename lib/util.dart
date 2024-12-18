@@ -6,10 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:xcnav/models/path_intercept.dart';
 import 'package:xcnav/datadog.dart';
 
 Distance latlngCalc = const Distance(roundResult: false);
+
+late PackageInfo version;
 
 void setSystemUI() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -28,6 +31,14 @@ TextStyle? resolveSmallerStyle(TextStyle? a, TextStyle? b, {double factor = 0.6}
   } else {
     return null;
   }
+}
+
+class TimestampDouble {
+  /// Milliseconds since epoch
+  final int time;
+  final double value;
+
+  TimestampDouble(this.time, this.value);
 }
 
 /// Round to number of digits

@@ -44,6 +44,9 @@ class LogSummary extends StatelessWidget {
               textAlign: TextAlign.end,
             ),
           ]),
+          const Divider(
+            height: 10,
+          ),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text("Max Altitude"),
             Text.rich(
@@ -62,6 +65,23 @@ class LogSummary extends StatelessWidget {
             const Text("Total Elev Gain"),
             Text.rich(
               richValue(UnitType.distFine, log.altGained, decimals: 0, unitStyle: unitStyle),
+              textAlign: TextAlign.end,
+            ),
+          ]),
+          const Divider(
+            height: 10,
+          ),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text("Max G-Force"),
+            Text(
+              printDouble(value: log.maxG(), digits: 0, decimals: 2),
+              textAlign: TextAlign.end,
+            ),
+          ]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text("Duration > 2G"),
+            Text.rich(
+              richMinSec(duration: log.durationOver2G, unitStyle: unitStyle),
               textAlign: TextAlign.end,
             ),
           ]),

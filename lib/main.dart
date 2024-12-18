@@ -51,6 +51,7 @@ import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/secrets.dart';
 import 'package:xcnav/airports.dart';
+import 'package:xcnav/util.dart';
 
 LatLng lastKnownLatLng = const LatLng(37, -122);
 
@@ -59,7 +60,7 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
-    final version = await PackageInfo.fromPlatform();
+    version = await PackageInfo.fromPlatform();
 
     final prefs = await SharedPreferences.getInstance();
     settingsMgr = SettingsMgr(prefs);
