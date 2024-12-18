@@ -74,7 +74,7 @@ class LogSummary extends StatelessWidget {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text("Max G-Force"),
             Text(
-              printDouble(value: log.maxG(), digits: 0, decimals: 2),
+              printDouble(value: log.maxG(), digits: 2, decimals: 2),
               textAlign: TextAlign.end,
             ),
           ]),
