@@ -2,24 +2,28 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:bisection/bisect.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:xcnav/datadog.dart';
-import 'package:xcnav/log_store.dart';
-import 'package:xcnav/models/gear.dart';
 import 'package:xml/xml.dart';
+import 'package:collection/collection.dart';
 
-import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 
 import 'package:xcnav/util.dart';
+import 'package:xcnav/units.dart';
+
 import 'package:xcnav/douglas_peucker.dart';
+
+import 'package:xcnav/datadog.dart';
+import 'package:xcnav/log_store.dart';
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/units.dart';
+import 'package:xcnav/models/gear.dart';
 import 'package:xcnav/models/fuel_report.dart';
+import 'package:xcnav/models/g_force.dart';
 
 class FlightLog {
   late final bool goodFile;
@@ -28,6 +32,8 @@ class FlightLog {
   String? _filename;
   late List<Geo> samples;
   late final List<Waypoint> waypoints;
+
+  late List<TimestampDouble> gForceSamples;
 
   late final String? rawJson;
 
@@ -226,12 +232,16 @@ class FlightLog {
     if (_altGained == null) {
       _altGained = 0;
       final values = douglasPeucker(samples.map((e) => e.alt).toList(), 3);
-      debugPrint("Elev points reduced ${samples.length} => ${values.length}");
       for (int t = 0; t < values.length - 1; t++) {
         _altGained = _altGained! + max(0, values[t + 1] - values[t]);
       }
     }
     return _altGained!;
+  }
+
+  // =========================================
+  LatLngBounds getBounds({double pad = 0.2}) {
+    return padLatLngBounds(LatLngBounds.fromPoints(samples.map((e) => e.latlng).toList()), pad);
   }
 
   // =========================================
@@ -265,10 +275,70 @@ class FlightLog {
   }
 
   // =========================================
-  LatLngBounds getBounds({double pad = 0.2}) {
-    return padLatLngBounds(LatLngBounds.fromPoints(samples.map((e) => e.latlng).toList()), pad);
+  List<GForceEvent>? _gForceEvents;
+  List<GForceEvent> get gForceEvents {
+    if (_gForceEvents == null) {
+      late List<GForceSlice> slices;
+      slices = getGForceSlices(samples: gForceSamples, high: 1.5);
+      if (slices.length > 15) {
+        slices = getGForceSlices(samples: gForceSamples, high: 2);
+      } else if (slices.length < 3) {
+        slices = getGForceSlices(samples: gForceSamples, high: 1.2);
+      }
+      _gForceEvents = slices.map((e) {
+        final first = samples[timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(gForceSamples[e.start].time))];
+        final last = samples[timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(gForceSamples[e.end].time))];
+        final center = samples[timeToSampleIndex(
+            DateTime.fromMillisecondsSinceEpoch((gForceSamples[e.start].time + gForceSamples[e.end].time) ~/ 2))];
+        return GForceEvent(
+            e,
+            DateTimeRange(
+                start: DateTime.fromMillisecondsSinceEpoch(first.time),
+                end: DateTime.fromMillisecondsSinceEpoch(last.time)),
+            center);
+      }).toList();
+    }
+
+    return _gForceEvents!;
   }
 
+  // =========================================
+  Duration? _durationOver2G;
+
+  /// Duration of flight time spent over 2G in force.
+  Duration get durationOver2G {
+    if (_durationOver2G == null) {
+      int ms = 0;
+      for (int i = 1; i < gForceSamples.length - 1; i++) {
+        if (gForceSamples[i].value > 2.0) {
+          final start = (gForceSamples[i - 1].time + gForceSamples[i].time) / 2;
+          final end = (gForceSamples[i + 1].time + gForceSamples[i].time) / 2;
+          ms += (end - start).round();
+        }
+      }
+      _durationOver2G = Duration(milliseconds: ms);
+    }
+    return _durationOver2G!;
+  }
+
+  // =========================================
+  /// Peak instantanious G-force recorded
+  /// If event index not given, will return max value for the whole timeline
+  double maxG({int? index}) {
+    if (gForceSamples.isEmpty) {
+      return 1;
+    }
+    if (index != null) {
+      final event = gForceSamples
+          .sublist(gForceEvents[index].gForceIndeces.start, gForceEvents[index].gForceIndeces.end)
+          .toList();
+      return event.map((a) => a.value).max;
+    } else {
+      return gForceSamples.map((a) => a.value).max;
+    }
+  }
+
+  // =========================================
   void resetFuelStatCache() {
     _fuelStats = null;
     _sumFuelStat = null;
@@ -405,6 +475,7 @@ class FlightLog {
 
     final newLog = FlightLog(
         samples: samples.sublist(startIndex, endIndex + 1).toList(),
+        gForceSamples: gForceSamples,
         waypoints: waypoints,
         fuelReports: newFuelReports,
         gear: gear,
@@ -436,6 +507,7 @@ class FlightLog {
   FlightLog(
       {this.samples = const [],
       this.waypoints = const [],
+      this.gForceSamples = const [],
       String? imported,
       int? timezone,
       List<FuelReport> fuelReports = const [],
@@ -450,6 +522,7 @@ class FlightLog {
     _filename = filename;
     _fuelReports = fuelReports.where((each) => containsTime(each.time)).toList();
     _gear = gear;
+    gForceSamples = gForceSamples.where((e) => containsTime(DateTime.fromMillisecondsSinceEpoch(e.time))).toList();
     goodFile = true;
   }
 
@@ -472,7 +545,7 @@ class FlightLog {
       // --- Parse Gear
       final rawGear = data["gear"];
       if (rawGear != null) {
-        gear = Gear.fromJson(data["gear"]);
+        _gear = Gear.fromJson(data["gear"]);
       }
 
       // --- Parse Samples
@@ -481,6 +554,16 @@ class FlightLog {
 
       if (samples.isEmpty) {
         throw "No samples in log";
+      }
+
+      // --- Try load g-force samples
+      gForceSamples = [];
+      if (data.containsKey("gForceSamples")) {
+        final List<dynamic> gSamples = data["gForceSamples"];
+        for (int t = 0; t < gSamples.length; t += 2) {
+          gForceSamples.add(
+              TimestampDouble((gSamples[t] as int) + startTime!.millisecondsSinceEpoch, gSamples[t + 1] as double));
+        }
       }
 
       _calculateSpeeds();
@@ -506,6 +589,7 @@ class FlightLog {
     } catch (e, trace) {
       samples = [];
       waypoints = [];
+      gForceSamples = [];
       goodFile = false;
       error("Broken FlightLog File",
           errorMessage: e.toString(),
@@ -520,6 +604,11 @@ class FlightLog {
     samples = [];
 
     DateTime? dateOffset;
+
+    // These are not supported in IGC
+    _fuelReports = [];
+    gForceSamples = [];
+    waypoints = [];
 
     try {
       for (final line in data.split("\n")) {
@@ -590,13 +679,10 @@ class FlightLog {
 
       _calculateSpeeds();
       _calculateHdgs();
-      waypoints = [];
-      _fuelReports = [];
+
       goodFile = true;
     } catch (e, trace) {
       samples = [];
-      waypoints = [];
-      _fuelReports = [];
       goodFile = false;
       error("Broken Import",
           errorMessage: e.toString(),
@@ -606,12 +692,21 @@ class FlightLog {
   }
 
   String toJson() {
+    // Flatten gForceSamples to 1D array for more compact json string
+    final List<num> gSamples = [];
+    // Only g-force samples within start-end timestamps will be saved
+    for (final each in gForceSamples.where((a) => containsTime(DateTime.fromMillisecondsSinceEpoch(a.time)))) {
+      gSamples.add(each.time - startTime!.millisecondsSinceEpoch);
+      gSamples.add(roundToDigits(each.value, 2));
+    }
     final dict = {
+      "xcNavVersion": "${version.version}  -  ( build ${version.buildNumber}",
       "samples": samples.map((e) => e.toJson()).toList(),
       "waypoints":
           waypoints.where((element) => (!element.ephemeral && element.validate())).map((e) => e.toJson()).toList(),
       "fuelReports": fuelReports.map((e) => e.toJson()).toList(),
       "gear": gear?.toJson(),
+      "gForceSamples": gSamples
     };
     if (imported != null) {
       dict["imported"] = imported;

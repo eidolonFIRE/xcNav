@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 // ignore: depend_on_referenced_packages
@@ -141,6 +142,16 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     debugPrint("Build /home");
     setSystemUI();
+
+    if (MediaQuery.of(context).size.aspectRatio <= 5 / 4 || MediaQuery.of(context).size.aspectRatio >= 4 / 5) {
+      // Unlock Landscape for wide aspect ratio
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight
+      ]);
+    }
 
     if (pageIndexNames[viewPageIndex] == "Chat") {
       // Don't notify

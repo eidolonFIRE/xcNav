@@ -17,7 +17,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
+import 'package:xcnav/douglas_peucker.dart';
 import 'package:xcnav/fake_path.dart';
+import 'package:xcnav/gaussian_filter.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
 
@@ -61,6 +63,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo? geo;
   Geo? geoPrev;
 
+  final List<TimestampDouble> gForceRecord = [];
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
   DateTime? takeOff;
@@ -78,6 +81,15 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Latest Barometric Reading
   BarometerEvent? baro;
 
+  /// Microseconds since last sensor reading
+  int gForcePrevTimestamp = 0;
+  double gForceX = 0;
+  double gForceY = 0;
+  double gForceZ = 0;
+
+  /// Microseconds since last sample of `gForce`
+  int gForceCounter = 0;
+
   /// Ambient barometric reading fetched from web API
   BarometerEvent? baroAmbient;
   bool baroAmbientRequested = false;
@@ -88,6 +100,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   double? ambientTemperature;
 
   StreamSubscription<BarometerEvent>? listenBaro;
+  StreamSubscription<AccelerometerEvent>? listenIMU;
 
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
   Stream<Position>? positionStream;
@@ -152,10 +165,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   MyTelemetry() {
     WidgetsBinding.instance.addObserver(this);
     _startBaroService();
+    _startIMUService();
   }
 
   void init() {
     debugPrint("Init /MyTelemetry");
+
+    gForcePrevTimestamp = clock.now().millisecondsSinceEpoch;
 
     assert(globalContext != null, "globalContext in MyTelemetry instance hasn't been set yet!");
 
@@ -186,6 +202,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         if (timer == null) {
           // --- Spoof Location / Disable Baro
           listenBaro?.cancel();
+          listenIMU?.cancel();
           if (positionStreamStarted) {
             positionStreamStarted = !positionStreamStarted;
             _toggleListening(globalContext!);
@@ -252,6 +269,36 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   void _startBaroService() {
     listenBaro = barometerEventStream().listen((event) {
       baro = event;
+    });
+  }
+
+  void _startIMUService() {
+    listenIMU = accelerometerEventStream(samplingPeriod: const Duration(milliseconds: 10)).listen((event) {
+      // Microsecond interval since last sample
+      // On android (Samsung S21) this was measured at 9602us. Configuring API to slow it down had no effect.
+      // final interval = event.timestamp.microsecondsSinceEpoch - gForcePrevTimestamp;
+
+      // Accumulate IMU readings.
+      gForceX += event.x;
+      gForceY += event.y;
+      gForceZ += event.z;
+      gForceCounter += 1;
+
+      // To save battery, we will only run heavy calculations every so often.
+      if (event.timestamp.millisecondsSinceEpoch > gForcePrevTimestamp + 100) {
+        // Average the accumulated readings and take normal vector.s
+        double magnitude =
+            sqrt(pow(gForceX / gForceCounter, 2) + pow(gForceY / gForceCounter, 2) + pow(gForceZ / gForceCounter, 2)) /
+                9.8066;
+        gForceRecord.add(TimestampDouble(event.timestamp.millisecondsSinceEpoch, magnitude));
+
+        // mark timer and reset for next couple samples
+        gForcePrevTimestamp = event.timestamp.millisecondsSinceEpoch;
+        gForceCounter = 0;
+        gForceX = 0;
+        gForceY = 0;
+        gForceZ = 0;
+      }
     });
   }
 
@@ -416,6 +463,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       // trim the log
       recordGeo.removeRange(0, launchIndex);
 
+      // trim g-force log
+      gForceRecord.removeWhere((a) => a.time < launchGeo!.time);
+
       notifyListeners();
     }
   }
@@ -447,6 +497,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       final log = FlightLog(
           timezone: DateTime.now().timeZoneOffset.inHours,
           samples: recordGeo.toList(),
+          // Note: gForce samples smoothed and simplified during time of save
+          gForceSamples: douglasPeuckerTimestamped(gaussianFilterTimestamped(gForceRecord, 1, 3), 0.02),
           waypoints: globalContext != null
               ? Provider.of<ActivePlan>(globalContext!, listen: false)
                   .waypoints
@@ -454,11 +506,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                   .where((element) => (!element.ephemeral && element.validate()))
                   .toList()
               : [],
-          fuelReports: fuelReports
-              .where((e) =>
-                  e.time.millisecondsSinceEpoch >= recordGeo.first.time &&
-                  e.time.millisecondsSinceEpoch <= recordGeo.last.time)
-              .toList(),
+          fuelReports: fuelReports,
           gear: Provider.of<Profile>(globalContext!, listen: false).gear);
 
       log.save();
