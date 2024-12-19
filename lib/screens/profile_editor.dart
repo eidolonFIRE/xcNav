@@ -161,16 +161,16 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
   void acceptBytes(BuildContext context, Uint8List bytes) {
     FlutterImageCompress.compressWithList(bytes, minHeight: 128, minWidth: 128, quality: 90).then((compressedImage) {
-      Provider.of<Profile>(context, listen: false).updateNameAvatar(nameController.text, compressedImage);
+      if (context.mounted) {
+        Provider.of<Profile>(context, listen: false).updateNameAvatar(nameController.text, compressedImage);
+      }
       setState(() {
         isProcessing = false;
       });
 
-      // if (isOptional) {
-      Navigator.pop(context);
-      // } else {
-      //   Navigator.popAndPushNamed(context, "/home");
-      // }
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
     });
   }
 
@@ -183,7 +183,9 @@ class _ProfileEditorState extends State<ProfileEditor> {
         });
         cropController.onCropImage().then((MemoryImage? croppedImage) {
           if (croppedImage != null) {
-            acceptBytes(context, croppedImage.bytes);
+            if (context.mounted) {
+              acceptBytes(context, croppedImage.bytes);
+            }
           } else {
             debugPrint("Error cropping image!");
             setState(() {
@@ -195,7 +197,9 @@ class _ProfileEditorState extends State<ProfileEditor> {
         // --- Color avatar
         colorAvatarSS.capture(pixelRatio: 1).then((value) {
           if (value != null) {
-            acceptBytes(context, value);
+            if (context.mounted) {
+              acceptBytes(context, value);
+            }
           } else {
             setState(() {
               isProcessing = false;

@@ -104,26 +104,27 @@ class Client with ChangeNotifier {
           debugPrint("RX-done");
           state = ClientState.disconnected;
         });
-
-        Profile profile = Provider.of<Profile>(globalContext, listen: false);
-        if (Profile.nameValidator(profile.name) == null) {
-          authenticate(profile);
-        }
-
-        // Watch updates to Profile
-        Provider.of<Profile>(globalContext, listen: false).addListener(() {
+        if (globalContext.mounted) {
           Profile profile = Provider.of<Profile>(globalContext, listen: false);
-          if (state == ClientState.connected) {
+          if (Profile.nameValidator(profile.name) == null) {
             authenticate(profile);
-          } else if (state == ClientState.authenticated && profile.name != null) {
-            // Just need to update server with new profile
-            pushProfile(profile);
           }
-        });
 
-        // Register Callbacks to waypoints
-        Provider.of<ActivePlan>(globalContext, listen: false).onWaypointAction = waypointsUpdate;
-        Provider.of<ActivePlan>(globalContext, listen: false).onSelectWaypoint = selectWaypoint;
+          // Watch updates to Profile
+          Provider.of<Profile>(globalContext, listen: false).addListener(() {
+            Profile profile = Provider.of<Profile>(globalContext, listen: false);
+            if (state == ClientState.connected) {
+              authenticate(profile);
+            } else if (state == ClientState.authenticated && profile.name != null) {
+              // Just need to update server with new profile
+              pushProfile(profile);
+            }
+          });
+
+          // Register Callbacks to waypoints
+          Provider.of<ActivePlan>(globalContext, listen: false).onWaypointAction = waypointsUpdate;
+          Provider.of<ActivePlan>(globalContext, listen: false).onSelectWaypoint = selectWaypoint;
+        }
       }).onError((error, stackTrace) {
         debugPrint("Failed to connect! $error");
         state = ClientState.disconnected;

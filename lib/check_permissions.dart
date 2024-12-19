@@ -22,7 +22,9 @@ Future<bool?> checkPermissions(BuildContext context) async {
       final whenInUse = await Permission.locationWhenInUse.status;
       if (whenInUse.isPermanentlyDenied) {
         debugPrint("Location was fully denied!");
-        showDialog(context: context, builder: (context) => const RequestLocationDialog());
+        if (context.mounted) {
+          showDialog(context: context, builder: (context) => const RequestLocationDialog());
+        }
         currentlyCheckingPermissions = false;
         return true;
       } else if (whenInUse.isDenied) {

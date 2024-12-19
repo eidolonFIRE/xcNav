@@ -86,7 +86,9 @@ class _PlanCardState extends State<PlanCard> {
   void _replacePlanDialog(BuildContext context) {
     if (Provider.of<ActivePlan>(context, listen: false).waypoints.isNotEmpty) {
       savePlan(context, isSavingFirst: true).then((value) {
-        _replacePlan(context);
+        if (context.mounted) {
+          _replacePlan(context);
+        }
       });
     } else {
       _replacePlan(context);
@@ -167,7 +169,9 @@ class _PlanCardState extends State<PlanCard> {
                         case "replace":
                           if (Provider.of<Group>(context, listen: false).pilots.isNotEmpty) {
                             replacePlanDialog(context).then((value) {
-                              if (value ?? false) _replacePlanDialog(context);
+                              if (context.mounted) {
+                                if (value ?? false) _replacePlanDialog(context);
+                              }
                             });
                           } else {
                             _replacePlanDialog(context);
@@ -180,8 +184,10 @@ class _PlanCardState extends State<PlanCard> {
                           editPlanName(context, widget.plan.name).then((newName) {
                             if (newName != null && newName.isNotEmpty) {
                               final oldName = widget.plan.name;
-                              Navigator.popUntil(context, ModalRoute.withName("/plans"));
-                              Provider.of<Plans>(context, listen: false).renamePlan(oldName, newName);
+                              if (context.mounted) {
+                                Navigator.popUntil(context, ModalRoute.withName("/plans"));
+                                Provider.of<Plans>(context, listen: false).renamePlan(oldName, newName);
+                              }
                             }
                           });
                           break;
@@ -189,8 +195,10 @@ class _PlanCardState extends State<PlanCard> {
                           editPlanName(context, widget.plan.name).then((newName) {
                             if (newName != null && newName.isNotEmpty) {
                               final oldName = widget.plan.name;
-                              Navigator.popUntil(context, ModalRoute.withName("/plans"));
-                              Provider.of<Plans>(context, listen: false).duplicatePlan(oldName, newName);
+                              if (context.mounted) {
+                                Navigator.popUntil(context, ModalRoute.withName("/plans"));
+                                Provider.of<Plans>(context, listen: false).duplicatePlan(oldName, newName);
+                              }
                             }
                           });
                           break;

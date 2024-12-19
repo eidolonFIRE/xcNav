@@ -22,7 +22,11 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
   void onDone(BuildContext context) {
     final newPlan = FlightPlan.fromActivePlan(filename.text, activePlan);
     activePlan.isSaved = true;
-    Provider.of<Plans>(context, listen: false).setPlan(newPlan).then((_) => Navigator.pop(context, true));
+    Provider.of<Plans>(context, listen: false).setPlan(newPlan).then((_) {
+      if (context.mounted) {
+        Navigator.pop(context, true);
+      }
+    });
   }
 
   return showDialog<bool?>(

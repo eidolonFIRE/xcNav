@@ -16,7 +16,7 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  List<BluetoothDevice> _systemDevices = [];
+  final List<BluetoothDevice> _systemDevices = [];
   List<ScanResult> _scanResults = [];
   bool _isScanning = false;
   late StreamSubscription<List<ScanResult>> _scanResultsSubscription;

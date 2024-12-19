@@ -252,7 +252,9 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                               }).then((value) {
                             if (value) {
                               activePlan.clearAllWayponits();
-                              Provider.of<Client>(context, listen: false).pushWaypoints();
+                              if (context.mounted) {
+                                Provider.of<Client>(context, listen: false).pushWaypoints();
+                              }
                             }
                           });
                           break;
@@ -319,7 +321,9 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                             )?.then((newWaypoint) {
                               if (newWaypoint != null) {
                                 // --- Update selected waypoint
-                                Provider.of<ActivePlan>(context, listen: false).updateWaypoint(newWaypoint);
+                                if (context.mounted) {
+                                  Provider.of<ActivePlan>(context, listen: false).updateWaypoint(newWaypoint);
+                                }
                               }
                             });
                           },
@@ -342,7 +346,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                                               onPressed: () => Navigator.pop(context, name), child: Text(name)))
                                           .toList(),
                                     )).then((value) {
-                              if (value != null) {
+                              if (value != null && context.mounted) {
                                 Provider.of<Plans>(context, listen: false).loadedPlans[value]?.waypoints[items[i].id] =
                                     Waypoint.from(items[i]);
                               }

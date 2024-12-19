@@ -42,8 +42,10 @@ class _PlansViewerState extends State<PlansViewer> {
         List<XmlElement>? selectedFolders = folderNames;
         if (folderNames.length > 1) {
           debugPrint("More than one folder in KML, select in dialog.");
-          final selectedFolderOptions = await selectKmlFolders(context, folderNames);
-          selectedFolders = folderNames.isNotEmpty ? selectedFolderOptions?.folders : null;
+          if (context.mounted) {
+            final selectedFolderOptions = await selectKmlFolders(context, folderNames);
+            selectedFolders = folderNames.isNotEmpty ? selectedFolderOptions?.folders : null;
+          }
         }
 
         final newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
@@ -151,7 +153,9 @@ class _PlansViewerState extends State<PlansViewer> {
                       editPlanName(context, null).then((value) {
                         if (value != null && value != "") {
                           var plan = FlightPlan(value);
-                          Navigator.pushNamed(context, "/planEditor", arguments: plan);
+                          if (context.mounted) {
+                            Navigator.pushNamed(context, "/planEditor", arguments: plan);
+                          }
                         }
                       });
                       break;
@@ -161,7 +165,9 @@ class _PlansViewerState extends State<PlansViewer> {
                     case "iFlight":
                       Clipboard.getData("text/plain").then(
                         (value) {
-                          iFlightURL(context, value?.text);
+                          if (context.mounted) {
+                            iFlightURL(context, value?.text);
+                          }
                         },
                       );
                       break;

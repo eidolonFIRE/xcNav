@@ -312,11 +312,15 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }).listen((serviceStatus) {
         if (serviceStatus == ServiceStatus.enabled) {
           if (positionStreamStarted) {
-            _toggleListening(context);
+            if (context.mounted) {
+              _toggleListening(context);
+            }
           }
           if (defaultTargetPlatform == TargetPlatform.iOS && !positionStreamStarted) {
             positionStreamStarted = true;
-            _toggleListening(context);
+            if (context.mounted) {
+              _toggleListening(context);
+            }
           }
           debugPrint("Location Service Enabled");
         } else {
@@ -376,7 +380,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       _positionStreamSubscription = positionStream!.handleError((error) {
         _positionStreamSubscription?.cancel();
         _positionStreamSubscription = null;
-      }).listen((position) => handleGeoUpdate(context, position));
+      }).listen((position) {
+        if (context.mounted) {
+          handleGeoUpdate(context, position);
+        }
+      });
 
       debugPrint('Listening for position updates RESUMED');
     } else {

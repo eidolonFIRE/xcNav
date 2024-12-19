@@ -79,36 +79,40 @@ class FlightLogCard extends StatelessWidget {
         .then((Directory path) {
       var outFile = File("${path.path}/xcNav_$fileType/$outFilename.$fileType");
       outFile.create(recursive: true).then((value) => value
-          .writeAsString(fileType == "json" ? (log.rawJson ?? "") : (fileType == "kml" ? log.toKML() : log.toGPX()))
-          .then((value) => showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                    title: const Text("File Exported to:"),
-                    content: Text(
-                      outFile.path,
-                    ),
-                    actions: [
-                      ElevatedButton.icon(
-                        label: const Text("Open"),
-                        onPressed: () async {
-                          var result = await OpenFile.open(outFile.path);
-                          debugPrint(result.message);
-                          // NOTE: Workaround for "high risk" android permission missing
-                          if (result.message.toUpperCase().contains('MANAGE_EXTERNAL_STORAGE')) {
-                            debugPrint("Workaround to MANAGE_EXTERNAL_STORAGE... using temp directory");
-                            final tempFilename = p.basename(outFile.path);
-                            final String newpath = '${(await getTemporaryDirectory()).path}/$tempFilename';
-                            await File(outFile.path).copy(newpath);
-                            result = await OpenFile.open(newpath);
-                          }
-                        },
-                        icon: const Icon(
-                          Icons.launch,
-                          color: Colors.blue,
+              .writeAsString(fileType == "json" ? (log.rawJson ?? "") : (fileType == "kml" ? log.toKML() : log.toGPX()))
+              .then((value) {
+            if (context.mounted) {
+              showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                        title: const Text("File Exported to:"),
+                        content: Text(
+                          outFile.path,
                         ),
-                      ),
-                    ],
-                  ))));
+                        actions: [
+                          ElevatedButton.icon(
+                            label: const Text("Open"),
+                            onPressed: () async {
+                              var result = await OpenFile.open(outFile.path);
+                              debugPrint(result.message);
+                              // NOTE: Workaround for "high risk" android permission missing
+                              if (result.message.toUpperCase().contains('MANAGE_EXTERNAL_STORAGE')) {
+                                debugPrint("Workaround to MANAGE_EXTERNAL_STORAGE... using temp directory");
+                                final tempFilename = p.basename(outFile.path);
+                                final String newpath = '${(await getTemporaryDirectory()).path}/$tempFilename';
+                                await File(outFile.path).copy(newpath);
+                                result = await OpenFile.open(newpath);
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.launch,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
+                      ));
+            }
+          }));
     });
   }
 
