@@ -2,23 +2,23 @@ PODS:
   - better_open_file (0.0.1):
     - Flutter
   - datadog_flutter_plugin (0.0.1):
-    - DatadogCore (= 2.15.0)
-    - DatadogCrashReporting (= 2.15.0)
-    - DatadogInternal (= 2.15.0)
-    - DatadogLogs (= 2.15.0)
-    - DatadogRUM (= 2.15.0)
+    - DatadogCore (= 2.18.0)
+    - DatadogCrashReporting (= 2.18.0)
+    - DatadogInternal (= 2.18.0)
+    - DatadogLogs (= 2.18.0)
+    - DatadogRUM (= 2.18.0)
     - DictionaryCoder (= 1.0.8)
     - Flutter
-  - DatadogCore (2.15.0):
-    - DatadogInternal (= 2.15.0)
-  - DatadogCrashReporting (2.15.0):
-    - DatadogInternal (= 2.15.0)
+  - DatadogCore (2.18.0):
+    - DatadogInternal (= 2.18.0)
+  - DatadogCrashReporting (2.18.0):
+    - DatadogInternal (= 2.18.0)
     - PLCrashReporter (~> 1.11.2)
-  - DatadogInternal (2.15.0)
-  - DatadogLogs (2.15.0):
-    - DatadogInternal (= 2.15.0)
-  - DatadogRUM (2.15.0):
-    - DatadogInternal (= 2.15.0)
+  - DatadogInternal (2.18.0)
+  - DatadogLogs (2.18.0):
+    - DatadogInternal (= 2.18.0)
+  - DatadogRUM (2.18.0):
+    - DatadogInternal (= 2.18.0)
   - DictionaryCoder (1.0.8)
   - DKImagePickerController/Core (4.3.9):
     - DKImagePickerController/ImageDataManager
@@ -64,7 +64,7 @@ PODS:
     - SDWebImageWebPCoder
   - flutter_local_notifications (0.0.1):
     - Flutter
-  - flutter_native_splash (0.0.1):
+  - flutter_native_splash (2.4.3):
     - Flutter
   - flutter_tts (0.0.1):
     - Flutter
@@ -90,10 +90,10 @@ PODS:
   - MTBBarcodeScanner (5.0.11)
   - network_info_plus (0.0.1):
     - Flutter
-  - ObjectBox (1.9.2)
+  - ObjectBox (4.0.1)
   - objectbox_flutter_libs (0.0.1):
     - Flutter
-    - ObjectBox (= 1.9.2)
+    - ObjectBox (= 4.0.1)
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
@@ -105,9 +105,9 @@ PODS:
   - qr_code_scanner (0.2.0):
     - Flutter
     - MTBBarcodeScanner
-  - SDWebImage (5.19.7):
-    - SDWebImage/Core (= 5.19.7)
-  - SDWebImage/Core (5.19.7)
+  - SDWebImage (5.20.0):
+    - SDWebImage/Core (= 5.20.0)
+  - SDWebImage/Core (5.20.0)
   - SDWebImageWebPCoder (0.14.6):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
@@ -125,6 +125,7 @@ PODS:
     - Flutter
   - webview_flutter_wkwebview (0.0.1):
     - Flutter
+    - FlutterMacOS
 
 DEPENDENCIES:
   - better_open_file (from `.symlinks/plugins/better_open_file/ios`)
@@ -149,7 +150,7 @@ DEPENDENCIES:
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
-  - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/ios`)
+  - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
 
 SPEC REPOS:
   trunk:
@@ -216,16 +217,16 @@ EXTERNAL SOURCES:
   wakelock_plus:
     :path: ".symlinks/plugins/wakelock_plus/ios"
   webview_flutter_wkwebview:
-    :path: ".symlinks/plugins/webview_flutter_wkwebview/ios"
+    :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
 SPEC CHECKSUMS:
   better_open_file: 03cf320415d4d3f46b6e00adc4a567d76c1a399d
-  datadog_flutter_plugin: f1c320edd1a4419ab28e0fdbb141005e1a7272e1
-  DatadogCore: f865c94e837d2c30210b29a1ed3a65cd6f676df3
-  DatadogCrashReporting: 5a53d4fd725f2992765de44f0b3046c239affce4
-  DatadogInternal: 925d7f03f6d6b3ed025b458df7654381377da468
-  DatadogLogs: 54bdce940d25735e37321633072befe1b95ba8bc
-  DatadogRUM: 05308932e8fcc89bff6afeeed3527b707a496461
+  datadog_flutter_plugin: e2fad9707b0a42901a101c1eee0d3de569439678
+  DatadogCore: 24f3bf4daa04949ef98b706ec4d4cb3cfde5443c
+  DatadogCrashReporting: 1a16f982c569f0d7058779a4540d4506002c89c6
+  DatadogInternal: 4719225e5e3a5550a52196930cecdf2a589820b2
+  DatadogLogs: 0365989aebbf3d0c7cb7346cf2bbb932c0eacc01
+  DatadogRUM: 8461273acc87ddfe4a8bbc6e6672ae9542471f86
   DictionaryCoder: 5f84fff69f54cb806071538430bdafe04a89d658
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
@@ -233,32 +234,32 @@ SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   flutter_blue_plus: 4837da7d00cf5d441fdd6635b3a57f936778ea96
   flutter_image_compress_common: ec1d45c362c9d30a3f6a0426c297f47c52007e3e
-  flutter_local_notifications: 4cde75091f6327eb8517fa068a0a5950212d2086
-  flutter_native_splash: edf599c81f74d093a4daf8e17bd7a018854bc778
+  flutter_local_notifications: df98d66e515e1ca797af436137b4459b160ad8c9
+  flutter_native_splash: e8a1e01082d97a8099d973f919f57904c925008a
   flutter_tts: 0f492aab6accf87059b72354fcb4ba934304771d
-  geolocator_apple: 6cbaf322953988e009e5ecb481f07efece75c450
+  geolocator_apple: 9bcea1918ff7f0062d98345d238ae12718acfbc1
   image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
   libwebp: 1786c9f4ff8a279e4dac1e8f385004d5fc253009
   Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
   MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
-  network_info_plus: 9d930145451916919786087c4173226363616071
-  ObjectBox: 46757a559717ab49b1cc0612eaff82b705acf394
-  objectbox_flutter_libs: 103f3a273b594cb664255086a386740bc179f97d
-  package_info_plus: 58f0028419748fad15bf008b270aaa8e54380b1c
+  network_info_plus: 6613d9d7cdeb0e6f366ed4dbe4b3c51c52d567a9
+  ObjectBox: 0bc4bb75eea85f6af06b369148b334c2056bbc29
+  objectbox_flutter_libs: 2ce0da386c780878687c736b528ceaf371573efb
+  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   PLCrashReporter: 499c53b0104f95c302d94fd723ebb03c56d9bac8
   qr_code_scanner: bb67d64904c3b9658ada8c402e8b4d406d5d796e
-  SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
+  SDWebImage: 73c6079366fea25fa4bb9640d5fb58f0893facd8
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
-  sensors_plus: 4b7c4bd9c9be2efbd575649368fe77ef09b429ad
-  share_plus: 8875f4f2500512ea181eef553c3e27dba5135aad
+  sensors_plus: 7229095999f30740798f0eeef5cd120357a8f4f2
+  share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
   shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
   url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
   wakelock_plus: 78ec7c5b202cab7761af8e2b2b3d0671be6c4ae1
-  webview_flutter_wkwebview: 2a23822e9039b7b1bc52e5add778e5d89ad488d1
+  webview_flutter_wkwebview: 0982481e3d9c78fd5c6f62a002fcd24fc791f1e4
 
 PODFILE CHECKSUM: 990e75a5fba23912ca7f5b3fc0557775de11d8e2
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

@@ -97,11 +97,8 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
     //   );
     default:
       debugPrint("------ make tile layer ----");
-      // TODO: when ios stops having https erros, remove this
       return TileLayer(
-        urlTemplate: Platform.isIOS
-            ? "http://tile.opentopomap.org/{z}/{x}/{y}.png"
-            : "https://tile.opentopomap.org/{z}/{x}/{y}.png",
+        urlTemplate: "https://tile.opentopomap.org/{z}/{x}/{y}.png",
         // urlTemplate: "https://tile.tracestrack.com/topo__/{z}/{x}/{y}.png?key={apiKey}",
         // fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
         // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
