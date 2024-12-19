@@ -16,6 +16,7 @@ import 'package:permission_handler_platform_interface/permission_handler_platfor
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/main.dart';
+import 'package:xcnav/notifications.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/chat_messages.dart';
@@ -29,7 +30,18 @@ import 'package:xcnav/providers/wind.dart';
 
 import 'mock_providers.dart';
 
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final MockFlutterLocalNotificationsPlugin mock = MockFlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlatform.instance = mock;
+
   Widget makeApp(ActivePlan activePlan, MockPlans plans, Completer<MockClient> client) {
     return MultiProvider(providers: [
       ChangeNotifierProvider(
@@ -97,7 +109,6 @@ void main() {
       });
       SharedPreferences.getInstance().then((prefs) {
         settingsMgr = SettingsMgr(prefs);
-        // settingsMgr.showAirspaceOverlay.value = false;
       });
 
       // --- Setup stubs and initial configs
@@ -116,7 +127,6 @@ void main() {
 
       // --- Build App
       await mockNetworkImages(() async => $.pumpWidget(makeApp(activePlan, plans, clientCompleter)));
-      // await $.pumpWidget(makeApp(activePlan, plans, clientCompleter));
       await $.waitUntilExists($(Scaffold));
 
       final client = await clientCompleter.future;
@@ -177,3 +187,11 @@ void main() {
     },
   );
 }
+
+class MockMethodChannel extends Mock implements MethodChannel {}
+
+class MockFlutterLocalNotificationsPlugin extends Mock
+    with
+        MockPlatformInterfaceMixin // ignore: prefer_mixin
+    implements
+        FlutterLocalNotificationsPlatform {}

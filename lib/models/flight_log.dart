@@ -700,7 +700,7 @@ class FlightLog {
       gSamples.add(roundToDigits(each.value, 2));
     }
     final dict = {
-      "xcNavVersion": "${version.version}  -  ( build ${version.buildNumber}",
+      "xcNavVersion": "${version.version}-(${version.buildNumber})",
       "samples": samples.map((e) => e.toJson()).toList(),
       "waypoints":
           waypoints.where((element) => (!element.ephemeral && element.validate())).map((e) => e.toJson()).toList(),

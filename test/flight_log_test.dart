@@ -2,13 +2,16 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/gear.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/util.dart';
 
 void main() {
+  version = PackageInfo(appName: "xcNav", packageName: "xcNav", version: "test", buildNumber: "100");
   test('Log Fidelity', () {
     final gear = Gear();
     gear.wingMakeModel = "1234ok";

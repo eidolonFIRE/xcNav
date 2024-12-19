@@ -10,9 +10,9 @@ void setFocus(bool focused) {
 }
 
 void configLocalNotification() {
-  var initializationSettingsAndroid = const AndroidInitializationSettings("@mipmap/ic_launcher");
-  var initializationSettingsIOS = const DarwinInitializationSettings();
-  var initializationSettings =
+  const initializationSettingsAndroid = AndroidInitializationSettings("@mipmap/ic_launcher");
+  const initializationSettingsIOS = DarwinInitializationSettings();
+  const initializationSettings =
       InitializationSettings(android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
   FlutterLocalNotificationsPlugin().initialize(initializationSettings);
 }

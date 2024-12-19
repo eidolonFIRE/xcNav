@@ -29,7 +29,17 @@ import 'package:xcnav/settings_service.dart';
 
 import 'mock_providers.dart';
 
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final MockFlutterLocalNotificationsPlugin mock = MockFlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlatform.instance = mock;
   SharedPreferences.setMockInitialValues({});
   SharedPreferences.getInstance().then((prefs) {
     settingsMgr = SettingsMgr(prefs);
@@ -135,6 +145,10 @@ void main() {
       ))).thenAnswer((_) => Stream.value(mockPosition));
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
       SharedPreferences.setMockInitialValues({
+        "weatherKit.last.time": clock.now().millisecondsSinceEpoch - 10000,
+        "weatherKit.last.value": 1351.0,
+        "weatherKit.last.lat": 37.0,
+        "weatherKit.last.lng": -121.0,
         "profile.name": "Mr Test",
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
@@ -144,7 +158,7 @@ void main() {
       final plans = MockPlans();
 
       // --- Build App
-      await $.pumpWidget(makeApp(activePlan, plans));
+      await mockNetworkImages(() async => $.pumpWidget(makeApp(activePlan, plans)));
       await $.waitUntilExists($(Scaffold));
       await $.pump(const Duration(seconds: 2));
 
@@ -166,3 +180,11 @@ void main() {
     },
   );
 }
+
+class MockMethodChannel extends Mock implements MethodChannel {}
+
+class MockFlutterLocalNotificationsPlugin extends Mock
+    with
+        MockPlatformInterfaceMixin // ignore: prefer_mixin
+    implements
+        FlutterLocalNotificationsPlatform {}

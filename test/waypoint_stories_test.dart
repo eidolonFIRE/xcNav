@@ -32,7 +32,18 @@ import 'package:xcnav/views/view_waypoints.dart';
 
 import 'mock_providers.dart';
 
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final MockFlutterLocalNotificationsPlugin mock = MockFlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlatform.instance = mock;
+
   Widget makeApp(ActivePlan activePlan, MockPlans plans) {
     return MultiProvider(providers: [
       ChangeNotifierProvider(
@@ -208,3 +219,11 @@ void main() {
     expect(plans.loadedPlans["my test collection"]?.waypoints.length, 1);
   });
 }
+
+class MockMethodChannel extends Mock implements MethodChannel {}
+
+class MockFlutterLocalNotificationsPlugin extends Mock
+    with
+        MockPlatformInterfaceMixin // ignore: prefer_mixin
+    implements
+        FlutterLocalNotificationsPlatform {}

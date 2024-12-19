@@ -29,7 +29,7 @@ class Gear {
     engine = parseAsString(data["engine"]);
     prop = parseAsString(data["prop"]);
     tankSize = parseAsDouble(data["tank_size"]);
-    bladderSize = parseAsDouble(data["blader_size"]);
+    bladderSize = parseAsDouble(data["bladder_size"]);
     other = parseAsString(data["other"]);
   }
 
