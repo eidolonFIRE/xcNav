@@ -422,43 +422,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   ));
                             }),
 
-                        // --- Add Fuel Report
-                        Positioned(
-                          left: 10,
-                          bottom: 90,
-                          child: MapButton(
-                              size: 45,
-                              onPressed: () {
-                                editFuelReport(context,
-                                        DateTime.fromMillisecondsSinceEpoch(log.samples[sampleIndex.value].time), null)
-                                    .then((newReport) {
-                                  if (newReport != null) {
-                                    setState(() {
-                                      log.insertFuelReport(newReport.time, newReport.amount);
-                                    });
-                                  }
-                                });
-                              },
-                              selected: false,
-                              child: const Stack(
-                                children: [
-                                  Icon(
-                                    Icons.local_gas_station,
-                                    color: Colors.black,
-                                    size: 30,
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 3.5, top: 11),
-                                    child: Icon(
-                                      Icons.add,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  ),
-                                ],
-                              )),
-                        ),
-
                         // --- Instruments
                         ValueListenableBuilder<int>(
                             valueListenable: sampleIndex,
@@ -809,73 +772,113 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
                 // --- Fuel
                 Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: log.fuelReports.isEmpty
-                      ? const Center(
-                          child: Text("No fuel reports."),
-                        )
-                      : Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // --- Fuel Stats: title
-                            DefaultTextStyle(
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    const Text("Duration (min)"),
-                                    Text("Burn Rate ($fuelRateStr)"),
-                                    Text("Efficiency ($fuelEffStr)"),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            // --- Fuel Stats: data
-                            DefaultTextStyle(
-                              style: const TextStyle(fontSize: 18),
-                              child: Expanded(
-                                child: Container(
-                                  color: Colors.grey.shade800,
-                                  // constraints: const BoxConstraints(maxHeight: 130),
-                                  child: ListView(
-                                      shrinkWrap: true,
-                                      children: log.fuelStats
-                                          .map((e) => Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                                                Text("${e.durationTime.inMinutes}"),
-                                                Text(printValue(UnitType.fuel, e.rate, decimals: 1) ?? "?"),
-                                                Text(printValue(
-                                                        UnitType.distCoarse, e.mpl / unitConverters[UnitType.fuel]!(1),
-                                                        decimals: 1) ??
-                                                    "?")
-                                              ]))
-                                          .toList()),
-                                ),
-                              ),
-                            ),
-                            // --- Fuel Stats: summary
-                            if (log.sumFuelStat != null && log.fuelStats.length > 1)
-                              DefaultTextStyle(
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: SizedBox(
-                                    height: 25,
-                                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                                      const Text("---"),
-                                      Text(printValue(UnitType.fuel, log.sumFuelStat!.rate) ?? "?"),
-                                      Text(printValue(UnitType.distCoarse,
-                                              log.sumFuelStat!.mpl / unitConverters[UnitType.fuel]!(1)) ??
-                                          "?")
-                                    ]),
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      mainAxisAlignment: log.fuelReports.isEmpty ? MainAxisAlignment.center : MainAxisAlignment.start,
+                      children: [
+                        if (log.fuelReports.isNotEmpty)
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // --- Fuel Stats: title
+                                DefaultTextStyle(
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                      children: [
+                                        const Text("Duration (min)"),
+                                        Text("Burn Rate ($fuelRateStr)"),
+                                        Text("Efficiency ($fuelEffStr)"),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              )
-                          ],
+                                // --- Fuel Stats: data
+                                Expanded(
+                                  child: DefaultTextStyle(
+                                    style: const TextStyle(fontSize: 18),
+                                    child: Container(
+                                      color: Colors.grey.shade800,
+                                      // constraints: const BoxConstraints(maxHeight: 130),
+                                      child: ListView(
+                                          shrinkWrap: true,
+                                          children: log.fuelStats
+                                              .mapIndexed((index, e) =>
+                                                  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                                                    Text("${e.durationTime.inMinutes}"),
+                                                    Text(printValue(UnitType.fuel, e.rate, decimals: 1) ?? "?"),
+                                                    Text(printValue(UnitType.distCoarse,
+                                                            e.mpl / unitConverters[UnitType.fuel]!(1),
+                                                            decimals: 1) ??
+                                                        "?")
+                                                  ]))
+                                              .toList()),
+                                    ),
+                                  ),
+                                ),
+                                // --- Fuel Stats: summary
+                                if (log.sumFuelStat != null && log.fuelStats.length > 1)
+                                  DefaultTextStyle(
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: SizedBox(
+                                        height: 25,
+                                        child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                                          const Text("---"),
+                                          Text(printValue(UnitType.fuel, log.sumFuelStat!.rate) ?? "?"),
+                                          Text(printValue(UnitType.distCoarse,
+                                                  log.sumFuelStat!.mpl / unitConverters[UnitType.fuel]!(1)) ??
+                                              "?")
+                                        ]),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                        // --- Add Fuel Report
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ElevatedButton.icon(
+                              onPressed: () {
+                                editFuelReport(context,
+                                        DateTime.fromMillisecondsSinceEpoch(log.samples[sampleIndex.value].time), null)
+                                    .then((newReport) {
+                                  if (newReport != null) {
+                                    setState(() {
+                                      log.insertFuelReport(newReport.time, newReport.amount,
+                                          tolerance: const Duration(minutes: 1));
+                                    });
+                                  }
+                                });
+                              },
+                              label: const Text("Insert"),
+                              icon: const Stack(
+                                children: [
+                                  Icon(
+                                    Icons.local_gas_station,
+                                    color: Colors.green,
+                                    size: 30,
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.only(left: 3.5, top: 11),
+                                    child: Icon(
+                                      Icons.add,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ],
+                              )),
                         ),
-                ),
+                      ],
+                    )),
               ]),
             ),
 
