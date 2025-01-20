@@ -141,7 +141,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     debugPrint("Build /home");
-    setSystemUI();
 
     if (MediaQuery.of(context).size.aspectRatio <= 5 / 4 || MediaQuery.of(context).size.aspectRatio >= 4 / 5) {
       // Unlock Landscape for wide aspect ratio

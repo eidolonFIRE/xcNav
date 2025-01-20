@@ -184,6 +184,8 @@ class XCNav extends StatelessWidget {
 
     WakelockPlus.enable();
 
+    setSystemUI();
+
     configLocalNotification();
 
     ttsService = TtsService();
