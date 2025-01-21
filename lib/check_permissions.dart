@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:xcnav/dialogs/request_location_always.dart';
 
@@ -12,11 +13,20 @@ Future<bool?> checkPermissions(BuildContext context) async {
 
     await Permission.notification.request();
 
+    if (!await GeolocatorPlatform.instance.isLocationServiceEnabled()) {
+      await Permission.location.request();
+    }
+
     if (Platform.isIOS) {
       await Permission.camera.request();
       await Permission.photos.request();
       await Permission.locationWhenInUse.request();
       await Permission.locationAlways.request();
+
+      if (await Permission.locationAlways.isPermanentlyDenied) {
+        debugPrint("Location was permanently denied, opening app settings.");
+        await openAppSettings();
+      }
     } else {
       debugPrint("Checking location permissions...");
       final whenInUse = await Permission.locationWhenInUse.status;
