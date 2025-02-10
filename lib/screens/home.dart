@@ -24,9 +24,6 @@ import 'package:xcnav/views/view_waypoints.dart';
 import 'package:xcnav/widgets/top_instruments.dart';
 import 'package:xcnav/widgets/main_menu.dart';
 
-// misc
-import 'package:xcnav/util.dart';
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 

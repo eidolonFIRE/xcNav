@@ -18,7 +18,6 @@ import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/widgets/log_summary.dart';
-import 'package:xcnav/widgets/map_button.dart';
 import 'package:xcnav/widgets/map_selector.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 

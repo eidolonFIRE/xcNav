@@ -22,6 +22,7 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/weather_observation_service.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -488,6 +489,79 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   )))
                               .toList()),
 
+                    // Measurement: yellow line
+                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
+                      PolylineLayer(polylines: [measurementPolyline]),
+
+                    // WeatherObservations
+                    if (mapReady)
+                      MarkerLayer(
+                          markers: getWeatherObservations(mapController.camera.center, 10000)
+                              .map((e) => Marker(
+                                    height: 28,
+                                    width: 100,
+                                    point: e.latlng,
+                                    rotate: true,
+                                    alignment: Alignment.centerRight,
+                                    child: Container(
+                                      transform: Matrix4.translationValues(-14, 0, 0),
+                                      child: Row(
+                                        // mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IgnorePointer(
+                                            child: ClipRRect(
+                                              borderRadius: const BorderRadius.all(Radius.circular(10)),
+                                              child: Container(
+                                                color: Colors.white.withAlpha(150),
+                                                child:
+                                                    // space for arrow
+                                                    Padding(
+                                                  padding: const EdgeInsets.only(left: 28, right: 10),
+                                                  child: Text(
+                                                    // "yooooooooooooo",
+                                                    printDouble(value: e.windSpd!, digits: 2, decimals: 0) +
+                                                        (e.windGust != null
+                                                            ? " g${printDouble(value: e.windGust!, digits: 2, decimals: 0)}"
+                                                            : ''),
+                                                    maxLines: 1,
+                                                    softWrap: false,
+                                                    overflow: TextOverflow.visible,
+                                                    style: const TextStyle(
+                                                        color: Colors.black,
+                                                        fontSize: 18,
+                                                        overflow: TextOverflow.visible),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ))
+                              .toList()),
+
+                    if (mapReady)
+                      MarkerLayer(
+                          markers: getWeatherObservations(mapController.camera.center, 10000)
+                              .map(
+                                (e) => Marker(
+                                  width: 14.0,
+                                  height: 14.0,
+                                  point: e.latlng,
+                                  rotate: false,
+                                  alignment: Alignment.center,
+                                  child: IgnorePointer(
+                                    child: Container(
+                                        transformAlignment: const Alignment(0, 0),
+                                        transform: Matrix4.rotationZ((e.windDir ?? 0) * pi / 180),
+                                        child: SvgPicture.asset("assets/images/simple_arrow.svg",
+                                            colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
+                                  ),
+                                ),
+                              )
+                              .toList()),
+
                     // Waypoint markers
                     if (!hideWaypoints)
                       MarkerLayer(
@@ -519,10 +593,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 )))
                             .toList(),
                       ),
-
-                    // Measurement: yellow line
-                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                      PolylineLayer(polylines: [measurementPolyline]),
 
                     // --- Draggable waypoints
                     if (editingWp != null &&
