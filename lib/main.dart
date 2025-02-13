@@ -52,6 +52,7 @@ import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/secrets.dart';
 import 'package:xcnav/airports.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/weather_observation_service.dart';
 
 LatLng lastKnownLatLng = const LatLng(37, -122);
 

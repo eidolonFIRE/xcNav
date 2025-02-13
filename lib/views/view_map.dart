@@ -22,6 +22,7 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/adsb.dart';
+import 'package:xcnav/weather_observation_service.dart';
 
 // widgets
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -100,6 +101,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
   bool hideWaypoints = false;
+  bool hideWeatherObservations = false;
 
   DateTime? lastSavedLastKnownLatLng;
 
@@ -488,6 +490,103 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   )))
                               .toList()),
 
+                    // Measurement: yellow line
+                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
+                      PolylineLayer(polylines: [measurementPolyline]),
+
+                    // (DEBUG): check the tiles being loaded
+                    // if (mapReady)
+                    //   PolygonLayer(
+                    //       polygons: WeatherObservationService.iterTiles(mapController.camera.visibleBounds)
+                    //           .map((e) => Polygon(
+                    //               points: tileToLatLngs(e),
+                    //               color: Color.fromARGB(
+                    //                   100, (e.x * 30) % 255, (e.y * 30) % 255, (e.x * 30 + e.y * 20) % 255)))
+                    //           .toList()),
+
+                    // WeatherObservations
+                    if (mapReady && !hideWeatherObservations && mapController.camera.zoom > 7)
+                      MarkerLayer(
+                          markers: getWeatherObservations(mapController.camera.visibleBounds)
+                              .map((e) => Marker(
+                                    height: 28,
+                                    width: 100,
+                                    point: e.latlng,
+                                    rotate: true,
+                                    alignment: Alignment.centerRight,
+                                    child: Container(
+                                      transform: Matrix4.translationValues(-14, 0, 0),
+                                      child: Row(
+                                        // mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IgnorePointer(
+                                            child: ClipRRect(
+                                              borderRadius: const BorderRadius.all(Radius.circular(10)),
+                                              child: Container(
+                                                color: e.color,
+                                                child:
+                                                    // space for arrow
+                                                    Padding(
+                                                  padding: const EdgeInsets.only(left: 28, right: 8),
+                                                  child: Text.rich(
+                                                    TextSpan(children: [
+                                                      TextSpan(
+                                                          text: printValue(UnitType.speed, e.windSpd!,
+                                                              digits: 2, decimals: 0)!),
+                                                      TextSpan(
+                                                          text: (e.windGust != null
+                                                              ? " g${printValue(UnitType.speed, e.windGust!, digits: 2, decimals: 0)}"
+                                                              : ''),
+                                                          style: const TextStyle(fontSize: 13))
+                                                    ]),
+                                                    maxLines: 1,
+                                                    softWrap: false,
+                                                    overflow: TextOverflow.visible,
+                                                    style: const TextStyle(
+                                                        color: Colors.black,
+                                                        fontSize: 18,
+                                                        overflow: TextOverflow.visible),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ))
+                              .toList()),
+
+                    if (mapReady && !hideWeatherObservations && mapController.camera.zoom > 7)
+                      MarkerLayer(
+                          markers: getWeatherObservations(mapController.camera.visibleBounds)
+                              .map(
+                                (e) => Marker(
+                                  width: 14.0,
+                                  height: 14.0,
+                                  point: e.latlng,
+                                  rotate: false,
+                                  alignment: Alignment.center,
+                                  child: IgnorePointer(
+                                    child: (e.windDir == null || (e.windSpd ?? 0) < 0.01)
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(2),
+                                            child: Container(
+                                                decoration: const BoxDecoration(
+                                              color: Colors.black,
+                                              shape: BoxShape.circle,
+                                            )),
+                                          )
+                                        : Container(
+                                            transformAlignment: const Alignment(0, 0),
+                                            transform: Matrix4.rotationZ((e.windDir ?? 0) * pi / 180),
+                                            child: SvgPicture.asset("assets/images/simple_arrow.svg",
+                                                colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
+                                  ),
+                                ),
+                              )
+                              .toList()),
+
                     // Waypoint markers
                     if (!hideWaypoints)
                       MarkerLayer(
@@ -519,10 +618,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 )))
                             .toList(),
                       ),
-
-                    // Measurement: yellow line
-                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                      PolylineLayer(polylines: [measurementPolyline]),
 
                     // --- Draggable waypoints
                     if (editingWp != null &&
@@ -1410,9 +1505,18 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 curLayer: settingsMgr.mainMapTileSrc.value,
                 curOpacity: settingsMgr.mainMapOpacity.value,
                 hideWaypoints: hideWaypoints,
+                hideWeatherObservations: hideWeatherObservations,
                 onChangedWaypoints: (hidden) {
                   setState(() {
                     hideWaypoints = hidden;
+                  });
+                },
+                onChangedWeatherObservations: (hidden) {
+                  setState(() {
+                    hideWeatherObservations = hidden;
+                    if (!hidden) {
+                      weatherServiceResetSomeTimers();
+                    }
                   });
                 },
                 onChanged: (layer, opacity) {

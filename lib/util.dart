@@ -70,6 +70,21 @@ double? parseAsDouble(dynamic value) {
   return null;
 }
 
+int? parseAsInt(dynamic value) {
+  if (value is double) return value.round();
+  if (value is int) return value;
+  if (value is String && value.isNotEmpty) {
+    try {
+      return int.parse(value);
+    } catch (err, trace) {
+      final msg = "failed to parse int $value";
+      info(msg, errorMessage: err.toString(), errorStackTrace: trace);
+    }
+  }
+
+  return null;
+}
+
 LatLng clampLatLng(double latitude, double longitude) {
   return LatLng(min(90, max(-90, latitude)), min(180, max(-180, longitude)));
 }
