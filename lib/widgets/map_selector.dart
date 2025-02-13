@@ -9,7 +9,9 @@ class MapSelector extends StatelessWidget {
   final double curOpacity;
   final Function(MapTileSrc tileSrc, double opacity) onChanged;
   final bool hideWaypoints;
+  final bool hideWeatherObservations;
   final Function(bool hidden)? onChangedWaypoints;
+  final Function(bool hidden)? onChangedWeatherObservations;
   final bool leftAlign;
 
   const MapSelector({
@@ -20,7 +22,9 @@ class MapSelector extends StatelessWidget {
     required this.isMapDialOpen,
     this.leftAlign = false,
     this.hideWaypoints = false,
+    this.hideWeatherObservations = false,
     this.onChangedWaypoints,
+    this.onChangedWeatherObservations,
   });
 
   final ValueNotifier<bool> isMapDialOpen;
@@ -78,19 +82,30 @@ class MapSelector extends StatelessWidget {
                                   .toList()),
                         )))
                     .toList() +
-                ((onChangedWaypoints == null)
-                    ? []
-                    : [
-                        SpeedDialChild(
-                            label: "Hide Waypoints",
-                            child: Checkbox.adaptive(
-                                value: hideWaypoints,
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    onChangedWaypoints?.call(value);
-                                    isMapDialOpen.value = false;
-                                  }
-                                })),
-                      ]));
+                [
+                  if (onChangedWaypoints != null)
+                    SpeedDialChild(
+                        label: "Hide Waypoints",
+                        child: Checkbox.adaptive(
+                            value: hideWaypoints,
+                            onChanged: (value) {
+                              if (value != null) {
+                                onChangedWaypoints?.call(value);
+                                isMapDialOpen.value = false;
+                              }
+                            })),
+                  if (onChangedWaypoints != null)
+                    if (true)
+                      SpeedDialChild(
+                          label: "Hide Wind",
+                          child: Checkbox.adaptive(
+                              value: hideWeatherObservations,
+                              onChanged: (value) {
+                                if (value != null) {
+                                  onChangedWeatherObservations?.call(value);
+                                  isMapDialOpen.value = false;
+                                }
+                              }))
+                ]);
   }
 }

@@ -15,7 +15,7 @@ import 'package:xml/xml.dart';
 
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/models/tfr.dart';
-import 'package:xcnav/state_centroids.dart';
+import 'package:xcnav/state_geo.dart';
 import 'package:xcnav/util.dart';
 
 final _notamIdExpr = RegExp(r"(\d/[\d]{4})");

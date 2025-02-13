@@ -101,6 +101,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
   bool hideWaypoints = false;
+  bool hideWeatherObservations = false;
 
   DateTime? lastSavedLastKnownLatLng;
 
@@ -493,10 +494,20 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
                       PolylineLayer(polylines: [measurementPolyline]),
 
+                    // (DEBUG): check the tiles being loaded
+                    // if (mapReady)
+                    //   PolygonLayer(
+                    //       polygons: WeatherObservationService.iterTiles(mapController.camera.visibleBounds)
+                    //           .map((e) => Polygon(
+                    //               points: tileToLatLngs(e),
+                    //               color: Color.fromARGB(
+                    //                   100, (e.x * 30) % 255, (e.y * 30) % 255, (e.x * 30 + e.y * 20) % 255)))
+                    //           .toList()),
+
                     // WeatherObservations
-                    if (mapReady)
+                    if (mapReady && !hideWeatherObservations && mapController.camera.zoom > 7)
                       MarkerLayer(
-                          markers: getWeatherObservations(mapController.camera.center, 10000)
+                          markers: getWeatherObservations(mapController.camera.visibleBounds)
                               .map((e) => Marker(
                                     height: 28,
                                     width: 100,
@@ -512,17 +523,22 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                             child: ClipRRect(
                                               borderRadius: const BorderRadius.all(Radius.circular(10)),
                                               child: Container(
-                                                color: Colors.white.withAlpha(150),
+                                                color: e.color,
                                                 child:
                                                     // space for arrow
                                                     Padding(
-                                                  padding: const EdgeInsets.only(left: 28, right: 10),
-                                                  child: Text(
-                                                    // "yooooooooooooo",
-                                                    printDouble(value: e.windSpd!, digits: 2, decimals: 0) +
-                                                        (e.windGust != null
-                                                            ? " g${printDouble(value: e.windGust!, digits: 2, decimals: 0)}"
-                                                            : ''),
+                                                  padding: const EdgeInsets.only(left: 28, right: 8),
+                                                  child: Text.rich(
+                                                    TextSpan(children: [
+                                                      TextSpan(
+                                                          text: printValue(UnitType.speed, e.windSpd!,
+                                                              digits: 2, decimals: 0)!),
+                                                      TextSpan(
+                                                          text: (e.windGust != null
+                                                              ? " g${printValue(UnitType.speed, e.windGust!, digits: 2, decimals: 0)}"
+                                                              : ''),
+                                                          style: const TextStyle(fontSize: 13))
+                                                    ]),
                                                     maxLines: 1,
                                                     softWrap: false,
                                                     overflow: TextOverflow.visible,
@@ -541,9 +557,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   ))
                               .toList()),
 
-                    if (mapReady)
+                    if (mapReady && !hideWeatherObservations && mapController.camera.zoom > 7)
                       MarkerLayer(
-                          markers: getWeatherObservations(mapController.camera.center, 10000)
+                          markers: getWeatherObservations(mapController.camera.visibleBounds)
                               .map(
                                 (e) => Marker(
                                   width: 14.0,
@@ -552,11 +568,20 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   rotate: false,
                                   alignment: Alignment.center,
                                   child: IgnorePointer(
-                                    child: Container(
-                                        transformAlignment: const Alignment(0, 0),
-                                        transform: Matrix4.rotationZ((e.windDir ?? 0) * pi / 180),
-                                        child: SvgPicture.asset("assets/images/simple_arrow.svg",
-                                            colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
+                                    child: (e.windDir == null || (e.windSpd ?? 0) < 0.01)
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(2),
+                                            child: Container(
+                                                decoration: const BoxDecoration(
+                                              color: Colors.black,
+                                              shape: BoxShape.circle,
+                                            )),
+                                          )
+                                        : Container(
+                                            transformAlignment: const Alignment(0, 0),
+                                            transform: Matrix4.rotationZ((e.windDir ?? 0) * pi / 180),
+                                            child: SvgPicture.asset("assets/images/simple_arrow.svg",
+                                                colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
                                   ),
                                 ),
                               )
@@ -1480,9 +1505,18 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 curLayer: settingsMgr.mainMapTileSrc.value,
                 curOpacity: settingsMgr.mainMapOpacity.value,
                 hideWaypoints: hideWaypoints,
+                hideWeatherObservations: hideWeatherObservations,
                 onChangedWaypoints: (hidden) {
                   setState(() {
                     hideWaypoints = hidden;
+                  });
+                },
+                onChangedWeatherObservations: (hidden) {
+                  setState(() {
+                    hideWeatherObservations = hidden;
+                    if (!hidden) {
+                      weatherServiceResetSomeTimers();
+                    }
                   });
                 },
                 onChanged: (layer, opacity) {
