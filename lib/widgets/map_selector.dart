@@ -94,7 +94,7 @@ class MapSelector extends StatelessWidget {
                                 isMapDialOpen.value = false;
                               }
                             })),
-                  if (onChangedWaypoints != null)
+                  if (onChangedWeatherObservations != null)
                     if (true)
                       SpeedDialChild(
                           label: "Hide Wind",
