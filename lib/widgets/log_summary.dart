@@ -55,7 +55,7 @@ class LogSummary extends StatelessWidget {
             ),
           ]),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text("Best 1min Climb"),
+            const Text("Best 30sec Climb"),
             Text.rich(
               richValue(UnitType.vario, log.bestClimb, decimals: 1, unitStyle: unitStyle),
               textAlign: TextAlign.end,

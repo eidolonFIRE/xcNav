@@ -107,7 +107,7 @@ class FlightLog {
   // =========================================
   double? _bestClimb;
 
-  /// Fastest climb sustained for 1min in `m/s`
+  /// Fastest climb sustained
   double get bestClimb {
     if (_bestClimb == null) {
       // --- Sliding window search for bestClimb
@@ -117,7 +117,7 @@ class FlightLog {
       while (left < samples.length) {
         // grow window
         while (right < samples.length &&
-            Duration(milliseconds: samples[right].time - samples[left].time) < const Duration(seconds: 60)) {
+            Duration(milliseconds: samples[right].time - samples[left].time) < const Duration(seconds: 30)) {
           right++;
         }
 
