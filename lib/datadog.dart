@@ -10,16 +10,13 @@ void error(String message,
     Map<String, Object?> attributes = const {}}) {
   DatadogSdk.instance.rum?.addErrorInfo("$message : ${errorMessage ?? '(report)'}", RumErrorSource.source,
       stackTrace: errorStackTrace, errorType: errorKind, attributes: attributes);
-
   ddLogger?.error(message,
       errorMessage: errorMessage, errorKind: errorKind, errorStackTrace: errorStackTrace, attributes: attributes);
-  debugPrint("Error: $message : $errorMessage");
+  debugPrint("Error: $message : ${errorMessage ?? '(report)'}");
 }
 
 void warn(String message,
     {String? errorKind, StackTrace? errorStackTrace, Map<String, Object?> attributes = const {}}) {
-  DatadogSdk.instance.rum?.addErrorInfo(message, RumErrorSource.source,
-      stackTrace: errorStackTrace, errorType: errorKind, attributes: attributes);
   ddLogger?.warn(message, errorKind: errorKind, errorStackTrace: errorStackTrace, attributes: attributes);
   debugPrint("Warn: $message");
 }

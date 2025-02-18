@@ -26,6 +26,7 @@ GA? _decodeTraffic(Uint8List data) {
   final double spd = ((data[13] << 4) + (data[14] >> 4)) * 0.51444;
 
   // Default to "heavy"
+  // Page 23: https://www.faa.gov/sites/faa.gov/files/air_traffic/technology/adsb/archival/GDL90_Public_ICD_RevA.PDF
   GAtype type = GAtype.large;
   final i = data[17];
   if (i == 1 || i == 9 || i == 10) {
