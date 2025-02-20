@@ -32,6 +32,7 @@ test_bundle.dart
 .packages
 .pub-cache/
 .pub/
+android/app/.cxx
 /build/
 
 # Web related

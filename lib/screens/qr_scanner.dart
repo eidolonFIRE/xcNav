@@ -1,9 +1,8 @@
-import 'dart:developer';
-import 'dart:io';
+import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -19,23 +18,68 @@ class QRScanner extends StatefulWidget {
   State<QRScanner> createState() => _QRScannerState();
 }
 
-class _QRScannerState extends State<QRScanner> {
-  QRViewController? controller;
+class _QRScannerState extends State<QRScanner> with WidgetsBindingObserver {
+  MobileScannerController controller = MobileScannerController();
   bool goodResult = false;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   final TextEditingController inputGroupId = TextEditingController();
   final groupCodeExp = RegExp(r'^([0-9a-zA-Z]{6,})$');
   static const groupCodePrefix = "xcNav_Group:";
 
-  // In order to get hot reload to work we need to pause the camera if the platform
-  // is android, or resume the camera if the platform is iOS.
+  StreamSubscription<Object?>? _subscription;
+
   @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      controller!.pauseCamera();
+  void initState() {
+    super.initState();
+    // Start listening to lifecycle changes.
+    WidgetsBinding.instance.addObserver(this);
+
+    // Start listening to the barcode events.
+    _subscription = controller.barcodes.listen(handleScan);
+
+    // Finally, start the scanner itself.
+    unawaited(controller.start());
+  }
+
+  @override
+  Future<void> dispose() async {
+    // Stop listening to lifecycle changes.
+    WidgetsBinding.instance.removeObserver(this);
+    // Stop listening to the barcode events.
+    unawaited(_subscription?.cancel());
+    _subscription = null;
+    // Dispose the widget itself.
+    super.dispose();
+    // Finally, dispose of the controller.
+    await controller.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // If the controller is not ready, do not try to start or stop it.
+    // Permission dialogs can trigger lifecycle changes before the controller is ready.
+    if (!controller.value.hasCameraPermission) {
+      return;
     }
-    controller!.resumeCamera();
+
+    switch (state) {
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+        return;
+      case AppLifecycleState.resumed:
+        // Restart the scanner when the app is resumed.
+        // Don't forget to resume listening to the barcode events.
+        _subscription = controller.barcodes.listen(handleScan);
+
+        unawaited(controller.start());
+      case AppLifecycleState.inactive:
+        // Stop the scanner when the app is paused.
+        // Also stop the barcode events subscription.
+        unawaited(_subscription?.cancel());
+        _subscription = null;
+        unawaited(controller.stop());
+    }
   }
 
   @override
@@ -64,12 +108,12 @@ class _QRScannerState extends State<QRScanner> {
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9]"))],
                   controller: inputGroupId,
                   textInputAction: TextInputAction.go,
-                  onSubmitted: (text) => {joinCode(text)},
+                  onSubmitted: (text) => {handleCode(text)},
                 ),
               ),
             ),
           ),
-          IconButton(onPressed: () => {joinCode(inputGroupId.text)}, icon: const Icon(Icons.login))
+          IconButton(onPressed: () => {handleCode(inputGroupId.text)}, icon: const Icon(Icons.login))
         ]),
       ),
       body: Column(
@@ -79,23 +123,16 @@ class _QRScannerState extends State<QRScanner> {
           Expanded(
             child: Stack(
               children: [
-                QRView(
+                MobileScanner(
                   key: qrKey,
-                  onQRViewCreated: _onQRViewCreated,
-                  overlay: QrScannerOverlayShape(
-                      borderColor: Colors.red,
-                      borderRadius: 10,
-                      borderLength: 30,
-                      borderWidth: 10,
-                      cutOutSize: MediaQuery.of(context).size.width / 2),
-                  onPermissionSet: (ctrl, p) => _onPermissionSet(context, ctrl, p),
+                  controller: controller,
                 ),
                 Positioned(
                     right: 10,
                     bottom: 10,
                     child: IconButton(
                       onPressed: () async {
-                        await controller?.flipCamera();
+                        await controller.switchCamera();
                         setState(() {});
                       },
                       iconSize: 30,
@@ -151,47 +188,22 @@ class _QRScannerState extends State<QRScanner> {
     );
   }
 
-  bool joinCode(String code) {
+  void handleScan(BarcodeCapture scanned) {
+    debugPrint("Scanned Code: $scanned");
+    final code = scanned.barcodes[0].toString();
+    handleCode(code);
+  }
+
+  bool handleCode(String code) {
     if (groupCodeExp.hasMatch(code)) {
       debugPrint("Joined code: $code");
-      controller!.pauseCamera().then((_) {
-        Navigator.pop<bool>(context, true);
-        Provider.of<Client>(context, listen: false).joinGroup(context, code);
-      });
+
+      Provider.of<Client>(context, listen: false).joinGroup(context, code);
+      Navigator.pop(context);
       return true;
     } else {
       debugPrint("Invalid code: $code");
       return false;
     }
-  }
-
-  void _onQRViewCreated(QRViewController controller) {
-    setState(() {
-      this.controller = controller;
-    });
-    controller.scannedDataStream.listen((scanData) {
-      debugPrint("QR scanner scanData: ${scanData.code}");
-      // Follow invite link
-      if (scanData.code != null && !goodResult && scanData.code!.startsWith(groupCodePrefix)) {
-        goodResult = joinCode(scanData.code!.substring(groupCodePrefix.length));
-      }
-    });
-    this.controller!.pauseCamera();
-    this.controller!.resumeCamera();
-  }
-
-  void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
-    log('${DateTime.now().toIso8601String()}_onPermissionSet $p');
-    if (!p) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('no Permission')),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    controller?.dispose();
-    super.dispose();
   }
 }

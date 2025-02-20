@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +25,7 @@ TileProvider? _makeTileProvider(String instanceName) {
   debugPrint("------ make tile provider \"$instanceName\" ----");
   if (!mapServiceIsInit) return null;
   try {
-    return FMTCStore(instanceName).getTileProvider();
+    return FMTCTileProvider(stores: {instanceName: BrowseStoreStrategy.readUpdateCreate});
   } catch (e, trace) {
     error("FMTC: Error making tile provider",
         errorMessage: e.toString(), errorStackTrace: trace, attributes: {"layerName": instanceName});
@@ -39,12 +38,23 @@ final Map<MapTileSrc, TileLayer> _tileLayersCache = {};
 bool _fetchingVfrVersion = false;
 String? _vfrVersion;
 
+String _getUrlTemplate(MapTileSrc src) {
+  switch (src) {
+    case MapTileSrc.sectional:
+      return 'http://vfrmap.com/${_vfrVersion ?? "20240711"}/tiles/vfrc/{z}/{y}/{x}.jpg';
+    case MapTileSrc.satellite:
+      return 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    case MapTileSrc.topo:
+      return "https://tile.opentopomap.org/{z}/{x}/{y}.png";
+  }
+}
+
 TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
   final tileName = tileSrc.toString().split(".").last;
   switch (tileSrc) {
     case MapTileSrc.sectional:
       return TileLayer(
-        urlTemplate: 'http://vfrmap.com/${_vfrVersion ?? "20240711"}/tiles/vfrc/{z}/{y}/{x}.jpg',
+        urlTemplate: _getUrlTemplate(tileSrc),
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 11,
         tms: true,
@@ -57,7 +67,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
       );
     case MapTileSrc.satellite:
       return TileLayer(
-        urlTemplate: 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        urlTemplate: _getUrlTemplate(tileSrc),
         tileProvider: _makeTileProvider(tileName),
         maxNativeZoom: 19,
         minZoom: 2,
@@ -95,10 +105,10 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
     //       debugPrint("$tileName: error: $tile, $error, $stackTrace");
     //     },
     //   );
-    default:
+    case MapTileSrc.topo:
       debugPrint("------ make tile layer ----");
       return TileLayer(
-        urlTemplate: "https://tile.opentopomap.org/{z}/{x}/{y}.png",
+        urlTemplate: _getUrlTemplate(tileSrc),
         // urlTemplate: "https://tile.tracestrack.com/topo__/{z}/{x}/{y}.png?key={apiKey}",
         // fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
         // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
@@ -193,7 +203,7 @@ Future initMapCache() async {
     final tileName = tileSrc.toString().split(".").last;
     final store = FMTCStore(tileName);
     await store.manage.create();
-    await store.metadata.set(key: 'sourceURL', value: getMapTileLayer(tileSrc).urlTemplate!);
+    await store.metadata.set(key: 'sourceURL', value: _getUrlTemplate(tileSrc));
     // Do a regular purge of old tiles
     store.manage.removeTilesOlderThan(expiry: clock.now().subtract(const Duration(days: 16)));
   }

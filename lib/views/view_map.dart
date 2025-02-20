@@ -399,15 +399,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     //   ),
 
                     // Other Pilot path trace
-                    PolylineLayer(
-                        polylines: Provider.of<Group>(context)
-                            .activePilots
-                            // .toList()
-                            .map((e) => e.buildFlightTrace())
-                            .toList()),
+                    if (Provider.of<Group>(context).activePilots.isNotEmpty)
+                      PolylineLayer(
+                          polylines: Provider.of<Group>(context)
+                              .activePilots
+                              // .toList()
+                              .map((e) => e.buildFlightTrace())
+                              .toList()),
 
                     // Flight Log
-                    PolylineLayer(polylines: [Provider.of<MyTelemetry>(context, listen: false).buildFlightTrace()]),
+                    if (Provider.of<MyTelemetry>(context, listen: false).flightTrace.isNotEmpty)
+                      PolylineLayer(polylines: [Provider.of<MyTelemetry>(context, listen: false).buildFlightTrace()]),
 
                     // ADSB Proximity
                     if (Provider.of<ADSB>(context, listen: false).enabled &&

@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.8.9+163
+version: 2.9.0+170
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
@@ -39,15 +39,14 @@ dependencies:
   http: any
   intl: any
   
-  flutter_map: ^7.0.0
-  flutter_map_tile_caching: ^9.0.0
+  flutter_map: ^8.0.0
+  flutter_map_tile_caching: ^10.1.0
   flutter_map_dragmarker: any
   flutter_map_line_editor: any
 
   shared_preferences: ^2.0.13
   image_picker: ^1.0.4
   custom_image_crop: any
-  qr_code_scanner: ^1.0.0
   qr_flutter: ^4.0.0
   share_plus: ^10.0.2
   web_socket_channel: ^3.0.0
@@ -57,27 +56,32 @@ dependencies:
   geolocator: ^13.0.1
   flutter_local_notifications: ^18.0.1
   focus_detector: ^2.0.1
-  file_picker: ^8.0.3
+  file_picker: ^9.0.0
   xml: ^6.1.0
   permission_handler: ^11.0.0
   flutter_tts: ^4.0.2
   wakelock_plus: ^1.1.4
   package_info_plus: ^8.0.0
-  flutter_slidable: ^3.0.0
+  flutter_slidable: ^4.0.0
   network_info_plus: ^6.0.1
   url_launcher: ^6.1.2
   crypto: ^3.0.2
-  usb_serial: ^0.5.1
+  # usb_serial: ^0.5.1
+  # temporary fix
+  usb_serial:
+    git:
+      url: https://github.com/jymden/usbserial.git
+      ref: master
   latlong2: ^0.9.0
   collection: ^1.16.0
-  better_open_file: any
+  open_file: any
   dart_numerics: ^0.0.6
   fuzzywuzzy: ^1.1.2
   bisection: ^0.4.3+1
   flutter_speed_dial: ^7.0.0
   flutter_colorpicker: ^1.0.3
   screenshot: ^3.0.0
-  fl_chart: ^0.69.0
+  fl_chart: ^0.70.2
   datadog_flutter_plugin: ^2.1.0
   flutter_native_splash: ^2.2.18
   clock: ^1.1.1
@@ -85,14 +89,7 @@ dependencies:
   webview_flutter: ^4.8.0
   sensors_plus: ^6.0.1
   smooth_page_indicator: ^1.2.0+3
-
-
-# dependency_overrides:
-#   url_launcher_ios:
-#     git:
-#       url: git@github.com:hellohuanlin/packages.git
-#       path: packages/url_launcher/url_launcher_ios
-#       ref: urllauncher_fix_main_actor_completion_conformance
+  mobile_scanner: ^6.0.6
 
 dev_dependencies:
   flutter_test:
@@ -101,12 +98,7 @@ dev_dependencies:
   mocktail_image_network : any
   flutter_local_notifications_platform_interface: any
   plugin_platform_interface: any
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
   patrol_finders: any
 
 # For information on the generic Dart part of this file, see the

@@ -163,7 +163,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                           name: newWaypointName.text,
                           latlngs: tempLatlngs,
                           icon: selectedIcon,
-                          color: selectedColor.value);
+                          color: selectedColor.toARGB32());
 
                       Navigator.pop(context, newWaypoint);
                     }

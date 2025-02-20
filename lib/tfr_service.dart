@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:clock/clock.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as parser;
 import 'package:http/http.dart' as http;
@@ -37,7 +36,7 @@ Future<List<TFR>?> getTFRs(LatLng center) async {
       _loadedTFRsTime = clock.now();
     } else {
       // try fetch
-      final fetched = (await _fetchTfrs(center))?.whereNotNull().toList();
+      final fetched = (await _fetchTfrs(center))?.nonNulls.toList();
       if (fetched != null) {
         _loadedTFRs = fetched;
         debugPrint("Fetched ${_loadedTFRs?.length} TFRs.");

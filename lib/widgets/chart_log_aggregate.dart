@@ -105,7 +105,7 @@ class ChartLogAggregate extends StatelessWidget {
                 interval: 1,
                 getTitlesWidget: (double value, TitleMeta meta) {
                   return SideTitleWidget(
-                    axisSide: meta.axisSide,
+                    meta: meta,
                     space: 10,
                     angle: -45,
                     child: Text(
@@ -125,9 +125,7 @@ class ChartLogAggregate extends StatelessWidget {
                 ),
                 sideTitles: SideTitles(
                   getTitlesWidget: (value, meta) => SideTitleWidget(
-                      axisSide: meta.axisSide,
-                      space: 4,
-                      child: Text(value.toStringAsFixed((value % 1).abs() < 0.2 ? 0 : 1))),
+                      meta: meta, space: 4, child: Text(value.toStringAsFixed((value % 1).abs() < 0.2 ? 0 : 1))),
                   showTitles: true,
                   // interval: 1,
                   reservedSize: 30,
@@ -142,9 +140,7 @@ class ChartLogAggregate extends StatelessWidget {
                 ),
                 sideTitles: SideTitles(
                     getTitlesWidget: (value, meta) => SideTitleWidget(
-                        axisSide: meta.axisSide,
-                        space: 4,
-                        child: Text(value.toStringAsFixed((value % 1).abs() < 0.2 ? 0 : 1))),
+                        meta: meta, space: 4, child: Text(value.toStringAsFixed((value % 1).abs() < 0.2 ? 0 : 1))),
                     showTitles: true,
                     reservedSize: 30))),
       ),

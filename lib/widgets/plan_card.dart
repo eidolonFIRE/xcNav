@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
-import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
 
 // --- Dialogs
@@ -371,7 +370,7 @@ class _PlanCardState extends State<PlanCard> {
                                   return null;
                                 }
                               })
-                              .whereNotNull()
+                              .nonNulls
                               .toList(),
                         ),
                       ]),

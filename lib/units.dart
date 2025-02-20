@@ -106,8 +106,6 @@ String getUnitStr(UnitType type, {bool lexical = false}) {
       return _unitStr[lexical]![type][_unitDist];
     case UnitType.fuel:
       return _unitStr[lexical]![type][_unitFuel];
-    default:
-      return "";
   }
 }
 
@@ -159,9 +157,6 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
       case DisplayUnitsSpeed.mps:
         unitConverters[UnitType.speed] = (double value) => value;
         break;
-      default:
-        Exception("Unsupported unit");
-        break;
     }
   }
 
@@ -177,9 +172,6 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
       case DisplayUnitsVario.mps:
         unitConverters[UnitType.vario] = (double value) => value;
         break;
-      default:
-        Exception("Unsupported unit");
-        break;
     }
   }
 
@@ -193,9 +185,6 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
       case DisplayUnitsDist.metric:
         unitConverters[UnitType.distFine] = (double value) => value;
         unitConverters[UnitType.distCoarse] = (double value) => value / 1000;
-        break;
-      default:
-        Exception("Unsupported unit");
         break;
     }
   }
@@ -211,9 +200,6 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
         break;
       case DisplayUnitsFuel.kWh:
         unitConverters[UnitType.fuel] = (double value) => value;
-      default:
-        Exception("Unsupported unit");
-        break;
     }
   }
 }
@@ -358,7 +344,9 @@ TextSpan richValue(UnitType type, double value,
   // Cases for increasing decimals
 
   if (type == UnitType.vario && _unitVario == DisplayUnitsVario.mps ||
-      type == UnitType.speed && _unitSpeed == DisplayUnitsSpeed.mps) decimals++;
+      type == UnitType.speed && _unitSpeed == DisplayUnitsSpeed.mps) {
+    decimals++;
+  }
 
   double printValue = unitConverters[type]!(value);
 

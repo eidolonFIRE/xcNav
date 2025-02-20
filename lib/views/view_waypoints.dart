@@ -37,8 +37,8 @@ class ViewWaypointsState extends State<ViewWaypoints> {
   Color? filterColor;
   bool filterDist = true;
 
-  int compareColor(Color a, Color b) {
-    return (a.blue - b.blue).abs() + (a.red - b.red).abs() + (a.green - b.green).abs();
+  double compareColor(Color a, Color b) {
+    return (a.b - b.b).abs() + (a.r - b.r).abs() + (a.g - b.g).abs();
   }
 
   int compareWaypoints(Waypoint a, Waypoint b) {

@@ -21,13 +21,9 @@ Future initDemCache() async {
 
   // set the layer
   _demTileLayer = TileLayer(
-    urlTemplate: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
-    tileProvider: const FMTCStore("dem").getTileProvider(
-      settings: FMTCTileProviderSettings(
-        cachedValidDuration: const Duration(days: 60),
-      ),
-    ),
-  );
+      urlTemplate: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+      tileProvider: FMTCTileProvider(
+          stores: {"dem": BrowseStoreStrategy.readUpdateCreate}, cachedValidDuration: const Duration(days: 60)));
 }
 
 class Point3 {

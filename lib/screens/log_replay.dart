@@ -525,7 +525,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               return LineChart(
                                 LineChartData(
                                     minY: unitConverters[UnitType.distFine]!(min(log.samples.map((e) => e.alt).min - 10,
-                                        log.samples.map((e) => e.ground).whereNotNull().min - 10)),
+                                        log.samples.map((e) => e.ground).nonNulls.min - 10)),
                                     extraLinesData: ExtraLinesData(verticalLines: [
                                       VerticalLine(
                                           x: log.samples[logIndex].time.toDouble(), color: Colors.white, strokeWidth: 1)
@@ -643,7 +643,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   getTitlesWidget: (double value, TitleMeta meta) {
                                     return (value.round() % interval == 0)
                                         ? SideTitleWidget(
-                                            axisSide: meta.axisSide,
+                                            meta: meta,
                                             child: Text(
                                               "${value.round() + log.speedHistOffset}",
                                             ),

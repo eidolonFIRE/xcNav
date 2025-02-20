@@ -102,7 +102,7 @@ class ChartLogDurationHist extends StatelessWidget {
                 interval: 1,
                 getTitlesWidget: (double value, TitleMeta meta) {
                   return SideTitleWidget(
-                      axisSide: meta.axisSide,
+                      meta: meta,
                       space: 10,
                       angle: -45,
                       child: Text.rich(
@@ -129,9 +129,7 @@ class ChartLogDurationHist extends StatelessWidget {
                 ),
                 sideTitles: SideTitles(
                     getTitlesWidget: (value, meta) => SideTitleWidget(
-                        axisSide: meta.axisSide,
-                        space: 4,
-                        child: Text("${(value / max(1, logs.length) * 100).round()}%")),
+                        meta: meta, space: 4, child: Text("${(value / max(1, logs.length) * 100).round()}%")),
                     showTitles: true,
                     reservedSize: 30))),
       ),

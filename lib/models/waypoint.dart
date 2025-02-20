@@ -188,7 +188,7 @@ class Waypoint {
   }
 
   Color getColor() {
-    return Color(color ?? Colors.black.value);
+    return Color(color ?? Colors.black.toARGB32());
   }
 
   /// ETA from a location to a waypoint

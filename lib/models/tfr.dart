@@ -65,7 +65,7 @@ class TFR {
     purpose = data["purpose"];
     shapes = [];
     for (final poly in data["shapes"]) {
-      shapes.add((poly as List<dynamic>).map((e) => latlngFromJson(e)).whereNotNull().toList());
+      shapes.add((poly as List<dynamic>).map((e) => latlngFromJson(e)).nonNulls.toList());
     }
   }
 

@@ -37,7 +37,7 @@ class Gear {
     final dict = {
       "wing_make_model": wingMakeModel,
       "wing_size": wingSize,
-      "wing_color": wingColor?.value,
+      "wing_color": wingColor?.toARGB32(),
       "frame_make_model": frameMakeModel,
       "engine": engine,
       "prop": prop,
