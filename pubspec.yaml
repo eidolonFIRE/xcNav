@@ -3,7 +3,7 @@ description: Cross Country Paramotor Navigation
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: none # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -18,8 +18,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 2.9.0+170
 
 environment:
-  sdk: ">=3.2.0 <4.0.0"
-  flutter: ">=3.22.0"
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: '>=3.22.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -31,14 +31,13 @@ dependencies:
   flutter:
     sdk: flutter
 
-
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: any
   provider: any
   http: any
   intl: any
-  
+
   flutter_map: ^8.0.0
   flutter_map_tile_caching: ^10.1.0
   flutter_map_dragmarker: any
@@ -95,7 +94,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   mockito: ^5.3.0
-  mocktail_image_network : any
+  mocktail_image_network: any
   flutter_local_notifications_platform_interface: any
   plugin_platform_interface: any
   flutter_lints: ^5.0.0
@@ -117,7 +116,6 @@ flutter:
     - assets/images/
     - assets/external/
     - assets/airports.json
-
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
