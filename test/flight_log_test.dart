@@ -61,7 +61,7 @@ void main() {
 
     expect(log.fuelReports.length, 3);
 
-    final trimmed = log.trimLog(1, 3);
+    final trimmed = log.cropLog(Range(1, 4));
 
     // Check samples
     expect(trimmed.samples.length, 3);
@@ -87,7 +87,7 @@ void main() {
 
     expect(log.fuelReports.length, 3);
 
-    final trimmed = log.trimLog(1, 3);
+    final trimmed = log.cropLog(Range(1, 4));
 
     // Check samples
     expect(trimmed.samples.length, 3);
@@ -113,7 +113,7 @@ void main() {
 
     expect(log.fuelReports.length, 3);
 
-    final trimmed = log.trimLog(0, 2);
+    final trimmed = log.cropLog(Range(0, 3));
 
     // Check samples
     expect(trimmed.samples.length, 3);
@@ -139,7 +139,7 @@ void main() {
 
     expect(log.fuelReports.length, 3);
 
-    final trimmed = log.trimLog(0, 2);
+    final trimmed = log.cropLog(Range(0, 3));
 
     // Check samples
     expect(trimmed.samples.length, 3);

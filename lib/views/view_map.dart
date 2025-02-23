@@ -37,7 +37,7 @@ import 'package:xcnav/widgets/waypoint_nav_bar.dart';
 // dialogs
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
-import 'package:xcnav/dialogs/edit_fuel_reports.dart';
+import 'package:xcnav/dialogs/edit_live_fuel_report.dart';
 
 // models
 import 'package:xcnav/models/geo.dart';
@@ -1018,7 +1018,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             size: buttonSize,
                             selected: false,
                             child: const Icon(Icons.local_gas_station, color: Colors.black, size: 30),
-                            onPressed: () => {editFuelReports(context)},
+                            onPressed: () => {editLiveFuelReport(context)},
                           ),
                           SizedBox(
                               width: 2,

@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dart_numerics/dart_numerics.dart' as math;
+import 'package:xcnav/datadog.dart';
 
 TileLayer? _demTileLayer;
 
@@ -20,10 +21,16 @@ Future initDemCache() async {
       .set(key: 'sourceURL', value: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png');
 
   // set the layer
-  _demTileLayer = TileLayer(
-      urlTemplate: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
-      tileProvider: FMTCTileProvider(
-          stores: {"dem": BrowseStoreStrategy.readUpdateCreate}, cachedValidDuration: const Duration(days: 60)));
+  demStore.manage.ready.then((ready) {
+    if (ready) {
+      _demTileLayer = TileLayer(
+          urlTemplate: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+          tileProvider: FMTCTileProvider(
+              stores: {"dem": BrowseStoreStrategy.readUpdateCreate}, cachedValidDuration: const Duration(days: 60)));
+    } else {
+      error("DEM store not ready!");
+    }
+  });
 }
 
 class Point3 {

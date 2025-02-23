@@ -41,6 +41,22 @@ class TimestampDouble {
   TimestampDouble(this.time, this.value);
 }
 
+class Range<T> {
+  final T start;
+  final T end;
+  Range(this.start, this.end);
+  @override
+  String toString() {
+    return "Range($start, $end)";
+  }
+}
+
+class HistogramData<T> {
+  final Range<T> range;
+  final List<int> values;
+  HistogramData(this.range, this.values);
+}
+
 /// Round to number of digits
 double roundToDigits(double value, double digits) {
   return (value * pow(10, digits)).round() / pow(10, digits);

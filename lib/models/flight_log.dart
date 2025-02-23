@@ -11,7 +11,6 @@ import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
 
 import 'package:xcnav/util.dart';
-import 'package:xcnav/units.dart';
 
 import 'package:xcnav/douglas_peucker.dart';
 
@@ -180,48 +179,68 @@ class FlightLog {
   }
 
   // =========================================
-  int speedHistOffset = 0;
-  List<int>? _speedHist;
-  List<int> get speedHist {
-    if (_speedHist == null) {
-      _speedHist = [];
+  // int speedHistOffset = 0;
+  // List<int>? _speedHist;
+  // List<int> get speedHist {
+  //   _speedHist ??= speedHistogram(0, samples.length);
 
-      // Build speed histogram
-      for (final each in samples) {
-        final index = unitConverters[UnitType.speed]!(each.spd).round();
+  //   return _speedHist!;
+  // }
 
-        while (_speedHist!.length <= index) {
-          // debugPrint("${_speedHist!.length} <= ${index}");
-          _speedHist!.add(0);
-        }
+  int? _speedHistMaxIndex;
+  int get speedHistMaxIndex {
+    if (_speedHistMaxIndex == null) {
+      final fullHist = speedHistogram(0, samples.length);
+      _speedHistMaxIndex = fullHist.values.length + fullHist.range.start;
+    }
+    return _speedHistMaxIndex!;
+  }
 
-        _speedHist![index]++;
+  HistogramData<int> speedHistogram(int start, int end, {int? width}) {
+    List<int> values = width == null ? [] : List.filled(width, 0);
+
+    // Build speed histogram
+    for (final each in samples.sublist(start, end)) {
+      final index = each.spd.round();
+
+      // Auto grow
+      if (width == null && values.length <= index) {
+        values.addAll(List.filled(index - values.length, 0));
       }
-
-      // Trim low count from outliers. Removes outliers and cleans up the chart.
-      final int highest = _speedHist!.reduce(max);
-
-      int t = _speedHist!.length - 1;
-      while (t >= 0) {
-        if (_speedHist!.last < (highest / 100 + 1)) {
-          _speedHist!.removeLast();
-        } else {
-          break;
-        }
-        t--;
-      }
-
-      while (t < _speedHist!.length) {
-        if (_speedHist!.first < (highest / 100 + 1)) {
-          _speedHist!.removeAt(0);
-          speedHistOffset++;
-        } else {
-          break;
-        }
-        t++;
+      if (index < values.length) {
+        values[index]++;
       }
     }
-    return _speedHist!;
+
+    if (width == null) {
+      // Trim low count from outliers. Removes outliers and cleans up the chart.
+      final int highest = values.reduce(max);
+
+      int clipEnd = values.length - 1;
+      while (clipEnd >= 0) {
+        if (values[clipEnd] < (highest / 20 + 1)) {
+        } else {
+          break;
+        }
+        clipEnd--;
+      }
+      clipEnd = min(values.length, (clipEnd / 5).ceil() * 5 + 1);
+      values = values.sublist(0, clipEnd);
+    }
+
+    // int clipStart = 0;
+    // while (clipStart < values.length) {
+    //   if (values[clipStart] < (highest / 50 + 1)) {
+    //     clipStart++;
+    //   } else {
+    //     break;
+    //   }
+    //   clipStart++;
+    // }
+
+    // clipStart = (clipStart / 5).floor() * 5;
+
+    return HistogramData(Range(0, values.length), values);
   }
 
   // =========================================
@@ -257,16 +276,16 @@ class FlightLog {
     if (_fuelStats == null) {
       _fuelStats = [];
 
-      if (goodFile && startTime != null) {
+      if (goodFile) {
         for (int t = 0; t < _fuelReports.length - 1; t++) {
           // NOTE: if fuel amount stays the same or increases, segment is dropped
-          if (_fuelReports[t].amount > _fuelReports[t + 1].amount) {
-            _fuelStats!.add(FuelStat.fromSamples(
-                _fuelReports[t],
-                _fuelReports[t + 1],
-                samples.sublist(
-                    timeToSampleIndex(_fuelReports[t].time), timeToSampleIndex(_fuelReports[t + 1].time) + 1)));
-          }
+          // if (_fuelReports[t].amount > _fuelReports[t + 1].amount) {
+          _fuelStats!.add(FuelStat.fromSamples(
+              _fuelReports[t],
+              _fuelReports[t + 1],
+              samples.sublist(
+                  timeToSampleIndex(_fuelReports[t].time), timeToSampleIndex(_fuelReports[t + 1].time) + 1)));
+          // }
         }
       }
     }
@@ -437,11 +456,10 @@ class FlightLog {
 
   /// Return a copy of this log with a trimmed timeline.
   /// Fuel reports will be interpolated in some cases
-  FlightLog trimLog(int startIndex, int endIndex) {
-    // insert new interpolated fuel reports
-
-    final newStartTime = DateTime.fromMillisecondsSinceEpoch(samples[startIndex].time);
-    final newEndTime = DateTime.fromMillisecondsSinceEpoch(samples[endIndex].time);
+  FlightLog cropLog(Range<int> index) {
+    final newRange = DateTimeRange(
+        start: DateTime.fromMillisecondsSinceEpoch(samples[index.start].time),
+        end: DateTime.fromMillisecondsSinceEpoch(samples[index.end - 1].time));
 
     double interpTime(DateTime start, DateTime end, DateTime i) {
       final dur = end.millisecondsSinceEpoch - start.millisecondsSinceEpoch;
@@ -449,7 +467,9 @@ class FlightLog {
     }
 
     bool newContainsTime(DateTime time) {
-      return time == newStartTime || time == newEndTime || (time.isAfter(newStartTime) && time.isBefore(newEndTime));
+      return time == newRange.start ||
+          time == newRange.end ||
+          (time.isAfter(newRange.start) && time.isBefore(newRange.end));
     }
 
     final newFuelReports = fuelReports.toList();
@@ -458,24 +478,29 @@ class FlightLog {
       final second = fuelReports[t + 1];
 
       // first is not contained, but second is.
-      if (!newContainsTime(first.time) && newContainsTime(second.time) && second.time.isAfter(newStartTime)) {
+      if (!newContainsTime(first.time) && newContainsTime(second.time) && second.time.isAfter(newRange.start)) {
         // insert new at beginning
-        final interpValue = interpTime(first.time, second.time, newStartTime);
+        final interpValue = interpTime(first.time, second.time, newRange.start);
         newFuelReports.insert(
-            0, FuelReport(newStartTime, first.amount * (1 - interpValue) + second.amount * interpValue));
+            0, FuelReport(newRange.start, first.amount * (1 - interpValue) + second.amount * interpValue));
       }
 
       // first is contained, but second is not.
-      if (newContainsTime(first.time) && !newContainsTime(second.time) && first.time.isBefore(newEndTime)) {
+      if (newContainsTime(first.time) && !newContainsTime(second.time) && first.time.isBefore(newRange.end)) {
         // insert new at end
-        final interpValue = interpTime(first.time, second.time, newEndTime);
-        newFuelReports.add(FuelReport(newEndTime, first.amount * (1 - interpValue) + second.amount * interpValue));
+        final interpValue = interpTime(first.time, second.time, newRange.end);
+        newFuelReports.add(FuelReport(newRange.end, first.amount * (1 - interpValue) + second.amount * interpValue));
       }
     }
 
+    final newSamples = samples.sublist(index.start, index.end).toList();
+
+    final newGForceSamples =
+        gForceSamples.where((e) => e.time >= newSamples.first.time && e.time <= newSamples.last.time).toList();
+
     final newLog = FlightLog(
-        samples: samples.sublist(startIndex, endIndex + 1).toList(),
-        gForceSamples: gForceSamples,
+        samples: newSamples,
+        gForceSamples: newGForceSamples,
         waypoints: waypoints,
         fuelReports: newFuelReports,
         gear: gear,

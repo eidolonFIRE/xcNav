@@ -89,6 +89,7 @@ dependencies:
   sensors_plus: ^6.0.1
   smooth_page_indicator: ^1.2.0+3
   mobile_scanner: ^6.0.6
+  syncfusion_flutter_sliders: ^28.2.6
 
 dev_dependencies:
   flutter_test:
