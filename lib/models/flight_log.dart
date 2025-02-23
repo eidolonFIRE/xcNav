@@ -301,8 +301,14 @@ class FlightLog {
       slices = getGForceSlices(samples: gForceSamples, high: 1.5);
       if (slices.length > 15) {
         slices = getGForceSlices(samples: gForceSamples, high: 2);
+        if (slices.length > 15) {
+          slices = getGForceSlices(samples: gForceSamples, high: 2.5);
+        }
       } else if (slices.length < 3) {
         slices = getGForceSlices(samples: gForceSamples, high: 1.2);
+        if (slices.length > 15) {
+          slices = getGForceSlices(samples: gForceSamples, high: 1.4);
+        }
       }
       _gForceEvents = slices.map((e) {
         final first = samples[timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(gForceSamples[e.start].time))];
