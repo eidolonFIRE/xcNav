@@ -6,7 +6,7 @@ import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 
-Future<FuelReport?> editFuelReport(BuildContext context, DateTime time, double? amount) {
+Future<FuelReport?> editFuelReportDialog(BuildContext context, DateTime time, double? amount) {
   final fuelAmountController =
       TextEditingController(text: amount == null ? null : printDoubleSimple(amount, decimals: 2));
   final amountFormKey = GlobalKey<FormState>();

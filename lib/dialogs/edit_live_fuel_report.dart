@@ -6,7 +6,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/units.dart';
 
-Future editFuelReports(BuildContext context) {
+Future editLiveFuelReport(BuildContext context) {
   final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
   final fuelAmountLaunch = TextEditingController();
   final fuelAmountNow = TextEditingController();

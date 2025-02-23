@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' as intl;
 import 'package:xcnav/units.dart';
 
-Future<bool?> confirmLogTrim(BuildContext context,
-    {required String cutLabel,
-    required DateTime newTime,
-    required int sampleCount,
-    required Duration trimLength}) async {
+Future<bool?> confirmLogCrop(BuildContext context, {required Duration trimLength}) async {
   return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
             title: Text.rich(TextSpan(children: [
               TextSpan(
-                text: "Trim $cutLabel?",
+                text: "Trim log to selection?",
                 style: const TextStyle(color: Colors.amber),
               ),
               WidgetSpan(
@@ -25,13 +20,7 @@ Future<bool?> confirmLogTrim(BuildContext context,
               ),
             ])),
             content: Text.rich(TextSpan(children: [
-              TextSpan(text: "New $cutLabel:   "),
-              TextSpan(
-                  text: intl.DateFormat("h:mm a").format(newTime), style: const TextStyle(fontWeight: FontWeight.bold)),
-              const TextSpan(text: "\n"),
               const TextSpan(text: "Removing:   "),
-              TextSpan(text: "$sampleCount", style: const TextStyle(fontWeight: FontWeight.bold)),
-              const TextSpan(text: " samples, which is  "),
               richMinSec(valueStyle: const TextStyle(fontWeight: FontWeight.bold), duration: trimLength),
             ])),
             actions: [

@@ -1,25 +1,24 @@
 import 'dart:math';
-import 'dart:ui';
-import 'package:flutter_svg/svg.dart';
-import 'package:intl/intl.dart' as intl;
-
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:syncfusion_flutter_sliders/sliders.dart';
 
-import 'package:xcnav/dialogs/confirm_log_trim.dart';
+import 'package:xcnav/datadog.dart';
+import 'package:xcnav/dialogs/confirm_log_crop.dart';
 import 'package:xcnav/dialogs/edit_gear.dart';
 import 'package:xcnav/dialogs/edit_fuel_report.dart';
-import 'package:xcnav/douglas_peucker.dart';
+import 'package:xcnav/dialogs/label_flag.dart';
 import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/widgets/altimeter.dart';
+import 'package:xcnav/util.dart';
+import 'package:xcnav/widgets/elevation_replay.dart';
+import 'package:xcnav/widgets/g_force_pages.dart';
 import 'package:xcnav/widgets/log_summary.dart';
 import 'package:xcnav/widgets/map_selector.dart';
+import 'package:xcnav/widgets/speed_histogram.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class LogReplay extends StatefulWidget {
@@ -33,7 +32,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   final mapKey = GlobalKey(debugLabel: "replayMap");
   final mapController = MapController();
   bool mapReady = false;
-  bool northLock = true;
   MapTileSrc mapTileSrc = MapTileSrc.topo;
   bool hideWaypoints = false;
   double mapOpacity = 1.0;
@@ -41,18 +39,20 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
   String? logKey;
   late FlightLog log;
-
-  ValueNotifier<int> sampleIndex = ValueNotifier(0);
-  bool hasScrubbed = false;
-
-  final lowerStyle = const TextStyle(color: Colors.black, fontSize: 20);
-  final TextStyle unitStyle = const TextStyle(fontSize: 12, color: Colors.black87, fontStyle: FontStyle.italic);
+  bool logLoaded = false;
 
   late final TabController tabController;
 
-  final PageController gForcePageController = PageController();
+  late final List<int> logGForceIndeces;
+  final gForcePageController = PageController();
+
+  final fuelScrollController = ScrollController();
 
   double mainDividerPosition = -1;
+
+  /// Selected index range of log
+  ValueNotifier<Range<int>> selectedIndexRange = ValueNotifier(Range(0, 1));
+  late ValueNotifier<DateTimeRange> selectedTimeRange;
 
   @override
   void initState() {
@@ -75,32 +75,65 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   }
 
   void gotoGForce(int index) {
+    scrollToTime(log.gForceEvents[index].timeRange.start.add(log.gForceEvents[index].timeRange.duration * 0.5));
     if (tabController.index != 3) {
       tabController.animateTo(3, duration: const Duration(milliseconds: 200));
       Future.delayed(const Duration(milliseconds: 220)).then((_) => gForcePageController.jumpToPage(index));
     } else {
-      gForcePageController.animateToPage(index, duration: const Duration(milliseconds: 300), curve: Curves.decelerate);
+      gForcePageController.jumpToPage(index);
     }
   }
 
-  void gotoGeo(int index) {
-    sampleIndex.value = index;
-    mapController.move(log.samples[index].latlng, mapController.camera.zoom);
+  void scrollToTime(DateTime center) {
+    mapController.move(log.samples[log.timeToSampleIndex(center)].latlng, mapController.camera.zoom);
+    final durWidth = selectedTimeRange.value.duration;
+    final startIndex = log.timeToSampleIndex(center.subtract(durWidth * 0.5));
+    final endIndex = log.timeToSampleIndex(center.add(durWidth * 0.5));
+    selectedTimeRange.value = DateTimeRange(
+        start: DateTime.fromMillisecondsSinceEpoch(log.samples[startIndex].time),
+        end: DateTime.fromMillisecondsSinceEpoch(log.samples[endIndex].time));
+    selectedIndexRange.value = Range(startIndex, endIndex);
+  }
+
+  void editFuelReport(BuildContext context, int reportIndex) {
+    editFuelReportDialog(context, log.fuelReports[reportIndex].time, log.fuelReports[reportIndex].amount)
+        .then((newReport) {
+      setState(() {
+        if (newReport != null) {
+          if (newReport.amount == 0 && newReport.time.millisecondsSinceEpoch == 0) {
+            // Report was deleted
+            log.removeFuelReport(reportIndex);
+          } else {
+            // Edit fuel report amount
+            log.updateFuelReport(reportIndex, newReport.amount);
+          }
+        }
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, Object>;
-    logKey ??= args["logKey"] as String;
+    debugPrint("/Build log_replay screen");
+    if (!logLoaded) {
+      final args = ModalRoute.of(context)!.settings.arguments as Map<String, Object>;
+      logKey ??= args["logKey"] as String;
 
-    log = logStore.logs[logKey]!;
+      log = logStore.logs[logKey]!;
 
-    if (mainDividerPosition < 0) {
-      mainDividerPosition = MediaQuery.of(context).size.height * 0.5;
+      selectedIndexRange.value = Range(0, log.samples.length - 1);
+      selectedTimeRange = ValueNotifier(DateTimeRange(start: log.startTime!, end: log.endTime!));
+
+      if (mainDividerPosition < 0) {
+        mainDividerPosition = (MediaQuery.of(context).size.height - 80) * 0.5;
+      }
+
+      if (log.goodFile) {
+        logLoaded = true;
+      } else {
+        error("Error loading log in replay screen.", attributes: {"filename": log.filename});
+      }
     }
-
-    final logGForceIndeces =
-        log.gForceEvents.map((e) => log.timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(e.center.time))).toList();
     return PopScope(
       onPopInvokedWithResult: (_, __) {
         if (log.goodFile && log.unsaved) {
@@ -123,55 +156,22 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     });
 
                     break;
-                  case "trim_start":
-                    if (sampleIndex.value == 0 || sampleIndex.value >= log.samples.length - 1) {
-                      // Alert if bad time selected
-                      infoSetTrimTime(context);
-                    } else {
-                      //
-                      final trimStartTime = DateTime.fromMillisecondsSinceEpoch(log.samples[sampleIndex.value].time);
-                      final trimLength =
-                          trimStartTime.difference(DateTime.fromMillisecondsSinceEpoch(log.samples.first.time));
-                      confirmLogTrim(context,
-                              cutLabel: "Start",
-                              newTime: trimStartTime,
-                              trimLength: trimLength,
-                              sampleCount: sampleIndex.value)
-                          .then((confirmed) {
-                        setState(() {
-                          if (confirmed ?? false) {
-                            final newLog = log.trimLog(sampleIndex.value, log.samples.length - 1);
-                            logStore.updateLog(logKey!, newLog);
-                            gotoGeo(0);
-                          }
-                        });
+                  case "trim":
+                    confirmLogCrop(context,
+                            trimLength: log.endTime!.difference(log.startTime!) -
+                                Duration(
+                                    milliseconds: log.samples[selectedIndexRange.value.end].time -
+                                        log.samples[selectedIndexRange.value.end].time))
+                        .then((confirmed) {
+                      setState(() {
+                        if (confirmed ?? false) {
+                          final newLog = log.cropLog(selectedIndexRange.value);
+                          logStore.updateLog(logKey!, newLog);
+                          scrollToTime(log.startTime!);
+                        }
                       });
-                    }
-                    break;
-                  case "trim_end":
-                    if (sampleIndex.value == 0 || sampleIndex.value >= log.samples.length - 1) {
-                      // Alert if bad time selected
-                      infoSetTrimTime(context);
-                    } else {
-                      //
-                      final trimEndTime = DateTime.fromMillisecondsSinceEpoch(log.samples[sampleIndex.value].time);
-                      final trimLength =
-                          DateTime.fromMillisecondsSinceEpoch(log.samples.last.time).difference(trimEndTime);
-                      confirmLogTrim(context,
-                              cutLabel: "End",
-                              newTime: trimEndTime,
-                              trimLength: trimLength,
-                              sampleCount: (log.samples.length - 1) - sampleIndex.value)
-                          .then((confirmed) {
-                        setState(() {
-                          if (confirmed ?? false) {
-                            final newLog = log.trimLog(0, sampleIndex.value);
-                            logStore.updateLog(logKey!, newLog);
-                            gotoGeo(log.samples.length - 1);
-                          }
-                        });
-                      });
-                    }
+                    });
+
                     break;
                 }
               },
@@ -185,29 +185,17 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 ),
                 const PopupMenuDivider(),
                 PopupMenuItem(
-                    value: "trim_start",
+                    value: "trim",
                     child: ListTile(
-                      leading: SvgPicture.asset(
-                        "assets/images/trim_start.svg",
-                        height: 32,
+                      leading: Icon(
+                        Icons.crop,
+                        size: 32,
                       ),
                       title: const Text(
-                        "Trim Start",
-                        style: TextStyle(color: Colors.amber),
+                        "Crop Log to Selection",
+                        style: TextStyle(color: Colors.red),
                       ),
                     )),
-                PopupMenuItem(
-                    value: "trim_end",
-                    child: ListTile(
-                      leading: SvgPicture.asset(
-                        "assets/images/trim_end.svg",
-                        height: 32,
-                      ),
-                      title: const Text(
-                        "Trim End",
-                        style: TextStyle(color: Colors.amber),
-                      ),
-                    ))
               ],
             )
           ],
@@ -233,9 +221,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   mapReady = true;
                                 });
                               },
-                              interactionOptions: InteractionOptions(
-                                  flags: InteractiveFlag.all &
-                                      (northLock ? ~InteractiveFlag.rotate : InteractiveFlag.all)),
+                              interactionOptions:
+                                  const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                               onPositionChanged: (mapPosition, hasGesture) {
                                 if (hasGesture) {
                                   isMapDialOpen.value = false;
@@ -269,33 +256,53 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                         .toList()),
 
                               // --- Log Line
-                              PolylineLayer(polylines: [
-                                Polyline(
-                                    points: log.samples.map((e) => e.latlng).toList(),
-                                    strokeWidth: 4,
-                                    color: Colors.red,
-                                    pattern: const StrokePattern.dotted())
-                              ]),
+                              ValueListenableBuilder<Range>(
+                                  valueListenable: selectedIndexRange,
+                                  builder: (context, range, _) {
+                                    return PolylineLayer(polylines: [
+                                      Polyline(
+                                          points:
+                                              log.samples.sublist(range.start, range.end).map((e) => e.latlng).toList(),
+                                          strokeWidth: 4,
+                                          borderColor: Colors.black,
+                                          borderStrokeWidth: 1,
+                                          color: Colors.amber
+                                          // gradientColors: [Colors.amber, Colors.orange],
+                                          )
+                                    ]);
+                                  }),
 
                               // --- G-Force Events
-                              MarkerLayer(
-                                  markers: log.gForceEvents
-                                      .mapIndexed((i, e) => Marker(
-                                          point: e.center.latlng,
-                                          child: GestureDetector(
-                                              behavior: HitTestBehavior.opaque,
-                                              onTap: () {
-                                                gotoGForce(i);
-                                              },
-                                              child: Card(
-                                                color: Colors.black.withAlpha(100),
-                                                child: const Icon(
-                                                  Icons.g_mobiledata,
-                                                  color: Colors.lightGreen,
-                                                  size: 20,
-                                                ),
-                                              ))))
-                                      .toList()),
+                              ValueListenableBuilder<DateTimeRange>(
+                                  valueListenable: selectedTimeRange,
+                                  builder: (context, range, _) {
+                                    return MarkerLayer(
+                                        markers: log.gForceEvents
+                                            .mapIndexed((i, e) => Marker(
+                                                point: e.center.latlng,
+                                                child: GestureDetector(
+                                                    behavior: HitTestBehavior.opaque,
+                                                    onTap: () {
+                                                      gotoGForce(i);
+                                                    },
+                                                    child: Card(
+                                                      color: Colors.black.withAlpha(
+                                                          e.timeRange.start.isBefore(range.start) &&
+                                                                      e.timeRange.end.isAfter(range.end) ||
+                                                                  e.timeRange.start.isAfter(range.start) &&
+                                                                      e.timeRange.start.isBefore(range.end) ||
+                                                                  (e.timeRange.end.isAfter(range.start) &&
+                                                                      e.timeRange.end.isBefore(range.end))
+                                                              ? 200
+                                                              : 20),
+                                                      child: const Icon(
+                                                        Icons.g_mobiledata,
+                                                        color: Colors.lightGreen,
+                                                        size: 20,
+                                                      ),
+                                                    ))))
+                                            .toList());
+                                  }),
 
                               // --- Fuel reports
                               MarkerLayer(
@@ -308,24 +315,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                         child: GestureDetector(
                                             onTap: () {
                                               setState(() {
-                                                gotoGeo(log.timeToSampleIndex(e.time));
+                                                scrollToTime(e.time);
                                               });
                                             },
                                             onLongPress: () {
-                                              editFuelReport(context, e.time, e.amount).then((newReport) {
-                                                setState(() {
-                                                  if (newReport != null) {
-                                                    if (newReport.amount == 0 &&
-                                                        newReport.time.millisecondsSinceEpoch == 0) {
-                                                      // Report was deleted
-                                                      log.removeFuelReport(index);
-                                                    } else {
-                                                      // Edit fuel report amount
-                                                      log.updateFuelReport(index, newReport.amount);
-                                                    }
-                                                  }
-                                                });
-                                              });
+                                              editFuelReport(context, index);
                                             },
 
                                             // Fuel Report Marker
@@ -338,26 +332,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                                 color: Colors.blue))))
                                     .toList(),
                               ),
-
-                              // "ME" Location Marker
-                              ValueListenableBuilder<int>(
-                                  valueListenable: sampleIndex,
-                                  builder: (context, value, _) {
-                                    return MarkerLayer(
-                                      markers: [
-                                        Marker(
-                                          width: 30.0,
-                                          height: 30.0,
-                                          point: log.samples[value].latlng,
-                                          child: Container(
-                                            transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.rotationZ(log.samples[value].hdg),
-                                            child: Image.asset("assets/images/red_arrow.png"),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  }),
                             ]),
 
                         // --- Map Tile Selector
@@ -385,98 +359,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                     }),
                                   )),
                             )),
-
-                        // --- Time Scrubber
-                        ValueListenableBuilder<int>(
-                            valueListenable: sampleIndex,
-                            builder: (context, index, _) {
-                              return Positioned(
-                                  bottom: 10,
-                                  left: 10,
-                                  right: 10,
-                                  child: Theme(
-                                    data: ThemeData(
-                                        sliderTheme: const SliderThemeData(
-                                      showValueIndicator: ShowValueIndicator.never,
-                                      thumbShape: _ThumbShape(),
-                                      activeTrackColor: Color.fromARGB(170, 0, 0, 0),
-                                      inactiveTrackColor: Colors.black45,
-                                      valueIndicatorColor: Colors.black45,
-                                      thumbColor: Colors.black,
-                                      trackHeight: 8,
-                                    )),
-                                    child: Slider(
-                                        label: intl.DateFormat("h:mm a")
-                                            .format(DateTime.fromMillisecondsSinceEpoch(log.samples[index].time)),
-                                        value: (log.samples[index].time - log.startTime!.millisecondsSinceEpoch) /
-                                            log.durationTime.inMilliseconds,
-                                        onChanged: (value) {
-                                          sampleIndex.value = max(
-                                              0,
-                                              min(
-                                                  log.samples.length - 1,
-                                                  log.timeToSampleIndex(log.startTime!.add(Duration(
-                                                      milliseconds:
-                                                          (value * log.durationTime.inMilliseconds).round())))));
-                                        }),
-                                  ));
-                            }),
-
-                        // --- Instruments
-                        ValueListenableBuilder<int>(
-                            valueListenable: sampleIndex,
-                            builder: (context, value, _) {
-                              return Positioned(
-                                  left: 4,
-                                  top: 4,
-                                  child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: BackdropFilter(
-                                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                        child: Container(
-                                          color: Colors.white38,
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  // --- Speedometer
-                                                  Text.rich(richValue(UnitType.speed, log.samples[value].spd,
-                                                      digits: 4,
-                                                      autoDecimalThresh: -1,
-                                                      valueStyle: lowerStyle.merge(const TextStyle(fontSize: 30)),
-                                                      unitStyle: unitStyle)),
-
-                                                  const SizedBox(
-                                                      width: 40,
-                                                      child: Divider(
-                                                        color: Colors.grey,
-                                                      )),
-
-                                                  // --- Altimeter stack
-                                                  Altimeter(
-                                                    log.samples[value].alt,
-                                                    valueStyle: lowerStyle,
-                                                    unitStyle: unitStyle,
-                                                    unitTag: "MSL",
-                                                    isPrimary: false,
-                                                  ),
-                                                  if (log.samples[value].ground != null)
-                                                    Altimeter(
-                                                      log.samples[value].ground != null
-                                                          ? log.samples[value].alt - log.samples[value].ground!
-                                                          : null,
-                                                      valueStyle: lowerStyle,
-                                                      unitStyle: unitStyle,
-                                                      unitTag: "AGL",
-                                                      isPrimary: false,
-                                                    ),
-                                                ]),
-                                          ),
-                                        ),
-                                      )));
-                            }),
                       ]),
               ),
 
@@ -504,6 +386,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
             ///     Lower Half
             ///
             /// ------------------------------------
+
             Expanded(
               child: TabBarView(
                   physics: const NeverScrollableScrollPhysics(),
@@ -512,386 +395,38 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                   children: [
                     // --- Summary
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                      padding: const EdgeInsets.fromLTRB(20, 10, 10, 10),
                       child: LogSummary(log: log),
                     ),
 
                     // --- Elevation Plot
                     Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: ValueListenableBuilder(
-                            valueListenable: sampleIndex,
-                            builder: (context, logIndex, _) {
-                              return LineChart(
-                                LineChartData(
-                                    minY: unitConverters[UnitType.distFine]!(min(log.samples.map((e) => e.alt).min - 10,
-                                        log.samples.map((e) => e.ground).nonNulls.min - 10)),
-                                    extraLinesData: ExtraLinesData(verticalLines: [
-                                      VerticalLine(
-                                          x: log.samples[logIndex].time.toDouble(), color: Colors.white, strokeWidth: 1)
-                                    ]),
-                                    lineTouchData: LineTouchData(
-                                      handleBuiltInTouches: false,
-                                      getTouchedSpotIndicator: (barData, spotIndexes) {
-                                        return spotIndexes
-                                            .map((e) => TouchedSpotIndicatorData(const FlLine(strokeWidth: 0),
-                                                    FlDotData(getDotPainter: (
-                                                  FlSpot spot,
-                                                  double xPercentage,
-                                                  LineChartBarData bar,
-                                                  int index, {
-                                                  double? size,
-                                                }) {
-                                                  return FlDotCirclePainter(
-                                                    radius: size ?? 5,
-                                                    color: Colors.lightGreen,
-                                                    strokeColor: Colors.grey,
-                                                  );
-                                                })))
-                                            .toList();
-                                      },
-                                      touchCallback: (p0, p1) {
-                                        if (p0 is FlTapUpEvent) {
-                                          final index = p1?.lineBarSpots?.first.spotIndex;
-                                          if (index != null) {
-                                            List<int> dist = [];
-                                            for (final each in logGForceIndeces) {
-                                              dist.add((index - each).abs());
-                                            }
-                                            final closest = dist.min;
-                                            final closestIndex = dist.indexOf(closest);
-                                            if (closest < log.samples.length / 10) {
-                                              // Go to g-force
-                                              gotoGForce(closestIndex);
-                                            }
-                                          }
-                                        }
-                                      },
-                                    ),
-                                    lineBarsData: [
-                                          LineChartBarData(
-                                              color: Colors.orange.shade600,
-                                              barWidth: 1,
-                                              dotData: const FlDotData(show: false),
-                                              spots: log.samples
-                                                  .where((e) => e.ground != null)
-                                                  .map((e) => FlSpot(
-                                                      e.time.toDouble(), unitConverters[UnitType.distFine]!(e.ground!)))
-                                                  .toList(),
-                                              belowBarData: BarAreaData(
-                                                show: true,
-                                                color: Colors.orange.shade600,
-                                              )),
-                                          LineChartBarData(
-                                              showingIndicators: logGForceIndeces,
-                                              spots: log.samples
-                                                  .map((e) => FlSpot(
-                                                      e.time.toDouble(), unitConverters[UnitType.distFine]!(e.alt)))
-                                                  .toList(),
-                                              barWidth: 2,
-                                              dotData: const FlDotData(show: false),
-                                              color: Colors.blue),
-                                        ] +
-                                        log.gForceEvents
-                                            .mapIndexed((i, e) => LineChartBarData(
-                                                color: Colors.lightGreen,
-                                                barWidth: 2,
-                                                dotData: const FlDotData(show: false),
-                                                spots: log.samples
-                                                    .sublist(
-                                                        log.timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(
-                                                            e.timeRange.start.millisecondsSinceEpoch)),
-                                                        log.timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(
-                                                            e.timeRange.end.millisecondsSinceEpoch)))
-                                                    .map(
-                                                        (e) => FlSpot(e.time.toDouble(), unitConverters[UnitType.distFine]!(e.alt)))
-                                                    .toList()))
-                                            .toList(),
-                                    titlesData: const FlTitlesData(
-                                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, minIncluded: false, reservedSize: 40)),
-                                        topTitles: AxisTitles(
-                                          sideTitles: SideTitles(showTitles: false),
-                                        ),
-                                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)))),
-                                duration: Duration.zero,
-                              );
-                            })),
+                        child: ElevationReplay(
+                          log: log,
+                          showVario: mainDividerPosition < (MediaQuery.of(context).size.height - 100) / 2,
+                          selectedIndexRange: selectedIndexRange,
+                          onSelectedGForce: gotoGForce,
+                        )),
 
                     // --- Speed Histogram
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Builder(builder: (context) {
-                        final int interval = (log.speedHist.length / 15).ceil();
-                        return BarChart(BarChartData(
-                            borderData: FlBorderData(show: false),
-                            barTouchData: BarTouchData(enabled: false),
-                            gridData: const FlGridData(drawVerticalLine: false, drawHorizontalLine: false),
-                            barGroups: log.speedHist
-                                .mapIndexed((index, value) => BarChartGroupData(x: index, barRods: [
-                                      BarChartRodData(
-                                          toY: value.toDouble(),
-                                          color: index % interval == 0 ? Colors.amberAccent : Colors.amber),
-                                    ]))
-                                .toList(),
-                            titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                axisNameWidget: Text(getUnitStr(UnitType.speed)),
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 30,
-                                  getTitlesWidget: (double value, TitleMeta meta) {
-                                    return (value.round() % interval == 0)
-                                        ? SideTitleWidget(
-                                            meta: meta,
-                                            child: Text(
-                                              "${value.round() + log.speedHistOffset}",
-                                            ),
-                                          )
-                                        : Container();
-                                  },
-                                ),
-                              ),
-                              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              leftTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                            )));
-                      }),
-                    ),
+                        padding: const EdgeInsets.all(8.0),
+                        child: SpeedHistogram(
+                          log: log,
+                          selectedIndexRange: selectedIndexRange,
+                        )),
 
-                    // --- G-force timeline
+                    // --- G-force event pages
                     (log.gForceEvents.isEmpty)
                         ? const Center(child: Text("No G-force events."))
-                        : Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Expanded(
-                                child: PageView.builder(
-                                    controller: gForcePageController,
-                                    itemCount: log.gForceEvents.length,
-                                    onPageChanged: (int index) {
-                                      // Map g-force event index to Geo sample index (times might not line up exactly)
-                                      final middleTime = log.gForceEvents[index].center.time;
-                                      gotoGeo(log.timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(middleTime)));
-                                    },
-                                    itemBuilder: (context, index) {
-                                      bool showPeaks = false;
-                                      return StatefulBuilder(
-                                        builder: (context, setStateInner) {
-                                          final slice = log.gForceSamples
-                                              .sublist(log.gForceEvents[index].gForceIndeces.start,
-                                                  log.gForceEvents[index].gForceIndeces.end)
-                                              .toList();
-                                          final keyPoints = douglasPeuckerTimestamped(slice, 0.3).toList();
-
-                                          final peaksData = LineChartBarData(
-                                              show: showPeaks,
-                                              spots: keyPoints
-                                                  .whereIndexed((i, e) =>
-                                                      i < keyPoints.length - 1 &&
-                                                      i > 0 &&
-                                                      e.value > keyPoints[i - 1].value &&
-                                                      e.value > keyPoints[i + 1].value)
-                                                  .map((a) => FlSpot(a.time.toDouble(), a.value))
-                                                  .toList(),
-                                              dotData: FlDotData(
-                                                getDotPainter: (p0, p1, p2, p3) =>
-                                                    FlDotCirclePainter(radius: 3, color: Colors.red),
-                                              ),
-                                              isCurved: false,
-                                              barWidth: 1,
-                                              color: Colors.red);
-                                          final valleysData = LineChartBarData(
-                                            show: showPeaks,
-                                            spots: keyPoints
-                                                .whereIndexed((i, e) =>
-                                                    i < keyPoints.length - 1 &&
-                                                    i > 0 &&
-                                                    e.value < keyPoints[i - 1].value &&
-                                                    e.value < keyPoints[i + 1].value)
-                                                .map((a) => FlSpot(a.time.toDouble(), a.value))
-                                                .toList(),
-                                            isCurved: false,
-                                            barWidth: 1,
-                                            color: Colors.blue,
-                                            dotData: FlDotData(
-                                              getDotPainter: (p0, p1, p2, p3) =>
-                                                  FlDotCirclePainter(radius: 3, color: Colors.blue),
-                                            ),
-                                          );
-
-                                          final maxG = log.maxG(index: index);
-                                          final maxInt = (maxG + 0.5).ceil();
-                                          final double timeInterval = max(
-                                              2000,
-                                              (log.gForceEvents[index].timeRange.duration.inMilliseconds / 1000)
-                                                      .round() *
-                                                  200);
-
-                                          return GestureDetector(
-                                            onLongPressDown: (details) {
-                                              setStateInner(() => showPeaks = true);
-                                            },
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: Builder(builder: (context) {
-                                                return LineChart(LineChartData(
-                                                    minY: 0,
-                                                    maxY: maxInt.toDouble(),
-                                                    extraLinesData: ExtraLinesData(horizontalLines: [
-                                                      if (maxG > 1.5)
-                                                        HorizontalLine(
-                                                            label: HorizontalLineLabel(
-                                                              show: true,
-                                                              labelResolver: (p0) => "Max ${maxG.toStringAsFixed(1)}G",
-                                                            ),
-                                                            y: maxG,
-                                                            color: Colors.white,
-                                                            strokeWidth: 1),
-                                                    ]),
-                                                    borderData: FlBorderData(show: false),
-                                                    lineTouchData: LineTouchData(
-                                                      touchSpotThreshold: 20,
-                                                      touchTooltipData: LineTouchTooltipData(
-                                                        getTooltipItems: (List<LineBarSpot> touchedSpots) {
-                                                          return touchedSpots.map((LineBarSpot touchedSpot) {
-                                                            if (touchedSpot.barIndex == 1) {
-                                                              return LineTooltipItem(
-                                                                touchedSpot.y.toStringAsFixed(1),
-                                                                const TextStyle(
-                                                                    color: Colors.redAccent,
-                                                                    fontWeight: FontWeight.bold),
-                                                              );
-                                                            } else if (touchedSpot.barIndex == 2) {
-                                                              return LineTooltipItem(
-                                                                touchedSpot.y.toStringAsFixed(1),
-                                                                const TextStyle(
-                                                                    color: Colors.blue, fontWeight: FontWeight.bold),
-                                                              );
-                                                            }
-                                                            return null;
-                                                          }).toList();
-                                                        },
-                                                      ),
-                                                      getTouchedSpotIndicator:
-                                                          (LineChartBarData barData, List<int> spotIndexes) {
-                                                        return spotIndexes.map((spotIndex) {
-                                                          if (barData.spots[0] == peaksData.spots[0]) {
-                                                            return TouchedSpotIndicatorData(
-                                                                const FlLine(color: Colors.red, strokeWidth: 2),
-                                                                FlDotData(
-                                                                    getDotPainter: (spot, percent, barData, index) {
-                                                              return FlDotCirclePainter(
-                                                                  radius: 3,
-                                                                  color: Colors.redAccent,
-                                                                  strokeWidth: 2,
-                                                                  strokeColor: Colors.red);
-                                                            }));
-                                                          } else if (barData.spots[0] == valleysData.spots[0]) {
-                                                            return TouchedSpotIndicatorData(
-                                                                const FlLine(color: Colors.blue, strokeWidth: 2),
-                                                                FlDotData(
-                                                                    getDotPainter: (spot, percent, barData, index) {
-                                                              return FlDotCirclePainter(
-                                                                  radius: 3,
-                                                                  color: Colors.blueAccent,
-                                                                  strokeWidth: 2,
-                                                                  strokeColor: Colors.blue);
-                                                            }));
-                                                          } else {
-                                                            return const TouchedSpotIndicatorData(
-                                                              FlLine(color: Colors.transparent),
-                                                              FlDotData(show: false),
-                                                            );
-                                                          }
-                                                        }).toList();
-                                                      },
-                                                    ),
-                                                    lineBarsData: [
-                                                      LineChartBarData(
-                                                          spots: slice
-                                                              .map((a) => FlSpot(a.time.toDouble(), a.value))
-                                                              .toList(),
-                                                          isCurved: true,
-                                                          barWidth: 1,
-                                                          color: Colors.white,
-                                                          dotData: const FlDotData(show: false),
-                                                          aboveBarData: BarAreaData(
-                                                              color: Colors.blue,
-                                                              show: true,
-                                                              cutOffY: 1,
-                                                              applyCutOffY: true),
-                                                          belowBarData: BarAreaData(
-                                                              gradient: LinearGradient(
-                                                                  begin: Alignment.bottomCenter,
-                                                                  end: Alignment.topCenter,
-                                                                  stops: [
-                                                                    1 / maxInt,
-                                                                    3 / maxInt,
-                                                                    7 / maxInt
-                                                                  ],
-                                                                  colors: const [
-                                                                    Colors.green,
-                                                                    Colors.amber,
-                                                                    Colors.red
-                                                                  ]),
-                                                              show: true,
-                                                              color: Colors.amber,
-                                                              cutOffY: 1,
-                                                              applyCutOffY: true)),
-                                                      peaksData,
-                                                      valleysData,
-                                                    ],
-                                                    gridData: FlGridData(
-                                                        drawVerticalLine: true,
-                                                        drawHorizontalLine: true,
-                                                        horizontalInterval: 1,
-                                                        verticalInterval: timeInterval / 2),
-                                                    titlesData: FlTitlesData(
-                                                      bottomTitles: AxisTitles(
-                                                        sideTitles: SideTitles(
-                                                            maxIncluded: false,
-                                                            interval: timeInterval,
-                                                            getTitlesWidget: (value, meta) => Text.rich(richMinSec(
-                                                                duration: Duration(
-                                                                    milliseconds: value.round() -
-                                                                        log
-                                                                            .gForceSamples[log.gForceEvents[index]
-                                                                                .gForceIndeces.start]
-                                                                            .time))),
-                                                            showTitles: true),
-                                                      ),
-                                                      topTitles: const AxisTitles(
-                                                        sideTitles: SideTitles(showTitles: false),
-                                                      ),
-                                                      rightTitles: const AxisTitles(
-                                                        sideTitles: SideTitles(showTitles: false),
-                                                      ),
-                                                      leftTitles: const AxisTitles(
-                                                        sideTitles: SideTitles(interval: 1, showTitles: true),
-                                                      ),
-                                                    )));
-                                              }),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    }),
-                              ),
-                              SmoothPageIndicator(
-                                controller: gForcePageController,
-                                count: log.gForceEvents.length,
-                                effect: const SlideEffect(activeDotColor: Colors.white),
-                                onDotClicked: (index) => gForcePageController.jumpToPage(index),
-                              ),
-                              const SizedBox(
-                                height: 20,
-                              )
-                            ],
+                        : GForcePages(
+                            pageController: gForcePageController,
+                            log: log,
+                            onPageChanged: (index) {
+                              scrollToTime(log.gForceEvents[index].timeRange.start
+                                  .add(log.gForceEvents[index].timeRange.duration * 0.5));
+                            },
                           ),
 
                     // --- Fuel
@@ -928,20 +463,41 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                         style: const TextStyle(fontSize: 18),
                                         child: Container(
                                           color: Colors.grey.shade800,
-                                          // constraints: const BoxConstraints(maxHeight: 130),
-                                          child: ListView(
-                                              shrinkWrap: true,
-                                              children: log.fuelStats
-                                                  .mapIndexed((index, e) =>
-                                                      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                                                        Text("${e.durationTime.inMinutes}"),
-                                                        Text(printValue(UnitType.fuel, e.rate, decimals: 1) ?? "?"),
-                                                        Text(printValue(UnitType.distCoarse,
-                                                                e.mpl / unitConverters[UnitType.fuel]!(1),
-                                                                decimals: 1) ??
-                                                            "?")
-                                                      ]))
-                                                  .toList()),
+                                          child: Scrollbar(
+                                            controller: fuelScrollController,
+                                            trackVisibility: true,
+                                            thumbVisibility: true,
+                                            child: ListView(
+                                                controller: fuelScrollController,
+                                                shrinkWrap: true,
+                                                children: log.fuelStats.expandIndexed<Widget>((index, e) sync* {
+                                                      yield Center(
+                                                          child: FuelEntryCard(
+                                                              log: log,
+                                                              reportIndex: index,
+                                                              onEdit: (reportIndex) =>
+                                                                  editFuelReport(context, reportIndex)));
+
+                                                      yield Row(
+                                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                          children: [
+                                                            Text("${e.durationTime.inMinutes}"),
+                                                            Text(printValue(UnitType.fuel, e.rate, decimals: 1) ?? "?"),
+                                                            Text(printValue(UnitType.distCoarse,
+                                                                    e.mpl / unitConverters[UnitType.fuel]!(1),
+                                                                    decimals: 1) ??
+                                                                "?")
+                                                          ]);
+                                                    }).toList() +
+                                                    [
+                                                      Center(
+                                                          child: FuelEntryCard(
+                                                              log: log,
+                                                              reportIndex: log.fuelReports.length - 1,
+                                                              onEdit: (reportIndex) =>
+                                                                  editFuelReport(context, reportIndex)))
+                                                    ]),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -972,9 +528,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               padding: const EdgeInsets.all(8.0),
                               child: ElevatedButton.icon(
                                   onPressed: () {
-                                    editFuelReport(
+                                    editFuelReportDialog(
                                             context,
-                                            DateTime.fromMillisecondsSinceEpoch(log.samples[sampleIndex.value].time),
+                                            selectedTimeRange.value.start.add(selectedTimeRange.value.duration * 0.5),
                                             null)
                                         .then((newReport) {
                                       if (newReport != null) {
@@ -1009,6 +565,33 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                   ]),
             ),
 
+            // --- Time Scrubber
+            ValueListenableBuilder<DateTimeRange>(
+                valueListenable: selectedTimeRange,
+                builder: (context, range, _) {
+                  return SfRangeSlider(
+                    values: SfRangeValues(range.start, range.end),
+                    dragMode: SliderDragMode.both,
+                    min: log.startTime,
+                    max: log.endTime,
+                    enableTooltip: true,
+                    tooltipTextFormatterCallback: (value, formattedText) {
+                      DateTime valueTime = value;
+                      return (valueTime == range.end ? "+" : "") +
+                          richHrMin(
+                                  duration: valueTime.difference(valueTime == range.end ? range.start : log.startTime!))
+                              .toPlainText();
+                    },
+                    onChanged: (newValue) {
+                      final int startIndex = log.timeToSampleIndex(newValue.start);
+                      final int endIndex = log.timeToSampleIndex(newValue.end);
+
+                      selectedIndexRange.value = Range(startIndex, endIndex);
+                      selectedTimeRange.value = DateTimeRange(start: newValue.start, end: newValue.end);
+                    },
+                  );
+                }),
+
             TabBar(labelPadding: const EdgeInsets.all(0), controller: tabController, tabs: const [
               Tab(icon: Icon(Icons.info), text: "Summary"),
               Tab(
@@ -1026,95 +609,35 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   }
 }
 
-// ==================================================================================
-//
-//    MISC UTILS
-//
-// ----------------------------------------------------------------------------------
-class _ThumbShape extends RoundSliderThumbShape {
-  final _indicatorShape = const PaddleSliderValueIndicatorShape();
+class FuelEntryCard extends StatelessWidget {
+  final FlightLog log;
+  final int reportIndex;
+  final void Function(int index)? onEdit;
 
-  const _ThumbShape();
-
-  @override
-  void paint(PaintingContext context, Offset center,
-      {required Animation<double> activationAnimation,
-      required Animation<double> enableAnimation,
-      required bool isDiscrete,
-      required TextPainter labelPainter,
-      required RenderBox parentBox,
-      required SliderThemeData sliderTheme,
-      required TextDirection textDirection,
-      required double value,
-      required double textScaleFactor,
-      required Size sizeWithOverflow}) {
-    super.paint(
-      context,
-      center,
-      activationAnimation: activationAnimation,
-      enableAnimation: enableAnimation,
-      sliderTheme: sliderTheme,
-      value: value,
-      textScaleFactor: textScaleFactor,
-      sizeWithOverflow: sizeWithOverflow,
-      isDiscrete: isDiscrete,
-      labelPainter: labelPainter,
-      parentBox: parentBox,
-      textDirection: textDirection,
-    );
-    _indicatorShape.paint(
-      context,
-      center,
-      activationAnimation: const AlwaysStoppedAnimation(1),
-      enableAnimation: enableAnimation,
-      labelPainter: labelPainter,
-      parentBox: parentBox,
-      sliderTheme: sliderTheme,
-      value: value,
-      textScaleFactor: 0.8,
-      sizeWithOverflow: sizeWithOverflow,
-      isDiscrete: isDiscrete,
-      textDirection: textDirection,
-    );
-  }
-}
-
-class LabelFlag extends StatelessWidget {
-  const LabelFlag({
-    super.key,
-    required this.direction,
-    required this.color,
-    required this.text,
-  });
-
-  final TextDirection direction;
-  final Widget text;
-  final Color color;
+  const FuelEntryCard({super.key, required this.log, required this.reportIndex, this.onEdit});
 
   @override
   Widget build(BuildContext context) {
-    final flag = SizedBox(
-        height: 40,
-        child: VerticalDivider(
-          color: color,
-          width: 3,
-          thickness: 3,
-        ));
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (direction == TextDirection.ltr) flag,
-        Card(
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(topRight: Radius.circular(10), bottomRight: Radius.circular(10))),
-          color: color,
-          margin: EdgeInsets.zero,
-          child: Padding(padding: const EdgeInsets.all(4.0), child: text),
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+      color: Colors.blue,
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 12, right: 8),
+          child: Icon(
+            Icons.local_gas_station,
+            size: 18,
+            // color: Colors.green,
+          ),
         ),
-        if (direction != TextDirection.ltr) flag,
-      ],
+        Text.rich(richValue(UnitType.fuel, log.fuelReports[reportIndex].amount)),
+        IconButton(
+            iconSize: 18,
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            onPressed: () => onEdit?.call(reportIndex),
+            icon: Icon(Icons.edit)),
+      ]),
     );
   }
 }
