@@ -1473,16 +1473,19 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     color: Colors.white38,
                                     child: WaypointNavBar(activePlan: activePlan)))),
                         Positioned(
-                            top: 0,
-                            right: 0,
+                            top: -40,
+                            right: -40,
                             child: InkWell(
                               onTap: (() {
                                 activePlan.selectedWp = null;
                               }),
-                              child: Icon(
-                                Icons.cancel,
-                                color: const Color.fromARGB(255, 255, 100, 100).withAlpha(180),
-                                size: 20,
+                              child: Padding(
+                                padding: const EdgeInsets.all(40),
+                                child: Icon(
+                                  Icons.cancel,
+                                  color: const Color.fromARGB(255, 255, 100, 100).withAlpha(200),
+                                  size: 20,
+                                ),
                               ),
                             ))
                       ],
