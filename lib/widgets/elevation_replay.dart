@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:xcnav/gaussian_filter.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
@@ -143,8 +142,7 @@ class ElevationReplay extends StatelessWidget {
                             dotData: FlDotData(show: false),
                             barWidth: 1,
                             color: Colors.white,
-                            spots: gaussianFilterTimestamped(
-                                    log.samples.map((e) => TimestampDouble(e.time, e.vario)).toList(), 2, 7)
+                            spots: log.varioLogSmoothed
                                 .map((e) => FlSpot(e.time.toDouble(), unitConverters[UnitType.vario]!(e.value)))
                                 .toList(),
                           )

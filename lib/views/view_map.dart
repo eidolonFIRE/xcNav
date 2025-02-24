@@ -830,7 +830,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     Consumer2<MyTelemetry, ActivePlan>(builder: (context, myTelemetry, activePlan, _) {
                       if (myTelemetry.sumFuelStat != null && myTelemetry.geo != null && activePlan.selectedWp != null) {
                         final waypointETA = activePlan.getSelectedWp()!.eta(myTelemetry.geo!, 1);
-                        final enduranceDist = myTelemetry.geo!.spdSmooth *
+                        final enduranceDist = myTelemetry.speedSmooth.value *
                             myTelemetry.sumFuelStat!
                                 .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now())
                                 .inSeconds;

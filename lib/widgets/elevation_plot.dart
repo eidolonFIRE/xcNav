@@ -39,6 +39,8 @@ class ElevationPlotPainter extends CustomPainter {
   late final Paint _paintFilterWhite;
   // late final Paint _paintCard;
 
+  final double liveVario;
+  final double liveSpeed;
   final List<Geo> geoData;
   final List<ElevSample?> groundData;
 
@@ -53,7 +55,12 @@ class ElevationPlotPainter extends CustomPainter {
   final int? labelIndex;
 
   ElevationPlotPainter(this.geoData, this.groundData, this.distScale,
-      {this.waypoint, this.waypointETA, this.showPilotIcon = true, this.labelIndex}) {
+      {this.waypoint,
+      this.waypointETA,
+      this.showPilotIcon = true,
+      this.labelIndex,
+      required this.liveVario,
+      required this.liveSpeed}) {
     _paintGround = Paint()
       ..color = Colors.orange.shade800
       ..style = PaintingStyle.fill;
@@ -240,13 +247,12 @@ class ElevationPlotPainter extends CustomPainter {
     // --- Draw Vario Trendline
     final base = scaleOffset(Offset(geoData.last.time.toDouble(), geoData.last.alt));
     Offset slope = const Offset(1, 0);
-    if (geoData.last.spdSmooth.isFinite && geoData.last.varioSmooth.isFinite) {
-      slope = Offset(scaleX((geoData.last.spdSmooth * distScale).toInt() + geoData.first.time),
-          -size.height + scaleY(geoData.last.varioSmooth + minElev));
-      if (slope.dx.abs() > 0) {
-        for (double t = 0; t < size.width - base.dx; t += 20) {
-          canvas.drawLine(base + slope * t / slope.dx, base + slope * (t + 10) / slope.dx, _paintVarioTrend);
-        }
+
+    slope = Offset(
+        scaleX((liveSpeed * distScale).toInt() + geoData.first.time), -size.height + scaleY(liveVario + minElev));
+    if (slope.dx.abs() > 0) {
+      for (double t = 0; t < size.width - base.dx; t += 20) {
+        canvas.drawLine(base + slope * t / slope.dx, base + slope * (t + 10) / slope.dx, _paintVarioTrend);
       }
     }
 
@@ -344,7 +350,7 @@ class ElevationPlotPainter extends CustomPainter {
     // --- Draw Vario
     if (showPilotIcon) {
       TextPainter tp = TextPainter(
-          text: richValue(UnitType.vario, geoData.last.varioSmooth,
+          text: richValue(UnitType.vario, liveVario,
               valueStyle: const TextStyle(fontSize: 30), unitStyle: const TextStyle(fontSize: 14, color: Colors.grey)),
           textAlign: TextAlign.right,
           textDirection: TextDirection.ltr);

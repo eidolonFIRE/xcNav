@@ -205,7 +205,7 @@ class AudioCueService {
     }
   }
 
-  void cueNextWaypoint(Geo myGeo) {
+  void cueNextWaypoint(Geo myGeo, double speedSmoothed) {
     // --- Next Waypoint
     final selectedWp = activePlan.getSelectedWp();
     if (mode != null && selectedWp != null && (config["Next Waypoint"] ?? false)) {
@@ -224,7 +224,7 @@ class AudioCueService {
           (clock.now().isAfter(lastHdg!.timestamp.add(minInterval)) && ((relativeHdg).abs() >= hdgPrecision))) {
         lastHdg = LastReport.now(myGeo.hdg);
 
-        final eta = selectedWp.eta(myGeo, myGeo.spdSmooth);
+        final eta = selectedWp.eta(myGeo, speedSmoothed);
         if (eta.time != null) {
           final etaTime = printHrMinLexical(eta.time!);
           final dist = printDoubleLexical(

@@ -5,6 +5,7 @@ import 'package:bisection/bisect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/gaussian_filter.dart';
 import 'package:xml/xml.dart';
 import 'package:collection/collection.dart';
 
@@ -261,6 +262,23 @@ class FlightLog {
   // =========================================
   LatLngBounds getBounds({double pad = 0.2}) {
     return padLatLngBounds(LatLngBounds.fromPoints(samples.map((e) => e.latlng).toList()), pad);
+  }
+
+  // =========================================
+  List<TimestampDouble>? _varioLogSmoothed;
+
+  /// Smoothed, calculated vario log from recorded elevation
+  List<TimestampDouble> get varioLogSmoothed {
+    if (_varioLogSmoothed == null) {
+      final altLog = gaussianFilterTimestamped(
+          gaussianFilterTimestamped(samples.map((e) => TimestampDouble(e.time, e.alt)).toList(), 3, 3).toList(), 3, 5);
+      _varioLogSmoothed = altLog
+          .convolve((a, b) => b.time > a.time + 100
+              ? TimestampDouble(((a.time + b.time) / 2).round(), (b.value - a.value) / (b.time - a.time) * 1000)
+              : null)
+          .toList();
+    }
+    return _varioLogSmoothed!;
   }
 
   // =========================================

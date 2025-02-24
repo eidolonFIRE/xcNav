@@ -6,6 +6,12 @@ import 'package:xcnav/models/path_intercept.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 
+/// Returns in Meters
+double altFromBaro(double pressure, double? ambient) {
+  final double amb = ambient ?? 1013.25;
+  return 145366.45 * (1 - pow(pressure / amb, 0.190284)) / meters2Feet;
+}
+
 class Geo {
   double lat = 0;
   double lng = 0;
@@ -33,18 +39,9 @@ class Geo {
   /// meters/sec
   double spd = 0;
 
-  /// meters/sec
-  double spdSmooth = 0;
-
-  /// meters/sec
-  double vario = 0;
-
-  /// meters/sec
-  double varioSmooth = 0;
-
   LatLng get latlng => LatLng(lat, lng);
 
-  Geo({this.lat = 0, this.lng = 0, this.alt = 0, int? timestamp, this.hdg = 0, this.spd = 0, this.vario = 0}) {
+  Geo({this.lat = 0, this.lng = 0, this.alt = 0, int? timestamp, this.hdg = 0, this.spd = 0}) {
     time = timestamp ?? DateTime.now().millisecondsSinceEpoch;
   }
 
@@ -71,21 +68,9 @@ class Geo {
 
     if (baro != null) {
       // altitude / vario filtering
-      final double amb = baroAmbient?.pressure ?? 1013.25;
-      alt = 145366.45 * (1 - pow(baro.pressure / amb, 0.190284)) / meters2Feet;
+      alt = altFromBaro(baro.pressure, baroAmbient?.pressure);
     } else {
       alt = location.altitude;
-    }
-
-    if (prev != null && prev.time < time) {
-      vario = (alt - prev.alt) / (time - prev.time) * 1000;
-      if (vario.isNaN || vario.isInfinite) vario = 0;
-      // Blend vario with previous vario reading to offer some mild smoothing
-      if (prev.varioSmooth.isFinite && vario.abs() < 99) varioSmooth = vario * 0.2 + prev.varioSmooth * 0.8;
-      spdSmooth = spd * 0.1 + prev.spdSmooth * 0.9;
-    } else {
-      vario = prev?.vario ?? 0;
-      spdSmooth = prev?.spdSmooth ?? spd;
     }
   }
 
@@ -157,7 +142,6 @@ class Geo {
       "time": time,
       "hdg": roundToDigits(hdg, 2),
       "spd": roundToDigits(spd, 3),
-      "vario": roundToDigits(vario, 3),
     };
     if (ground != null) {
       dict["ground"] = roundToDigits(ground!, 2);
@@ -172,7 +156,6 @@ class Geo {
     time = data["time"] as int;
     hdg = parseAsDouble(data["hdg"]) ?? 0;
     spd = parseAsDouble(data["spd"]) ?? 0;
-    vario = parseAsDouble(data["vario"]) ?? 0;
     ground = parseAsDouble(data["ground"]);
   }
 }

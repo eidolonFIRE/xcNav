@@ -33,12 +33,38 @@ TextStyle? resolveSmallerStyle(TextStyle? a, TextStyle? b, {double factor = 0.6}
   }
 }
 
+extension IterableConvolve<T> on Iterable<T> {
+  Iterable<R> convolve<R>(R? Function(T a, T b) action) sync* {
+    final it = iterator;
+    T? prev;
+    while (it.moveNext()) {
+      if (prev != null) {
+        final ret = action(prev, it.current);
+        if (ret != null) yield ret;
+      }
+      prev = it.current;
+    }
+  }
+}
+
 class TimestampDouble {
   /// Milliseconds since epoch
   final int time;
   final double value;
 
   TimestampDouble(this.time, this.value);
+
+  @override
+  bool operator ==(Object other) {
+    if (other is TimestampDouble) {
+      return other.time == time && other.value == value;
+    } else {
+      return false;
+    }
+  }
+
+  @override
+  int get hashCode => time.hashCode + value.hashCode;
 }
 
 class Range<T> {

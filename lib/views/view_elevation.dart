@@ -50,8 +50,8 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
     const Duration(minutes: 10),
   ];
 
-  Future<List<ElevSample?>> doSamples(Geo geo, Waypoint? waypoint) async {
-    waypointETA = waypoint?.eta(geo, geo.spdSmooth);
+  Future<List<ElevSample?>> doSamples(Geo geo, Waypoint? waypoint, double speed) async {
+    waypointETA = waypoint?.eta(geo, speed);
 
     /// Use either the selected duration, or derive from ETA to waypoint (plus over-shoot a little)
     /// Max 200km
@@ -224,7 +224,8 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 // constraints: const BoxConstraints(maxHeight: 400),
                 child: ClipRect(
                     child: FutureBuilder<List<ElevSample?>>(
-                        future: doSamples(myTelemetry.recordGeo.last, activePlan.getSelectedWp()),
+                        future: doSamples(
+                            myTelemetry.recordGeo.last, activePlan.getSelectedWp(), myTelemetry.speedSmooth.value),
                         initialData: prevSamples ?? [],
                         builder: (context, groundSamples) {
                           prevSamples = groundSamples.data;
@@ -241,7 +242,10 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                           } else {
                             return CustomPaint(
                               painter: ElevationPlotPainter(history, groundSamples.data ?? [], distScale,
-                                  waypoint: activePlan.getSelectedWp(), waypointETA: waypointETA),
+                                  waypoint: activePlan.getSelectedWp(),
+                                  waypointETA: waypointETA,
+                                  liveSpeed: myTelemetry.speedSmooth.value,
+                                  liveVario: myTelemetry.varioSmooth.value),
                             );
                           }
                         })),

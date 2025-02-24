@@ -18,8 +18,8 @@ class WaypointNavBar extends StatelessWidget {
     return Consumer<MyTelemetry>(builder: (context, myTelemetry, child) {
       late ETA etaNext;
       if (myTelemetry.geo != null) {
-        etaNext =
-            activePlan.getSelectedWp()?.eta(myTelemetry.geo!, myTelemetry.geo!.spdSmooth) ?? ETA(0, const Duration());
+        etaNext = activePlan.getSelectedWp()?.eta(myTelemetry.geo!, myTelemetry.speedSmooth.value) ??
+            ETA(0, const Duration());
       } else {
         etaNext = ETA(0, const Duration());
       }

@@ -81,6 +81,12 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Latest Barometric Reading
   BarometerEvent? baro;
 
+  /// Live vario (smoothed)
+  ValueNotifier<double> varioSmooth = ValueNotifier(0);
+
+  /// Live speed (smoothed)
+  ValueNotifier<double> speedSmooth = ValueNotifier(0);
+
   /// Microseconds since last sensor reading
   int gForcePrevTimestamp = 0;
   double gForceX = 0;
@@ -268,7 +274,16 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   void _startBaroService() {
     listenBaro = barometerEventStream().listen((event) {
+      // Handle barometer changes (run the vario)
+      final baroPrev = baro;
       baro = event;
+      double vario = 0;
+      if (baroPrev != null) {
+        vario = (altFromBaro(baro!.pressure, baroAmbient?.pressure) -
+                altFromBaro(baroPrev.pressure, baroAmbient?.pressure)) /
+            (baro!.timestamp.difference(baroPrev.timestamp)).inSeconds;
+      }
+      varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
     });
   }
 
@@ -429,7 +444,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
         if (inFlight) {
           audioCueService.cueMyTelemetry(geo!);
-          audioCueService.cueNextWaypoint(geo!);
+          audioCueService.cueNextWaypoint(geo!, speedSmooth.value);
           audioCueService.cueGroupAwareness(geo!);
           audioCueService.cueFuel(sumFuelStat, fuelReports.lastOrNull);
         }
@@ -506,7 +521,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           timezone: DateTime.now().timeZoneOffset.inHours,
           samples: recordGeo.toList(),
           // Note: gForce samples smoothed and simplified during time of save
-          gForceSamples: douglasPeuckerTimestamped(gaussianFilterTimestamped(gForceRecord, 1, 3), 0.02),
+          gForceSamples: douglasPeuckerTimestamped(gaussianFilterTimestamped(gForceRecord, 1, 3).toList(), 0.02),
           waypoints: globalContext != null
               ? Provider.of<ActivePlan>(globalContext!, listen: false)
                   .waypoints
@@ -635,6 +650,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
 
+    speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
+
     if (geo == null) return;
 
     geo!.prevGnd = geoPrev?.ground;
@@ -657,7 +674,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (globalContext != null && settingsMgr.autoRecordFlight.value) {
       if (inFlight) {
         // Is moving slowly near the ground?
-        if (geo!.spdSmooth < 2.5 && geo!.varioSmooth.abs() < 0.2 && geo!.alt - (geo!.ground ?? geo!.alt) < 30) {
+        if (speedSmooth.value < 2.5 && varioSmooth.value.abs() < 0.2 && geo!.alt - (geo!.ground ?? geo!.alt) < 30) {
           if (geoPrev != null) {
             triggerHyst += geo!.time - geoPrev!.time;
           } else {

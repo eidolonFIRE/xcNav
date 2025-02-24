@@ -164,7 +164,9 @@ class _MyHomePageState extends State<MyHomePage> {
             automaticallyImplyLeading: false,
             leadingWidth: 35,
             toolbarHeight: topInstrumentsHeight,
-            title: settingsMgr.groundMode.value ? groundControlBar(context) : topInstruments(context),
+            title: settingsMgr.groundMode.value
+                ? groundControlBar(context)
+                : TopInstruments(myTelemetry: Provider.of<MyTelemetry>(context, listen: false)),
             // actions: [IconButton(onPressed: () {}, icon: Icon(Icons.timer_outlined))],
           ),
           // --- Main Menu
