@@ -46,7 +46,6 @@ dependencies:
   shared_preferences: ^2.0.13
   image_picker: ^1.0.4
   custom_image_crop: any
-  qr_flutter: ^4.0.0
   share_plus: ^10.0.2
   web_socket_channel: ^3.0.0
   flutter_image_compress: ^2.0.4
@@ -88,7 +87,6 @@ dependencies:
   webview_flutter: ^4.8.0
   sensors_plus: ^6.0.1
   smooth_page_indicator: ^1.2.0+3
-  mobile_scanner: ^6.0.6
   syncfusion_flutter_sliders: ^28.2.6
 
 dev_dependencies:
