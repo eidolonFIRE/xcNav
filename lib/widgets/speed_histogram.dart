@@ -24,10 +24,11 @@ class SpeedHistogram extends StatelessWidget {
           final hist = log.speedHistogram(range.start, range.end, width: maxX);
 
           return LineChart(LineChartData(
+              clipData: FlClipData.all(),
               borderData: FlBorderData(show: false),
               // barTouchData: BarTouchData(enabled: false),
               minY: 0,
-              maxX: maxX.toDouble() - 1,
+              maxX: unitConverters[UnitType.speed]!(maxX / 2),
               lineTouchData: LineTouchData(enabled: false),
               lineBarsData: [
                 LineChartBarData(
@@ -43,29 +44,31 @@ class SpeedHistogram extends StatelessWidget {
                           end: Alignment.bottomCenter),
                     ),
                     spots: hist.values
-                        .mapIndexed((i, e) => FlSpot((i + hist.range.start).toDouble(), e.toDouble()))
+                        .mapIndexed(
+                            (i, e) => FlSpot(unitConverters[UnitType.speed]!(i / 2 + hist.range.start), e.toDouble()))
                         .toList())
               ],
-              gridData: FlGridData(drawVerticalLine: true, drawHorizontalLine: false, verticalInterval: 2),
+              gridData: FlGridData(drawVerticalLine: true, drawHorizontalLine: false),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   axisNameWidget: Text(getUnitStr(UnitType.speed)),
                   sideTitles: SideTitles(
+                    maxIncluded: false,
                     showTitles: true,
-                    interval: 2,
+                    // interval: 2,
                     reservedSize: 30,
-                    getTitlesWidget: (double value, TitleMeta meta) {
-                      return
-                          // (unitConverters[UnitType.speed]!(value).round() % 5 == 0)
-                          // ?
-                          SideTitleWidget(
-                        meta: meta,
-                        child: Text(
-                          "${unitConverters[UnitType.speed]!(value).round() + hist.range.start}",
-                        ),
-                      );
-                      // : Container();
-                    },
+                    // getTitlesWidget: (double value, TitleMeta meta) {
+                    //   return
+                    //       // (unitConverters[UnitType.speed]!(value).round() % 5 == 0)
+                    //       // ?
+                    //       SideTitleWidget(
+                    //     meta: meta,
+                    //     child: Text(
+                    //       "${value).round() + hist.range.start}",
+                    //     ),
+                    //   );
+                    //   // : Container();
+                    // },
                   ),
                 ),
                 rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),

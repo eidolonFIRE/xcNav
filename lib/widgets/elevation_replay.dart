@@ -114,7 +114,8 @@ class ElevationReplay extends StatelessWidget {
                               .toList(),
                       titlesData: const FlTitlesData(
                           leftTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: true, minIncluded: false, reservedSize: 40)),
+                              sideTitles: SideTitles(
+                                  showTitles: true, minIncluded: false, reservedSize: 40, maxIncluded: false)),
                           topTitles: AxisTitles(
                             sideTitles: SideTitles(showTitles: false),
                           ),
@@ -158,7 +159,8 @@ class ElevationReplay extends StatelessWidget {
                                     }).toList())),
                         titlesData: const FlTitlesData(
                             leftTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: true, minIncluded: false, reservedSize: 40)),
+                                sideTitles: SideTitles(
+                                    showTitles: true, minIncluded: false, reservedSize: 40, maxIncluded: false)),
                             topTitles: AxisTitles(
                               sideTitles: SideTitles(showTitles: false),
                             ),

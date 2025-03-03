@@ -34,7 +34,7 @@ List<GForceSlice> getGForceSlices({required List<TimestampDouble> samples, doubl
       // Extend right
       // - each tick over LOW threshold
       int countLow = 0;
-      while (end < samples.length - 1 && countLow < 4000) {
+      while (end < samples.length - 1 && countLow < 3000) {
         end++;
         // integrate "uninteresting" time
         if (samples[end].value < low && samples[end].value >= 0.95) {
@@ -51,7 +51,7 @@ List<GForceSlice> getGForceSlices({required List<TimestampDouble> samples, doubl
       // - don't overlap with previous
       // - each tick over LOW threshold
       countLow = 0;
-      while (start > 0 && (events.isEmpty || start > events.last.end) && countLow < 4000) {
+      while (start > 0 && (events.isEmpty || start > events.last.end) && countLow < 3000) {
         start--;
 
         // integrate "uninteresting" time

@@ -198,17 +198,17 @@ class FlightLog {
   }
 
   HistogramData<int> speedHistogram(int start, int end, {int? width}) {
-    List<int> values = width == null ? [] : List.filled(width, 0);
+    List<int> values = List.filled(max(width ?? 0, 13), 0, growable: true);
 
     // Build speed histogram
     for (final each in samples.sublist(start, end)) {
-      final index = each.spd.round();
+      final index = (each.spd * 2).round();
 
       // Auto grow
       if (width == null && values.length <= index) {
         values.addAll(List.filled(index - values.length, 0));
       }
-      if (index < values.length) {
+      if (index < values.length && index > 0) {
         values[index]++;
       }
     }
@@ -270,10 +270,10 @@ class FlightLog {
   /// Smoothed, calculated vario log from recorded elevation
   List<TimestampDouble> get varioLogSmoothed {
     if (_varioLogSmoothed == null) {
-      final altLog = gaussianFilterTimestamped(
-          gaussianFilterTimestamped(samples.map((e) => TimestampDouble(e.time, e.alt)).toList(), 3, 3).toList(), 3, 5);
+      final altLog =
+          gaussianFilterTimestamped(samples.map((e) => TimestampDouble(e.time, e.alt)).toList(), 3, 3).toList();
       _varioLogSmoothed = altLog
-          .convolve((a, b) => b.time > a.time + 100
+          .convolve((a, b) => b.time > a.time + 10
               ? TimestampDouble(((a.time + b.time) / 2).round(), (b.value - a.value) / (b.time - a.time) * 1000)
               : null)
           .toList();

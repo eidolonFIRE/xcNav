@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:xcnav/units.dart';
 
-Future<bool?> confirmLogCrop(BuildContext context, {required Duration trimLength}) async {
+Future<bool?> confirmLogCrop(BuildContext context, {required Duration trimStart, required Duration trimEnd}) async {
   return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -21,7 +21,10 @@ Future<bool?> confirmLogCrop(BuildContext context, {required Duration trimLength
             ])),
             content: Text.rich(TextSpan(children: [
               const TextSpan(text: "Removing:   "),
-              richMinSec(valueStyle: const TextStyle(fontWeight: FontWeight.bold), duration: trimLength),
+              richMinSec(valueStyle: const TextStyle(fontWeight: FontWeight.bold), duration: trimStart),
+              const TextSpan(text: " from start, and "),
+              richMinSec(valueStyle: const TextStyle(fontWeight: FontWeight.bold), duration: trimEnd),
+              const TextSpan(text: " from the end."),
             ])),
             actions: [
               ElevatedButton.icon(

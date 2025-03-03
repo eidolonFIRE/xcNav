@@ -75,13 +75,23 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   }
 
   void gotoGForce(int index) {
-    scrollToTime(log.gForceEvents[index].timeRange.start.add(log.gForceEvents[index].timeRange.duration * 0.5));
+    scrollToTimeRange(log.gForceEvents[index].timeRange);
     if (tabController.index != 3) {
       tabController.animateTo(3, duration: const Duration(milliseconds: 200));
       Future.delayed(const Duration(milliseconds: 220)).then((_) => gForcePageController.jumpToPage(index));
     } else {
       gForcePageController.jumpToPage(index);
     }
+  }
+
+  void scrollToTimeRange(DateTimeRange range) {
+    final startIndex = log.timeToSampleIndex(range.start);
+    final endIndex = log.timeToSampleIndex(range.end);
+    selectedTimeRange.value = DateTimeRange(
+        start: DateTime.fromMillisecondsSinceEpoch(log.samples[startIndex].time),
+        end: DateTime.fromMillisecondsSinceEpoch(log.samples[endIndex].time));
+    selectedIndexRange.value = Range(startIndex, endIndex);
+    fitMap();
   }
 
   void scrollToTime(DateTime center) {
@@ -93,6 +103,18 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
         start: DateTime.fromMillisecondsSinceEpoch(log.samples[startIndex].time),
         end: DateTime.fromMillisecondsSinceEpoch(log.samples[endIndex].time));
     selectedIndexRange.value = Range(startIndex, endIndex);
+    fitMap();
+  }
+
+  void fitMap() {
+    mapController.fitCamera(CameraFit.coordinates(
+        coordinates: log.samples
+            .sublist(selectedIndexRange.value.start, selectedIndexRange.value.end)
+            .map((e) => e.latlng)
+            .toList(),
+        padding: EdgeInsets.all(50),
+        minZoom: 4,
+        maxZoom: 14));
   }
 
   void editFuelReport(BuildContext context, int reportIndex) {
@@ -110,6 +132,24 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
         }
       });
     });
+  }
+
+  void showCropCutSuggestion(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+                title: Text("Invalid Selection"),
+                content: Text("Use the range slider to select the duration of the log to keep."),
+                actions: [
+                  IconButton(
+                      icon: const Icon(
+                        Icons.check,
+                        color: Colors.lightGreen,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      })
+                ]));
   }
 
   @override
@@ -156,22 +196,27 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     });
 
                     break;
-                  case "trim":
-                    confirmLogCrop(context,
-                            trimLength: log.endTime!.difference(log.startTime!) -
-                                Duration(
-                                    milliseconds: log.samples[selectedIndexRange.value.end].time -
-                                        log.samples[selectedIndexRange.value.end].time))
-                        .then((confirmed) {
-                      setState(() {
-                        if (confirmed ?? false) {
-                          final newLog = log.cropLog(selectedIndexRange.value);
-                          logStore.updateLog(logKey!, newLog);
-                          scrollToTime(log.startTime!);
-                        }
+                  case "crop":
+                    if (selectedIndexRange.value.start <= 2 && selectedIndexRange.value.end >= log.samples.length - 3) {
+                      showCropCutSuggestion(context);
+                    } else {
+                      confirmLogCrop(context,
+                              trimStart: Duration(
+                                  milliseconds:
+                                      log.samples[selectedIndexRange.value.start].time - log.samples.first.time),
+                              trimEnd: Duration(
+                                  milliseconds:
+                                      -log.samples[selectedIndexRange.value.end].time + log.samples.last.time))
+                          .then((confirmed) {
+                        setState(() {
+                          if (confirmed ?? false) {
+                            final newLog = log.cropLog(selectedIndexRange.value);
+                            logStore.updateLog(logKey!, newLog);
+                            scrollToTimeRange(DateTimeRange(start: newLog.startTime!, end: newLog.endTime!));
+                          }
+                        });
                       });
-                    });
-
+                    }
                     break;
                 }
               },
@@ -185,7 +230,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 ),
                 const PopupMenuDivider(),
                 PopupMenuItem(
-                    value: "trim",
+                    value: "crop",
                     child: ListTile(
                       leading: Icon(
                         Icons.crop,
@@ -215,7 +260,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                             key: mapKey,
                             mapController: mapController,
                             options: MapOptions(
-                              initialCameraFit: CameraFit.bounds(bounds: log.getBounds()),
+                              initialCameraFit: CameraFit.bounds(
+                                  bounds: log.getBounds(), padding: EdgeInsets.all(50), minZoom: 4, maxZoom: 14),
                               onMapReady: () {
                                 setState(() {
                                   mapReady = true;
@@ -240,6 +286,19 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                       .map((e) => Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor()))
                                       .toList(),
                                 ),
+
+                              // Log line - base
+                              PolylineLayer(polylines: [
+                                Polyline(
+                                    points: log.samples.map((e) => e.latlng).toList(),
+                                    strokeWidth: 3,
+                                    borderColor: Colors.black,
+                                    // borderStrokeWidth: 1,
+                                    color: Colors.amber,
+                                    pattern: StrokePattern.dotted()
+                                    // gradientColors: [Colors.amber, Colors.orange],
+                                    )
+                              ]),
 
                               // Waypoint markers
                               if (!hideWaypoints)
@@ -270,38 +329,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                           // gradientColors: [Colors.amber, Colors.orange],
                                           )
                                     ]);
-                                  }),
-
-                              // --- G-Force Events
-                              ValueListenableBuilder<DateTimeRange>(
-                                  valueListenable: selectedTimeRange,
-                                  builder: (context, range, _) {
-                                    return MarkerLayer(
-                                        markers: log.gForceEvents
-                                            .mapIndexed((i, e) => Marker(
-                                                point: e.center.latlng,
-                                                child: GestureDetector(
-                                                    behavior: HitTestBehavior.opaque,
-                                                    onTap: () {
-                                                      gotoGForce(i);
-                                                    },
-                                                    child: Card(
-                                                      color: Colors.black.withAlpha(
-                                                          e.timeRange.start.isBefore(range.start) &&
-                                                                      e.timeRange.end.isAfter(range.end) ||
-                                                                  e.timeRange.start.isAfter(range.start) &&
-                                                                      e.timeRange.start.isBefore(range.end) ||
-                                                                  (e.timeRange.end.isAfter(range.start) &&
-                                                                      e.timeRange.end.isBefore(range.end))
-                                                              ? 200
-                                                              : 20),
-                                                      child: const Icon(
-                                                        Icons.g_mobiledata,
-                                                        color: Colors.lightGreen,
-                                                        size: 20,
-                                                      ),
-                                                    ))))
-                                            .toList());
                                   }),
 
                               // --- Fuel reports
@@ -396,7 +423,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     // --- Summary
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 10, 10, 10),
-                      child: LogSummary(log: log),
+                      child: ValueListenableBuilder<Range<int>>(
+                          valueListenable: selectedIndexRange,
+                          builder: (context, range, _) {
+                            return LogSummary(log: log.cropLog(range));
+                          }),
                     ),
 
                     // --- Elevation Plot
@@ -404,7 +435,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         padding: const EdgeInsets.all(8.0),
                         child: ElevationReplay(
                           log: log,
-                          showVario: mainDividerPosition < (MediaQuery.of(context).size.height - 100) / 2,
+                          showVario: true, // mainDividerPosition < (MediaQuery.of(context).size.height - 100) / 2,
                           selectedIndexRange: selectedIndexRange,
                           onSelectedGForce: gotoGForce,
                         )),
@@ -424,8 +455,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                             pageController: gForcePageController,
                             log: log,
                             onPageChanged: (index) {
-                              scrollToTime(log.gForceEvents[index].timeRange.start
-                                  .add(log.gForceEvents[index].timeRange.duration * 0.5));
+                              scrollToTimeRange(log.gForceEvents[index].timeRange);
                             },
                           ),
 
@@ -583,11 +613,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               .toPlainText();
                     },
                     onChanged: (newValue) {
-                      final int startIndex = log.timeToSampleIndex(newValue.start);
-                      final int endIndex = log.timeToSampleIndex(newValue.end);
-
-                      selectedIndexRange.value = Range(startIndex, endIndex);
-                      selectedTimeRange.value = DateTimeRange(start: newValue.start, end: newValue.end);
+                      scrollToTimeRange(DateTimeRange(start: newValue.start, end: newValue.end));
                     },
                   );
                 }),
