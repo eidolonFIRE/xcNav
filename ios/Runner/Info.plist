@@ -26,18 +26,34 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+	<!-- Bluetooth Permission -->
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>This app needs Bluetooth to connect to servo carb.</string>
+	<string>This app needs Bluetooth to connect to servo carb and other external devices.</string>
+
+	<!-- Camera Permission -->
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to scan QR codes</string>
+	<string>This app needs camera access to scan QR codes.</string>
+
+	<!-- Location Permissions -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>xcNav needs access to location for navigation and sharing your location with the group</string>
+	<string>xcNav needs access to location for navigation and sharing your location with the group.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>xcNav needs access to location even while the app is not in focus.</string>
+	<string>xcNav needs access to location even while the app is not in focus to ensure continuous navigation.</string>
+
+	<!-- Motion Sensor Permission -->
 	<key>NSMotionUsageDescription</key>
 	<string>This app requires access to the barometer to provide altitude information.</string>
+
+	<!-- Photo Library Access -->
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs to be able to select an avatar picture.</string>
+	<string>This app needs access to the photo library to select an avatar picture.</string>
+
+	<!-- (Optional) Microphone Permission (if required) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>xcNav requires microphone access for voice navigation and communication.</string>
+
+	<!-- Background Mode Support -->
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
@@ -47,6 +63,8 @@
 		<string>fetch</string>
 		<string>location</string>
 	</array>
+
+	<!-- UI Settings -->
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -68,6 +86,8 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+
+	<!-- Flutter Embedded Views -->
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
 </dict>
