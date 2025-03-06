@@ -652,8 +652,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
 
-    if (geo == null) return;
-
     geo!.prevGnd = geoPrev?.ground;
     await sampleDem(geo!.latlng, true).then((value) {
       if (value != null) {
