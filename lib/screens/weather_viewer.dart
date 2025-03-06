@@ -63,11 +63,11 @@ class _WeatherViewerState extends State<WeatherViewer> {
           controller: controller,
         ),
         Padding(
-          padding: const EdgeInsets.only(left: 4, top: 20),
+          padding: const EdgeInsets.only(left: 0, top: 60),
           child: Align(
             alignment: Alignment.topLeft,
             child: IconButton(
-              iconSize: 30,
+              iconSize: 40,
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
