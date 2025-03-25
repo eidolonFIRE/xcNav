@@ -212,6 +212,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                           if (confirmed ?? false) {
                             final newLog = log.cropLog(selectedIndexRange.value);
                             logStore.updateLog(logKey!, newLog);
+                            log = newLog;
                             scrollToTimeRange(DateTimeRange(start: newLog.startTime!, end: newLog.endTime!));
                           }
                         });
