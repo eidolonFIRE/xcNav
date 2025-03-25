@@ -1,24 +1,22 @@
 PODS:
-  - better_open_file (0.0.1):
-    - Flutter
   - datadog_flutter_plugin (0.0.1):
-    - DatadogCore (= 2.18.0)
-    - DatadogCrashReporting (= 2.18.0)
-    - DatadogInternal (= 2.18.0)
-    - DatadogLogs (= 2.18.0)
-    - DatadogRUM (= 2.18.0)
+    - DatadogCore (= 2.20.0)
+    - DatadogCrashReporting (= 2.20.0)
+    - DatadogInternal (= 2.20.0)
+    - DatadogLogs (= 2.20.0)
+    - DatadogRUM (= 2.20.0)
     - DictionaryCoder (= 1.0.8)
     - Flutter
-  - DatadogCore (2.18.0):
-    - DatadogInternal (= 2.18.0)
-  - DatadogCrashReporting (2.18.0):
-    - DatadogInternal (= 2.18.0)
+  - DatadogCore (2.20.0):
+    - DatadogInternal (= 2.20.0)
+  - DatadogCrashReporting (2.20.0):
+    - DatadogInternal (= 2.20.0)
     - PLCrashReporter (~> 1.11.2)
-  - DatadogInternal (2.18.0)
-  - DatadogLogs (2.18.0):
-    - DatadogInternal (= 2.18.0)
-  - DatadogRUM (2.18.0):
-    - DatadogInternal (= 2.18.0)
+  - DatadogInternal (2.20.0)
+  - DatadogLogs (2.20.0):
+    - DatadogInternal (= 2.20.0)
+  - DatadogRUM (2.20.0):
+    - DatadogInternal (= 2.20.0)
   - DictionaryCoder (1.0.8)
   - DKImagePickerController/Core (4.3.9):
     - DKImagePickerController/ImageDataManager
@@ -55,8 +53,9 @@ PODS:
     - DKImagePickerController/PhotoGallery
     - Flutter
   - Flutter (1.0.0)
-  - flutter_blue_plus (0.0.1):
+  - flutter_blue_plus_darwin (0.0.2):
     - Flutter
+    - FlutterMacOS
   - flutter_image_compress_common (1.0.0):
     - Flutter
     - Mantle
@@ -72,28 +71,29 @@ PODS:
     - Flutter
   - image_picker_ios (0.0.1):
     - Flutter
-  - libwebp (1.3.2):
-    - libwebp/demux (= 1.3.2)
-    - libwebp/mux (= 1.3.2)
-    - libwebp/sharpyuv (= 1.3.2)
-    - libwebp/webp (= 1.3.2)
-  - libwebp/demux (1.3.2):
+  - libwebp (1.5.0):
+    - libwebp/demux (= 1.5.0)
+    - libwebp/mux (= 1.5.0)
+    - libwebp/sharpyuv (= 1.5.0)
+    - libwebp/webp (= 1.5.0)
+  - libwebp/demux (1.5.0):
     - libwebp/webp
-  - libwebp/mux (1.3.2):
+  - libwebp/mux (1.5.0):
     - libwebp/demux
-  - libwebp/sharpyuv (1.3.2)
-  - libwebp/webp (1.3.2):
+  - libwebp/sharpyuv (1.5.0)
+  - libwebp/webp (1.5.0):
     - libwebp/sharpyuv
   - Mantle (2.2.0):
     - Mantle/extobjc (= 2.2.0)
   - Mantle/extobjc (2.2.0)
-  - MTBBarcodeScanner (5.0.11)
   - network_info_plus (0.0.1):
     - Flutter
-  - ObjectBox (4.0.1)
+  - ObjectBox (4.1.0)
   - objectbox_flutter_libs (0.0.1):
     - Flutter
-    - ObjectBox (= 4.0.1)
+    - ObjectBox (= 4.1.0)
+  - open_file_ios (0.0.1):
+    - Flutter
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
@@ -101,13 +101,10 @@ PODS:
     - FlutterMacOS
   - permission_handler_apple (9.3.0):
     - Flutter
-  - PLCrashReporter (1.11.2)
-  - qr_code_scanner (0.2.0):
-    - Flutter
-    - MTBBarcodeScanner
-  - SDWebImage (5.20.0):
-    - SDWebImage/Core (= 5.20.0)
-  - SDWebImage/Core (5.20.0)
+  - PLCrashReporter (1.11.3)
+  - SDWebImage (5.21.0):
+    - SDWebImage/Core (= 5.21.0)
+  - SDWebImage/Core (5.21.0)
   - SDWebImageWebPCoder (0.14.6):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
@@ -128,11 +125,10 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
-  - better_open_file (from `.symlinks/plugins/better_open_file/ios`)
   - datadog_flutter_plugin (from `.symlinks/plugins/datadog_flutter_plugin/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
-  - flutter_blue_plus (from `.symlinks/plugins/flutter_blue_plus/ios`)
+  - flutter_blue_plus_darwin (from `.symlinks/plugins/flutter_blue_plus_darwin/darwin`)
   - flutter_image_compress_common (from `.symlinks/plugins/flutter_image_compress_common/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
@@ -141,10 +137,10 @@ DEPENDENCIES:
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - network_info_plus (from `.symlinks/plugins/network_info_plus/ios`)
   - objectbox_flutter_libs (from `.symlinks/plugins/objectbox_flutter_libs/ios`)
+  - open_file_ios (from `.symlinks/plugins/open_file_ios/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
-  - qr_code_scanner (from `.symlinks/plugins/qr_code_scanner/ios`)
   - sensors_plus (from `.symlinks/plugins/sensors_plus/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -164,7 +160,6 @@ SPEC REPOS:
     - DKPhotoGallery
     - libwebp
     - Mantle
-    - MTBBarcodeScanner
     - ObjectBox
     - PLCrashReporter
     - SDWebImage
@@ -172,16 +167,14 @@ SPEC REPOS:
     - SwiftyGif
 
 EXTERNAL SOURCES:
-  better_open_file:
-    :path: ".symlinks/plugins/better_open_file/ios"
   datadog_flutter_plugin:
     :path: ".symlinks/plugins/datadog_flutter_plugin/ios"
   file_picker:
     :path: ".symlinks/plugins/file_picker/ios"
   Flutter:
     :path: Flutter
-  flutter_blue_plus:
-    :path: ".symlinks/plugins/flutter_blue_plus/ios"
+  flutter_blue_plus_darwin:
+    :path: ".symlinks/plugins/flutter_blue_plus_darwin/darwin"
   flutter_image_compress_common:
     :path: ".symlinks/plugins/flutter_image_compress_common/ios"
   flutter_local_notifications:
@@ -198,14 +191,14 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/network_info_plus/ios"
   objectbox_flutter_libs:
     :path: ".symlinks/plugins/objectbox_flutter_libs/ios"
+  open_file_ios:
+    :path: ".symlinks/plugins/open_file_ios/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
-  qr_code_scanner:
-    :path: ".symlinks/plugins/qr_code_scanner/ios"
   sensors_plus:
     :path: ".symlinks/plugins/sensors_plus/ios"
   share_plus:
@@ -220,45 +213,43 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
 SPEC CHECKSUMS:
-  better_open_file: 03cf320415d4d3f46b6e00adc4a567d76c1a399d
-  datadog_flutter_plugin: e2fad9707b0a42901a101c1eee0d3de569439678
-  DatadogCore: 24f3bf4daa04949ef98b706ec4d4cb3cfde5443c
-  DatadogCrashReporting: 1a16f982c569f0d7058779a4540d4506002c89c6
-  DatadogInternal: 4719225e5e3a5550a52196930cecdf2a589820b2
-  DatadogLogs: 0365989aebbf3d0c7cb7346cf2bbb932c0eacc01
-  DatadogRUM: 8461273acc87ddfe4a8bbc6e6672ae9542471f86
+  datadog_flutter_plugin: ad5d6214eae15c788d6bf9be4f4d132841cd33b8
+  DatadogCore: 773e69b0cbb3fbf97176e6fc707206df6dec71d8
+  DatadogCrashReporting: 588244d5f61cd614f68a00b7352172aa33bac706
+  DatadogInternal: 4259244d5d3dc1acc83d1dc382d6cfdfee48869c
+  DatadogLogs: ba048171d5ad5745bfce9b78050e14cfe6361e08
+  DatadogRUM: 6d88e20d36d156131ca3174040865995685974f1
   DictionaryCoder: 5f84fff69f54cb806071538430bdafe04a89d658
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
-  file_picker: 09aa5ec1ab24135ccd7a1621c46c84134bfd6655
+  file_picker: b159e0c068aef54932bb15dc9fd1571818edaf49
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_blue_plus: 4837da7d00cf5d441fdd6635b3a57f936778ea96
+  flutter_blue_plus_darwin: 3ea4ec9133b377febcc8a70b28cd2d2dc9242bd9
   flutter_image_compress_common: ec1d45c362c9d30a3f6a0426c297f47c52007e3e
   flutter_local_notifications: df98d66e515e1ca797af436137b4459b160ad8c9
-  flutter_native_splash: e8a1e01082d97a8099d973f919f57904c925008a
+  flutter_native_splash: df59bb2e1421aa0282cb2e95618af4dcb0c56c29
   flutter_tts: 0f492aab6accf87059b72354fcb4ba934304771d
   geolocator_apple: 9bcea1918ff7f0062d98345d238ae12718acfbc1
   image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
-  libwebp: 1786c9f4ff8a279e4dac1e8f385004d5fc253009
+  libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
-  MTBBarcodeScanner: f453b33c4b7dfe545d8c6484ed744d55671788cb
   network_info_plus: 6613d9d7cdeb0e6f366ed4dbe4b3c51c52d567a9
-  ObjectBox: 0bc4bb75eea85f6af06b369148b334c2056bbc29
-  objectbox_flutter_libs: 2ce0da386c780878687c736b528ceaf371573efb
+  ObjectBox: bf3d4b51075d52868422d5d1f2f2141b1d630d30
+  objectbox_flutter_libs: 2f30755c12b0fe104d75445c3ba879e3072eda54
+  open_file_ios: 461db5853723763573e140de3193656f91990d9e
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
-  PLCrashReporter: 499c53b0104f95c302d94fd723ebb03c56d9bac8
-  qr_code_scanner: bb67d64904c3b9658ada8c402e8b4d406d5d796e
-  SDWebImage: 73c6079366fea25fa4bb9640d5fb58f0893facd8
+  PLCrashReporter: 97cef386c199b54662e744d1a62c19f7bfe08e90
+  SDWebImage: f84b0feeb08d2d11e6a9b843cb06d75ebf5b8868
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
   sensors_plus: 7229095999f30740798f0eeef5cd120357a8f4f2
   share_plus: 8b6f8b3447e494cca5317c8c3073de39b3600d1f
   shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
   url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
-  wakelock_plus: 78ec7c5b202cab7761af8e2b2b3d0671be6c4ae1
-  webview_flutter_wkwebview: 0982481e3d9c78fd5c6f62a002fcd24fc791f1e4
+  wakelock_plus: 373cfe59b235a6dd5837d0fb88791d2f13a90d56
+  webview_flutter_wkwebview: a4af96a051138e28e29f60101d094683b9f82188
 
 PODFILE CHECKSUM: 990e75a5fba23912ca7f5b3fc0557775de11d8e2
 

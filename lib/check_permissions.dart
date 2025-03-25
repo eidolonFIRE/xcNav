@@ -21,11 +21,11 @@ Future<bool?> checkPermissions(BuildContext context) async {
       await Permission.camera.request();
       await Permission.photos.request();
       await Permission.locationWhenInUse.request();
-      await Permission.locationAlways.request();
+      final locAlwaysStatus = await Permission.locationAlways.request();
 
-      if (await Permission.locationAlways.isPermanentlyDenied) {
+      if (await Permission.locationAlways.isPermanentlyDenied || !locAlwaysStatus.isGranted) {
         debugPrint("Location was permanently denied, opening app settings.");
-        await openAppSettings();
+        await showDialog(context: context, builder: (context) => const RequestLocationDialog());
       }
     } else {
       debugPrint("Checking location permissions...");
@@ -33,7 +33,7 @@ Future<bool?> checkPermissions(BuildContext context) async {
       if (whenInUse.isPermanentlyDenied) {
         debugPrint("Location was fully denied!");
         if (context.mounted) {
-          showDialog(context: context, builder: (context) => const RequestLocationDialog());
+          await showDialog(context: context, builder: (context) => const RequestLocationDialog());
         }
         currentlyCheckingPermissions = false;
         return true;
