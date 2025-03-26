@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:clock/clock.dart';
@@ -7,6 +8,7 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/models/eta.dart';
@@ -109,6 +111,17 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
       return Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
+          if (Platform.isIOS)
+            GestureDetector(
+              onTap: () => launchUrl(Uri.parse("https://weatherkit.apple.com/legal-attribution.html")),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: Image.asset(
+                  "assets/external/apple_weather.png",
+                  height: 20,
+                ),
+              ),
+            ),
           // --- Barometer control
           ListTile(
             minVerticalPadding: 20,
