@@ -97,7 +97,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   bool get wantKeepAlive => true;
 
   late PolyEditor measurementEditor;
-  final measurementPolyline = Polyline(color: Colors.orange, points: [], strokeWidth: 8);
+  final List<LatLng> measurementPoints = [];
 
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
   bool hideWaypoints = false;
@@ -132,7 +132,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
     measurementEditor = PolyEditor(
       addClosePathMarker: false,
-      points: measurementPolyline.points,
+      points: measurementPoints,
       pointIcon: const Icon(
         Icons.crop_square,
         size: 20,
@@ -259,7 +259,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       polyEditor.add(editablePoints, latlng);
     } else if (focusMode == FocusMode.measurement) {
       // Add point to measurement
-      measurementEditor.add(measurementPolyline.points, latlng);
+      measurementEditor.add(measurementPoints, latlng);
     } else {
       // check tap on TFR
       for (final tfr in getLoadedTFRs() ?? <TFR>[]) {
@@ -287,8 +287,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   Widget build(BuildContext context) {
     super.build(context);
 
+    debugPrint("Build view_map");
+
     // Hookup the measurement points to the active plan provider.
-    Provider.of<ActivePlan>(context, listen: false).mapMeasurement = measurementPolyline.points;
+    Provider.of<ActivePlan>(context, listen: false).mapMeasurement = measurementPoints;
 
     final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
 
@@ -493,8 +495,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               .toList()),
 
                     // Measurement: yellow line
-                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                      PolylineLayer(polylines: [measurementPolyline]),
+                    if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
+                      PolylineLayer(
+                          polylines: [Polyline(points: measurementPoints, color: Colors.orange, strokeWidth: 8)]),
 
                     // (DEBUG): check the tiles being loaded
                     // if (mapReady)
@@ -603,7 +606,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                 child: GestureDetector(
                                   onTap: () {
                                     if (focusMode == FocusMode.measurement) {
-                                      measurementEditor.add(measurementPolyline.points, e.latlng.first);
+                                      measurementEditor.add(measurementPoints, e.latlng.first);
                                     } else {
                                       plan.selectedWp = e.id;
                                     }
@@ -909,10 +912,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     }),
 
                     // Measurement Polyline
-                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
+                    if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
                       DragMarkers(markers: measurementEditor.edit()),
-                    if (focusMode == FocusMode.measurement && measurementPolyline.points.isNotEmpty)
-                      MarkerLayer(markers: buildMeasurementMarkers(measurementPolyline.points)),
+                    if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
+                      MarkerLayer(markers: buildMeasurementMarkers(measurementPoints)),
 
                     // Draggable line editor
                     if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
@@ -1120,7 +1123,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   color: Colors.red,
                                 ),
                                 onPressed: () {
-                                  measurementPolyline.points.clear();
+                                  measurementPoints.clear();
                                   setFocusMode(prevFocusMode);
                                 },
                               ),
