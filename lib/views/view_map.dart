@@ -437,17 +437,25 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     // Waypoints: paths
                     if (!hideWaypoints)
                       GestureDetector(
+                        onTapDown: (details) {
+                          if (focusMode == FocusMode.measurement) {
+                            measurementEditor.add(
+                                measurementPoints, mapController.camera.offsetToCrs(details.localPosition));
+                          }
+                        },
                         onTap: () {
-                          final p0 = polylineHit.value?.hitValues.first;
-                          if (p0 != null && focusMode != FocusMode.measurement) {
-                            final wp = plan.waypoints[p0];
-                            if (wp != null) {
-                              // Select this path waypoint
-                              if (focusMode != FocusMode.measurement) {
-                                if (plan.selectedWp == p0) {
-                                  wp.toggleDirection();
+                          if (focusMode != FocusMode.measurement) {
+                            final p0 = polylineHit.value?.hitValues.first;
+                            if (p0 != null) {
+                              final wp = plan.waypoints[p0];
+                              if (wp != null) {
+                                // Select this path waypoint
+                                if (focusMode != FocusMode.measurement) {
+                                  if (plan.selectedWp == p0) {
+                                    wp.toggleDirection();
+                                  }
+                                  plan.selectedWp = p0;
                                 }
-                                plan.selectedWp = p0;
                               }
                             }
                           }
