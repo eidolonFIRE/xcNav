@@ -301,6 +301,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                             }),
                         isSelected: lookAheadOptions.map((e) => e == lookAhead).toList(),
                         children: lookAheadOptions.map((e) {
+                          debugPrint(e.runtimeType.toString());
                           switch (e.runtimeType.toString()) {
                             case "double":
                               return e == lookAheadOptions.first
@@ -310,14 +311,14 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                                           digits: 3, decimals: 0, autoDecimalThresh: 1) ??
                                       "");
 
-                            case "WaypointID":
+                            case "String":
                               final selectedWp = activePlan.getSelectedWp();
                               if (selectedWp == null) {
                                 return Container();
                               } else {
                                 return SizedBox(
                                   width: 30,
-                                  height: 32,
+                                  height: 30,
                                   child: selectedWp.isPath
                                       ? SvgPicture.asset(
                                           "assets/images/path.svg",
