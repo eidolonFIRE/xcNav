@@ -278,12 +278,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       final baroPrev = baro;
       baro = event;
       double vario = 0;
-      if (baroPrev != null) {
+      if (baroPrev != null && baroPrev.timestamp.isBefore(baro!.timestamp)) {
         vario = (altFromBaro(baro!.pressure, baroAmbient?.pressure) -
                 altFromBaro(baroPrev.pressure, baroAmbient?.pressure)) /
             (baro!.timestamp.difference(baroPrev.timestamp)).inSeconds;
+        if (vario.isFinite) {
+          varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
+        }
       }
-      varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
     });
   }
 
