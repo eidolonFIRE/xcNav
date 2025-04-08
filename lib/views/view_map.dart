@@ -1091,9 +1091,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         ],
                       )),
 
-                  if (focusMode == FocusMode.addPath ||
-                      focusMode == FocusMode.editPath ||
-                      focusMode == FocusMode.measurement)
+                  if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
                     Align(
                       alignment: Alignment.bottomRight,
                       child: Row(
@@ -1342,13 +1340,19 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                   MapButton(
                     size: buttonSize,
                     onPressed: () {
-                      setFocusMode(FocusMode.measurement);
+                      if (focusMode == FocusMode.measurement) {
+                        measurementPoints.clear();
+                        setFocusMode(prevFocusMode);
+                      } else {
+                        setFocusMode(FocusMode.measurement);
+                      }
+                      // setFocusMode(FocusMode.measurement);
                     },
                     selected: false,
-                    child: const Icon(
-                      Icons.straighten,
+                    child: Icon(
+                      focusMode == FocusMode.measurement ? Icons.cancel : Icons.straighten,
                       size: 30,
-                      color: Colors.black,
+                      color: focusMode == FocusMode.measurement ? Colors.red : Colors.black,
                     ),
                   )
                 ]);

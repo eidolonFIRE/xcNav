@@ -301,7 +301,6 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                             }),
                         isSelected: lookAheadOptions.map((e) => e == lookAhead).toList(),
                         children: lookAheadOptions.map((e) {
-                          debugPrint(e.runtimeType.toString());
                           switch (e.runtimeType.toString()) {
                             case "double":
                               return e == lookAheadOptions.first
