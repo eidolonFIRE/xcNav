@@ -7,12 +7,12 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 
 Future<FuelReport?> editFuelReportDialog(BuildContext context, DateTime time, double? amount) {
-  final fuelAmountController =
-      TextEditingController(text: amount == null ? null : printDoubleSimple(amount, decimals: 2));
-  final amountFormKey = GlobalKey<FormState>();
   return showDialog<FuelReport?>(
       context: context,
       builder: (context) {
+        final fuelAmountController =
+            TextEditingController(text: amount == null ? null : printDoubleSimple(amount, decimals: 2));
+        final amountFormKey = GlobalKey<FormState>(debugLabel: "FuelReportFormKey");
         return AlertDialog(
           title: const Text("Report Fuel Level"),
           content: Row(
@@ -23,7 +23,7 @@ Future<FuelReport?> editFuelReportDialog(BuildContext context, DateTime time, do
                 style: const TextStyle(fontSize: 20),
               ),
               SizedBox(
-                width: 70,
+                width: 80,
                 child: Form(
                   key: amountFormKey,
                   child: TextFormField(
@@ -33,7 +33,7 @@ Future<FuelReport?> editFuelReportDialog(BuildContext context, DateTime time, do
                         hintText: getUnitStr(UnitType.fuel, lexical: true),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         contentPadding: const EdgeInsets.all(4)),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
                     autofocus: true,
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
                     validator: (value) {
