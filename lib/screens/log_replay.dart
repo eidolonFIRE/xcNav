@@ -12,6 +12,7 @@ import 'package:xcnav/dialogs/label_flag.dart';
 import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
+import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/elevation_replay.dart';
@@ -118,8 +119,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   }
 
   void editFuelReport(BuildContext context, int reportIndex) {
-    editFuelReportDialog(context, log.fuelReports[reportIndex].time, log.fuelReports[reportIndex].amount)
-        .then((newReport) {
+    showDialog<FuelReport>(
+        context: context,
+        builder: (context) => EditFuelReportDialog(
+            time: log.fuelReports[reportIndex].time, amount: log.fuelReports[reportIndex].amount)).then((newReport) {
       setState(() {
         if (newReport != null) {
           if (newReport.amount == 0 && newReport.time.millisecondsSinceEpoch == 0) {
@@ -559,11 +562,12 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               padding: const EdgeInsets.all(8.0),
                               child: ElevatedButton.icon(
                                   onPressed: () {
-                                    editFuelReportDialog(
-                                            context,
-                                            selectedTimeRange.value.start.add(selectedTimeRange.value.duration * 0.5),
-                                            null)
-                                        .then((newReport) {
+                                    showDialog<FuelReport>(
+                                        context: context,
+                                        builder: (context) => EditFuelReportDialog(
+                                            time: selectedTimeRange.value.start
+                                                .add(selectedTimeRange.value.duration * 0.5),
+                                            amount: null)).then((newReport) {
                                       if (newReport != null) {
                                         setState(() {
                                           log.insertFuelReport(newReport.time, newReport.amount,
