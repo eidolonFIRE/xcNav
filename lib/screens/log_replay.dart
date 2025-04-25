@@ -119,10 +119,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   }
 
   void editFuelReport(BuildContext context, int reportIndex) {
-    showDialog<FuelReport>(
-        context: context,
-        builder: (context) => EditFuelReportDialog(
-            time: log.fuelReports[reportIndex].time, amount: log.fuelReports[reportIndex].amount)).then((newReport) {
+    dialogEditFuelReport(
+            context: context, time: log.fuelReports[reportIndex].time, amount: log.fuelReports[reportIndex].amount)
+        .then((newReport) {
       setState(() {
         if (newReport != null) {
           if (newReport.amount == 0 && newReport.time.millisecondsSinceEpoch == 0) {
@@ -562,12 +561,12 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               padding: const EdgeInsets.all(8.0),
                               child: ElevatedButton.icon(
                                   onPressed: () {
-                                    showDialog<FuelReport>(
-                                        context: context,
-                                        builder: (context) => EditFuelReportDialog(
+                                    dialogEditFuelReport(
+                                            context: context,
                                             time: selectedTimeRange.value.start
                                                 .add(selectedTimeRange.value.duration * 0.5),
-                                            amount: null)).then((newReport) {
+                                            amount: null)
+                                        .then((newReport) {
                                       if (newReport != null) {
                                         setState(() {
                                           log.insertFuelReport(newReport.time, newReport.amount,
