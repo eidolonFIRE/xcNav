@@ -42,6 +42,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   late FlightLog log;
   bool logLoaded = false;
 
+  double windowHeight = 400;
+
   late final TabController tabController;
 
   late final List<int> logGForceIndeces;
@@ -59,6 +61,30 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   void initState() {
     super.initState();
     tabController = TabController(length: 5, vsync: this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    if (!logLoaded) {
+      final args = ModalRoute.of(context)!.settings.arguments as Map<String, Object>;
+      logKey ??= args["logKey"] as String;
+
+      log = logStore.logs[logKey]!;
+
+      selectedIndexRange.value = Range(0, log.samples.length - 1);
+      selectedTimeRange = ValueNotifier(DateTimeRange(start: log.startTime!, end: log.endTime!));
+
+      if (log.goodFile) {
+        logLoaded = true;
+      } else {
+        error("Error loading log in replay screen.", attributes: {"filename": log.filename});
+      }
+    }
+    windowHeight = MediaQuery.of(context).size.height;
+    if (mainDividerPosition < 0) {
+      mainDividerPosition = (windowHeight - 80) * 0.5;
+    }
+    super.didChangeDependencies();
   }
 
   @override
@@ -156,26 +182,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("/Build log_replay screen");
-    if (!logLoaded) {
-      final args = ModalRoute.of(context)!.settings.arguments as Map<String, Object>;
-      logKey ??= args["logKey"] as String;
+    debugPrint("Build /logReplay");
 
-      log = logStore.logs[logKey]!;
-
-      selectedIndexRange.value = Range(0, log.samples.length - 1);
-      selectedTimeRange = ValueNotifier(DateTimeRange(start: log.startTime!, end: log.endTime!));
-
-      if (mainDividerPosition < 0) {
-        mainDividerPosition = (MediaQuery.of(context).size.height - 80) * 0.5;
-      }
-
-      if (log.goodFile) {
-        logLoaded = true;
-      } else {
-        error("Error loading log in replay screen.", attributes: {"filename": log.filename});
-      }
-    }
     return PopScope(
       onPopInvokedWithResult: (_, __) {
         if (log.goodFile && log.unsaved) {
@@ -402,8 +410,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 onPointerMove: (event) {
                   // if (dividerDown != null) {
                   setState(() {
-                    mainDividerPosition =
-                        min(MediaQuery.of(context).size.height - 350, max(0, mainDividerPosition + event.delta.dy));
+                    mainDividerPosition = min(windowHeight - 350, max(0, mainDividerPosition + event.delta.dy));
                   });
                   // }
                 },
@@ -438,7 +445,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         padding: const EdgeInsets.all(8.0),
                         child: ElevationReplay(
                           log: log,
-                          showVario: true, // mainDividerPosition < (MediaQuery.of(context).size.height - 100) / 2,
+                          showVario: true,
                           selectedIndexRange: selectedIndexRange,
                           onSelectedGForce: gotoGForce,
                         )),

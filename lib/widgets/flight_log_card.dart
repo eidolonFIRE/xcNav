@@ -164,58 +164,59 @@ class FlightLogCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: SizedBox(
-          width: MediaQuery.of(context).size.width - 8,
-          height: log.goodFile ? MediaQuery.of(context).size.width / 2 : null,
+          height: log.goodFile ? 200 : null,
           child: Stack(children: [
             if (log.goodFile)
-              FlutterMap(
-                  key: GlobalKey(debugLabel: "flight_log_card:${log.startTime?.millisecondsSinceEpoch.toString()}"),
-                  mapController: mapController,
-                  options: MapOptions(
-                    initialCameraFit: mapBounds != null ? CameraFit.bounds(bounds: mapBounds) : null,
-                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
-                    onTap: (_, __) {
-                      if (log.goodFile) {
-                        Navigator.pushNamed(context, "/logReplay", arguments: {"logKey": logKey});
-                      }
-                    },
-                  ),
-                  children: [
-                    getMapTileLayer(MapTileSrc.topo),
-
-                    // --- Waypoints: paths
-                    PolylineLayer(
-                      polylines: log.waypoints
-                          .where((value) => value.latlng.length > 1)
-                          .map((e) => Polyline(points: e.latlng, strokeWidth: 3.0, color: e.getColor()))
-                          .toList(),
+              Builder(builder: (context) {
+                return FlutterMap(
+                    key: GlobalKey(debugLabel: "flight_log_card:${log.startTime?.millisecondsSinceEpoch.toString()}"),
+                    mapController: mapController,
+                    options: MapOptions(
+                      initialCameraFit: mapBounds != null ? CameraFit.bounds(bounds: mapBounds) : null,
+                      interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                      onTap: (_, __) {
+                        if (log.goodFile) {
+                          Navigator.pushNamed(context, "/logReplay", arguments: {"logKey": logKey});
+                        }
+                      },
                     ),
+                    children: [
+                      getMapTileLayer(MapTileSrc.topo),
 
-                    // --- Waypoints: pin markers
-                    MarkerLayer(
-                      markers: log.waypoints
-                          .where((element) => element.latlng.length == 1)
-                          .map((e) => Marker(
-                              point: e.latlng[0],
-                              height: 60 * 0.5,
-                              width: 40 * 0.5,
-                              child: Container(
-                                  transformAlignment: const Alignment(0, 0),
-                                  transform: Matrix4.translationValues(0, -30 * 0.5, 0),
-                                  child: WaypointMarker(e, 60 * 0.5))))
-                          .toList(),
-                    ),
+                      // --- Waypoints: paths
+                      PolylineLayer(
+                        polylines: log.waypoints
+                            .where((value) => value.latlng.length > 1)
+                            .map((e) => Polyline(points: e.latlng, strokeWidth: 3.0, color: e.getColor()))
+                            .toList(),
+                      ),
 
-                    // --- Log Line
-                    PolylineLayer(polylines: [
-                      Polyline(
-                        points: log.samples.map((e) => e.latlng).toList(),
-                        strokeWidth: 4,
-                        color: Colors.red,
-                        pattern: const StrokePattern.dotted(),
-                      )
-                    ]),
-                  ]),
+                      // --- Waypoints: pin markers
+                      MarkerLayer(
+                        markers: log.waypoints
+                            .where((element) => element.latlng.length == 1)
+                            .map((e) => Marker(
+                                point: e.latlng[0],
+                                height: 60 * 0.5,
+                                width: 40 * 0.5,
+                                child: Container(
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: Matrix4.translationValues(0, -30 * 0.5, 0),
+                                    child: WaypointMarker(e, 60 * 0.5))))
+                            .toList(),
+                      ),
+
+                      // --- Log Line
+                      PolylineLayer(polylines: [
+                        Polyline(
+                          points: log.samples.map((e) => e.latlng).toList(),
+                          strokeWidth: 4,
+                          color: Colors.red,
+                          pattern: const StrokePattern.dotted(),
+                        )
+                      ]),
+                    ]);
+              }),
 
             // --- info overlay
             if (log.goodFile)

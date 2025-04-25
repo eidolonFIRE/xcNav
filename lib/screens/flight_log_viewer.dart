@@ -77,9 +77,12 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("Build /flightLogs");
     if (logStore.loaded.value != true) {
       logStore.refreshLogsFromDirectory().then((value) {
-        setState(() {});
+        setState(() {
+          debugPrint("Refreshed flight logs");
+        });
       });
     }
 
@@ -153,7 +156,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
       body: AnimatedBuilder(
           animation: logStore,
           builder: (context, _) {
-            debugPrint("Build log view");
+            debugPrint("Build /flightLogs - animatedBuilder");
             return TabBarView(
               physics: const NeverScrollableScrollPhysics(),
               controller: mainTabController,
@@ -209,7 +212,6 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           SizedBox(
-                            // width: MediaQuery.of(context).size.width,
                             height: 200,
                             child: ClipRect(
                               child: Padding(
@@ -237,7 +239,6 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                           ),
                           // if (sliceSize.index > SliceSize.month.index)
                           SizedBox(
-                            width: MediaQuery.of(context).size.width,
                             height: 200,
                             child: Padding(
                               padding: const EdgeInsets.all(10.0),
@@ -262,7 +263,6 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                           ),
 
                           SizedBox(
-                            width: MediaQuery.of(context).size.width,
                             height: 200,
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(10, 0, 20, 10),
@@ -293,7 +293,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                                 ],
                               ),
                               SizedBox(
-                                  width: MediaQuery.of(context).size.width / 10,
+                                  width: 40,
                                   child: const Divider(
                                     thickness: 2,
                                   )),
