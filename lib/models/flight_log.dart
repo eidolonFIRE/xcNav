@@ -69,6 +69,15 @@ class FlightLog {
   }
 
   // =========================================
+  DateTimeRange? get timeRange {
+    if (samples.isEmpty) {
+      return null;
+    } else {
+      return DateTimeRange(start: startTime!, end: endTime!);
+    }
+  }
+
+  // =========================================
   Duration? _durationTime;
   Duration get durationTime {
     return _durationTime ??=
@@ -285,7 +294,8 @@ class FlightLog {
   FuelStat? _sumFuelStat;
   FuelStat? get sumFuelStat {
     if (fuelStats.isEmpty) return null;
-    return _sumFuelStat ??= fuelStats.reduce((a, b) => a + b);
+    _sumFuelStat ??= fuelStats.reduce((a, b) => a + b);
+    return _sumFuelStat;
   }
 
   // =========================================
@@ -296,8 +306,8 @@ class FlightLog {
 
       if (goodFile) {
         for (int t = 0; t < _fuelReports.length - 1; t++) {
-          // NOTE: if fuel amount stays the same or increases, segment is dropped
-          // if (_fuelReports[t].amount > _fuelReports[t + 1].amount) {
+          // NOTE: if fuel amount stays the same, segment is dropped
+          // if (_fuelReports[t].amount != _fuelReports[t + 1].amount) {
           _fuelStats!.add(FuelStat.fromSamples(
               _fuelReports[t],
               _fuelReports[t + 1],
@@ -393,9 +403,9 @@ class FlightLog {
   }
 
   /// Simple update of an existing fuel report
-  void updateFuelReport(int index, double amount) {
+  void updateFuelReport(int index, double amount, {DateTime? time}) {
     if (index >= 0 && index < _fuelReports.length) {
-      _fuelReports[index] = FuelReport(_fuelReports[index].time, amount);
+      _fuelReports[index] = FuelReport(time ?? _fuelReports[index].time, amount);
       resetFuelStatCache();
       unsaved = true;
     }

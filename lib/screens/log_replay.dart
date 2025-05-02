@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 
 import 'package:xcnav/datadog.dart';
@@ -66,6 +67,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   @override
   void didChangeDependencies() {
     if (!logLoaded) {
+      debugPrint("Loading log $logKey");
       final args = ModalRoute.of(context)!.settings.arguments as Map<String, Object>;
       logKey ??= args["logKey"] as String;
 
@@ -146,7 +148,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
   void editFuelReport(BuildContext context, int reportIndex) {
     dialogEditFuelReport(
-            context: context, time: log.fuelReports[reportIndex].time, amount: log.fuelReports[reportIndex].amount)
+            context: context,
+            time: log.fuelReports[reportIndex].time,
+            amount: log.fuelReports[reportIndex].amount,
+            validRange: log.timeRange!)
         .then((newReport) {
       setState(() {
         if (newReport != null) {
@@ -155,7 +160,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
             log.removeFuelReport(reportIndex);
           } else {
             // Edit fuel report amount
-            log.updateFuelReport(reportIndex, newReport.amount);
+            log.updateFuelReport(reportIndex, newReport.amount, time: newReport.time);
           }
         }
       });
@@ -470,139 +475,131 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                           ),
 
                     // --- Fuel
-                    Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          mainAxisAlignment:
-                              log.fuelReports.isEmpty ? MainAxisAlignment.center : MainAxisAlignment.start,
-                          children: [
-                            if (log.fuelReports.isNotEmpty)
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    // --- Fuel Stats: title
-                                    DefaultTextStyle(
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(bottom: 4),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    DefaultTextStyle(
+                      style: const TextStyle(fontSize: 18),
+                      child: Container(
+                        color: Colors.grey.shade800,
+                        child: Scrollbar(
+                          controller: fuelScrollController,
+                          trackVisibility: true,
+                          thumbVisibility: true,
+                          child: ListView(
+                              controller: fuelScrollController,
+                              shrinkWrap: true,
+                              children:
+                                  // Start of flight
+                                  <Widget>[TimeCard(time: log.startTime, text: "Launch")] +
+
+                                      // Fuel reports
+                                      log.fuelStats.expandIndexed<Widget>((index, e) sync* {
+                                        yield Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                           children: [
-                                            const Text("Duration (min)"),
-                                            Text("Burn Rate ($fuelRateStr)"),
-                                            Text("Efficiency ($fuelEffStr)"),
+                                            FuelEntryCard(
+                                                log: log,
+                                                reportIndex: index,
+                                                onEdit: (reportIndex) => editFuelReport(context, reportIndex)),
+                                            Container(),
+                                            Container(),
                                           ],
-                                        ),
-                                      ),
-                                    ),
-                                    // --- Fuel Stats: data
-                                    Expanded(
-                                      child: DefaultTextStyle(
-                                        style: const TextStyle(fontSize: 18),
-                                        child: Container(
-                                          color: Colors.grey.shade800,
-                                          child: Scrollbar(
-                                            controller: fuelScrollController,
-                                            trackVisibility: true,
-                                            thumbVisibility: true,
-                                            child: ListView(
-                                                controller: fuelScrollController,
-                                                shrinkWrap: true,
-                                                children: log.fuelStats.expandIndexed<Widget>((index, e) sync* {
-                                                      yield Center(
-                                                          child: FuelEntryCard(
-                                                              log: log,
-                                                              reportIndex: index,
-                                                              onEdit: (reportIndex) =>
-                                                                  editFuelReport(context, reportIndex)));
+                                        );
 
-                                                      yield Row(
-                                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                          children: [
-                                                            Text("${e.durationTime.inMinutes}"),
-                                                            Text(printValue(UnitType.fuel, e.rate, decimals: 1) ?? "?"),
-                                                            Text(printValue(UnitType.distCoarse,
-                                                                    e.mpl / unitConverters[UnitType.fuel]!(1),
-                                                                    decimals: 1) ??
-                                                                "?")
-                                                          ]);
-                                                    }).toList() +
-                                                    [
-                                                      Center(
-                                                          child: FuelEntryCard(
-                                                              log: log,
-                                                              reportIndex: log.fuelReports.length - 1,
-                                                              onEdit: (reportIndex) =>
-                                                                  editFuelReport(context, reportIndex)))
-                                                    ]),
+                                        yield Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                                          Container(),
+                                          Container(),
+                                          SizedBox(
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                // Vertical line
+                                                Container(
+                                                  width: 1,
+                                                  height: 50,
+                                                  color: Colors.blue,
+                                                ),
+                                                // Circle
+                                                Container(
+                                                  width: 30,
+                                                  height: 30,
+                                                  decoration: BoxDecoration(
+                                                      color: Colors.grey.shade800,
+                                                      border: Border.all(color: Colors.blue, width: 1),
+                                                      borderRadius: BorderRadius.circular(20)),
+                                                ),
+                                                IconButton(
+                                                    iconSize: 26,
+                                                    padding: EdgeInsets.zero,
+                                                    onPressed: () => dialogEditFuelReport(
+                                                                context: context,
+                                                                time: DateTime.fromMillisecondsSinceEpoch(((log
+                                                                                .fuelReports[index]
+                                                                                .time
+                                                                                .millisecondsSinceEpoch +
+                                                                            log.fuelReports[index + 1].time
+                                                                                .millisecondsSinceEpoch) /
+                                                                        2)
+                                                                    .round()),
+                                                                amount: null,
+                                                                validRange: log.timeRange!)
+                                                            .then((newReport) {
+                                                          if (newReport != null) {
+                                                            setState(() {
+                                                              log.insertFuelReport(newReport.time, newReport.amount,
+                                                                  tolerance: const Duration(minutes: 1));
+                                                            });
+                                                          }
+                                                        }),
+                                                    color: Colors.blue,
+                                                    visualDensity: VisualDensity.compact,
+                                                    icon: const Icon(Icons.add, color: Colors.white)),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                    // --- Fuel Stats: summary
-                                    if (log.sumFuelStat != null && log.fuelStats.length > 1)
-                                      DefaultTextStyle(
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(top: 8),
-                                          child: SizedBox(
-                                            height: 25,
-                                            child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                                              const Text("---"),
-                                              Text(printValue(UnitType.fuel, log.sumFuelStat!.rate) ?? "?"),
-                                              Text(printValue(UnitType.distCoarse,
-                                                      log.sumFuelStat!.mpl / unitConverters[UnitType.fuel]!(1)) ??
-                                                  "?")
-                                            ]),
+                                          Container(),
+                                          StatCard(
+                                            stat: e,
                                           ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-
-                            // --- Add Fuel Report
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    dialogEditFuelReport(
-                                            context: context,
-                                            time: selectedTimeRange.value.start
-                                                .add(selectedTimeRange.value.duration * 0.5),
-                                            amount: null)
-                                        .then((newReport) {
-                                      if (newReport != null) {
-                                        setState(() {
-                                          log.insertFuelReport(newReport.time, newReport.amount,
-                                              tolerance: const Duration(minutes: 1));
-                                        });
-                                      }
-                                    });
-                                  },
-                                  label: const Text("Insert"),
-                                  icon: const Stack(
-                                    children: [
-                                      Icon(
-                                        Icons.local_gas_station,
-                                        color: Colors.green,
-                                        size: 30,
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.only(left: 3.5, top: 11),
-                                        child: Icon(
-                                          Icons.add,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  )),
-                            ),
-                          ],
-                        )),
+                                          Container()
+                                        ]);
+                                      }).toList() +
+                                      [
+                                        // Final report
+                                        if (log.fuelReports.isNotEmpty)
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              FuelEntryCard(
+                                                  log: log,
+                                                  reportIndex: log.fuelReports.length - 1,
+                                                  onEdit: (reportIndex) => editFuelReport(context, reportIndex)),
+                                              Container(),
+                                              Container(),
+                                            ],
+                                          ),
+                                        if (log.fuelReports.length < 2)
+                                          IconButton(
+                                              onPressed: () => dialogEditFuelReport(
+                                                          context: context,
+                                                          time: log.fuelReports.isEmpty ? log.startTime! : log.endTime!,
+                                                          amount: null,
+                                                          validRange: log.timeRange!)
+                                                      .then((newReport) {
+                                                    if (newReport != null) {
+                                                      setState(() {
+                                                        log.insertFuelReport(newReport.time, newReport.amount,
+                                                            tolerance: const Duration(minutes: 1));
+                                                      });
+                                                    }
+                                                  }),
+                                              color: Colors.blue,
+                                              visualDensity: VisualDensity.compact,
+                                              icon: const Icon(Icons.add, color: Colors.white, size: 26)),
+                                        // End of flight
+                                        TimeCard(time: log.endTime, text: "Landing"),
+                                      ]),
+                        ),
+                      ),
+                    ),
                   ]),
             ),
 
@@ -646,6 +643,83 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   }
 }
 
+class StatCard extends StatelessWidget {
+  const StatCard({
+    super.key,
+    required this.stat,
+  });
+
+  final FuelStat stat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Card(
+        color: Colors.grey.shade600,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        child: SizedBox(
+          width: 180,
+          child: Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text.rich(TextSpan(children: [
+                  TextSpan(
+                      text: printValue(UnitType.fuel, stat.rate, decimals: 1) ?? "?", style: TextStyle(fontSize: 16)),
+                  TextSpan(text: fuelRateStr, style: TextStyle(fontSize: 12, color: Colors.grey.shade300))
+                ])),
+                Text.rich(TextSpan(children: [
+                  TextSpan(
+                      text:
+                          printValue(UnitType.distCoarse, stat.mpl / unitConverters[UnitType.fuel]!(1), decimals: 1) ??
+                              "?",
+                      style: TextStyle(fontSize: 16)),
+                  TextSpan(text: fuelEffStr, style: TextStyle(fontSize: 12, color: Colors.grey.shade300))
+                ])),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TimeCard extends StatelessWidget {
+  const TimeCard({
+    super.key,
+    this.time,
+    this.text,
+  });
+
+  final String? text;
+  final DateTime? time;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.center,
+      child: DefaultTextStyle(
+        style: TextStyle(color: Colors.grey, fontSize: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                time != null ? intl.DateFormat("h:mm a").format(time!) : "?",
+              ),
+            ),
+            if (text != null) Padding(padding: const EdgeInsets.all(8), child: Text(text!))
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class FuelEntryCard extends StatelessWidget {
   final FlightLog log;
   final int reportIndex;
@@ -655,26 +729,32 @@ class FuelEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-      color: Colors.blue,
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 12, right: 8),
-          child: Icon(
-            Icons.local_gas_station,
-            size: 18,
-            // color: Colors.green,
-          ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Card(
+        margin: const EdgeInsets.all(0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        color: Colors.blue,
+        child: SizedBox(
+          width: 200,
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Container(),
+            Text(intl.DateFormat("h:mm a").format(log.fuelReports[reportIndex].time)),
+            Text.rich(TextSpan(children: [
+              // Icon
+              WidgetSpan(child: Icon(Icons.local_gas_station, size: 18)),
+              // Fuel amount
+              richValue(UnitType.fuel, log.fuelReports[reportIndex].amount, decimals: 1),
+            ])),
+            IconButton(
+                iconSize: 18,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                onPressed: () => onEdit?.call(reportIndex),
+                icon: Icon(Icons.edit)),
+          ]),
         ),
-        Text.rich(richValue(UnitType.fuel, log.fuelReports[reportIndex].amount)),
-        IconButton(
-            iconSize: 18,
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            onPressed: () => onEdit?.call(reportIndex),
-            icon: Icon(Icons.edit)),
-      ]),
+      ),
     );
   }
 }
