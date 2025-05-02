@@ -45,11 +45,11 @@ class _WheelPickerTimeState extends State<WheelPickerTime> {
     );
 
     _hoursWheel = WheelPickerController(
-      itemCount: (widget.validRange.duration.inMinutes / 60).ceil(),
+      itemCount: widget.validRange.end.hour - widget.validRange.start.hour + 1,
       initialIndex: widget.initialTime.difference(widget.validRange.start).inHours,
     );
     _minutesWheel = WheelPickerController(
-      itemCount: (widget.validRange.duration.inSeconds / 60).ceil(),
+      itemCount: (widget.validRange.duration.inSeconds / 60.0).ceil(),
       initialIndex: widget.initialTime.difference(widget.validRange.start).inMinutes,
     );
 
