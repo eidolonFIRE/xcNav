@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 
@@ -277,6 +278,17 @@ class _MainMenuState extends State<MainMenu> {
               size: 30,
             ),
             title: Text("Settings", style: Theme.of(context).textTheme.headlineSmall)),
+
+        FutureBuilder(
+            future: FlutterBluePlus.isSupported,
+            builder: (context, supported) => (supported.hasData && (supported.data ?? false))
+                ? ListTile(
+                    minVerticalPadding: 10,
+                    onTap: () => {Navigator.pushNamed(context, "/bleScan")},
+                    leading: const Icon(Icons.bluetooth, size: 30),
+                    title: Text("Devices", style: Theme.of(context).textTheme.headlineSmall),
+                  )
+                : Container()),
 
         ListTile(
           minVerticalPadding: 10,

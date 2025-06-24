@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
@@ -13,6 +14,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/ble_devices/ble_device_xc170.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -54,6 +56,7 @@ import 'package:xcnav/datadog.dart';
 import 'package:xcnav/tfr_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/services/ble_service.dart' as ble_service;
 
 enum FocusMode {
   unlocked,
@@ -1023,6 +1026,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                   Align(
                       alignment: Alignment.bottomRight,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         verticalDirection: VerticalDirection.up,
                         children: [
                           MapButton(
@@ -1088,6 +1092,56 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           })))),
                             );
                           }),
+
+                          // BLE xc170
+                          if (ble_service.bleDeviceXc170.device != null)
+                            Container(
+                                foregroundDecoration: BoxDecoration(
+                                    border: Border.all(width: 0.5, color: Colors.black),
+                                    borderRadius: const BorderRadius.all(Radius.circular(15))),
+                                child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(15),
+                                    child: BackdropFilter(
+                                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                        child: Container(
+                                            color: Colors.white38,
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(8.0),
+                                              child: StreamBuilder(
+                                                  stream: ble_service.bleDeviceXc170.device?.connectionState,
+                                                  builder: (context, state) {
+                                                    return StreamBuilder(
+                                                        stream: ble_service.bleDeviceXc170.fuelSensorRawStream,
+                                                        builder: (context, value) => Text.rich(TextSpan(children: [
+                                                              WidgetSpan(
+                                                                  child: Icon(
+                                                                state.data == BluetoothConnectionState.connected
+                                                                    ? Icons.bluetooth_connected
+                                                                    : Icons.bluetooth_disabled,
+                                                                size: 30,
+                                                                color: state.data == BluetoothConnectionState.connected
+                                                                    ? Colors.blue
+                                                                    : Colors.grey.shade800,
+                                                              )),
+                                                              if (value.data?.status == ValueInRange.aboveRange)
+                                                                TextSpan(
+                                                                    text: ">",
+                                                                    style:
+                                                                        TextStyle(fontSize: 30, color: Colors.green)),
+                                                              if (value.data?.status == ValueInRange.belowRange)
+                                                                TextSpan(
+                                                                    text: "<",
+                                                                    style: TextStyle(fontSize: 30, color: Colors.red)),
+                                                              richValue(UnitType.fuel, value.data?.value ?? 0,
+                                                                  digits: 2,
+                                                                  decimals: 1,
+                                                                  valueStyle: const TextStyle(
+                                                                      color: Colors.black, fontSize: 30),
+                                                                  unitStyle: TextStyle(
+                                                                      color: Colors.grey.shade700, fontSize: 20)),
+                                                            ])));
+                                                  }),
+                                            ))))),
                         ],
                       )),
 

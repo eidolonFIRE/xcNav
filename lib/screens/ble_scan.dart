@@ -1,12 +1,9 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:xcnav/servo_carb_service.dart';
-import 'package:xcnav/widgets/scan_result_tile.dart';
-import 'package:xcnav/snackbar.dart';
-import 'package:xcnav/widgets/system_device_tile.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:xcnav/services/ble_service.dart' as ble_service;
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -16,171 +13,104 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  final List<BluetoothDevice> _systemDevices = [];
-  List<ScanResult> _scanResults = [];
-  bool _isScanning = false;
-  late StreamSubscription<List<ScanResult>> _scanResultsSubscription;
-  late StreamSubscription<bool> _isScanningSubscription;
-
   @override
   void initState() {
     super.initState();
-
-    _scanResultsSubscription = FlutterBluePlus.scanResults.listen((results) {
-      _scanResults = results;
-      if (mounted) {
-        setState(() {});
-      }
-    }, onError: (e) {
-      debugPrint(e);
-      debugPrint(e);
-      // SnackBar(ABC.b, prettyException("Scan Error:", e), success: false);
-    });
-
-    _isScanningSubscription = FlutterBluePlus.isScanning.listen((state) {
-      _isScanning = state;
-      if (mounted) {
-        setState(() {});
-      }
-    });
-
-    // auto start a scan
-    onScanPressed();
-  }
-
-  @override
-  void dispose() {
-    _scanResultsSubscription.cancel();
-    _isScanningSubscription.cancel();
-    super.dispose();
-  }
-
-  Future onScanPressed() async {
-    try {
-      // TODO: fix ble
-      // _systemDevices = await FlutterBluePlus.systemDevices();
-    } catch (e) {
-      SnackbarTools.show(ABC.b, prettyException("System Devices Error:", e), success: false);
-    }
-    try {
-      // android is slow when asking for all advertisements,
-      // so instead we only ask for 1/8 of them
-      int divisor = Platform.isAndroid ? 8 : 1;
-      await FlutterBluePlus.startScan(
-          timeout: const Duration(seconds: 15), continuousUpdates: true, continuousDivisor: divisor);
-    } catch (e) {
-      SnackbarTools.show(ABC.b, prettyException("Start Scan Error:", e), success: false);
-    }
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  Future onStopPressed() async {
-    try {
-      FlutterBluePlus.stopScan();
-    } catch (e) {
-      SnackbarTools.show(ABC.b, prettyException("Stop Scan Error:", e), success: false);
-    }
-  }
-
-  void onConnectPressed(BluetoothDevice device) async {
-    // device.connectAndUpdateStream().catchError((e) {
-    await device.connect().catchError((e) {
-      debugPrint(e);
-      SnackbarTools.show(ABC.c, prettyException("Connect Error:", e), success: false);
-    });
-
-    await device.discoverServices();
-
-    attachBLEdevice(device);
-
-    // MaterialPageRoute route = MaterialPageRoute(
-    //     builder: (context) => DeviceScreen(device: device), settings: RouteSettings(name: '/DeviceScreen'));
-    // Navigator.push(context, route);
-    // Navigator.of(context).pushNamed("/ble_device", device);
-  }
-
-  Future onRefresh() {
-    if (_isScanning == false) {
-      FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
-    }
-    if (mounted) {
-      setState(() {});
-    }
-    return Future.delayed(const Duration(milliseconds: 500));
-  }
-
-  Widget buildScanButton(BuildContext context) {
-    if (FlutterBluePlus.isScanningNow) {
-      return FloatingActionButton(
-        onPressed: onStopPressed,
-        backgroundColor: Colors.red,
-        child: const Icon(Icons.stop),
-      );
-    } else {
-      return FloatingActionButton(onPressed: onScanPressed, child: const Text("SCAN"));
-    }
-  }
-
-  List<Widget> _buildSystemDeviceTiles(BuildContext context) {
-    return _systemDevices
-        .map(
-          (d) => SystemDeviceTile(
-            device: d,
-            // onOpen: () => Navigator.of(context).push(
-            //   MaterialPageRoute(
-            //     builder: (context) => DeviceScreen(device: d),
-            //     settings: RouteSettings(name: '/DeviceScreen'),
-            //   ),
-            // ),
-            onDisconnect: () {
-              d.disconnect();
-              onScanPressed();
-            },
-            onConnect: () => onConnectPressed(d),
-          ),
-        )
-        .toList();
-  }
-
-  List<Widget> _buildScanResultTiles(BuildContext context) {
-    return _scanResults
-        .where((element) => element.device.advName.contains("ServoCarb"))
-        .map(
-          (r) => ScanResultTile(
-            result: r,
-            onTap: () => onConnectPressed(r.device),
-          ),
-        )
-        .toList();
+    ble_service.scan();
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = <Widget>[
-      ..._buildSystemDeviceTiles(context),
-      ..._buildScanResultTiles(context),
-    ];
-
     return ScaffoldMessenger(
-      // key: SnackBar.snackBarKeyB,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Find Devices'),
-        ),
-        body: items.isNotEmpty
-            ? RefreshIndicator(
-                onRefresh: onRefresh,
-                child: ListView(
-                  children: items,
-                ),
-              )
-            : const Center(
-                child: Text("No ServoCarb devices found."),
-              ),
-        // floatingActionButton: buildScanButton(context),
-      ),
+          appBar: AppBar(
+            title: const Text('Bluetooth Devices'),
+            actions: [
+              StreamBuilder<bool>(
+                  stream: FlutterBluePlus.isScanning,
+                  builder: (context, isScanning) {
+                    return IconButton(
+                      icon: (isScanning.data ?? false)
+                          ? SizedBox(width: 26, height: 26, child: CircularProgressIndicator.adaptive())
+                          : Icon(Icons.refresh),
+                      onPressed: () {
+                        if (!(isScanning.data ?? false)) {
+                          ble_service.scan();
+                        }
+                      },
+                    );
+                  }),
+            ],
+          ),
+          body: DefaultTextStyle(
+            style: const TextStyle(fontSize: 20),
+            child: StreamBuilder(
+                stream: FlutterBluePlus.scanResults,
+                builder: (context, results) {
+                  if (results.hasData && results.data!.isEmpty) {
+                    return Center(
+                        child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text("Don't see your device?"),
+                              Text(
+                                  "Currently only specific devices are supported. Visit the discord to request support for your device.",
+                                  textAlign: TextAlign.center),
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width / 5,
+                                height: MediaQuery.of(context).size.width / 5,
+                                child: ElevatedButton(
+                                    style: ButtonStyle(
+                                      side: WidgetStateProperty.resolveWith<BorderSide>(
+                                          (states) => const BorderSide(color: Colors.white)),
+                                      backgroundColor: WidgetStateProperty.resolveWith<Color>((states) => Colors.white),
+                                      // minimumSize: WidgetStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
+                                      padding: WidgetStateProperty.resolveWith<EdgeInsetsGeometry>(
+                                          (states) => const EdgeInsets.all(20)),
+                                      shape: WidgetStateProperty.resolveWith<OutlinedBorder>((_) {
+                                        return RoundedRectangleBorder(borderRadius: BorderRadius.circular(4));
+                                      }),
+                                      textStyle: WidgetStateProperty.resolveWith<TextStyle>(
+                                          (states) => const TextStyle(color: Colors.white, fontSize: 22)),
+                                    ),
+                                    onPressed: () => {launchUrl(Uri.parse("https://discord.gg/Fwv8Sz4HJN"))},
+                                    child: SvgPicture.asset(
+                                      "assets/external/icon_clyde_white_RGB.svg",
+                                    )),
+                              ),
+                            ].map((e) => Padding(padding: EdgeInsets.all(8.0), child: e)).toList()));
+                  }
+                  return ListView.builder(
+                      itemCount: results.data?.length ?? 0,
+                      itemBuilder: (context, index) {
+                        final device = results.data![index].device;
+
+                        return ListTile(
+                          title: Text(device.advName),
+                          trailing: device.isConnected
+                              ? ElevatedButton.icon(
+                                  onPressed: () {
+                                    device.disconnect().then((_) {
+                                      setState(() {});
+                                    });
+                                  },
+                                  label: Text("Disconnect"),
+                                  icon: Icon(Icons.close),
+                                )
+                              : ElevatedButton.icon(
+                                  onPressed: () {
+                                    ble_service.connect(device).then((_) {
+                                      setState(() {});
+                                    });
+                                  },
+                                  label: Text("Connect"),
+                                  icon: Icon(Icons.add),
+                                ),
+                        );
+                      });
+                }),
+          )),
     );
   }
 }
