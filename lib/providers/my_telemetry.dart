@@ -22,6 +22,7 @@ import 'package:xcnav/fake_path.dart';
 import 'package:xcnav/gaussian_filter.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
+import 'package:xcnav/datadog.dart' as dd;
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
@@ -273,7 +274,12 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void _startBaroService() {
-    listenBaro = barometerEventStream().listen((event) {
+    if (listenBaro != null) {
+      listenBaro?.cancel();
+      listenBaro = null;
+    }
+    debugPrint("Starting Barometer Service Stream");
+    listenBaro = barometerEventStream(samplingPeriod: SensorInterval.normalInterval).listen((event) {
       // Handle barometer changes (run the vario)
       final baroPrev = baro;
       baro = event;
@@ -281,15 +287,25 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (baroPrev != null && baroPrev.timestamp.isBefore(baro!.timestamp)) {
         vario = (altFromBaro(baro!.pressure, baroAmbient?.pressure) -
                 altFromBaro(baroPrev.pressure, baroAmbient?.pressure)) /
-            (baro!.timestamp.difference(baroPrev.timestamp)).inSeconds;
+            (baro!.timestamp.difference(baroPrev.timestamp)).inMilliseconds *
+            1000;
         if (vario.isFinite) {
           varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
         }
       }
+    }, onError: (error) {
+      // Handle barometer errors
+      listenBaro?.cancel();
+      listenBaro = null;
+      dd.error("Barometer Service Stream Error", errorMessage: error);
     });
   }
 
   void _startIMUService() {
+    if (listenIMU != null) {
+      listenIMU?.cancel();
+      listenIMU = null;
+    }
     listenIMU = accelerometerEventStream(samplingPeriod: const Duration(milliseconds: 10)).listen((event) {
       // Microsecond interval since last sample
       // On android (Samsung S21) this was measured at 9602us. Configuring API to slow it down had no effect.
@@ -651,6 +667,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   void updateGeo(Position position, {bool bypassRecording = false}) async {
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
+    if (baro == null) {
+      // Maybe no barometer in device?
+      if (geoPrev != null) {
+        final vario = (geo!.alt - geoPrev!.alt) / (geo!.time - geoPrev!.time) * 1000;
+        varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
+      }
+    }
 
     speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
 
