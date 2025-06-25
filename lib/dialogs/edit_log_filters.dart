@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:xcnav/models/flight_log.dart';
@@ -17,13 +18,13 @@ Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text("Date Range"),
+                Text("Date Range".tr()),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     logFilterDateStart == null
-                        ? const Text(
-                            "start",
+                        ? Text(
+                            "start".tr(),
                             style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
                           )
                         : Text(logFilterDateStart.toString().substring(0, 10)),
@@ -46,8 +47,8 @@ Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
                         icon: const Icon(Icons.calendar_month, color: Colors.lightBlue)),
                     const Text("  "),
                     logFilterDateEnd == null
-                        ? const Text(
-                            "end",
+                        ? Text(
+                            "end".tr(),
                             style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
                           )
                         : Text(logFilterDateEnd.toString().substring(0, 10)),
@@ -76,7 +77,7 @@ Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
                     child: TextFormField(
                         initialValue: logFilterGearSearch,
                         onChanged: (value) => logFilterGearSearch = value,
-                        decoration: const InputDecoration(hintText: "Search Gear"))),
+                        decoration: InputDecoration(hintText: "Search Gear".tr()))),
               ],
             ),
             actions: [
@@ -91,7 +92,7 @@ Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
                     List<LogFilter> filters = [];
                     Navigator.pop(context, filters);
                   },
-                  label: const Text("Clear")),
+                  label: Text("btn.Clear".tr())),
               ElevatedButton.icon(
                   icon: const Icon(
                     Icons.search,
@@ -125,7 +126,7 @@ Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
                     }
                     Navigator.pop(context, filters);
                   },
-                  label: const Text("Search"))
+                  label: Text("Search".tr()))
             ],
           );
         });

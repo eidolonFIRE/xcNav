@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -240,33 +241,33 @@ class SettingsMgr {
   SettingsMgr(SharedPreferences prefs) {
     // --- General
     groundMode = SettingConfig(this, prefs, "General", "groundMode", false,
-        title: "Ground Support Mode",
+        title: "ground_support_mode",
         icon: const Icon(Icons.directions_car),
         description: "Alters UI and doesn't record track.");
 
     autoRecordFlight = SettingConfig(this, prefs, "General", "autoRecordFlight", true,
-        title: "Auto Record Flight",
+        title: "auto_record_flight",
         icon: const Icon(Icons.play_arrow),
         description: "Flight recorder automatically starts and stops.");
 
     // --- UI
     primaryAltimeter = SettingConfig(this, prefs, "UI", "primaryAltimeter", AltimeterMode.msl,
-        title: "Primary Altimeter",
+        title: "primary_altimeter",
         icon: const Icon(Icons.vertical_align_top),
         description: "Which altimeter is on top.");
     altimeterVsiThresh = SettingConfig(this, prefs, "UI", "altimeterVsiThresh", 0.15,
-        title: "Altimeter Arrow Threshold (m/s)",
+        title: "altimeter_vsi_thresh",
         icon: SvgPicture.asset(
           "assets/images/arrow.svg",
           height: 20,
         ),
         description: "The \"deadzone\" for the up/down arrow next to altimeter.");
     mapControlsRightSide = SettingConfig(this, prefs, "UI", "mapControlsRightSide", false,
-        title: "Right-handed UI",
+        title: "right_hand_ui",
         description: "Move map control buttons to the right side.",
         icon: const Icon(Icons.swap_horiz));
     showPilotNames = SettingConfig(this, prefs, "UI", "showPilotNames", false,
-        title: "Always show pilot names", description: "", icon: const Icon(Icons.abc));
+        title: "always_show_pilot_names", description: "", icon: const Icon(Icons.abc));
 
     // showWeatherOverlay = SettingConfig(this, prefs, "UI", "showWeatherOverlay", false,
     //     title: "Show weather overlay", description: "", icon: const Icon(Icons.cloud));
@@ -277,7 +278,7 @@ class SettingsMgr {
     //       color: Colors.grey.shade400,
     //     ));
     groupViewWaypoint = SettingConfig(this, prefs, "UI", "groupViewWaypoint", false,
-        title: "Group view includes waypoint", icon: const Icon(Icons.pin_drop));
+        title: "group_view_includes_waypoints", icon: const Icon(Icons.pin_drop));
 
     // --- Display Units
     displayUnitDist = SettingConfig(this, prefs, "Display Units", "displayUnitDist", DisplayUnitsDist.imperial,
@@ -310,21 +311,25 @@ class SettingsMgr {
 
     // --- Misc
     adsbProximitySize = SettingConfig(this, prefs, "Misc", "adsbProximitySize", ProximitySize.medium,
-        title: "ADSB Proximity Profile", icon: const Icon(Icons.radar));
+        title: "adsb_proximity_profile", icon: const Icon(Icons.radar));
     adsbFilters = SettingConfig(this, prefs, "Misc", "adsbFilters", [],
-        title: "Filter tail number(s)",
+        title: "filter_tail_numbers",
         icon: const Icon(Icons.filter_alt),
         setter: (value) => value.map((e) => e.toUpperCase()).toList());
     adsbTestAudio =
-        SettingAction(this, "Misc", () => null, title: "Test Audio Cues", actionIcon: const Icon(Icons.volume_up));
+        SettingAction(this, "Misc", () => null, title: "test_audio_cues", actionIcon: const Icon(Icons.volume_up));
     rumOptOut = SettingConfig(this, prefs, "Misc", "rumOptOut", false,
-        title: "Opt-out of anonymous usage data",
+        title: "opt_out_usage_stats",
         icon: const Icon(Icons.cancel),
         subtitle: Text.rich(TextSpan(children: [
-          const WidgetSpan(child: Icon(Icons.help, size: 16, color: Colors.lightBlue)),
-          const TextSpan(text: " View list of metrics captured "),
+          const WidgetSpan(
+              child: Padding(
+            padding: EdgeInsets.only(right: 4),
+            child: Icon(Icons.help, size: 16, color: Colors.lightBlue),
+          )),
+          TextSpan(text: "settings.subtitle.view_list_of_metrics".tr()),
           TextSpan(
-              text: "HERE.",
+              text: "  ${"External Link".tr()}",
               style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
               recognizer: TapGestureRecognizer()
                 ..onTap = () async {
@@ -334,27 +339,27 @@ class SettingsMgr {
 
     // --- ServoCarb
     showServoCarbMenu = SettingConfig(this, prefs, "Experimental", "showServoCarbMenu", false,
-        title: "Show ServoCarb Menu", icon: const Icon(Icons.settings_applications_sharp));
+        title: "show_servocarb", icon: const Icon(Icons.settings_applications_sharp));
 
     // --- Debug Tools
     spoofLocation = SettingConfig(this, prefs, "Debug Tools", "", false,
-        title: "Spoof Location",
+        title: "spoof_location",
         icon: const Icon(
           Icons.location_off,
         ),
         description: "Useful for test driving while on the ground.");
     clearMapCache = SettingAction(this, "Debug Tools", () {},
-        title: "Clear Map Cache",
+        title: "clear_map_cache",
         actionIcon: const Icon(
           Icons.map,
         ));
     clearAvatarCache = SettingAction(this, "Debug Tools", () => null,
-        title: "Clear Cached Avatars",
+        title: "clear_avatar_cache",
         actionIcon: const Icon(
           Icons.account_circle,
         ));
     eraseIdentity = SettingAction(this, "Debug Tools", () => null,
-        title: "Erase Identity",
+        title: "erase_identity",
         actionIcon: const Icon(
           Icons.badge,
         ));

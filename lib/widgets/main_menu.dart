@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_svg/svg.dart';
@@ -81,13 +82,13 @@ class _MainMenuState extends State<MainMenu> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(profile.gear?.wingMakeModel ?? "wing unset",
+                          Text(profile.gear?.wingMakeModel ?? "wing unset".tr(),
                               style: Theme.of(context).textTheme.headlineSmall!.merge(TextStyle(
                                   color: profile.gear?.wingColor,
                                   // fontWeight: profile.gear?.wingMakeModel == null ? FontWeight.normal : FontWeight.bold,
                                   fontStyle:
                                       (profile.gear?.wingMakeModel == null ? FontStyle.italic : FontStyle.normal)))),
-                          Text(profile.gear?.frameMakeModel ?? "motor unset",
+                          Text(profile.gear?.frameMakeModel ?? "motor unset".tr(),
                               style: Theme.of(context).textTheme.headlineSmall!.merge(TextStyle(
                                   // color: profile.gear?.wingColor,
                                   // fontWeight:
@@ -133,14 +134,14 @@ class _MainMenuState extends State<MainMenu> {
             ),
             subtitle: Provider.of<ADSB>(context).enabled
                 ? (Provider.of<ADSB>(context).lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 60)
-                    ? const Text.rich(TextSpan(children: [
+                    ? Text.rich(TextSpan(children: [
                         WidgetSpan(
                             alignment: PlaceholderAlignment.middle,
                             child: Icon(
                               Icons.check,
                               color: Colors.green,
                             )),
-                        TextSpan(text: "  Connected")
+                        TextSpan(text: "  ${"Connected".tr()}")
                       ]))
                     : Text.rich(TextSpan(children: [
                         const WidgetSpan(
@@ -149,7 +150,7 @@ class _MainMenuState extends State<MainMenu> {
                               Icons.link_off,
                               color: Colors.amber,
                             )),
-                        const TextSpan(text: "  No Data"),
+                        TextSpan(text: "  ${"No Data".tr()}"),
                         WidgetSpan(
                             alignment: PlaceholderAlignment.middle,
                             child: Padding(
@@ -229,7 +230,7 @@ class _MainMenuState extends State<MainMenu> {
             size: 30,
           ),
           title: Text(
-            "Group",
+            "main_menu.group".tr(),
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           trailing: IconButton(
@@ -245,7 +246,7 @@ class _MainMenuState extends State<MainMenu> {
         ListTile(
           minVerticalPadding: 10,
           leading: const Icon(Icons.checklist, size: 30),
-          title: Text("Checklist", style: Theme.of(context).textTheme.headlineSmall),
+          title: Text("main_menu.checklist".tr(), style: Theme.of(context).textTheme.headlineSmall),
           onTap: () => {Navigator.popAndPushNamed(context, "/checklist")},
         ),
 
@@ -255,7 +256,7 @@ class _MainMenuState extends State<MainMenu> {
             "assets/external/report_ppg.png",
             height: 30,
           ),
-          title: Text("Weather", style: Theme.of(context).textTheme.headlineSmall),
+          title: Text("main_menu.weather".tr(), style: Theme.of(context).textTheme.headlineSmall),
           onTap: () => {Navigator.popAndPushNamed(context, "/weather")},
         ),
 
@@ -266,7 +267,7 @@ class _MainMenuState extends State<MainMenu> {
               Icons.menu_book,
               size: 30,
             ),
-            title: Text("Log", style: Theme.of(context).textTheme.headlineSmall)),
+            title: Text("main_menu.log".tr(), style: Theme.of(context).textTheme.headlineSmall)),
 
         Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
 
@@ -277,7 +278,7 @@ class _MainMenuState extends State<MainMenu> {
               Icons.settings,
               size: 30,
             ),
-            title: Text("Settings", style: Theme.of(context).textTheme.headlineSmall)),
+            title: Text("main_menu.settings".tr(), style: Theme.of(context).textTheme.headlineSmall)),
 
         FutureBuilder(
             future: FlutterBluePlus.isSupported,
@@ -286,7 +287,7 @@ class _MainMenuState extends State<MainMenu> {
                     minVerticalPadding: 10,
                     onTap: () => {Navigator.pushNamed(context, "/bleScan")},
                     leading: const Icon(Icons.bluetooth, size: 30),
-                    title: Text("Devices", style: Theme.of(context).textTheme.headlineSmall),
+                    title: Text("main_menu.devices".tr(), style: Theme.of(context).textTheme.headlineSmall),
                   )
                 : Container()),
 
@@ -294,7 +295,7 @@ class _MainMenuState extends State<MainMenu> {
           minVerticalPadding: 10,
           onTap: () => {Navigator.popAndPushNamed(context, "/about")},
           leading: const Icon(Icons.info, size: 30),
-          title: Text("About", style: Theme.of(context).textTheme.headlineSmall),
+          title: Text("main_menu.about".tr(), style: Theme.of(context).textTheme.headlineSmall),
         ),
       ],
     ));

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -70,7 +71,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
 
           return AlertDialog(
             title: Text(
-              (isNew ? "Add " : "Edit ") + (isPath ? "Path" : "Waypoint"),
+              "${isNew ? "btn.Add".tr() : "btn.Edit".tr()} ${isPath ? "Path".tr() : "Waypoint".tr()}",
               style: Theme.of(context).textTheme.titleSmall,
             ),
             titlePadding: const EdgeInsets.all(10),
@@ -89,12 +90,12 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                       autofocus: true,
                       validator: (value) {
                         if (value != null) {
-                          if (value.trim().isEmpty || value.isEmpty) return "Must not be empty";
+                          if (value.trim().isEmpty || value.isEmpty) return "warning_empty".tr();
                         }
                         return null;
                       },
                       decoration: InputDecoration(
-                        hintText: "${isPath ? "Path" : "Waypoint"} Name",
+                        hintText: "${isPath ? "Path".tr() : "Waypoint".tr()} ${"Name".tr()}",
                         border: const OutlineInputBorder(),
                       ),
                       textAlignVertical: TextAlignVertical.bottom,
@@ -147,7 +148,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
             actionsAlignment: MainAxisAlignment.spaceAround,
             actions: [
               ElevatedButton.icon(
-                  label: const Text("Cancel"),
+                  label: Text("btn.Cancel".tr()),
                   onPressed: () => {Navigator.pop(context)},
                   icon: const Icon(
                     Icons.cancel,
@@ -155,7 +156,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
                     color: Colors.red,
                   )),
               ElevatedButton.icon(
-                  label: Text(isNew ? "Add" : "Update"),
+                  label: Text(isNew ? "btn.Add".tr() : "btn.Update".tr()),
                   onPressed: () {
                     if ((formKey.currentState?.validate() ?? false) && (tempLatlngs.isNotEmpty)) {
                       var newWaypoint = Waypoint(

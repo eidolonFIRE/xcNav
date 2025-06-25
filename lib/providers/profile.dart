@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
@@ -74,9 +75,9 @@ class Profile with ChangeNotifier {
 
   static String? nameValidator(String? name) {
     if (name != null) {
-      if (name.trim().length < 2) return "Must be at least 2 characters.";
+      if (name.trim().length < 2) return "warning_must_be_2_char".tr();
     } else {
-      return "Must not be empty.";
+      return "warning_empty".tr();
     }
     return null;
   }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +25,7 @@ class FlightLogCard extends StatelessWidget {
   void restoreWaypoints(BuildContext context) {
     final log = logStore.logs[logKey]!;
 
-    final String planName = "Flight: ${log.title}";
+    final String planName = "${"Flight".tr()}: ${log.title}";
 
     final newPlan = FlightPlan(planName);
     for (final wp in log.waypoints) {
@@ -91,7 +92,7 @@ class FlightLogCard extends StatelessWidget {
                         ),
                         actions: [
                           ElevatedButton.icon(
-                            label: const Text("Open"),
+                            label: Text("btn.Open".tr()),
                             onPressed: () async {
                               var result = await OpenFile.open(outFile.path);
                               debugPrint(result.message);
@@ -122,10 +123,10 @@ class FlightLogCard extends StatelessWidget {
         context: context,
         builder: (BuildContext ctx) {
           return AlertDialog(
-            title: const Text('Confirm'),
-            content: const Text('Are you sure you want to delete this log?'),
+            title: Text('dialog.confirm.please'.tr()),
+            content: Text('dialog.confirm.delete_log'.tr()),
             actions: [
-              // The "Yes" button
+              // The "btn.Yes" button
               ElevatedButton.icon(
                   onPressed: () {
                     // Delete Log File
@@ -136,7 +137,7 @@ class FlightLogCard extends StatelessWidget {
                     Icons.delete_forever,
                     color: Colors.red,
                   ),
-                  label: const Text('Delete')),
+                  label: Text('btn.Delete'.tr())),
               // ElevatedButton(
               //     onPressed: () {
               //       // Close the dialog
@@ -345,7 +346,7 @@ class FlightLogCard extends StatelessWidget {
                                   ])),
                                 )),
                             const PopupMenuDivider(),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                                 value: "delete",
                                 child: ListTile(
                                   leading: Icon(
@@ -353,7 +354,7 @@ class FlightLogCard extends StatelessWidget {
                                     color: Colors.red,
                                     size: 28,
                                   ),
-                                  title: Text("Delete", style: TextStyle(fontSize: 20)),
+                                  title: Text("btn.Delete".tr(), style: TextStyle(fontSize: 20)),
                                 ))
                           ])
                 ],

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -17,7 +18,7 @@ Future<FuelReport?> dialogEditFuelReport(
 
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: const Text("Report Fuel Level"),
+            title: Text("Report Fuel Level".tr()),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -57,7 +58,7 @@ Future<FuelReport?> dialogEditFuelReport(
                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],
                           validator: (value) {
                             if (value != null) {
-                              if (value.trim().isEmpty) return "Empty";
+                              if (value.trim().isEmpty) return "Empty".tr();
                             }
                             return null;
                           },
@@ -85,7 +86,7 @@ Future<FuelReport?> dialogEditFuelReport(
                     Icons.delete,
                     color: Colors.red,
                   ),
-                  label: const Text("Delete"),
+                  label: Text("btn.Delete".tr()),
                 ),
               ElevatedButton.icon(
                   onPressed: () {
@@ -97,7 +98,7 @@ Future<FuelReport?> dialogEditFuelReport(
                     Icons.check,
                     color: Colors.lightGreen,
                   ),
-                  label: const Text("Save"))
+                  label: Text("btn.Save".tr()))
             ],
           );
         });

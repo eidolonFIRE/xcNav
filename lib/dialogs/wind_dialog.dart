@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:clock/clock.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -33,9 +34,9 @@ class WindDialog extends StatefulWidget {
 }
 
 class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateMixin {
-  static const List<Tab> myTabs = <Tab>[
-    Tab(text: "Detector"),
-    Tab(text: "Route"),
+  static List<Tab> myTabs = <Tab>[
+    Tab(text: "Detector".tr()),
+    Tab(text: "Route".tr()),
   ];
 
   late TabController _tabController;
@@ -209,13 +210,13 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                 wind.samples.removeRange(0, wind.samples.length - 10);
                                 wind.clearResult();
                               }
-                              addTapAction("Reset Wind Detector");
+                              addTapAction("Reset Wind Detector".tr());
                             },
                             icon: const Icon(
                               Icons.clear,
                               color: Colors.red,
                             ),
-                            label: const Text("Reset")),
+                            label: Text("btn.Reset".tr())),
                       )
                     ],
                   ),
@@ -233,13 +234,14 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                   aspectRatio: 1,
                                   child: Stack(fit: StackFit.expand, children: [
                                     wind.result == null
-                                        ? const Center(
+                                        ? Center(
                                             child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Padding(
                                                 padding: EdgeInsets.all(10.0),
-                                                child: Text("Slowly Turn ¼ Circle", style: TextStyle(fontSize: 18)),
+                                                child:
+                                                    Text("Slowly Turn ¼ Circle".tr(), style: TextStyle(fontSize: 18)),
                                               ),
                                               CircularProgressIndicator.adaptive(
                                                 strokeWidth: 3,
@@ -313,8 +315,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                       : null);
 
               if (points?.isEmpty ?? true) {
-                return const SizedBox(
-                    height: 200, child: Center(child: Text("Make a measurement on the map,\nor select a waypoint.")));
+                return SizedBox(height: 200, child: Center(child: Text("make_a_measurement".tr())));
               } else {
                 return Row(
                   mainAxisSize: MainAxisSize.max,
@@ -397,10 +398,10 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                           ),
 
                           // --- Calculations
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.only(top: 10),
                             child: Text(
-                              "ETA with Wind",
+                              "ETA with Wind".tr(),
                               textAlign: TextAlign.center,
                               style: TextStyle(color: Colors.grey),
                             ),
@@ -439,7 +440,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                     ],
                                   );
                                 } else {
-                                  return const Padding(
+                                  return Padding(
                                       padding: EdgeInsets.only(left: 8, right: 8),
                                       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                                         Padding(
@@ -447,7 +448,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                           child: Icon(Icons.warning_amber_rounded, size: 35, color: Colors.amber),
                                         ),
                                         Text(
-                                          "No Arrival",
+                                          "No Arrival".tr(),
                                           style:
                                               TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 20),
                                         ),

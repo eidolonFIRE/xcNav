@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
@@ -66,10 +67,10 @@ class _SettingsEditorState extends State<SettingsEditor> {
           context: context,
           builder: (BuildContext ctx) {
             return AlertDialog(
-              title: const Text('Please Confirm'),
-              content: const Text('Are you sure you want to clear all cached avatars?'),
+              title: Text('dialog.confirm.please'.tr()),
+              content: Text('dialog.confirm.check_clear_avatars'.tr()),
               actions: [
-                // The "Yes" button
+                // The "btn.Yes" button
                 TextButton.icon(
                     onPressed: () {
                       // // Clear Profile
@@ -109,10 +110,10 @@ class _SettingsEditorState extends State<SettingsEditor> {
           context: context,
           builder: (BuildContext ctx) {
             return AlertDialog(
-              title: const Text('Please Confirm'),
-              content: const Text('Are you sure you want to clear your Identity?'),
+              title: Text('dialog.confirm.please'.tr()),
+              content: Text('dialog.confirm.check_clear_identity'.tr()),
               actions: [
-                // The "Yes" button
+                // The "btn.Yes" button
                 TextButton.icon(
                     onPressed: () {
                       // Clear Profile
@@ -131,13 +132,13 @@ class _SettingsEditorState extends State<SettingsEditor> {
                       Icons.delete_forever,
                       color: Colors.red,
                     ),
-                    label: const Text('Yes')),
+                    label: Text('Yes'.tr())),
                 TextButton(
                     onPressed: () {
                       // Close the dialog
                       Navigator.of(context).pop();
                     },
-                    child: const Text('No'))
+                    child: Text('No'.tr()))
               ],
             );
           });
@@ -145,7 +146,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
 
     return Scaffold(
         appBar: AppBar(
-          title: const Text("Settings"),
+          title: Text("Settings".tr()),
         ),
         body: Column(
           children: [
@@ -159,7 +160,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                 decoration: InputDecoration(
                     contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-                    hintText: "search"),
+                    hintText: "Search".tr()),
                 onChanged: (value) {
                   if (mounted) {
                     setState(() {
@@ -231,11 +232,11 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
                                                   value: e.config!.value,
-                                                  items: const [
+                                                  items: [
                                                     DropdownMenuItem(
-                                                        value: DisplayUnitsDist.imperial, child: Text("Imperial")),
+                                                        value: DisplayUnitsDist.imperial, child: Text("Imperial".tr())),
                                                     DropdownMenuItem(
-                                                        value: DisplayUnitsDist.metric, child: Text("Metric")),
+                                                        value: DisplayUnitsDist.metric, child: Text("Metric".tr())),
                                                   ]);
                                               break;
                                             case "DisplayUnitsSpeed":
@@ -243,34 +244,36 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
                                                   value: e.config!.value,
-                                                  items: const [
-                                                    DropdownMenuItem(value: DisplayUnitsSpeed.mph, child: Text("mph")),
-                                                    DropdownMenuItem(value: DisplayUnitsSpeed.kph, child: Text("kph")),
-                                                    DropdownMenuItem(value: DisplayUnitsSpeed.kts, child: Text("kts")),
-                                                    DropdownMenuItem(value: DisplayUnitsSpeed.mps, child: Text("m/s")),
-                                                  ]);
+                                                  items: DisplayUnitsSpeed.values
+                                                      .map((e) => DropdownMenuItem(
+                                                          value: e,
+                                                          child: Text(
+                                                              getUnitStr(UnitType.speed, lexical: false, override: e))))
+                                                      .toList());
                                               break;
                                             case "DisplayUnitsVario":
                                               trailing = DropdownButton<DisplayUnitsVario>(
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
                                                   value: e.config!.value,
-                                                  items: const [
-                                                    DropdownMenuItem(value: DisplayUnitsVario.fpm, child: Text("ft/m")),
-                                                    DropdownMenuItem(value: DisplayUnitsVario.fps, child: Text("ft/s")),
-                                                    DropdownMenuItem(value: DisplayUnitsVario.mps, child: Text("m/s")),
-                                                  ]);
+                                                  items: DisplayUnitsVario.values
+                                                      .map((e) => DropdownMenuItem(
+                                                          value: e,
+                                                          child: Text(
+                                                              getUnitStr(UnitType.vario, lexical: false, override: e))))
+                                                      .toList());
                                               break;
                                             case "DisplayUnitsFuel":
                                               trailing = DropdownButton<DisplayUnitsFuel>(
                                                   onChanged: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
                                                   value: e.config!.value,
-                                                  items: const [
-                                                    DropdownMenuItem(value: DisplayUnitsFuel.liter, child: Text("L")),
-                                                    DropdownMenuItem(value: DisplayUnitsFuel.gal, child: Text("Gal")),
-                                                    DropdownMenuItem(value: DisplayUnitsFuel.kWh, child: Text("kWh")),
-                                                  ]);
+                                                  items: DisplayUnitsFuel.values
+                                                      .map((e) => DropdownMenuItem(
+                                                          value: e,
+                                                          child: Text(
+                                                              getUnitStr(UnitType.fuel, lexical: false, override: e))))
+                                                      .toList());
                                               break;
                                             case "AltimeterMode":
                                               trailing = DropdownButton<AltimeterMode>(
@@ -289,7 +292,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                   value: e.config!.value,
                                                   items: ProximitySize.values
                                                       .map((e) => DropdownMenuItem(
-                                                          value: e, child: Text(e.toString().split(".").last)))
+                                                          value: e, child: Text(e.toString().split(".").last.tr())))
                                                       .toList());
                                               break;
                                             default:
@@ -299,7 +302,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                           // Build each
                                           return ListTile(
                                             leading: e.config!.icon,
-                                            title: Text(e.title),
+                                            title: Text("settings.title.${e.title}".tr()),
                                             subtitle: e.config!.subtitle,
                                             trailing: trailing,
                                             textColor: catagoryColors[key],
@@ -310,7 +313,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                     : ListTile(
                                         textColor: catagoryColors[key],
                                         iconColor: catagoryColors[key],
-                                        title: Text(e.title),
+                                        title: Text("settings.title.${e.title}".tr()),
                                         trailing: IconButton(
                                             icon: e.action!.actionIcon ?? const Icon(Icons.navigate_next),
                                             onPressed: e.action!.callback),
@@ -325,7 +328,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                 Padding(
                                   padding: const EdgeInsets.only(left: 20, top: 20),
                                   child: Text(
-                                    key,
+                                    "settings.group.$key".tr(),
                                     style: const TextStyle(color: Colors.grey),
                                   ),
                                 ),

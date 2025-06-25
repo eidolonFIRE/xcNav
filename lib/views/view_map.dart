@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:clock/clock.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -1444,7 +1445,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         showDialog(
                             context: context,
                             builder: (context) => AlertDialog(
-                                  content: const Text("Manually stop flight recording?"),
+                                  content: Text("dialog.confirm.manual_stop".tr()),
                                   actions: [
                                     ElevatedButton.icon(
                                         icon: const Icon(
@@ -1455,7 +1456,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           myTelemetry.stopFlight();
                                           Navigator.pop(context);
                                         },
-                                        label: const Text("Stop"))
+                                        label: Text("btn.Stop".tr()))
                                   ],
                                 ));
                       } else {
@@ -1513,8 +1514,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           Icons.play_arrow,
                                           color: Colors.red,
                                         ),
-                                        label: const Text(
-                                          "Record",
+                                        label: Text(
+                                          "btn.Record".tr(),
                                           style: TextStyle(color: Colors.black),
                                         ))
                                 ])))),
