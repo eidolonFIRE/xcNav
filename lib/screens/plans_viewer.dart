@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
@@ -81,10 +82,10 @@ class _PlansViewerState extends State<PlansViewer> {
                       key: const Key("iFlightPlannerName"),
                       autofocus: true,
                       // controller: nameController,
-                      decoration: const InputDecoration(hintText: "Plan Name"),
+                      decoration: InputDecoration(hintText: "Name".tr()),
                       validator: (value) {
                         if (value?.isEmpty ?? true) {
-                          return "Must not be empty.";
+                          return "warning_empty".tr();
                         }
                         return null;
                       },
@@ -102,11 +103,11 @@ class _PlansViewerState extends State<PlansViewer> {
                       maxLines: null,
                       validator: (value) {
                         if (value?.isEmpty ?? false) {
-                          return "Must not be empty.";
+                          return "warning_empty".tr();
                         }
                         final plan = parsePlan("-", value!);
                         if (!plan.goodFile) {
-                          return "Error Parsing.";
+                          return "warning_err_parse".tr();
                         }
                         return null;
                       },
@@ -132,7 +133,7 @@ class _PlansViewerState extends State<PlansViewer> {
                       Icons.check,
                       color: Colors.lightGreen,
                     ),
-                    label: const Text("Load"))
+                    label: Text("btn.Load"))
               ],
             ));
   }
@@ -144,7 +145,7 @@ class _PlansViewerState extends State<PlansViewer> {
       keys.sort((a, b) => a.compareTo(b));
       return Scaffold(
         appBar: AppBar(
-          title: const Text("Library"),
+          title: Text("Library".tr()),
           actions: [
             PopupMenuButton<String>(
                 onSelected: (value) {
@@ -174,14 +175,14 @@ class _PlansViewerState extends State<PlansViewer> {
                   }
                 },
                 itemBuilder: (context) => <PopupMenuEntry<String>>[
-                      const PopupMenuItem(
+                      PopupMenuItem(
                           value: "new",
                           child: ListTile(
                             leading: Icon(
                               Icons.add,
                               color: Colors.lightGreen,
                             ),
-                            title: Text("New"),
+                            title: Text("btn.New".tr()),
                           )),
                       const PopupMenuItem(
                           value: "kml",

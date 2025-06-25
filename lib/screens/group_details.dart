@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/dialogs/leave_group.dart';
@@ -41,7 +42,7 @@ class _GroupDetailsState extends State<GroupDetails> {
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
-          "Group Members",
+          "Group Members".tr(),
           style: Theme.of(context).textTheme.bodyLarge,
         ),
         actions: [
@@ -110,11 +111,11 @@ class _GroupDetailsState extends State<GroupDetails> {
                               ))
                           .toList()
                       : [
-                          const ListTile(
+                          ListTile(
                             title: Padding(
                               padding: EdgeInsets.all(30.0),
                               child: Text(
-                                "group is empty",
+                                "empty_list".tr(),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
                               ),

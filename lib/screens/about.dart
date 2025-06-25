@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class About extends StatefulWidget {
   const About({super.key});
@@ -36,7 +37,7 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text("About"),
+          title: Text("main_menu.about".tr()),
         ),
         body: Container(
           width: MediaQuery.of(context).size.width,
@@ -69,8 +70,8 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
 
                 SizedBox(
                   width: MediaQuery.of(context).size.width / 1.5,
-                  child: const Text(
-                    "This project was started by Caleb Johnson with the goal of putting all the tools for coordinating a group, cross-country flight into one app. \n\nThis app is free and open source forever. We rely on your contributions to keep it alive.\n\nCheckout the resources below to get involved.",
+                  child: Text(
+                    "about_description".tr(),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -106,7 +107,7 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text("Code", style: Theme.of(context).textTheme.headlineSmall),
+                        Text("Code".tr(), style: Theme.of(context).textTheme.headlineSmall),
                         SizedBox(
                           width: MediaQuery.of(context).size.width / 5,
                           height: MediaQuery.of(context).size.width / 5,
@@ -121,7 +122,7 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text("Chat", style: Theme.of(context).textTheme.headlineSmall),
+                        Text("Chat".tr(), style: Theme.of(context).textTheme.headlineSmall),
                         SizedBox(
                           width: MediaQuery.of(context).size.width / 5,
                           height: MediaQuery.of(context).size.width / 5,

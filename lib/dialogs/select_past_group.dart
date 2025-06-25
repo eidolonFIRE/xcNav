@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/providers/client.dart';
@@ -11,10 +12,10 @@ void selectPastGroup(BuildContext context) {
   showDialog(
       context: context,
       builder: (context) => AlertDialog(
-          title: const Text("Recent Groups"),
+          title: Text("Recent Groups".tr()),
           content: pastGroupsSorted.isEmpty
-              ? const Text(
-                  "Nothing here...\nHave you been in a group recently?",
+              ? Text(
+                  "dialog_past_group_empty".tr(),
                   textAlign: TextAlign.center,
                   style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
                 )

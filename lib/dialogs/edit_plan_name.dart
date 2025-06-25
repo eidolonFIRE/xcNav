@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -18,10 +19,11 @@ Future<String?> editPlanName(BuildContext context, String? prevName) {
       context: context,
       builder: (context) {
         return AlertDialog(
-            title: Text("${((prevName != null && prevName.isNotEmpty) ? "Rename" : "New")} Collection"),
+            title: Text(
+                "${((prevName != null && prevName.isNotEmpty) ? "btn.Rename".tr() : "btn.New".tr())} ${"Collection".tr()}"),
             actions: [
               TextButton.icon(
-                  label: const Text("Cancel"),
+                  label: Text("btn.Cancel".tr()),
                   onPressed: () => {Navigator.pop(context, null)},
                   icon: const Icon(
                     Icons.cancel,
@@ -29,7 +31,7 @@ Future<String?> editPlanName(BuildContext context, String? prevName) {
                     color: Colors.red,
                   )),
               TextButton.icon(
-                  label: const Text("Ok"),
+                  label: Text("btn.Ok".tr()),
                   onPressed: onDone,
                   icon: const Icon(
                     Icons.check,
@@ -46,13 +48,13 @@ Future<String?> editPlanName(BuildContext context, String? prevName) {
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[a-zA-Z0-9_ -()\.]"))],
                   validator: (value) {
                     if (value != null) {
-                      if (value.trim().isEmpty) return "Must not be empty";
-                      if (Provider.of<Plans>(context, listen: false).hasPlan(value)) return "Name already in use";
+                      if (value.trim().isEmpty) return "warning_empty".tr();
+                      if (Provider.of<Plans>(context, listen: false).hasPlan(value)) return "warning_name_in_use".tr();
                     }
                     return null;
                   },
-                  decoration: const InputDecoration(
-                    hintText: "Name",
+                  decoration: InputDecoration(
+                    hintText: "Name".tr(),
                     border: OutlineInputBorder(),
                   ),
                   style: const TextStyle(fontSize: 20),

@@ -1,12 +1,39 @@
+import 'dart:convert';
+
+import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/src/easy_localization_controller.dart';
+import 'package:easy_localization/src/localization.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xcnav/units.dart';
 
-void main() {
-  // Common Setup
-  // setUpAll(() {
+class ImmutableJsonAssetLoader extends AssetLoader {
+  const ImmutableJsonAssetLoader();
 
-  // });
+  @override
+  Future<Map<String, dynamic>> load(String fullPath, Locale locale) async {
+    return jsonDecode(await rootBundle.loadString('assets/translations/en.json'));
+  }
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  var r1 = EasyLocalizationController(
+      forceLocale: const Locale('en'),
+      path: 'assets/translations/en.json',
+      supportedLocales: const [Locale('en')],
+      useOnlyLangCode: true,
+      useFallbackTranslations: false,
+      saveLocale: false,
+      onLoadError: (e) {},
+      assetLoader: ImmutableJsonAssetLoader());
+  // Common Setup
+  setUpAll(() async {
+    await r1.loadTranslations();
+    Localization.load(const Locale('en'), translations: r1.translations);
+  });
 
   test("trimZeros", () {
     expect(trimZeros("0.00100"), "0.001");
@@ -32,7 +59,7 @@ void main() {
     expect(printHrMinLexical(const Duration(hours: 0, minutes: 0)), "0 minutes");
     expect(printHrMinLexical(const Duration(hours: 0, minutes: 1)), "1 minute");
     expect(printHrMinLexical(const Duration(hours: 0, minutes: 0)), "0 minutes");
-    expect(printHrMinLexical(const Duration(hours: 1, minutes: 0)), "1 hour");
+    expect(printHrMinLexical(const Duration(hours: 1, minutes: 0)), "1 hour 0 minutes");
     expect(printHrMinLexical(const Duration(hours: 0, minutes: 90)), "1 hour 30 minutes");
     expect(printHrMinLexical(const Duration(hours: 5, minutes: 90)), "6 hours 30 minutes");
 

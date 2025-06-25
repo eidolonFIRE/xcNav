@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -94,7 +95,7 @@ class _ChecklistViewerState extends State<ChecklistViewer> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Checklist:",
+                "Checklist".tr(),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               if (!isEditing)
@@ -165,9 +166,9 @@ class _ChecklistViewerState extends State<ChecklistViewer> {
 
                 /// --- Checklist
                 : checklists[curChecklist]!.catagories.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
-                          "Wow, such empty!",
+                          "empty_list".tr(),
                           style: TextStyle(fontStyle: FontStyle.italic),
                         ),
                       )

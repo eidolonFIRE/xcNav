@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:datadog_flutter_plugin/datadog_flutter_plugin.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,6 +59,7 @@ LatLng lastKnownLatLng = const LatLng(37, -122);
 void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    await EasyLocalization.ensureInitialized();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
     version = await PackageInfo.fromPlatform();
@@ -128,47 +130,51 @@ void main() async {
     }
     await initMapCache();
 
-    runApp(MultiProvider(
-        providers: [
-          ChangeNotifierProvider(
-            create: (_) => MyTelemetry(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Wind(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => ActivePlan(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Plans(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Profile(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => Group(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (_) => ChatMessages(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (context) => ADSB(context),
-            lazy: false,
-          ),
-          ChangeNotifierProvider(
-            create: (BuildContext context) => Client(context),
-            lazy: false,
-          )
-        ],
-        child: FocusDetector(
-            onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav())));
+    runApp(EasyLocalization(
+        supportedLocales: [Locale('en')],
+        path: 'assets/translations',
+        fallbackLocale: Locale('en'),
+        child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider(
+                create: (_) => MyTelemetry(),
+                lazy: false,
+              ),
+              ChangeNotifierProvider(
+                create: (_) => Wind(),
+                lazy: false,
+              ),
+              ChangeNotifierProvider(
+                create: (_) => ActivePlan(),
+                lazy: false,
+              ),
+              ChangeNotifierProvider(
+                create: (_) => Plans(),
+                lazy: false,
+              ),
+              ChangeNotifierProvider(
+                create: (_) => Profile(),
+                lazy: false,
+              ),
+              ChangeNotifierProvider(
+                create: (_) => Group(),
+                lazy: false,
+              ),
+              ChangeNotifierProvider(
+                create: (_) => ChatMessages(),
+                lazy: false,
+              ),
+              ChangeNotifierProvider(
+                create: (context) => ADSB(context),
+                lazy: false,
+              ),
+              ChangeNotifierProvider(
+                create: (BuildContext context) => Client(context),
+                lazy: false,
+              )
+            ],
+            child: FocusDetector(
+                onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav()))));
   }, (e, s) {
     DatadogSdk.instance.rum?.addErrorInfo(e.toString(), RumErrorSource.source, stackTrace: s);
     throw e;
@@ -212,6 +218,9 @@ class XCNav extends StatelessWidget {
     });
 
     return MaterialApp(
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
       navigatorObservers:
           settingsMgr.rumOptOut.value ? [] : [DatadogNavigationObserver(datadogSdk: DatadogSdk.instance)],
       title: 'xcNav',

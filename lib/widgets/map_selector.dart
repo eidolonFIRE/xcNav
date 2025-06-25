@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
@@ -85,7 +86,7 @@ class MapSelector extends StatelessWidget {
                 [
                   if (onChangedWaypoints != null)
                     SpeedDialChild(
-                        label: "Hide Waypoints",
+                        label: "Hide Waypoints".tr(),
                         child: Checkbox.adaptive(
                             value: hideWaypoints,
                             onChanged: (value) {
@@ -97,7 +98,7 @@ class MapSelector extends StatelessWidget {
                   if (onChangedWeatherObservations != null)
                     if (true)
                       SpeedDialChild(
-                          label: "Hide Wind",
+                          label: "Hide Wind".tr(),
                           child: Checkbox.adaptive(
                               value: hideWeatherObservations,
                               onChanged: (value) {

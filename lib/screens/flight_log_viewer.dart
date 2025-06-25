@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -167,7 +168,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                         child: CircularProgressIndicator.adaptive(),
                       )
                     : (logStore.logs.isEmpty
-                        ? const Center(child: Text("Wow, such empty!"))
+                        ? Center(child: Text("empty_list".tr()))
                         : ListView(
                             controller: logListController,
                             children: logStore.logsSlice.reversed.map((e) => FlightLogCard(e)).toList(),
@@ -186,7 +187,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
 
                           // --- Basic Aggregate
                           Text(
-                            "Summary",
+                            "Summary".tr(),
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
@@ -207,7 +208,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
 
                           // --- Hist
                           Text(
-                            "Flight Duration (histogram)",
+                            "flight_duration_hist".tr(),
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
@@ -233,7 +234,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                           // --- Monthly Aggregate
                           // if (sliceSize.index > SliceSize.month.index)
                           Text(
-                            "Monthly Totals",
+                            "Monthly Totals".tr(),
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
@@ -253,7 +254,7 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                             height: 10,
                           ),
                           Text(
-                            "Fuel Insights",
+                            "Fuel Insights".tr(),
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
@@ -284,12 +285,12 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                                     chartFuelY = ChartFuelModeY.values[index];
                                   });
                                 },
-                                children: const [
+                                children: [
                                   Text(
-                                    "Burn\nRate",
+                                    "Burn Rate".tr(),
                                     textAlign: TextAlign.center,
                                   ),
-                                  Text("Eff.")
+                                  Text("efficiency_abbreviated".tr(), textAlign: TextAlign.center),
                                 ],
                               ),
                               SizedBox(
@@ -304,13 +305,13 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                                     chartFuelX = ChartFuelModeX.values[index];
                                   });
                                 },
-                                children: const [
-                                  Text("Alt."),
+                                children: [
+                                  Text("altitude_abbreviated".tr(), textAlign: TextAlign.center),
                                   Text(
-                                    "Alt.\nGained",
+                                    "altitude_gained_abbreviated".tr(),
                                     textAlign: TextAlign.center,
                                   ),
-                                  Text("Speed")
+                                  Text("Speed".tr())
                                 ],
                               )
                             ],

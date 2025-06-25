@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -80,9 +81,9 @@ void showPilotInfo(BuildContext context, String pilotId) {
                     children: [
                       /// --- Basic Telemetry
                       TableRow(children: [
-                        const TableCell(
+                        TableCell(
                           child: Text(
-                            "Telemetry",
+                            "Telemetry".tr(),
                             textAlign: TextAlign.end,
                           ),
                         ),
@@ -111,9 +112,9 @@ void showPilotInfo(BuildContext context, String pilotId) {
 
                       /// --- Relative
                       TableRow(children: [
-                        const TableCell(
+                        TableCell(
                           child: Text(
-                            "Relative Distance",
+                            "Relative Distance".tr(),
                             textAlign: TextAlign.end,
                           ),
                         ),
@@ -147,9 +148,9 @@ void showPilotInfo(BuildContext context, String pilotId) {
                       /// --- Intercept
                       if (etaIntercept.time != null && etaIntercept.time! < const Duration(hours: 5) && dist > 300)
                         TableRow(children: [
-                          const TableCell(
+                          TableCell(
                             child: Text(
-                              "Intercept",
+                              "Intercept".tr(),
                               textAlign: TextAlign.end,
                             ),
                           ),
@@ -254,7 +255,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
                       ],
                     ),
                   ),
-                  content: const Text("No Telemetry for this pilot!"));
+                  content: Text("No telemetry for this pilot.".tr()));
             }
           }));
 }

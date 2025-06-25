@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
@@ -11,14 +12,14 @@ void promptLeaveGroup(BuildContext context) {
       builder: (context) {
         return AlertDialog(
           title: Text(
-            "Leave Group?",
+            "dialog.confirm.leave_group".tr(),
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           titlePadding: const EdgeInsets.all(10),
           contentPadding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
           actions: [
             ElevatedButton.icon(
-                label: const Text("Leave"),
+                label: Text("btn.Leave".tr()),
                 onPressed: () {
                   Provider.of<Client>(context, listen: false).joinGroup(context, "");
                   Navigator.popUntil(context, ModalRoute.withName("/home"));
@@ -28,14 +29,6 @@ void promptLeaveGroup(BuildContext context) {
                   size: 24,
                   color: Colors.red,
                 )),
-            // ElevatedButton.icon(
-            //     label: const Text("Cancel"),
-            //     onPressed: () => {Navigator.pop(context)},
-            //     icon: const Icon(
-            //       Icons.cancel,
-            //       size: 20,
-            //       color: Colors.lightGreen,
-            //     )),
           ],
         );
       });

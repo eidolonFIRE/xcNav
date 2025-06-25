@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:easy_localization/easy_localization.dart' as tr;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
@@ -95,14 +96,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  void infoSetTrimTime(BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (context) => const AlertDialog(
-              content: Text("Use the slider to select the trim position."),
-            ));
-  }
-
   void gotoGForce(int index) {
     scrollToTimeRange(log.gForceEvents[index].timeRange);
     if (tabController.index != 3) {
@@ -171,8 +164,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
-                title: Text("Invalid Selection"),
-                content: Text("Use the range slider to select the duration of the log to keep."),
+                title: Text("Invalid Selection".tr()),
+                content: Text("dialog_select_range_with_slider".tr()),
                 actions: [
                   IconButton(
                       icon: const Icon(
@@ -237,14 +230,14 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 }
               },
               itemBuilder: (context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: "edit_gear",
                   child: ListTile(
                     leading: Icon(Icons.edit),
-                    title: Text("Edit Gear"),
+                    title: Text("btn.Edit Gear".tr()),
                   ),
                 ),
-                const PopupMenuDivider(),
+                PopupMenuDivider(),
                 PopupMenuItem(
                     value: "crop",
                     child: ListTile(
@@ -252,8 +245,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         Icons.crop,
                         size: 32,
                       ),
-                      title: const Text(
-                        "Crop Log to Selection",
+                      title: Text(
+                        "btn.crop_log".tr(),
                         style: TextStyle(color: Colors.red),
                       ),
                     )),
@@ -465,7 +458,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
                     // --- G-force event pages
                     (log.gForceEvents.isEmpty)
-                        ? const Center(child: Text("No G-force events."))
+                        ? Center(child: Text("empty_list".tr()))
                         : GForcePages(
                             pageController: gForcePageController,
                             log: log,
@@ -488,7 +481,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               shrinkWrap: true,
                               children:
                                   // Start of flight
-                                  <Widget>[TimeCard(time: log.startTime, text: "Launch")] +
+                                  <Widget>[TimeCard(time: log.startTime, text: "Launch".tr())] +
 
                                       // Fuel reports
                                       log.fuelStats.expandIndexed<Widget>((index, e) sync* {
@@ -595,7 +588,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                               visualDensity: VisualDensity.compact,
                                               icon: const Icon(Icons.add, color: Colors.white, size: 26)),
                                         // End of flight
-                                        TimeCard(time: log.endTime, text: "Landing"),
+                                        TimeCard(time: log.endTime, text: "Landing".tr()),
                                       ]),
                         ),
                       ),
@@ -626,15 +619,15 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                   );
                 }),
 
-            TabBar(labelPadding: const EdgeInsets.all(0), controller: tabController, tabs: const [
-              Tab(icon: Icon(Icons.info), text: "Summary"),
+            TabBar(labelPadding: const EdgeInsets.all(0), controller: tabController, tabs: [
+              Tab(icon: Icon(Icons.info), text: "Summary".tr()),
               Tab(
                 icon: Icon(Icons.area_chart),
-                text: "Altitude",
+                text: "Altitude".tr(),
               ),
-              Tab(icon: Icon(Icons.speed), text: "Speed"),
-              Tab(icon: Icon(Icons.g_mobiledata), text: "G-Force"),
-              Tab(icon: Icon(Icons.local_gas_station), text: "Fuel"),
+              Tab(icon: Icon(Icons.speed), text: "Speed".tr()),
+              Tab(icon: Icon(Icons.g_mobiledata), text: "G-Force".tr()),
+              Tab(icon: Icon(Icons.local_gas_station), text: "Fuel".tr()),
             ]),
           ],
         ),

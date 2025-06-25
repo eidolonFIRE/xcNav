@@ -1,4 +1,5 @@
 import 'package:clock/clock.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +19,7 @@ Future editLiveFuelReport(BuildContext context) {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Report Fuel in Tank"),
+          title: Text("Report Fuel in Tank".tr()),
           content: StatefulBuilder(builder: (context, setState) {
             String fuelHintLaunch = "  ";
             if (myTelemetry.takeOff != null && myTelemetry.findFuelReportIndex(myTelemetry.takeOff!) == 0) {
@@ -48,7 +49,7 @@ Future editLiveFuelReport(BuildContext context) {
                   // launch
                   ListTile(
                     leading: const Icon(Icons.flight_takeoff),
-                    title: const Text("Launch"),
+                    title: Text("Launch".tr()),
                     subtitle: myTelemetry.takeOff != null
                         ? Text(intl.DateFormat("h:mm a").format(myTelemetry.takeOff!))
                         : null,
@@ -108,7 +109,7 @@ Future editLiveFuelReport(BuildContext context) {
                               Icons.add,
                               color: Colors.lightGreen,
                             ),
-                      title: const Text("Now"),
+                      title: Text("btn.Now".tr()),
                       trailing: SizedBox(
                         width: 60,
                         child: TextFormField(

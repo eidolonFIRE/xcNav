@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_svg/svg.dart';
@@ -53,10 +54,8 @@ class _ScanScreenState extends State<ScanScreen> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text("Don't see your device?"),
-                              Text(
-                                  "Currently only specific devices are supported. Visit the discord to request support for your device.",
-                                  textAlign: TextAlign.center),
+                              Text("dont_see_device".tr()),
+                              Text("only_some_device_supported".tr(), textAlign: TextAlign.center),
                               SizedBox(
                                 width: MediaQuery.of(context).size.width / 5,
                                 height: MediaQuery.of(context).size.width / 5,
@@ -95,7 +94,7 @@ class _ScanScreenState extends State<ScanScreen> {
                                       setState(() {});
                                     });
                                   },
-                                  label: Text("Disconnect"),
+                                  label: Text("btn.Disconnect".tr()),
                                   icon: Icon(Icons.close),
                                 )
                               : ElevatedButton.icon(
@@ -104,7 +103,7 @@ class _ScanScreenState extends State<ScanScreen> {
                                       setState(() {});
                                     });
                                   },
-                                  label: Text("Connect"),
+                                  label: Text("btn.Connect".tr()),
                                   icon: Icon(Icons.add),
                                 ),
                         );

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +40,7 @@ class _QRScannerState extends State<QRScanner> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Current Group",
+                      "Current Group".tr(),
                       style: TextStyle(fontSize: 22, color: Colors.grey),
                     ),
                     (Provider.of<Group>(context).currentGroupID == null)
@@ -91,7 +92,7 @@ class _QRScannerState extends State<QRScanner> {
                     textCapitalization: TextCapitalization.characters,
                     enableIMEPersonalizedLearning: false,
                     keyboardType: TextInputType.name,
-                    decoration: const InputDecoration(hintText: "Join Code"),
+                    decoration: InputDecoration(hintText: "Join Code".tr()),
                     inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9]"))],
                     controller: inputGroupId,
                     textInputAction: TextInputAction.go,

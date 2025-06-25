@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:bisection/bisect.dart';
 import 'package:collection/collection.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -123,8 +124,8 @@ class ChartLogDurationHist extends StatelessWidget {
               sideTitles: SideTitles(showTitles: false),
             ),
             leftTitles: AxisTitles(
-                axisNameWidget: const Text(
-                  "Flights",
+                axisNameWidget: Text(
+                  "Flights".tr(),
                   style: TextStyle(color: Colors.blue),
                 ),
                 sideTitles: SideTitles(

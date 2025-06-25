@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
@@ -177,7 +178,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                       decoration: InputDecoration(
                           contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-                          hintText: "search"),
+                          hintText: "Search".tr()),
                       onChanged: (value) {
                         setState(() {
                           // (this will make the waypoint list re-sort)
@@ -229,8 +230,8 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                               context: context,
                               builder: (BuildContext ctx) {
                                 return AlertDialog(
-                                  title: const Text('Are you sure?'),
-                                  content: const Text('This will clear all waypoints for everyone in the group!'),
+                                  title: Text("dialog.confirm.sure".tr()),
+                                  content: Text("dialog.warn.clear_all_waypoints_in_group".tr()),
                                   actions: [
                                     TextButton.icon(
                                         onPressed: () {
@@ -260,10 +261,10 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                           break;
                       }
                     },
-                    itemBuilder: (context) => const <PopupMenuEntry<String>>[
+                    itemBuilder: (context) => <PopupMenuEntry<String>>[
                           PopupMenuItem(
                               value: "library",
-                              child: ListTile(leading: Icon(Icons.bookmarks), title: Text("Library"))),
+                              child: ListTile(leading: Icon(Icons.bookmarks), title: Text("Library".tr()))),
                           PopupMenuItem(
                             value: "save",
                             child: ListTile(
@@ -271,7 +272,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                                 Icons.save_as,
                                 color: Colors.green,
                               ),
-                              title: Text("Save"),
+                              title: Text("btn.Save".tr()),
                             ),
                           ),
                           PopupMenuItem(
@@ -281,7 +282,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                                 Icons.delete_forever,
                                 color: Colors.red,
                               ),
-                              title: Text("Clear"),
+                              title: Text("btn.Clear".tr()),
                             ),
                           ),
                         ]),
@@ -382,7 +383,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
             Padding(
               padding: const EdgeInsets.only(top: 50, bottom: 50),
               child: Text(
-                "No waypoints added yet... \n\nLong-press on the map to begin.",
+                "no_waypoints_yet_long_press_to_add".tr(),
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade400, fontStyle: FontStyle.italic),
               ),

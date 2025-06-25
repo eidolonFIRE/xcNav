@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:clock/clock.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_svg/svg.dart';
@@ -127,7 +128,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
               minVerticalPadding: 20,
               visualDensity: VisualDensity.compact,
               // leading: const Icon(Icons.thermostat),
-              title: const Text("Ambient Pressure"),
+              title: Text("Ambient Pressure".tr()),
               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                 IconButton(
                     visualDensity: VisualDensity.compact,
@@ -192,7 +193,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text(
-                    "Density Altitude:",
+                    "Density Altitude".tr(),
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(
@@ -215,7 +216,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text(
-                    "GPS Altitude:",
+                    "GPS Altitude".tr(),
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(
@@ -286,7 +287,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                                     ? Text("${e.inMinutes}")
                                     : Text.rich(richHrMin(
                                         duration: e, unitStyle: const TextStyle(fontSize: 10, color: Colors.grey))))
-                                : const Text("All"))
+                                : Text("btn.All".tr()))
                             .toList()),
                     const Expanded(
                         child: Divider(

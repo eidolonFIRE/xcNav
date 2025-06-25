@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -437,7 +438,7 @@ class _PlanEditorState extends State<PlanEditor> {
                               padding: const EdgeInsets.only(bottom: 10),
                               child: Card(
                                   color: Colors.amber.shade400,
-                                  child: const Padding(
+                                  child: Padding(
                                       padding: EdgeInsets.all(8.0),
                                       child: Text.rich(
                                         TextSpan(children: [
@@ -447,7 +448,7 @@ class _PlanEditorState extends State<PlanEditor> {
                                             size: 18,
                                             color: Colors.black,
                                           )),
-                                          TextSpan(text: "Tap to add to path")
+                                          TextSpan(text: "Tap to add to path".tr())
                                         ]),
                                         style:
                                             TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
