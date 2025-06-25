@@ -1154,7 +1154,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         children: [
                           Card(
                             color: Colors.amber.shade400,
-                            child: const Padding(
+                            child: Padding(
                               padding: EdgeInsets.all(8.0),
                               child: Text.rich(
                                 TextSpan(children: [
@@ -1164,7 +1164,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     size: 18,
                                     color: Colors.black,
                                   )),
-                                  TextSpan(text: "Tap to add to path")
+                                  TextSpan(text: "Tap to add to path".tr())
                                 ]),
                                 style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
                               ),

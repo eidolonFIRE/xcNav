@@ -173,7 +173,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                             child: TextFormField(
                               controller: controllerProp,
                               decoration: InputDecoration(
-                                  hintText: "gear.Prop".tr(), floatingLabelBehavior: FloatingLabelBehavior.always),
+                                  hintText: "gear.Propeller".tr(), floatingLabelBehavior: FloatingLabelBehavior.always),
                               onChanged: (value) => gear?.prop = value,
                             ),
                           ),

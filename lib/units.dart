@@ -177,18 +177,18 @@ TextSpan richHrMin({required Duration? duration, TextStyle? valueStyle, TextStyl
       return TextSpan(children: [
         TextSpan(text: hr.toString(), style: valueStyle),
         TextSpan(
-            text: "${"unit.time.hour${longUnits ? "long" : "short"}".plural(hr)} ",
+            text: "${"time.hour.${longUnits ? "long" : "short"}".plural(hr)} ",
             style: resolveSmallerStyle(unitStyle, valueStyle)),
         TextSpan(text: min.toString(), style: valueStyle),
         TextSpan(
-            text: "${"unit.time.minute${longUnits ? "long" : "short"}".plural(min)} ",
+            text: "${"time.minute.${longUnits ? "long" : "short"}".plural(min)} ",
             style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     } else {
       return TextSpan(children: [
         TextSpan(text: min.toString(), style: valueStyle),
         TextSpan(
-            text: "${"unit.time.minute${longUnits ? "long" : "short"}".plural(min)} ",
+            text: "${"time.minute.${longUnits ? "long" : "short"}".plural(min)} ",
             style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     }
@@ -207,18 +207,18 @@ TextSpan richMinSec(
       return TextSpan(children: [
         TextSpan(text: min.toString(), style: valueStyle),
         TextSpan(
-            text: "${"unit.time.minute${longUnits ? "long" : "short"}".plural(min)} ",
+            text: "${"time.minute.${longUnits ? "long" : "short"}".plural(min)} ",
             style: resolveSmallerStyle(unitStyle, valueStyle)),
         TextSpan(text: sec.toString(), style: valueStyle),
         TextSpan(
-            text: "${"unit.time.second${longUnits ? "long" : "short"}".plural(sec)} ",
+            text: "${"time.second.${longUnits ? "long" : "short"}".plural(sec)} ",
             style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     } else {
       return TextSpan(children: [
         TextSpan(text: sec.toString(), style: valueStyle),
         TextSpan(
-            text: "${"unit.time.second${longUnits ? "long" : "short"}".plural(sec)} ",
+            text: "${"time.second.${longUnits ? "long" : "short"}".plural(sec)} ",
             style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     }

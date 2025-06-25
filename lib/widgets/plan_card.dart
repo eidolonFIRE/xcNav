@@ -49,8 +49,8 @@ class _PlanCardState extends State<PlanCard> {
         context: context,
         builder: (BuildContext ctx) {
           return AlertDialog(
-            title: const Text('dialog.confirm.please'),
-            content: const Text('Are you sure you want to delete this plan?'),
+            title: Text('dialog.confirm.please'.tr()),
+            content: Text('dialog.confirm.delete_plan'.tr()),
             actions: [
               // The "btn.Yes" button
               TextButton.icon(
@@ -62,7 +62,7 @@ class _PlanCardState extends State<PlanCard> {
                     Icons.delete_forever,
                     color: Colors.red,
                   ),
-                  label: const Text('Delete')),
+                  label: Text('btn.Delete'.tr())),
               TextButton(
                   onPressed: () {
                     // Close the dialog
@@ -108,8 +108,8 @@ class _PlanCardState extends State<PlanCard> {
         context: context,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('dialog.confirm.please'),
-            content: const Text('This will replace the plan for everyone in the group.'),
+            title: Text('dialog.confirm.please'.tr()),
+            content: Text('dialog.warn.replace_plan'.tr()),
             actions: [
               // The "btn.Yes" button
               ElevatedButton.icon(
@@ -120,12 +120,12 @@ class _PlanCardState extends State<PlanCard> {
                     Icons.check,
                     color: Colors.amber,
                   ),
-                  label: const Text('Replace')),
+                  label: Text('btn.Replace'.tr())),
               ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop(false);
                   },
-                  child: const Text('Cancel'))
+                  child: Text('btn.Cancel'.tr()))
             ],
           );
         });
@@ -395,9 +395,9 @@ class _PlanCardState extends State<PlanCard> {
                             color: Colors.lightGreen,
                           ),
                           label: Text(
-                            "Load ${checkedElements.isEmpty ? "All" : "Selected"}",
+                            "btn.Load_${checkedElements.isEmpty ? "All" : "Selected"}".tr(),
                             style: const TextStyle(fontSize: 18),
-                          ).tr()),
+                          )),
                     ),
                   )
                 ],

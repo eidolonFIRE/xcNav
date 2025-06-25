@@ -29,6 +29,10 @@
             "right_hand_ui": "Right-handed UI",
             "always_show_pilot_names": "Always Show Pilot Names",
             "group_view_includes_waypoints": "Group View Includes Waypoints",
+            "Distance": "Distance",
+            "Speed": "Speed",
+            "Vario": "Vario",
+            "Fuel": "Fuel",
             "adsb_proximity_profile": "ADSB Proximity Profile",
             "filter_tail_numbers": "Filter Tail Number(s)",
             "test_audio_cues": "Test Audio Cues",
@@ -38,9 +42,6 @@
             "clear_map_cache": "Clear Map Cache",
             "clear_avatar_cache": "Clear Avatar Cache",
             "erase_identity": "Erase Identity"
-        },
-        "subtitle": {
-            "view_list_of_metrics": "View list of metrics captured"
         }
     },
     "Distance": "Distance",
@@ -106,10 +107,12 @@
             "please": "Please Confirm",
             "check_clear_identity": "Are you sure you want to clear your Identity?",
             "check_clear_avatars": "Are you sure you want to clear all cached avatars?",
-            "delete_log": "Are you sure you want to delete this log?"
+            "delete_log": "Are you sure you want to delete this log?",
+            "delete_plan": "Are you sure you want to delete this plan?"
         },
         "warn": {
-            "clear_all_waypoints_in_group": "This will clear all waypoints for everyone in the group!"
+            "clear_all_waypoints_in_group": "This will clear all waypoints for everyone in the group!",
+            "replace_plan": "This will replace the plan for everyone in the group."
         }
     },
     "btn": {
@@ -140,7 +143,8 @@
         "Select": "Select",
         "Leave": "Leave",
         "Ok": "Ok",
-        "Load All": "Load All"
+        "Load_All": "Load All",
+        "Load_Selected": "Load Selected"
     },
     "Library": "Library",
     "Search": "Search",
@@ -158,7 +162,6 @@
     "warning_unrecognized_format": "Unrecognized Format",
     "warning_must_be_2_char": "Must be at least 2 characters.",
     "warning_err_parse": "Error Parsing",
-    "Load Selected": "Load Selected",
     "warning_no_undo": "No Undo!",
     "Report Fuel Level": "Report Fuel Level",
     "Report Fuel in Tank": "Report Fuel in Tank",
@@ -189,6 +192,7 @@
     "Route": "Route",
     "Reset Wind Detector": "Reset Wind Detector",
     "Slowly Turn ¼ Circle": "Slowly Turn ¼ Circle",
+    "Tap to add to path": "Tap to add to path",
     "make_a_measurement": "Make a measurement on the map,\nor select a waypoint.",
     "ETA with Wind": "ETA with Wind",
     "No Arrival": "No Arrival",

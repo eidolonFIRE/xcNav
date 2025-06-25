@@ -46,7 +46,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
     getMapTileCacheSize().then((value) {
       if (mounted) {
         setState(() {
-          settingsMgr.clearMapCache.title = "Clear Map Cache ($value)";
+          settingsMgr.clearMapCache.title = "${"clear_map_cache".tr()} ($value)";
         });
       }
     });

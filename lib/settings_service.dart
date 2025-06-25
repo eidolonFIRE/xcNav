@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -327,9 +326,9 @@ class SettingsMgr {
             padding: EdgeInsets.only(right: 4),
             child: Icon(Icons.help, size: 16, color: Colors.lightBlue),
           )),
-          TextSpan(text: "settings.subtitle.view_list_of_metrics".tr()),
+          TextSpan(text: "View list of metrics captured.  "),
           TextSpan(
-              text: "  ${"External Link".tr()}",
+              text: "External Link",
               style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
               recognizer: TapGestureRecognizer()
                 ..onTap = () async {
@@ -348,7 +347,7 @@ class SettingsMgr {
           Icons.location_off,
         ),
         description: "Useful for test driving while on the ground.");
-    clearMapCache = SettingAction(this, "Debug Tools", () {},
+    clearMapCache = SettingAction(this, "Debug Tools", () => null,
         title: "clear_map_cache",
         actionIcon: const Icon(
           Icons.map,
