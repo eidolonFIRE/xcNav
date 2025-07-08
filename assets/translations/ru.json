@@ -1,0 +1,336 @@
+{
+    "main_menu": {
+      "group": "Группа",
+      "checklist": "Контрольный список",
+      "weather": "Погода",
+      "log": "Журнал",
+      "settings": "Настройки",
+      "devices": "Устройства",
+      "about": "О приложении"
+    },
+    "about_description": "Этот проект был основан Кейлебом Джонсоном (Caleb Johnson) чтобы собрать в одном приложении все инструменты для координации групповых кросс-кантри перелетов на парамоторах.\n\nЭто приложение бесплатно и навсегда останется opensource. Мы рассчитываем на вашу поддержку чтобы оно осталось таким.\n\nПерейдите по ссылкам ниже, чтобы поучаствовать в разработке.",
+    "Code": "Код",
+    "Chat": "Чат",
+    "Settings": "Настройки",
+    "settings": {
+      "group": {
+        "General": "Общие",
+        "UI": "Интерфейс",
+        "Display Units": "Единицы измерения",
+        "Misc": "Прочее",
+        "Debug Tools": "Инструменты отладки",
+        "Experimental": "Экспериментальное"
+      },
+      "title": {
+        "ground_support_mode": "Режим наземной поддержки",
+        "auto_record_flight": "Авто-запись полёта",
+        "primary_altimeter": "Основной альтиметр",
+        "altimeter_vsi_thresh": "Порог стрелки альтиметра (м/с)",
+        "right_hand_ui": "Интерфейс для правшей",
+        "always_show_pilot_names": "Всегда показывать имена пилотов",
+        "group_view_includes_waypoints": "Групповой вид включает путевые точки",
+        "Distance": "Расстояние",
+        "Speed": "Скорость",
+        "Vario": "Варио",
+        "Fuel": "Топливо",
+        "adsb_proximity_profile": "Профиль близости ADS-B",
+        "filter_tail_numbers": "Фильтр бортовых номеров",
+        "test_audio_cues": "Тест аудио-подсказок",
+        "opt_out_usage_stats": "Отключить анонимную статистику",
+        "show_servocarb": "Показать меню ServoCarb",
+        "spoof_location": "Подменить местоположение",
+        "clear_map_cache": "Очистить кэш карты",
+        "clear_avatar_cache": "Очистить кэш аватаров",
+        "erase_identity": "Стереть личные данные"
+      }
+    },
+    "Distance": "Расстояние",
+    "Speed": "Скорость",
+    "Vario": "Варио",
+    "Fuel": "Топливо",
+    "External Link": "Внешняя ссылка",
+    "start": "начало",
+    "end": "конец",
+    "off": "выключено",
+    "small": "малый",
+    "medium": "средний",
+    "large": "большой",
+    "xlarge": "очень большой",
+    "Group Members": "Участники группы",
+    "Join Code": "Код присоединения",
+    "Current Group": "Текущая группа",
+    "Recent Groups": "Недавние группы",
+    "dialog_past_group_empty": "Пусто...\nВы недавно были в группе?",
+    "Checklist": "Контрольный список",
+    "empty_list": "Опа, здесь пусто!",
+    "log_summary": {
+      "Distance": "Расстояние",
+      "Fuel Burn Rate": "Расход топлива",
+      "Fuel Efficiency": "Топливная эффективность",
+      "Duration_2G": "Длительность > 2G",
+      "Duration": "Длительность",
+      "Avg Speed": "Средняя скорость",
+      "Max Altitude": "Максимальная высота",
+      "Best 30sec Climb": "Макс подъём за 30с",
+      "Total Elev Gain": "Общий набор высоты",
+      "Max G-Force": "Макс перегрузка"
+    },
+    "Summary": "Сводка",
+    "Altitude": "Высота",
+    "G-Force": "Перегрузка",
+    "Laurch": "Взлёт",
+    "Landing": "Посадка",
+    "dialog_select_range_with_slider": "Используйте ползунок, чтобы выбрать диапазон журнала для сохранения.",
+    "Invalid Selection": "Неверный выбор",
+    "flight_duration_hist": "Длительность полётов (гистограмма)",
+    "Monthly Totals": "Итого по месяцам",
+    "Fuel Insights": "Анализ топлива",
+    "Burn Rate": "Расход\nтоплива",
+    "efficiency_abbreviated": "Эфф.",
+    "altitude_abbreviated": "Выс.",
+    "altitude_gained_abbreviated": "Набор выс.",
+    "Flight": "Полёт",
+    "Flights": "Полёты",
+    "Time": "Время",
+    "Total": "Всего",
+    "Average": "Среднее",
+    "Ambient Pressure": "Атмосферное давление",
+    "Density Altitude": "Барометрическая высота",
+    "GPS Altitude": "GPS-высота",
+    "dialog": {
+      "confirm": {
+        "sure": "Вы уверены?",
+        "manual_stop": "Остановить вручную?",
+        "trim_log": "Отрезать журнал до выделенной строки?",
+        "save_waypoints": "Сохранить путевые точки в библиотеку?",
+        "leave_group": "Покинуть группу?",
+        "please": "Пожалуйста, подтвердите",
+        "check_clear_identity": "Cтереть личные данные?",
+        "check_clear_avatars": "Удалить все аватары?",
+        "delete_log": "Удалить этот журнал?",
+        "delete_plan": "Удалить этот план?"
+      },
+      "warn": {
+        "clear_all_waypoints_in_group": "Это удалит все путевые точки для всех участников группы!",
+        "replace_plan": "Это заменит план для всех участников группы."
+      }
+    },
+    "btn": {
+      "crop_log": "Обрезать журнал до выделенной строки",
+      "Edit Gear": "Редактировать снаряжение",
+      "All": "Все",
+      "Save": "Сохранить",
+      "Now": "Сейчас",
+      "Saving": "Сохранение",
+      "Cancel": "Отмена",
+      "Stop": "Стоп",
+      "Yes": "Да",
+      "No": "Нет",
+      "Delete": "Удалить",
+      "Clear": "Очистить",
+      "Replace All": "Заменить всё",
+      "Rename": "Переименовать",
+      "Duplicate": "Дублировать",
+      "New": "Создать",
+      "Add": "Добавить",
+      "Open": "Открыть",
+      "Record": "Записать",
+      "Update": "Обновить",
+      "Reset": "Сброс",
+      "Connect": "Подключить",
+      "Disconnect": "Отключить",
+      "Edit": "Редактировать",
+      "Select": "Выбрать",
+      "Leave": "Выйти",
+      "Ok": "Ок",
+      "Load_All": "Загрузить всё",
+      "Load_Selected": "Загрузить выбранное"
+    },
+    "Library": "Библиотека",
+    "Search": "Поиск",
+    "Connected": "Подключено",
+    "No Data": "Нет данных",
+    "Empty": "Пусто",
+    "Name": "Имя",
+    "Collection": "Коллекция",
+    "Waypoint": "Путевая точка",
+    "Path": "Путь",
+    "no_waypoints_yet_long_press_to_add": "Путевые точки ещё не добавлены...\n\nЗажмите точку на карте чтобы начать.",
+    "hint_collection_name": "Название коллекции",
+    "warning_empty": "Не должно быть пустым",
+    "warning_name_in_use": "Имя уже используется",
+    "warning_unrecognized_format": "Нераспознанный формат",
+    "warning_must_be_2_char": "Должно быть не менее 2 символов",
+    "warning_err_parse": "Ошибка разбора",
+    "warning_no_undo": "Без отмены!",
+    "Report Fuel Level": "Укажите уровень топлива",
+    "Report Fuel in Tank": "Укажите уровень топлива в баке",
+    "gear": {
+      "Wing": "Крыло",
+      "wing unset": "Неизвестное крыло ",
+      "motor unset": "Неизвестный двигатель",
+      "Size": "Размер",
+      "make_model": "Марка, модель",
+      "Motor": "Мотор",
+      "Engine": "Двигатель",
+      "Propeller": "Винт",
+      "Tank": "Бак",
+      "Bladder": "Мешок",
+      "other_details": "Доп. детали",
+      "other_details_example": "палатка, провизия и т.д."
+    },
+    "Date Range": "Диапазон дат",
+    "Search Gear": "Поиск снаряжения",
+    "Telemetry": "Телеметрия",
+    "Relative Distance": "Относительное расстояние",
+    "Intercept": "Перехват",
+    "No telemetry for this pilot.": "Нет телеметрии для этого пилота.",
+    "Go to settings": "Перейти к настройкам",
+    "Please enable:": "Пожалуйста, включите:",
+    "permission": "право доступа",
+    "Detector": "Датчик",
+    "Route": "Маршрут",
+    "Reset Wind Detector": "Сбросить датчик ветра",
+    "Slowly Turn ¼ Circle": "Медленно поверните на четверть круга",
+    "Tap to add to path": "Нажмите, чтобы добавить к пути",
+    "make_a_measurement": "Сделайте измерение на карте,\nили выберите путевую точку.",
+    "ETA with Wind": "Время прибытия с учётом ветра",
+    "No Arrival": "Нет прибытия",
+    "dont_see_device": "Не видите устройство?",
+    "only_some_device_supported": "Пока что поддерживаются всего несколько устройств. Заходите к нам в Discord - обсудим поддержку.",
+    "Hide Waypoints": "Скрыть путевые точки",
+    "Hide Wind": "Скрыть ветер",
+    "Lat, Long": "Шир., Долг.",
+    "Imperial": "Имперская",
+    "Metric": "Метрическая",
+    "unit": {
+      "short": {
+        "UnitType": {
+          "speed": {
+            "mph": "миль/ч",
+            "kts": "уз",
+            "kph": "км/ч",
+            "mps": "м/с"
+          },
+          "vario": {
+            "fpm": "фут/мин",
+            "fps": "фут/с",
+            "mps": "м/с"
+          },
+          "distFine": {
+            "imperial": "фут",
+            "metric": "м"
+          },
+          "distCoarse": {
+            "imperial": "ми",
+            "metric": "км"
+          },
+          "fuel": {
+            "liter": "л",
+            "gal": "гал",
+            "kWh": "кВт⋅ч"
+          }
+        }
+      },
+      "long": {
+        "UnitType": {
+          "speed": {
+            "mph": "миль в час",
+            "kts": "узлов",
+            "kph": "километров в час",
+            "mps": "метров в секунду"
+          },
+          "vario": {
+            "fpm": "футов в минуту",
+            "fps": "футов в секунду",
+            "mps": "метров в секунду"
+          },
+          "distFine": {
+            "imperial": "футы",
+            "metric": "метры"
+          },
+          "distCoarse": {
+            "imperial": "мили",
+            "metric": "километры"
+          },
+          "fuel": {
+            "liter": "литры",
+            "gal": "галлоны",
+            "kWh": "киловатт-часы"
+          }
+        }
+      }
+    },
+    "time": {
+      "hour": {
+        "long": {
+          "zero": "часов",
+          "one": "час",
+          "many": "часов",
+          "other": "часов"
+        },
+        "short": {
+          "zero": "ч",
+          "one": "ч",
+          "many": "ч",
+          "other": "ч"
+        }
+      },
+      "minute": {
+        "long": {
+          "zero": "минут",
+          "one": "минута",
+          "many": "минут",
+          "other": "минуты"
+        },
+        "short": {
+          "zero": "мин",
+          "one": "мин",
+          "many": "мин",
+          "other": "мин"
+        }
+      },
+      "second": {
+        "long": {
+          "zero": "секунд",
+          "one": "секунда",
+          "many": "секунд",
+          "other": "секунды"
+        },
+        "short": {
+          "zero": "с",
+          "one": "с",
+          "many": "с",
+          "other": "с"
+        }
+      },
+      "month": {
+        "short": {
+          "jan": "Янв",
+          "feb": "Фев",
+          "mar": "Мар",
+          "apr": "Апр",
+          "may": "Май",
+          "jun": "Июн",
+          "jul": "Июл",
+          "aug": "Авг",
+          "sep": "Сен",
+          "oct": "Окт",
+          "nov": "Ноя",
+          "dec": "Дек"
+        }
+      },
+      "day": {
+        "short": {
+          "sun": "Вс",
+          "mon": "Пн",
+          "tue": "Вт",
+          "wed": "Ср",
+          "thu": "Чт",
+          "fri": "Пт",
+          "sat": "Сб"
+        }
+      }
+    }
+  }
+  
