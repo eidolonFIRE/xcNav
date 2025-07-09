@@ -131,9 +131,10 @@ void main() async {
     await initMapCache();
 
     runApp(EasyLocalization(
-        supportedLocales: [Locale('en')],
-        path: 'assets/translations',
-        fallbackLocale: Locale('en'),
+        supportedLocales: [Locale("en"), Locale("ru")],
+        path: "assets/translations",
+        fallbackLocale: Locale("en"),
+        useFallbackTranslations: true,
         child: MultiProvider(
             providers: [
               ChangeNotifierProvider(

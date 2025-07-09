@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/settings_service.dart';
@@ -14,7 +15,7 @@ Future<Map<String, bool>?> showAudioCueConfigDialog(BuildContext context, Map<St
                     .map<Widget>((entry) => SwitchListTile(
                         value: entry.value,
                         secondary: Icon(AudioCueService.icons[entry.key]),
-                        title: Text(entry.key),
+                        title: Text("audio_cue.${entry.key}".tr()),
                         onChanged: (newValue) => setState(
                               () => config[entry.key] = newValue,
                             )))

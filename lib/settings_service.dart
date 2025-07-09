@@ -148,7 +148,7 @@ class SettingConfig<T> {
 class SettingAction {
   final String catagory;
   String title;
-  final String? description;
+  String? description;
   final Icon? actionIcon;
 
   Function() callback;

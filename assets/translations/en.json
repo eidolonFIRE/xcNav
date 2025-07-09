@@ -8,6 +8,17 @@
         "devices": "Devices",
         "about": "About"
     },
+    "audio_cue": {
+        "Off": "Off",
+        "Less": "Less",
+        "Med": "Med",
+        "More": "More",
+        "My Telemetry": "My Telemetry",
+        "Next Waypoint": "Next Waypoint",
+        "Group Awareness": "Group Awareness",
+        "Report Fuel": "Report Fuel",
+        "Fuel Level": "Fuel Level"
+    },
     "about_description": "This project was started by Caleb Johnson with the goal of putting all the tools for coordinating a group, cross-country flight into one app. \n\nThis app is free and open source forever. We rely on your contributions to keep it alive.\n\nCheckout the resources below to get involved.",
     "Code": "Code",
     "Chat": "Chat",
