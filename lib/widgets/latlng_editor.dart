@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
@@ -44,8 +45,8 @@ class LatLngEditor extends StatelessWidget {
           autofocus: true,
           validator: (value) {
             if (value != null) {
-              if (value.trim().isEmpty) return "Must not be empty";
-              if (!reMatchAll.hasMatch(value)) return "Unrecognized Format";
+              if (value.trim().isEmpty) return "warning_empty".tr();
+              if (!reMatchAll.hasMatch(value)) return "warning_unrecognized_format".tr();
               // Check the numbers
               for (final each in LatLngEditor.reMatchEach.allMatches(value)) {
                 if (double.parse(each.group(1)!).abs() > 90) {
@@ -62,7 +63,7 @@ class LatLngEditor extends StatelessWidget {
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            hintText: "Lat, Long",
+            hintText: "Lat, Long".tr(),
             // border: OutlineInputBorder(),
           ),
           textAlign: TextAlign.center,

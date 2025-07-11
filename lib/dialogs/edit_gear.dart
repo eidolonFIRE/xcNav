@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -37,9 +38,9 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                     // mainAxisSize: MainAxisSize.min,
                     children: [
                       // WING
-                      const Align(
+                      Align(
                         alignment: Alignment.centerLeft,
-                        child: Text("Wing", style: TextStyle(color: Colors.lightBlue)),
+                        child: Text("gear.Wing".tr(), style: TextStyle(color: Colors.lightBlue)),
                       ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -48,8 +49,9 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                           Expanded(
                             child: TextFormField(
                               controller: controllerWingMM,
-                              decoration: const InputDecoration(
-                                  hintText: "make,  model", floatingLabelBehavior: FloatingLabelBehavior.always),
+                              decoration: InputDecoration(
+                                  hintText: "gear.make_model".tr(),
+                                  floatingLabelBehavior: FloatingLabelBehavior.always),
                               onChanged: (value) => gear?.wingMakeModel = value,
                             ),
                           ),
@@ -59,8 +61,8 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                               controller: controllerWingSize,
                               textAlign: TextAlign.center,
                               inputFormatters: [LengthLimitingTextInputFormatter(2)],
-                              decoration: const InputDecoration(
-                                hintText: "size",
+                              decoration: InputDecoration(
+                                hintText: "gear.Size".tr(),
                                 contentPadding: EdgeInsets.all(0),
                               ),
                               onChanged: (value) => gear?.wingSize = value,
@@ -108,7 +110,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                                                 onPressed: () {
                                                   Navigator.pop(context, color.toColor());
                                                 },
-                                                label: const Text("Select"))
+                                                label: Text("btn.Select".tr()))
                                           ]);
                                     });
                                   }).then((newColor) {
@@ -131,10 +133,10 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                       ),
 
                       // MOTOR
-                      const Align(
+                      Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          "Motor",
+                          "gear.Motor".tr(),
                           style: TextStyle(color: Colors.lightBlue),
                         ),
                       ),
@@ -146,8 +148,9 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                             flex: 2,
                             child: TextFormField(
                               controller: controllerMotorMM,
-                              decoration: const InputDecoration(
-                                  hintText: "make,  model", floatingLabelBehavior: FloatingLabelBehavior.always),
+                              decoration: InputDecoration(
+                                  hintText: "gear.make_model".tr(),
+                                  floatingLabelBehavior: FloatingLabelBehavior.always),
                               onChanged: (value) => gear?.frameMakeModel = value,
                             ),
                           ),
@@ -155,7 +158,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                             flex: 1,
                             child: TextFormField(
                               controller: controllerEngine,
-                              decoration: const InputDecoration(hintText: "engine"),
+                              decoration: InputDecoration(hintText: "gear.Engine".tr()),
                               onChanged: (value) => gear?.engine = value,
                             ),
                           ),
@@ -169,8 +172,8 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                             flex: 1,
                             child: TextFormField(
                               controller: controllerProp,
-                              decoration: const InputDecoration(
-                                  hintText: "prop", floatingLabelBehavior: FloatingLabelBehavior.always),
+                              decoration: InputDecoration(
+                                  hintText: "gear.Propeller".tr(), floatingLabelBehavior: FloatingLabelBehavior.always),
                               onChanged: (value) => gear?.prop = value,
                             ),
                           ),
@@ -182,7 +185,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                               textAlign: TextAlign.end,
                               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[0-9\.]"))],
                               decoration: InputDecoration(
-                                  hintText: "tank",
+                                  hintText: "gear.Tank".tr(),
                                   suffixText: getUnitStr(UnitType.fuel),
                                   contentPadding: const EdgeInsets.only(right: 10)),
                               onChanged: (value) => gear?.tankSize = parseAsDouble(value),
@@ -196,7 +199,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                               textAlign: TextAlign.end,
                               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[0-9\.]"))],
                               decoration: InputDecoration(
-                                  hintText: "bladder",
+                                  hintText: "gear.Bladder".tr(),
                                   suffixText: getUnitStr(UnitType.fuel),
                                   prefixText: "+",
                                   contentPadding: const EdgeInsets.only(right: 10)),
@@ -211,16 +214,16 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                       ),
 
                       // OTHER
-                      const Align(
+                      Align(
                         alignment: Alignment.centerLeft,
-                        child: Text("Other Details", style: TextStyle(color: Colors.lightBlue)),
+                        child: Text("gear.other_details".tr(), style: TextStyle(color: Colors.lightBlue)),
                       ),
                       SizedBox(
                         width: double.infinity,
                         child: TextFormField(
                           controller: controllerOther,
-                          decoration: const InputDecoration(
-                              hintText: "flight box, camping bag, etc...",
+                          decoration: InputDecoration(
+                              hintText: "gear.other_details_example".tr(),
                               floatingLabelBehavior: FloatingLabelBehavior.always),
                         ),
                       ),
@@ -265,7 +268,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                   onPressed: () {
                     // Save latest to prefs
                     if (gear != null) {
-                      debugPrint("Saving gear: ${jsonEncode(gear?.toJson())}");
+                      debugPrint("${"btn.Saving".tr()}: ${jsonEncode(gear?.toJson())}");
                       SharedPreferences.getInstance()
                           .then((prefs) => prefs.setString("gear_last_saved_value", jsonEncode(gear?.toJson())));
                     }
@@ -275,7 +278,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
                     Icons.check,
                     color: Colors.lightGreen,
                   ),
-                  label: const Text("Save"))
+                  label: Text("btn.Save".tr()))
             ],
           );
         });

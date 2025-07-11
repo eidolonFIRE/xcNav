@@ -1,0 +1,348 @@
+{
+    "main_menu": {
+        "group": "Csoport",
+        "checklist": "Ellenőrzőlista",
+        "weather": "Időjárás",
+        "log": "Napló",
+        "settings": "Beállítások",
+        "devices": "Eszközök",
+        "about": "Névjegy"
+    },
+    "audio_cue": {
+        "Off": "Ki",
+        "Less": "Kevesebb",
+        "Med": "Közepes",
+        "More": "Több",
+        "My Telemetry": "Saját telemetria",
+        "Next Waypoint": "Következő útvonalpont",
+        "Group Awareness": "Csoporttudatosság",
+        "Report Fuel": "Üzemanyagszint jelentése",
+        "Fuel Level": "Üzemanyagszint"
+    },
+    "Requires Restarting xcNav": "Az xcNav újraindítása szükséges",
+    "about_description": "Ezt a projektet Caleb Johnson indította azzal a céllal, hogy az összes, csoportos távrepülés koordinálásához szükséges eszközt egyetlen alkalmazásba gyűjtse.\n\nEz az alkalmazás örökre ingyenes és nyílt forráskódú. A fenntartásához a te hozzájárulásodra is szükség van.\n\nAz alábbi források segítségével te is bekapcsolódhatsz.",
+    "Code": "Kód",
+    "Chat": "Csevegés",
+    "Settings": "Beállítások",
+    "settings": {
+        "group": {
+            "General": "Általános",
+            "UI": "Felhasználói felület",
+            "Display Units": "Megjelenítési egységek",
+            "Misc": "Egyéb",
+            "Debug Tools": "Hibakereső eszközök",
+            "Experimental": "Kísérleti"
+        },
+        "title": {
+            "Language Override": "Nyelv felülírása",
+            "ground_support_mode": "Földi támogatási mód",
+            "auto_record_flight": "Repülés automatikus rögzítése",
+            "primary_altimeter": "Elsődleges magasságmérő",
+            "altimeter_vsi_thresh": "Magasságmérő nyíl küszöbértéke (m/s)",
+            "right_hand_ui": "Jobbkezes felhasználói felület",
+            "always_show_pilot_names": "Pilótanevek mindig látszanak",
+            "group_view_includes_waypoints": "A csoportnézet tartalmazza az útvonalpontokat",
+            "Distance": "Távolság",
+            "Speed": "Sebesség",
+            "Vario": "Vario",
+            "Fuel": "Üzemanyag",
+            "adsb_proximity_profile": "ADSB közelségprofil",
+            "filter_tail_numbers": "Lajstromszám(ok) szűrése",
+            "test_audio_cues": "Hangjelzések tesztelése",
+            "opt_out_usage_stats": "Névtelen használati statisztikák elutasítása",
+            "show_servocarb": "ServoCarb menü megjelenítése",
+            "spoof_location": "Helyzet hamisítása",
+            "clear_map_cache": "Térképmemória törlése",
+            "clear_avatar_cache": "Avatar cache törlése",
+            "erase_identity": "Azonosító törlése"
+        }
+    },
+    "Distance": "Távolság",
+    "Speed": "Sebesség",
+    "Vario": "Vario",
+    "Fuel": "Üzemanyag",
+    "External Link": "Külső hivatkozás",
+    "start": "indítás",
+    "end": "befejezés",
+    "off": "ki",
+    "small": "kicsi",
+    "medium": "közepes",
+    "large": "nagy",
+    "xlarge": "extra nagy",
+    "Group Members": "Csoporttagok",
+    "Join Code": "Csatlakozási kód",
+    "Current Group": "Aktuális csoport",
+    "Recent Groups": "Legutóbbi csoportok",
+    "dialog_past_group_empty": "Nincs itt semmi...\nVoltál már csoportban korábban?",
+    "Checklist": "Ellenőrzőlista",
+    "empty_list": "Hűha, de üres!",
+    "log_summary": {
+        "Distance": "Távolság",
+        "Fuel Burn Rate": "Üzemanyag-fogyási arány",
+        "Fuel Efficiency": "Üzemanyag-hatékonyság",
+        "Duration_2G": "Időtartam > 2G",
+        "Duration": "Időtartam",
+        "Avg Speed": "Átlagsebesség",
+        "Max Altitude": "Max. magasság",
+        "Best 30sec Climb": "Legjobb 30 mp emelkedés",
+        "Total Elev Gain": "Összes emelkedés",
+        "Max G-Force": "Max. G-erő"
+    },
+    "Summary": "Összegzés",
+    "Altitude": "Magasság",
+    "G-Force": "G-erő",
+    "Laurch": "Indítás",
+    "Landing": "Leszállás",
+    "dialog_select_range_with_slider": "Használja a csúszkát a megtartandó napló időtartamának kiválasztásához.",
+    "Invalid Selection": "Érvénytelen kiválasztás",
+    "flight_duration_hist": "Repülési időtartam (hisztogram)",
+    "Monthly Totals": "Havi összesítés",
+    "Fuel Insights": "Üzemanyag betekintések",
+    "Burn Rate": "Fogyási\narány",
+    "efficiency_abbreviated": "Haték.",
+    "altitude_abbreviated": "Mag.",
+    "altitude_gained_abbreviated": "Emelkedés",
+    "Flight": "Repülés",
+    "Flights": "Repülések",
+    "Time": "Idő",
+    "Total": "Összesen",
+    "Average": "Átlag",
+    "Ambient Pressure": "Környezeti nyomás",
+    "Density Altitude": "Sűrűségi magasság",
+    "GPS Altitude": "GPS magasság",
+    "dialog": {
+        "confirm": {
+            "sure": "Biztos vagy benne?",
+            "manual_stop": "Leállítás kézzel?",
+            "trim_log": "Napló vágása a kijelöléshez?",
+            "save_waypoints": "Útvonalpontok mentése a könyvtárba?",
+            "leave_group": "Kilépés a csoportból?",
+            "please": "Kérjük, erősítsd meg",
+            "check_clear_identity": "Biztosan törölni szeretnéd az azonosítódat?",
+            "check_clear_avatars": "Biztosan törölni szeretnéd az összes cache-elt avatárt?",
+            "delete_log": "Biztosan törölni szeretnéd ezt a naplót?",
+            "delete_plan": "Biztosan törölni szeretnéd ezt a tervet?"
+        },
+        "warn": {
+            "clear_all_waypoints_in_group": "Ez az összes útvonalpontot törli a csoport minden tagjánál!",
+            "replace_plan": "Ez az egész csoport számára lecseréli a tervet."
+        }
+    },
+    "btn": {
+        "crop_log": "Napló vágása kijelölésre",
+        "Edit Gear": "Felszerelés szerkesztése",
+        "All": "Összes",
+        "Save": "Mentés",
+        "Now": "Most",
+        "Saving": "Mentés folyamatban",
+        "Cancel": "Mégse",
+        "Stop": "Leállítás",
+        "Yes": "Igen",
+        "No": "Nem",
+        "Delete": "Törlés",
+        "Clear": "Tisztítás",
+        "Replace All": "Összes cseréje",
+        "Rename": "Átnevezés",
+        "Duplicate": "Duplikálás",
+        "New": "Új",
+        "Add": "Hozzáadás",
+        "Open": "Megnyitás",
+        "Record": "Rögzítés",
+        "Update": "Frissítés",
+        "Reset": "Visszaállítás",
+        "Connect": "Csatlakozás",
+        "Disconnect": "Leválasztás",
+        "Edit": "Szerkesztés",
+        "Select": "Kiválasztás",
+        "Leave": "Kilépés",
+        "Ok": "OK",
+        "Load_All": "Összes betöltése",
+        "Load_Selected": "Kijelöltek betöltése"
+    },
+    "Library": "Könyvtár",
+    "Search": "Keresés",
+    "Connected": "Csatlakozva",
+    "No Data": "Nincs adat",
+    "Empty": "Üres",
+    "Name": "Név",
+    "Collection": "Gyűjtemény",
+    "Waypoint": "Útvonalpont",
+    "Path": "Útvonal",
+    "no_waypoints_yet_long_press_to_add": "Még nincs hozzáadott útvonalpont...\n\nHosszú nyomással a térképen elkezdheted.",
+    "hint_collection_name": "Gyűjtemény neve",
+    "warning_empty": "Nem lehet üres",
+    "warning_name_in_use": "A név már használatban van",
+    "warning_unrecognized_format": "Ismeretlen formátum",
+    "warning_must_be_2_char": "Legalább 2 karakter legyen.",
+    "warning_err_parse": "Feldolgozási hiba",
+    "warning_no_undo": "Nem lehet visszavonni!",
+    "Report Fuel Level": "Üzemanyagszint jelentése",
+    "Report Fuel in Tank": "Üzemanyag jelentése a tartályban",
+    "gear": {
+        "Wing": "Szárny",
+        "wing unset": "szárny nincs beállítva",
+        "motor unset": "motor nincs beállítva",
+        "Size": "Méret",
+        "make_model": "Gyártó, Típus",
+        "Motor": "Motor",
+        "Engine": "Motor",
+        "Propeller": "Propeller",
+        "Tank": "Tartály",
+        "Bladder": "Zsák",
+        "other_details": "Egyéb részletek",
+        "other_details_example": "repülődoboz, sátorzsák, stb..."
+    },
+    "Date Range": "Dátumtartomány",
+    "Search Gear": "Felszerelés keresése",
+    "Telemetry": "Telemetria",
+    "Relative Distance": "Relatív távolság",
+    "Intercept": "Elfogás",
+    "No telemetry for this pilot.": "Nincs telemetria ehhez a pilótához.",
+    "Go to settings": "Ugrás a beállításokhoz",
+    "Please enable:": "Engedélyezd:",
+    "permission": "engedély",
+    "Detector": "Detektor",
+    "Route": "Útvonal",
+    "Reset Wind Detector": "Szélmérő visszaállítása",
+    "Slowly Turn ¼ Circle": "Forgás lassan ¼ kört",
+    "Tap to add to path": "Érintéssel hozzáadás az útvonalhoz",
+    "make_a_measurement": "Mérj a térképen,\nvagy válassz ki egy útvonalpontot.",
+    "ETA with Wind": "Érkezési idő széllel",
+    "No Arrival": "Nincs érkezés",
+    "dont_see_device": "Nem látod az eszközöd?",
+    "only_some_device_supported": "Jelenleg csak bizonyos eszközök támogatottak. Kérj támogatást Discordon.",
+    "Hide Waypoints": "Útvonalpontok elrejtése",
+    "Hide Wind": "Szél elrejtése",
+    "Lat, Long": "Szélesség, Hosszúság",
+    "Imperial": "Angolszász",
+    "Metric": "Metrikus",
+    "unit": {
+        "short": {
+            "UnitType": {
+                "speed": {
+                    "mph": "mph",
+                    "kts": "csomó",
+                    "kph": "km/h",
+                    "mps": "m/s"
+                },
+                "vario": {
+                    "fpm": "ft/perc",
+                    "fps": "ft/mp",
+                    "mps": "m/s"
+                },
+                "distFine": {
+                    "imperial": "láb",
+                    "metric": "m"
+                },
+                "distCoarse": {
+                    "imperial": "mérföld",
+                    "metric": "km"
+                },
+                "fuel": {
+                    "liter": "L",
+                    "gal": "gal",
+                    "kWh": "kWh"
+                }
+            }
+        },
+        "long": {
+            "UnitType": {
+                "speed": {
+                    "mph": "mérföld/óra",
+                    "kts": "csomó",
+                    "kph": "kilométer/óra",
+                    "mps": "méter/másodperc"
+                },
+                "vario": {
+                    "fpm": "láb/perc",
+                    "fps": "láb/másodperc",
+                    "mps": "méter/másodperc"
+                },
+                "distFine": {
+                    "imperial": "láb",
+                    "metric": "méter"
+                },
+                "distCoarse": {
+                    "imperial": "mérföld",
+                    "metric": "kilométer"
+                },
+                "fuel": {
+                    "liter": "liter",
+                    "gal": "gallon",
+                    "kWh": "kilowattóra"
+                }
+            }
+        }
+    },
+    "time": {
+        "hour": {
+            "long": {
+                "zero": "óra",
+                "one": "óra",
+                "many": "óra",
+                "other": "óra"
+            },
+            "short": {
+                "zero": "ó",
+                "one": "ó",
+                "many": "ó",
+                "other": "ó"
+            }
+        },
+        "minute": {
+            "long": {
+                "zero": "perc",
+                "one": "perc",
+                "many": "perc",
+                "other": "perc"
+            },
+            "short": {
+                "zero": "p",
+                "one": "p",
+                "many": "p",
+                "other": "p"
+            }
+        },
+        "second": {
+            "long": {
+                "zero": "másodperc",
+                "one": "másodperc",
+                "many": "másodperc",
+                "other": "másodperc"
+            },
+            "short": {
+                "zero": "mp",
+                "one": "mp",
+                "many": "mp",
+                "other": "mp"
+            }
+        },
+        "month": {
+            "short": {
+                "jan": "Jan",
+                "feb": "Febr",
+                "mar": "Márc",
+                "apr": "Ápr",
+                "may": "Máj",
+                "jun": "Jún",
+                "jul": "Júl",
+                "aug": "Aug",
+                "sep": "Szept",
+                "oct": "Okt",
+                "nov": "Nov",
+                "dec": "Dec"
+            }
+        },
+        "day": {
+            "short": {
+                "sun": "Vas",
+                "mon": "Hét",
+                "tue": "Kedd",
+                "wed": "Sze",
+                "thu": "Csüt",
+                "fri": "Pén",
+                "sat": "Szo"
+            }
+        }
+    }
+}

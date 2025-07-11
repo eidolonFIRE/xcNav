@@ -1,5 +1,5 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/units.dart';
 
@@ -28,7 +28,7 @@ class LogSummary extends StatelessWidget {
           padding: const EdgeInsets.only(right: 10),
           child: ListView(shrinkWrap: true, controller: scrollController, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text("Duration"),
+              Text("log_summary.Duration".tr()),
               Text.rich(
                   richHrMin(
                       duration: log.durationTime,
@@ -38,14 +38,14 @@ class LogSummary extends StatelessWidget {
                   textAlign: TextAlign.end)
             ]),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text("Distance"),
+              Text("log_summary.Distance".tr()),
               Text.rich(
                 richValue(UnitType.distCoarse, log.durationDist, decimals: 1, unitStyle: unitStyle),
                 textAlign: TextAlign.end,
               ),
             ]),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text("Avg Speed"),
+              Text("log_summary.Avg Speed".tr()),
               Text.rich(
                 richValue(UnitType.speed, log.meanSpd, decimals: 1, unitStyle: unitStyle),
                 textAlign: TextAlign.end,
@@ -55,21 +55,21 @@ class LogSummary extends StatelessWidget {
               height: 10,
             ),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text("Max Altitude"),
+              Text("log_summary.Max Altitude".tr()),
               Text.rich(
                 richValue(UnitType.distFine, log.maxAlt, decimals: 1, unitStyle: unitStyle),
                 textAlign: TextAlign.end,
               ),
             ]),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text("Best 30sec Climb"),
+              Text("log_summary.Best 30sec Climb".tr()),
               Text.rich(
                 richValue(UnitType.vario, log.bestClimb, decimals: 1, unitStyle: unitStyle),
                 textAlign: TextAlign.end,
               ),
             ]),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text("Total Elev Gain"),
+              Text("log_summary.Total Elev Gain".tr()),
               Text.rich(
                 richValue(UnitType.distFine, log.altGained, decimals: 0, unitStyle: unitStyle),
                 textAlign: TextAlign.end,
@@ -79,14 +79,14 @@ class LogSummary extends StatelessWidget {
               height: 10,
             ),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text("Max G-Force"),
+              Text("log_summary.Max G-Force".tr()),
               Text(
                 printDouble(value: log.maxG(), digits: 2, decimals: 2),
                 textAlign: TextAlign.end,
               ),
             ]),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text("Duration > 2G"),
+              Text("log_summary.Duration_2G".tr()),
               Text.rich(
                 richMinSec(duration: log.durationOver2G, unitStyle: unitStyle),
                 textAlign: TextAlign.end,
@@ -100,7 +100,7 @@ class LogSummary extends StatelessWidget {
               ),
             if (showFuelStats)
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text("Fuel Burn Rate"),
+                Text("log_summary.Fuel Burn Rate".tr()),
                 Text.rich(TextSpan(children: [
                   TextSpan(text: printValue(UnitType.fuel, log.sumFuelStat?.rate ?? 0, decimals: 1) ?? "?"),
                   TextSpan(text: fuelRateStr, style: unitStyle)
@@ -108,7 +108,7 @@ class LogSummary extends StatelessWidget {
               ]),
             if (showFuelStats)
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text("Fuel Efficiency"),
+                Text("log_summary.Fuel Efficiency".tr()),
                 Text.rich(TextSpan(children: [
                   TextSpan(
                       text: printValue(

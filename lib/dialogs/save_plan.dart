@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/models/flight_plan.dart';
@@ -32,23 +33,23 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
   return showDialog<bool?>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text("Save Waypoints to Library${isSavingFirst ? " before they are replaced?" : ""}"),
+      title: Text("dialog.confirm.save_waypoints".tr()),
       content: Form(
         key: formKey,
         child: TextFormField(
           textInputAction: TextInputAction.done,
           controller: filename,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: "collection name",
+          decoration: InputDecoration(
+            hintText: "hint_collection_name".tr(),
             border: OutlineInputBorder(),
           ),
           style: const TextStyle(fontSize: 20),
           validator: (value) {
             if (value != null) {
-              if (value.trim().isEmpty) return "Must not be empty";
+              if (value.trim().isEmpty) return "warning_empty".tr();
               if (Provider.of<Plans>(context, listen: false).hasPlan(value)) {
-                return "Name already in use";
+                return "warning_name_in_use".tr();
               }
             }
             return null;
@@ -59,7 +60,7 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
       actionsAlignment: MainAxisAlignment.spaceAround,
       actions: [
         ElevatedButton.icon(
-            label: Text(isSavingFirst ? "No" : "Cancel"),
+            label: Text(isSavingFirst ? "btn.No".tr() : "btn.Cancel".tr()),
             onPressed: () => {Navigator.pop(context, false)},
             icon: const Icon(
               Icons.cancel,
@@ -67,7 +68,7 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
               color: Colors.red,
             )),
         ElevatedButton.icon(
-            label: const Text("Save"),
+            label: Text("btn.Save".tr()),
             onPressed: () => onDone(context),
             icon: const Icon(
               Icons.save,

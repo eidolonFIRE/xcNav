@@ -1,0 +1,348 @@
+{
+    "main_menu": {
+        "group": "Group",
+        "checklist": "Checklist",
+        "weather": "Weather",
+        "log": "Log",
+        "settings": "Settings",
+        "devices": "Devices",
+        "about": "About"
+    },
+    "audio_cue": {
+        "Off": "Off",
+        "Less": "Less",
+        "Med": "Med",
+        "More": "More",
+        "My Telemetry": "My Telemetry",
+        "Next Waypoint": "Next Waypoint",
+        "Group Awareness": "Group Awareness",
+        "Report Fuel": "Report Fuel",
+        "Fuel Level": "Fuel Level"
+    },
+    "Requires Restarting xcNav": "Requires Restarting xcNav",
+    "about_description": "This project was started by Caleb Johnson with the goal of putting all the tools for coordinating a group, cross-country flight into one app. \n\nThis app is free and open source forever. We rely on your contributions to keep it alive.\n\nCheckout the resources below to get involved.",
+    "Code": "Code",
+    "Chat": "Chat",
+    "Settings": "Settings",
+    "settings": {
+        "group": {
+            "General": "General",
+            "UI": "UI",
+            "Display Units": "Display Units",
+            "Misc": "Misc",
+            "Debug Tools": "Debug Tools",
+            "Experimental": "Experimental"
+        },
+        "title": {
+            "Language Override": "Language Override",
+            "ground_support_mode": "Ground Support Mode",
+            "auto_record_flight": "Auto Record Flight",
+            "primary_altimeter": "Primary Altimeter",
+            "altimeter_vsi_thresh": "Altimeter Arrow Threshold (m/s)",
+            "right_hand_ui": "Right-handed UI",
+            "always_show_pilot_names": "Always Show Pilot Names",
+            "group_view_includes_waypoints": "Group View Includes Waypoints",
+            "Distance": "Distance",
+            "Speed": "Speed",
+            "Vario": "Vario",
+            "Fuel": "Fuel",
+            "adsb_proximity_profile": "ADSB Proximity Profile",
+            "filter_tail_numbers": "Filter Tail Number(s)",
+            "test_audio_cues": "Test Audio Cues",
+            "opt_out_usage_stats": "Opt-out of anonymous usage data",
+            "show_servocarb": "Show ServoCarb Menu",
+            "spoof_location": "Spoof Location",
+            "clear_map_cache": "Clear Map Cache",
+            "clear_avatar_cache": "Clear Avatar Cache",
+            "erase_identity": "Erase Identity"
+        }
+    },
+    "Distance": "Distance",
+    "Speed": "Speed",
+    "Vario": "Vario",
+    "Fuel": "Fuel",
+    "External Link": "External Link",
+    "start": "start",
+    "end": "end",
+    "off": "off",
+    "small": "small",
+    "medium": "medium",
+    "large": "large",
+    "xlarge": "xlarge",
+    "Group Members": "Group Members",
+    "Join Code": "Join Code",
+    "Current Group": "Current Group",
+    "Recent Groups": "Recent Groups",
+    "dialog_past_group_empty": "Nothing here...\nHave you been in a group recently?",
+    "Checklist": "Checklist",
+    "empty_list": "Wow, such empty!",
+    "log_summary": {
+        "Distance": "Distance",
+        "Fuel Burn Rate": "Fuel Burn Rate",
+        "Fuel Efficiency": "Fuel Efficiency",
+        "Duration_2G": "Duration > 2G",
+        "Duration": "Duration",
+        "Avg Speed": "Avg Speed",
+        "Max Altitude": "Max Altitude",
+        "Best 30sec Climb": "Best 30sec Climb",
+        "Total Elev Gain": "Total Elev Gain",
+        "Max G-Force": "Max G-Force"
+    },
+    "Summary": "Summary",
+    "Altitude": "Altitude",
+    "G-Force": "G-Force",
+    "Laurch": "Launch",
+    "Landing": "Landing",
+    "dialog_select_range_with_slider": "Use the range slider to select the duration of the log to keep.",
+    "Invalid Selection": "Invalid Selection",
+    "flight_duration_hist": "Flight Duration (histogram)",
+    "Monthly Totals": "Monthly Totals",
+    "Fuel Insights": "Fuel Insights",
+    "Burn Rate": "Burn\nRate",
+    "efficiency_abbreviated": "Eff.",
+    "altitude_abbreviated": "Alt.",
+    "altitude_gained_abbreviated": "Alt. Gained",
+    "Flight": "Flight",
+    "Flights": "Flights",
+    "Time": "Time",
+    "Total": "Total",
+    "Average": "Average",
+    "Ambient Pressure": "Ambient Pressure",
+    "Density Altitude": "Density Altitude",
+    "GPS Altitude": "GPS Altitude",
+    "dialog": {
+        "confirm": {
+            "sure": "Are you sure?",
+            "manual_stop": "Manually stop?",
+            "trim_log": "Trim log to selection?",
+            "save_waypoints": "Save Waypoints to Library?",
+            "leave_group": "Leave Group?",
+            "please": "Please Confirm",
+            "check_clear_identity": "Are you sure you want to clear your Identity?",
+            "check_clear_avatars": "Are you sure you want to clear all cached avatars?",
+            "delete_log": "Are you sure you want to delete this log?",
+            "delete_plan": "Are you sure you want to delete this plan?"
+        },
+        "warn": {
+            "clear_all_waypoints_in_group": "This will clear all waypoints for everyone in the group!",
+            "replace_plan": "This will replace the plan for everyone in the group."
+        }
+    },
+    "btn": {
+        "crop_log": "Crop Log to Selection",
+        "Edit Gear": "Edit Gear",
+        "All": "All",
+        "Save": "Save",
+        "Now": "Now",
+        "Saving": "Saving",
+        "Cancel": "Cancel",
+        "Stop": "Stop",
+        "Yes": "Yes",
+        "No": "No",
+        "Delete": "Delete",
+        "Clear": "Clear",
+        "Replace All": "Replace All",
+        "Rename": "Rename",
+        "Duplicate": "Duplicate",
+        "New": "New",
+        "Add": "Add",
+        "Open": "Open",
+        "Record": "Record",
+        "Update": "Update",
+        "Reset": "Reset",
+        "Connect": "Connect",
+        "Disconnect": "Disconnect",
+        "Edit": "Edit",
+        "Select": "Select",
+        "Leave": "Leave",
+        "Ok": "Ok",
+        "Load_All": "Load All",
+        "Load_Selected": "Load Selected"
+    },
+    "Library": "Library",
+    "Search": "Search",
+    "Connected": "Connected",
+    "No Data": "No Data",
+    "Empty": "Empty",
+    "Name": "Name",
+    "Collection": "Collection",
+    "Waypoint": "Waypoint",
+    "Path": "Path",
+    "no_waypoints_yet_long_press_to_add": "No waypoints added yet... \n\nLong-press on the map to begin.",
+    "hint_collection_name": "Collection Name",
+    "warning_empty": "Must not be empty",
+    "warning_name_in_use": "Name already in use",
+    "warning_unrecognized_format": "Unrecognized Format",
+    "warning_must_be_2_char": "Must be at least 2 characters.",
+    "warning_err_parse": "Error Parsing",
+    "warning_no_undo": "No Undo!",
+    "Report Fuel Level": "Report Fuel Level",
+    "Report Fuel in Tank": "Report Fuel in Tank",
+    "gear": {
+        "Wing": "Wing",
+        "wing unset": "wing unset",
+        "motor unset": "motor unset",
+        "Size": "Size",
+        "make_model": "Make, Model",
+        "Motor": "Motor",
+        "Engine": "Engine",
+        "Propeller": "Prop",
+        "Tank": "Tank",
+        "Bladder": "Bladder",
+        "other_details": "Other Details",
+        "other_details_example": "flight box, camping bag, etc..."
+    },
+    "Date Range": "Date Range",
+    "Search Gear": "Search Gear",
+    "Telemetry": "Telemetry",
+    "Relative Distance": "Relative Distance",
+    "Intercept": "Intercept",
+    "No telemetry for this pilot.": "No telemetry for this pilot.",
+    "Go to settings": "Go to settings",
+    "Please enable:": "Please enable:",
+    "permission": "permission",
+    "Detector": "Detector",
+    "Route": "Route",
+    "Reset Wind Detector": "Reset Wind Detector",
+    "Slowly Turn ¼ Circle": "Slowly Turn ¼ Circle",
+    "Tap to add to path": "Tap to add to path",
+    "make_a_measurement": "Make a measurement on the map,\nor select a waypoint.",
+    "ETA with Wind": "ETA with Wind",
+    "No Arrival": "No Arrival",
+    "dont_see_device": "Don't see your device?",
+    "only_some_device_supported": "Currently only specific devices are supported. Visit the discord to request support for your device.",
+    "Hide Waypoints": "Hide Waypoints",
+    "Hide Wind": "Hide Wind",
+    "Lat, Long": "Lat, Long",
+    "Imperial": "Imperial",
+    "Metric": "Metric",
+    "unit": {
+        "short": {
+            "UnitType": {
+                "speed": {
+                    "mph": "mph",
+                    "kts": "kts",
+                    "kph": "kph",
+                    "mps": "m/s"
+                },
+                "vario": {
+                    "fpm": "ft/m",
+                    "fps": "ft/s",
+                    "mps": "m/s"
+                },
+                "distFine": {
+                    "imperial": "ft",
+                    "metric": "m"
+                },
+                "distCoarse": {
+                    "imperial": "mi",
+                    "metric": "km"
+                },
+                "fuel": {
+                    "liter": "L",
+                    "gal": "gal",
+                    "kWh": "kWh"
+                }
+            }
+        },
+        "long": {
+            "UnitType": {
+                "speed": {
+                    "mph": "miles per hour",
+                    "kts": "knots",
+                    "kph": "kilometers per hour",
+                    "mps": "meters per second"
+                },
+                "vario": {
+                    "fpm": "feet per minute",
+                    "fps": "feet per second",
+                    "mps": "meters per second"
+                },
+                "distFine": {
+                    "imperial": "feet",
+                    "metric": "meters"
+                },
+                "distCoarse": {
+                    "imperial": "miles",
+                    "metric": "kilometers"
+                },
+                "fuel": {
+                    "liter": "liters",
+                    "gal": "gallons",
+                    "kWh": "kilowatt hours"
+                }
+            }
+        }
+    },
+    "time": {
+        "hour": {
+            "long": {
+                "zero": "hours",
+                "one": "hour",
+                "many": "hours",
+                "other": "hours"
+            },
+            "short": {
+                "zero": "hrs",
+                "one": "hr",
+                "many": "hrs",
+                "other": "hrs"
+            }
+        },
+        "minute": {
+            "long": {
+                "zero": "minutes",
+                "one": "minute",
+                "many": "minutes",
+                "other": "minutes"
+            },
+            "short": {
+                "zero": "mins",
+                "one": "min",
+                "many": "mins",
+                "other": "mins"
+            }
+        },
+        "second": {
+            "long": {
+                "zero": "seconds",
+                "one": "second",
+                "many": "seconds",
+                "other": "seconds"
+            },
+            "short": {
+                "zero": "secs",
+                "one": "sec",
+                "many": "secs",
+                "other": "secs"
+            }
+        },
+        "month": {
+            "short": {
+                "jan": "Jan",
+                "feb": "Feb",
+                "mar": "Mar",
+                "apr": "Apr",
+                "may": "May",
+                "jun": "Jun",
+                "jul": "Jul",
+                "aug": "Aug",
+                "sep": "Sep",
+                "oct": "Oct",
+                "nov": "Nov",
+                "dec": "Dec"
+            }
+        },
+        "day": {
+            "short": {
+                "sun": "Sun",
+                "mon": "Mon",
+                "tue": "Tue",
+                "wed": "Wed",
+                "thu": "Thu",
+                "fri": "Fri",
+                "sat": "Sat"
+            }
+        }
+    }
+}

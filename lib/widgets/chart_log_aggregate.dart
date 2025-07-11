@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -22,28 +23,28 @@ class ChartLogAggregate extends StatelessWidget {
   final Map<int, LogStat> totals = {};
 
   final _dayLexical = {
-    1: "Sun",
-    2: "Mon",
-    3: "Tue",
-    4: "Wed",
-    5: "Thu",
-    6: "Fri",
-    7: "Sat",
+    1: "time.day.short.sun".tr(),
+    2: "time.day.short.mon".tr(),
+    3: "time.day.short.tue".tr(),
+    4: "time.day.short.wed".tr(),
+    5: "time.day.short.thu".tr(),
+    6: "time.day.short.fri".tr(),
+    7: "time.day.short.sat".tr(),
   };
 
   final _monthLexical = {
-    1: "Jan",
-    2: "Feb",
-    3: "Mar",
-    4: "Apr",
-    5: "May",
-    6: "Jun",
-    7: "Jul",
-    8: "Aug",
-    9: "Sep",
-    10: "Oct",
-    11: "Nov",
-    12: "Dec",
+    1: "time.month.short.jan".tr(),
+    2: "time.month.short.feb".tr(),
+    3: "time.month.short.mar".tr(),
+    4: "time.month.short.apr".tr(),
+    5: "time.month.short.may".tr(),
+    6: "time.month.short.jun".tr(),
+    7: "time.month.short.jul".tr(),
+    8: "time.month.short.aug".tr(),
+    9: "time.month.short.sep".tr(),
+    10: "time.month.short.oct".tr(),
+    11: "time.month.short.nov".tr(),
+    12: "time.month.short.dec".tr(),
   };
 
   Map<int, String> get lexical => mode == ChartLogAggregateMode.week ? _dayLexical : _monthLexical;
@@ -119,8 +120,8 @@ class ChartLogAggregate extends StatelessWidget {
               ),
             ),
             rightTitles: AxisTitles(
-                axisNameWidget: const Text(
-                  "Duration (hr)",
+                axisNameWidget: Text(
+                  "${"Duration".tr()} (${"time.hour.short.one".tr()})",
                   style: TextStyle(color: Colors.amber),
                 ),
                 sideTitles: SideTitles(
@@ -134,8 +135,8 @@ class ChartLogAggregate extends StatelessWidget {
               sideTitles: SideTitles(showTitles: false),
             ),
             leftTitles: AxisTitles(
-                axisNameWidget: const Text(
-                  "Flights",
+                axisNameWidget: Text(
+                  "Flights".tr(),
                   style: TextStyle(color: Colors.blue),
                 ),
                 sideTitles: SideTitles(

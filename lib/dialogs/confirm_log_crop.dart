@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/units.dart';
 
@@ -7,15 +8,15 @@ Future<bool?> confirmLogCrop(BuildContext context, {required Duration trimStart,
       builder: (context) => AlertDialog(
             title: Text.rich(TextSpan(children: [
               TextSpan(
-                text: "Trim log to selection?",
+                text: "dialog.confirm.trim_log".tr(),
                 style: const TextStyle(color: Colors.amber),
               ),
               WidgetSpan(
                   child: Container(
                 width: 20,
               )),
-              const TextSpan(
-                text: "No Undo!",
+              TextSpan(
+                text: "warning_no_undo".tr(),
                 style: TextStyle(color: Colors.red),
               ),
             ])),
@@ -33,14 +34,14 @@ Future<bool?> confirmLogCrop(BuildContext context, {required Duration trimStart,
                     color: Colors.red,
                   ),
                   onPressed: () => Navigator.pop(context, false),
-                  label: const Text("Cancel")),
+                  label: Text("btn.Cancel".tr())),
               ElevatedButton.icon(
                   icon: const Icon(
                     Icons.check,
                     color: Colors.lightGreen,
                   ),
                   onPressed: () => Navigator.pop(context, true),
-                  label: const Text("Yes"))
+                  label: Text("btn.Yes".tr()))
             ],
           ));
 }

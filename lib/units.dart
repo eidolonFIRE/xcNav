@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/util.dart';
 
@@ -39,73 +40,23 @@ enum DisplayUnitsFuel {
   kWh,
 }
 
-const Map<bool, Map<UnitType, dynamic>> _unitStr = {
-  false: {
-    UnitType.speed: {
-      DisplayUnitsSpeed.mph: "mph",
-      DisplayUnitsSpeed.kts: "kts",
-      DisplayUnitsSpeed.kph: "kph",
-      DisplayUnitsSpeed.mps: "m/s",
-    },
-    UnitType.vario: {
-      DisplayUnitsVario.fpm: "ft/m",
-      DisplayUnitsVario.fps: "ft/s",
-      DisplayUnitsVario.mps: "m/s",
-    },
-    UnitType.distFine: {
-      DisplayUnitsDist.imperial: "ft",
-      DisplayUnitsDist.metric: "m",
-    },
-    UnitType.distCoarse: {
-      DisplayUnitsDist.imperial: "mi",
-      DisplayUnitsDist.metric: "km",
-    },
-    UnitType.fuel: {
-      DisplayUnitsFuel.liter: "L",
-      DisplayUnitsFuel.gal: "gal",
-      DisplayUnitsFuel.kWh: "kWh",
-    }
-  },
-  true: {
-    UnitType.speed: {
-      DisplayUnitsSpeed.mph: "miles per hour",
-      DisplayUnitsSpeed.kts: "knots",
-      DisplayUnitsSpeed.kph: "kilometers per hour",
-      DisplayUnitsSpeed.mps: "meters per second",
-    },
-    UnitType.vario: {
-      DisplayUnitsVario.fpm: "feet per minute",
-      DisplayUnitsVario.fps: "feet per second",
-      DisplayUnitsVario.mps: "meters per second",
-    },
-    UnitType.distFine: {
-      DisplayUnitsDist.imperial: "feet",
-      DisplayUnitsDist.metric: "meters",
-    },
-    UnitType.distCoarse: {
-      DisplayUnitsDist.imperial: "miles",
-      DisplayUnitsDist.metric: "kilometers",
-    },
-    UnitType.fuel: {
-      DisplayUnitsFuel.liter: "liters",
-      DisplayUnitsFuel.gal: "gallons",
-      DisplayUnitsFuel.kWh: "kilowatt hours"
-    }
-  }
-};
-
-String getUnitStr(UnitType type, {bool lexical = false}) {
+String getUnitStr(UnitType type, {bool lexical = false, dynamic override}) {
   switch (type) {
     case UnitType.speed:
-      return _unitStr[lexical]![type][_unitSpeed];
+      return "unit.${lexical ? "long" : "short"}.${type.toString()}.${(override ?? _unitSpeed).toString().split(".").last}"
+          .tr();
     case UnitType.vario:
-      return _unitStr[lexical]![type][_unitVario];
+      return "unit.${lexical ? "long" : "short"}.${type.toString()}.${(override ?? _unitVario).toString().split(".").last}"
+          .tr();
     case UnitType.distFine:
-      return _unitStr[lexical]![type][_unitDist];
+      return "unit.${lexical ? "long" : "short"}.${type.toString()}.${(override ?? _unitDist).toString().split(".").last}"
+          .tr();
     case UnitType.distCoarse:
-      return _unitStr[lexical]![type][_unitDist];
+      return "unit.${lexical ? "long" : "short"}.${type.toString()}.${(override ?? _unitDist).toString().split(".").last}"
+          .tr();
     case UnitType.fuel:
-      return _unitStr[lexical]![type][_unitFuel];
+      return "unit.${lexical ? "long" : "short"}.${type.toString()}.${(override ?? _unitFuel).toString().split(".").last}"
+          .tr();
   }
 }
 
@@ -113,7 +64,7 @@ String get fuelRateStr {
   if (_unitFuel == DisplayUnitsFuel.kWh) {
     return " kW";
   } else {
-    return " ${getUnitStr(UnitType.fuel)}/hr";
+    return " ${getUnitStr(UnitType.fuel)}/${"time.hour.short.one"}";
   }
 }
 
@@ -209,9 +160,9 @@ String printHrMinLexical(Duration duration) {
   int min = duration.inMinutes - duration.inHours * 60;
 
   if (hr > 0) {
-    return "$hr hour${hr == 1 ? "" : "s"}${min > 0 ? " $min minute${min == 1 ? "" : "s"}" : ""}";
+    return "$hr ${"time.hour.long".plural(hr)} $min ${"time.minute.long".plural(min)}";
   } else {
-    return "$min minute${min == 1 ? "" : "s"}";
+    return "$min ${"time.minute.long".plural(min)}";
   }
 }
 
@@ -225,14 +176,20 @@ TextSpan richHrMin({required Duration? duration, TextStyle? valueStyle, TextStyl
     if (hr > 0) {
       return TextSpan(children: [
         TextSpan(text: hr.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "hr " : "h ", style: resolveSmallerStyle(unitStyle, valueStyle)),
+        TextSpan(
+            text: "${"time.hour.${longUnits ? "long" : "short"}".plural(hr)} ",
+            style: resolveSmallerStyle(unitStyle, valueStyle)),
         TextSpan(text: min.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "min" : "m", style: resolveSmallerStyle(unitStyle, valueStyle)),
+        TextSpan(
+            text: "${"time.minute.${longUnits ? "long" : "short"}".plural(min)} ",
+            style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     } else {
       return TextSpan(children: [
         TextSpan(text: min.toString(), style: valueStyle),
-        TextSpan(text: "min", style: resolveSmallerStyle(unitStyle, valueStyle)),
+        TextSpan(
+            text: "${"time.minute.${longUnits ? "long" : "short"}".plural(min)} ",
+            style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     }
   }
@@ -249,14 +206,20 @@ TextSpan richMinSec(
     if (min > 0) {
       return TextSpan(children: [
         TextSpan(text: min.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "min " : "m ", style: resolveSmallerStyle(unitStyle, valueStyle)),
+        TextSpan(
+            text: "${"time.minute.${longUnits ? "long" : "short"}".plural(min)} ",
+            style: resolveSmallerStyle(unitStyle, valueStyle)),
         TextSpan(text: sec.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "sec" : "s", style: resolveSmallerStyle(unitStyle, valueStyle)),
+        TextSpan(
+            text: "${"time.second.${longUnits ? "long" : "short"}".plural(sec)} ",
+            style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     } else {
       return TextSpan(children: [
         TextSpan(text: sec.toString(), style: valueStyle),
-        TextSpan(text: longUnits ? "sec" : "s", style: resolveSmallerStyle(unitStyle, valueStyle)),
+        TextSpan(
+            text: "${"time.second.${longUnits ? "long" : "short"}".plural(sec)} ",
+            style: resolveSmallerStyle(unitStyle, valueStyle)),
       ]);
     }
   }

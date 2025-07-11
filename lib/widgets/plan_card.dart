@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -48,10 +49,10 @@ class _PlanCardState extends State<PlanCard> {
         context: context,
         builder: (BuildContext ctx) {
           return AlertDialog(
-            title: const Text('Please Confirm'),
-            content: const Text('Are you sure you want to delete this plan?'),
+            title: Text('dialog.confirm.please'.tr()),
+            content: Text('dialog.confirm.delete_plan'.tr()),
             actions: [
-              // The "Yes" button
+              // The "btn.Yes" button
               TextButton.icon(
                   onPressed: () {
                     Provider.of<Plans>(context, listen: false).deletePlan(widget.plan.name);
@@ -61,7 +62,7 @@ class _PlanCardState extends State<PlanCard> {
                     Icons.delete_forever,
                     color: Colors.red,
                   ),
-                  label: const Text('Delete')),
+                  label: Text('btn.Delete'.tr())),
               TextButton(
                   onPressed: () {
                     // Close the dialog
@@ -107,10 +108,10 @@ class _PlanCardState extends State<PlanCard> {
         context: context,
         builder: (ctx) {
           return AlertDialog(
-            title: const Text('Please Confirm'),
-            content: const Text('This will replace the plan for everyone in the group.'),
+            title: Text('dialog.confirm.please'.tr()),
+            content: Text('dialog.warn.replace_plan'.tr()),
             actions: [
-              // The "Yes" button
+              // The "btn.Yes" button
               ElevatedButton.icon(
                   onPressed: () {
                     Navigator.of(context).pop(true);
@@ -119,12 +120,12 @@ class _PlanCardState extends State<PlanCard> {
                     Icons.check,
                     color: Colors.amber,
                   ),
-                  label: const Text('Replace')),
+                  label: Text('btn.Replace'.tr())),
               ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop(false);
                   },
-                  child: const Text('Cancel'))
+                  child: Text('btn.Cancel'.tr()))
             ],
           );
         });
@@ -209,7 +210,7 @@ class _PlanCardState extends State<PlanCard> {
                       }
                     }),
                     icon: const Icon(Icons.more_horiz),
-                    itemBuilder: (context) => const <PopupMenuEntry<String>>[
+                    itemBuilder: (context) => <PopupMenuEntry<String>>[
                       // PopupMenuItem(
                       //   enabled: false,
                       //   height: 20,
@@ -235,7 +236,7 @@ class _PlanCardState extends State<PlanCard> {
                           value: "replace",
                           child: ListTile(
                               title: Text(
-                                "Replace All",
+                                "btn.Replace All".tr(),
                                 style: TextStyle(color: Colors.amber, fontSize: 20),
                               ),
                               leading: Icon(
@@ -250,7 +251,7 @@ class _PlanCardState extends State<PlanCard> {
                       PopupMenuItem(
                           value: "edit",
                           child: ListTile(
-                              title: Text("Edit", style: TextStyle(fontSize: 20)),
+                              title: Text("btn.Edit".tr(), style: TextStyle(fontSize: 20)),
                               leading: Icon(
                                 Icons.pin_drop,
                                 size: 28,
@@ -260,14 +261,14 @@ class _PlanCardState extends State<PlanCard> {
                       PopupMenuItem(
                           value: "rename",
                           child: ListTile(
-                            title: Text("Rename", style: TextStyle(fontSize: 20)),
+                            title: Text("btn.Rename".tr(), style: TextStyle(fontSize: 20)),
                             leading: Icon(Icons.edit, size: 30),
                           )),
                       // --- Option: Duplicate
                       PopupMenuItem(
                           value: "duplicate",
                           child: ListTile(
-                            title: Text("Duplicate", style: TextStyle(fontSize: 20)),
+                            title: Text("btn.Duplicate".tr(), style: TextStyle(fontSize: 20)),
                             leading: Icon(
                               Icons.copy_all,
                               size: 28,
@@ -281,7 +282,7 @@ class _PlanCardState extends State<PlanCard> {
                           value: "delete",
                           child: ListTile(
                               title: Text(
-                                "Delete",
+                                "btn.Delete".tr(),
                                 style: TextStyle(color: Colors.red, fontSize: 20),
                               ),
                               leading: Icon(
@@ -311,7 +312,7 @@ class _PlanCardState extends State<PlanCard> {
                       options: MapOptions(
                         onMapReady: () => setState(
                           () {
-                            debugPrint("Mapready");
+                            debugPrint("Map Ready");
                             mapReady = true;
                           },
                         ),
@@ -394,7 +395,7 @@ class _PlanCardState extends State<PlanCard> {
                             color: Colors.lightGreen,
                           ),
                           label: Text(
-                            "Load ${checkedElements.isEmpty ? "All" : "Selected (${checkedElements.length})"}",
+                            "btn.Load_${checkedElements.isEmpty ? "All" : "Selected"}".tr(),
                             style: const TextStyle(fontSize: 18),
                           )),
                     ),
