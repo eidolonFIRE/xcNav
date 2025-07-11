@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:clock/clock.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
@@ -44,7 +45,9 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
 
   List<ElevSample?>? prevSamples;
 
-  TextEditingController barometerTextController = TextEditingController();
+  final barometerTextController = TextEditingController();
+  final barometerOverrideTextController =
+      TextEditingController(text: settingsMgr.barometerOffset.value.toStringAsFixed(2));
 
   List<Duration?> lookBehindOptions = [
     null,
@@ -123,6 +126,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                   ),
                 ),
               ),
+
             // --- Barometer control
             ListTile(
               minVerticalPadding: 20,
@@ -133,15 +137,20 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                 IconButton(
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
-                      if (myTelemetry.geo != null) myTelemetry.fetchAmbPressure(myTelemetry.geo!.latlng);
+                      if (myTelemetry.geo != null) {
+                        myTelemetry.snapBarometerTo(settingsMgr.ambientPressureSource.value,
+                            latlng: myTelemetry.geo?.latlng);
+                      }
                     },
                     iconSize: 18,
-                    icon: myTelemetry.baroFromWeatherkit
-                        ? const Icon(Icons.public, color: Colors.lightGreen)
-                        : const Icon(
-                            Icons.public_off,
-                            color: Colors.red,
-                          )),
+                    icon: settingsMgr.ambientPressureSource.value == BarometerSrc.weatherkit
+                        ? (myTelemetry.baroFromWeatherkit
+                            ? const Icon(Icons.public, color: Colors.lightGreen)
+                            : const Icon(
+                                Icons.public_off,
+                                color: Colors.red,
+                              ))
+                        : Icon(Icons.refresh)),
                 Text(
                   printDouble(value: myTelemetry.baroAmbient?.pressure ?? 1013.25, digits: 4, decimals: 2),
                   style:

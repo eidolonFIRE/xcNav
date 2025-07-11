@@ -54,9 +54,13 @@
             "spoof_location": "Spoof Location",
             "clear_map_cache": "Clear Map Cache",
             "clear_avatar_cache": "Clear Avatar Cache",
-            "erase_identity": "Erase Identity"
+            "erase_identity": "Erase Identity",
+            "barometer_offset": "Barometer Offset",
+            "ambient_pressure_source": "Ambient Pressure Source"
         }
     },
+    "WeatherKit": "WeatherKit",
+    "Snap To Ground": "Snap To Ground",
     "Distance": "Distance",
     "Speed": "Speed",
     "Vario": "Vario",

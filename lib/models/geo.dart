@@ -12,6 +12,14 @@ double altFromBaro(double pressure, double? ambient) {
   return 145366.45 * (1 - pow(pressure / amb, 0.190284)) / meters2Feet;
 }
 
+double ambientFromAlt(double altitudeMeters, double pressure) {
+  const double exponent = 0.190284;
+  const double meters2Feet = 3.28084; // assuming this was defined somewhere
+  final double scale = 145366.45 / meters2Feet;
+  final double term = 1 - (altitudeMeters / scale);
+  return pressure / pow(term, 1 / exponent);
+}
+
 class Geo {
   double lat = 0;
   double lng = 0;

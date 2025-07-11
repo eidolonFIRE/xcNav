@@ -7,6 +7,7 @@ import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:xcnav/locale.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 
 // Providers
 import 'package:xcnav/providers/profile.dart';
@@ -304,6 +305,17 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                   items: LanguageOverride.values
                                                       .map((e) => DropdownMenuItem(
                                                           value: e, child: Text(languageNames[e] ?? "None")))
+                                                      .toList());
+                                              break;
+                                            case "BarometerSrc":
+                                              trailing = DropdownButton<BarometerSrc>(
+                                                  onChanged: (value) =>
+                                                      {e.config!.value = value ?? e.config!.defaultValue},
+                                                  value: e.config!.value,
+                                                  items: BarometerSrc.values
+                                                      .map((e) => DropdownMenuItem(
+                                                          value: e,
+                                                          child: Text(barometerSrcString[e] ?? "Unknown").tr()))
                                                       .toList());
                                               break;
                                             default:

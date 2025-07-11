@@ -41,6 +41,18 @@ import 'package:xcnav/util.dart';
 
 enum FlightEventType { init, takeoff, land }
 
+enum BarometerSrc {
+  weatherkit,
+  snapToGround,
+  gpsAlt,
+}
+
+final Map<BarometerSrc, String> barometerSrcString = {
+  BarometerSrc.weatherkit: "WeatherKit",
+  BarometerSrc.snapToGround: "Snap To Ground",
+  BarometerSrc.gpsAlt: "GPS Altitude",
+};
+
 /// Meters
 double densityAlt(BarometerEvent ambientPressure, double ambientTemp) {
   return 145442.16 *
@@ -282,7 +294,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     listenBaro = barometerEventStream(samplingPeriod: SensorInterval.normalInterval).listen((event) {
       // Handle barometer changes (run the vario)
       final baroPrev = baro;
-      baro = event;
+      baro = BarometerEvent(event.pressure + settingsMgr.barometerOffset.value, event.timestamp);
+      ;
       double vario = 0;
       if (baroPrev != null && baroPrev.timestamp.isBefore(baro!.timestamp)) {
         vario = (altFromBaro(baro!.pressure, baroAmbient?.pressure) -
@@ -605,6 +618,24 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     _sumFuelStat = null;
   }
 
+  void snapBarometerTo(BarometerSrc src, {LatLng? latlng}) {
+    switch (src) {
+      case BarometerSrc.weatherkit:
+        if (latlng != null) {
+          fetchAmbPressure(latlng);
+        }
+
+      case BarometerSrc.snapToGround:
+        debugPrint("Snapping ambient pressure to ground.");
+        baroAmbient =
+            BarometerEvent(ambientFromAlt(geo!.ground ?? geo?.altGps ?? 0, baro?.pressure ?? 1013.25), clock.now());
+        break;
+      case BarometerSrc.gpsAlt:
+        debugPrint("Snapping ambient pressure to gps altitude. ${geo?.altGps}");
+        baroAmbient = BarometerEvent(ambientFromAlt(geo?.altGps ?? 0, baro?.pressure ?? 1013.25), clock.now());
+    }
+  }
+
   void fetchAmbPressure(LatLng latlng, {force = false}) async {
     // First check if we've recently
     if (!force) {
@@ -644,6 +675,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             ambientTemperature = payload["currentWeather"]["temperature"] * 9 / 5 + 32;
             debugPrint("Ambient pressure found: ${baroAmbient?.pressure} ( ${ambientTemperature}F )");
             baroFromWeatherkit = true;
+            baroAmbientRequestCount = 0;
 
             // Save for later
             SharedPreferences.getInstance().then((prefs) {
@@ -690,7 +722,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     // fetch ambient baro from weather service
     if (baroAmbient == null && baroAmbientRequestCount < 10) {
-      fetchAmbPressure(geo!.latlng);
+      snapBarometerTo(settingsMgr.ambientPressureSource.value, latlng: geo?.latlng);
     }
 
     // --- In-Flight detector
