@@ -82,13 +82,13 @@ class _MainMenuState extends State<MainMenu> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(profile.gear?.wingMakeModel ?? "wing unset".tr(),
+                          Text(profile.gear?.wingMakeModel ?? "gear.wing unset".tr(),
                               style: Theme.of(context).textTheme.headlineSmall!.merge(TextStyle(
                                   color: profile.gear?.wingColor,
                                   // fontWeight: profile.gear?.wingMakeModel == null ? FontWeight.normal : FontWeight.bold,
                                   fontStyle:
                                       (profile.gear?.wingMakeModel == null ? FontStyle.italic : FontStyle.normal)))),
-                          Text(profile.gear?.frameMakeModel ?? "motor unset".tr(),
+                          Text(profile.gear?.frameMakeModel ?? "gear.motor unset".tr(),
                               style: Theme.of(context).textTheme.headlineSmall!.merge(TextStyle(
                                   // color: profile.gear?.wingColor,
                                   // fontWeight:
@@ -186,7 +186,7 @@ class _MainMenuState extends State<MainMenu> {
                   audioCueService.mode = AudioCueService.modeOptions.values.toList()[index];
                 });
               },
-              children: AudioCueService.modeOptions.keys.map((e) => Text(e)).toList(),
+              children: AudioCueService.modeOptions.keys.map((e) => Text("audio_cue.$e".tr())).toList(),
             ),
             IconButton(
                 padding: EdgeInsets.zero,

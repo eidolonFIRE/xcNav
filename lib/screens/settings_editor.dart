@@ -46,7 +46,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
     getMapTileCacheSize().then((value) {
       if (mounted) {
         setState(() {
-          settingsMgr.clearMapCache.title = "${"clear_map_cache".tr()} ($value)";
+          settingsMgr.clearMapCache.description = "${"Total".tr()}: $value";
         });
       }
     });
@@ -314,6 +314,12 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                         textColor: catagoryColors[key],
                                         iconColor: catagoryColors[key],
                                         title: Text("settings.title.${e.title}".tr()),
+                                        subtitle: e.description == null
+                                            ? null
+                                            : Text(
+                                                e.description!,
+                                                style: TextStyle(fontSize: 12),
+                                              ),
                                         trailing: IconButton(
                                             icon: e.action!.actionIcon ?? const Icon(Icons.navigate_next),
                                             onPressed: e.action!.callback),

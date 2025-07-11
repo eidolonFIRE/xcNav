@@ -91,7 +91,7 @@
     "G-Force": "Перегрузка",
     "Laurch": "Взлёт",
     "Landing": "Посадка",
-    "dialog_select_range_with_slider": "Используйте ползунок, чтобы выбрать диапазон журнала для сохранения",
+    "dialog_select_range_with_slider": "Используйте ползунок, чтобы выбрать диапазон журнала для сохранения.",
     "Invalid Selection": "Неверный выбор",
     "flight_duration_hist": "Длительность полётов (гистограмма)",
     "Monthly Totals": "Итого по месяцам",
