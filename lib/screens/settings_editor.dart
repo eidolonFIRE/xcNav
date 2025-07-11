@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:xcnav/locale.dart';
 
 // Providers
 import 'package:xcnav/providers/profile.dart';
@@ -295,6 +296,16 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                           value: e, child: Text(e.toString().split(".").last.tr())))
                                                       .toList());
                                               break;
+                                            case "LanguageOverride":
+                                              trailing = DropdownButton<LanguageOverride>(
+                                                  onChanged: (value) =>
+                                                      {e.config!.value = value ?? e.config!.defaultValue},
+                                                  value: e.config!.value,
+                                                  items: LanguageOverride.values
+                                                      .map((e) => DropdownMenuItem(
+                                                          value: e, child: Text(languageNames[e] ?? "None")))
+                                                      .toList());
+                                              break;
                                             default:
                                               trailing = Text(
                                                   "${e.config!.id} Unsupported Type ${e.config!.value.runtimeType}");
@@ -303,7 +314,8 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                           return ListTile(
                                             leading: e.config!.icon,
                                             title: Text("settings.title.${e.title}".tr()),
-                                            subtitle: e.config!.subtitle,
+                                            subtitle:
+                                                e.config.runtimeType != Text ? null : (e.config!.subtitle as Text).tr(),
                                             trailing: trailing,
                                             textColor: catagoryColors[key],
                                             iconColor: catagoryColors[key],

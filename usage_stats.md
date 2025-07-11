@@ -3,7 +3,8 @@
 Some basic usage data is anonymized and sent to our datadog account.
 It includes:
 
-- Time spent on each screen of xcNav.
+- Language override (selected in settings)
+- Time spent on each screen of xcNav
 - Wind detector:
     - Time spent in dialog
     - Reset button presses

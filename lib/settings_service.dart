@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:xcnav/locale.dart';
 import 'package:xcnav/map_service.dart';
 
 import 'package:xcnav/providers/adsb.dart';
@@ -104,6 +105,9 @@ class SettingConfig<T> {
             case "MapTileSrc":
               _value = ValueNotifier<T>(MapTileSrc.values[loadedInt] as T);
               break;
+            case "LanguageOverride":
+              _value = ValueNotifier<T>(LanguageOverride.values[loadedInt] as T);
+              break;
             default:
               throw "Unrecognized enum class ${T.toString()}";
           }
@@ -192,8 +196,8 @@ class SettingsMgr {
   Map<String, List<SettingMgrItem>> settings = {};
 
   // --- General
+  late final SettingConfig<LanguageOverride> languageOverride;
   late final SettingConfig<bool> groundMode;
-
   late final SettingConfig<bool> autoRecordFlight;
 
   // --- UI
@@ -239,6 +243,16 @@ class SettingsMgr {
 
   SettingsMgr(SharedPreferences prefs) {
     // --- General
+    languageOverride = SettingConfig(
+      this,
+      prefs,
+      "General",
+      "languageOverride",
+      LanguageOverride.none,
+      title: "Language Override",
+      icon: const Icon(Icons.translate),
+      subtitle: Text("Requires Restarting xcNav"),
+    );
     groundMode = SettingConfig(this, prefs, "General", "groundMode", false,
         title: "ground_support_mode",
         icon: const Icon(Icons.directions_car),

@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:xcnav/datadog.dart';
+import 'package:xcnav/locale.dart';
 
 // providers
 import 'package:xcnav/providers/adsb.dart';
@@ -130,11 +131,19 @@ void main() async {
     }
     await initMapCache();
 
+    if (settingsMgr.rumOptOut.value) {
+      addAttribute(settingsMgr.languageOverride.id, settingsMgr.languageOverride.value.toString());
+    }
+    debugPrint("Language in settings: ${settingsMgr.languageOverride.value}");
+
     runApp(EasyLocalization(
-        supportedLocales: [Locale("en"), Locale("ru")],
+        supportedLocales: supportedLanguages.values.nonNulls.toList(),
         path: "assets/translations",
         fallbackLocale: Locale("en"),
         useFallbackTranslations: true,
+        useFallbackTranslationsForEmptyResources: true,
+        startLocale: supportedLanguages[settingsMgr.languageOverride.value],
+        useOnlyLangCode: true,
         child: MultiProvider(
             providers: [
               ChangeNotifierProvider(
