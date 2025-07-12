@@ -1,10 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:clock/clock.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/src/easy_localization_controller.dart';
+import 'package:easy_localization/src/localization.dart';
+
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/geo.dart';
@@ -14,6 +19,19 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tts_service.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
+import 'package:flutter/services.dart';
+
+class ImmutableJsonAssetLoader extends AssetLoader {
+  const ImmutableJsonAssetLoader();
+
+  @override
+  Future<Map<String, dynamic>> load(String fullPath, Locale locale) async {
+    return jsonDecode(await rootBundle.loadString('assets/translations/en.json'));
+  }
+}
 
 class MockFlutterTts extends Mock implements FlutterTts {
   MockFlutterTts();
@@ -60,6 +78,22 @@ void main() {
   late FuelReport a;
   late FuelReport b;
   late FuelStat stat;
+
+  TestWidgetsFlutterBinding.ensureInitialized();
+  var r1 = EasyLocalizationController(
+      forceLocale: const Locale('en'),
+      path: 'assets/translations/en.json',
+      supportedLocales: const [Locale('en')],
+      useOnlyLangCode: true,
+      useFallbackTranslations: false,
+      saveLocale: false,
+      onLoadError: (e) {},
+      assetLoader: ImmutableJsonAssetLoader());
+  // Common Setup
+  setUpAll(() async {
+    await r1.loadTranslations();
+    Localization.load(const Locale('en'), translations: r1.translations);
+  });
 
   // Common Setup
   setUp(() async {

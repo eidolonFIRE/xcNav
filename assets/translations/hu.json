@@ -54,9 +54,13 @@
             "spoof_location": "Helyzet hamisítása",
             "clear_map_cache": "Térképmemória törlése",
             "clear_avatar_cache": "Avatar cache törlése",
-            "erase_identity": "Azonosító törlése"
+            "erase_identity": "Azonosító törlése",
+            "barometer_offset": "Barométer eltolás",
+            "ambient_pressure_source": "Környezeti nyomásforrás"
         }
     },
+    "WeatherKit": "WeatherKit",
+    "Snap To Ground": "Illesztés a földhöz",
     "Distance": "Távolság",
     "Speed": "Sebesség",
     "Vario": "Vario",

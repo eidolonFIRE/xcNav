@@ -54,9 +54,13 @@
       "spoof_location": "Подменить местоположение",
       "clear_map_cache": "Очистить кэш карты",
       "clear_avatar_cache": "Очистить кэш аватаров",
-      "erase_identity": "Удалить личные данные"
+      "erase_identity": "Удалить личные данные",
+      "barometer_offset": "Смещение барометра",
+      "ambient_pressure_source": "Источник давления окружающей среды"
     }
   },
+  "WeatherKit": "WeatherKit",
+  "Snap To Ground": "Привязка к земле",
   "Distance": "Расстояние",
   "Speed": "Скорость",
   "Vario": "Варио",
