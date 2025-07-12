@@ -73,6 +73,8 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
+		<string>ru</string>
+		<string>hu</string>
 	</array>
 </dict>
 </plist>
