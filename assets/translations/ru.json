@@ -56,7 +56,7 @@
       "clear_avatar_cache": "Очистить кэш аватаров",
       "erase_identity": "Удалить личные данные",
       "barometer_offset": "Смещение барометра",
-      "ambient_pressure_source": "Источник давления окружающей среды"
+      "ambient_pressure_source": "Источник атмосферного давления"
     }
   },
   "WeatherKit": "WeatherKit",
