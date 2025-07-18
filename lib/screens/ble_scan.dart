@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:xcnav/services/ble_service.dart' as ble_service;
+import 'package:xcnav/settings_service.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -25,7 +26,7 @@ class _ScanScreenState extends State<ScanScreen> {
     return ScaffoldMessenger(
       child: Scaffold(
           appBar: AppBar(
-            title: const Text('Bluetooth Devices'),
+            title: Text('Bluetooth Devices'.tr()),
             actions: [
               StreamBuilder<bool>(
                   stream: FlutterBluePlus.isScanning,
@@ -86,27 +87,64 @@ class _ScanScreenState extends State<ScanScreen> {
                         final device = results.data![index].device;
 
                         return ListTile(
-                          title: Text(device.advName),
-                          trailing: device.isConnected
-                              ? ElevatedButton.icon(
-                                  onPressed: () {
-                                    device.disconnect().then((_) {
-                                      setState(() {});
-                                    });
-                                  },
-                                  label: Text("btn.Disconnect".tr()),
-                                  icon: Icon(Icons.close),
-                                )
-                              : ElevatedButton.icon(
-                                  onPressed: () {
-                                    ble_service.connect(device).then((_) {
-                                      setState(() {});
-                                    });
-                                  },
-                                  label: Text("btn.Connect".tr()),
-                                  icon: Icon(Icons.add),
+                            contentPadding: EdgeInsets.only(left: 10),
+                            visualDensity: VisualDensity.compact,
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  device.advName,
+                                  style: TextStyle(fontSize: 20),
                                 ),
-                        );
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text("Auto Connect".tr()),
+                                    Switch.adaptive(
+                                        value: settingsMgr.bleAutoDevices.value.contains(device.remoteId.str),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            if (value && device.isDisconnected) {
+                                              ble_service.connect(device);
+                                              // Add to list
+                                              if (!settingsMgr.bleAutoDevices.value.contains(device.remoteId.str)) {
+                                                settingsMgr.bleAutoDevices.value =
+                                                    settingsMgr.bleAutoDevices.value + [device.remoteId.str];
+                                              }
+                                            }
+                                            if (!value) {
+                                              // Remove from list
+                                              final wasRemoved =
+                                                  settingsMgr.bleAutoDevices.value.remove(device.remoteId.str);
+                                              if (wasRemoved) {
+                                                // Trigger save by setting value
+                                                settingsMgr.bleAutoDevices.value = settingsMgr.bleAutoDevices.value;
+                                              }
+                                            }
+                                          });
+                                        }),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            trailing: StreamBuilder(
+                              stream: device.connectionState,
+                              builder: (context, connected) => connected.data == BluetoothConnectionState.connected
+                                  ? ElevatedButton.icon(
+                                      onPressed: () {
+                                        ble_service.disconnect(device);
+                                      },
+                                      label: Text("btn.Disconnect".tr()),
+                                      icon: Icon(Icons.close),
+                                    )
+                                  : ElevatedButton.icon(
+                                      onPressed: () {
+                                        ble_service.connect(device);
+                                      },
+                                      label: Text("btn.Connect".tr()),
+                                      icon: Icon(Icons.add),
+                                    ),
+                            ));
                       });
                 }),
           )),

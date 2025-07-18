@@ -19,6 +19,8 @@
         "Report Fuel": "Report Fuel",
         "Fuel Level": "Fuel Level"
     },
+    "Auto Connect": "Auto Connect",
+    "Bluetooth Devices": "Bluetooth Devices",
     "Requires Restarting xcNav": "Requires Restarting xcNav",
     "about_description": "This project was started by Caleb Johnson with the goal of putting all the tools for coordinating a group, cross-country flight into one app. \n\nThis app is free and open source forever. We rely on your contributions to keep it alive.\n\nCheckout the resources below to get involved.",
     "Code": "Code",

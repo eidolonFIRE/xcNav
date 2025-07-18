@@ -38,6 +38,7 @@ class FlightLog {
   late List<TimestampDouble> gForceSamples;
 
   late final String? rawJson;
+  late final Map<String, dynamic>? bleDevicesJson;
 
   late List<FuelReport> _fuelReports;
   List<FuelReport> get fuelReports => _fuelReports;
@@ -464,13 +465,19 @@ class FlightLog {
 
   // =========================================
   /// Return true if success
-  Future<bool> save() async {
+  Future<bool> save({Map<String, dynamic>? additionalJson}) async {
     _filename ??=
         "${(await getApplicationDocumentsDirectory()).path}/flight_logs/${startTime!.millisecondsSinceEpoch}.json";
     debugPrint("Saving FlightLog $filename");
     logStore.updateLog(_filename!, this);
     Completer<bool> completer = Completer();
-    saveFileToAppDocs(filename: filename, data: toJson()).then((value) {
+    Map<String, dynamic> logJson = toJson();
+    if (additionalJson != null) {
+      logJson.addAll(additionalJson);
+    }
+    final encoded = jsonEncode(logJson);
+    debugPrint(encoded);
+    saveFileToAppDocs(filename: filename, data: encoded).then((value) {
       unsaved = false;
       completer.complete(true);
     });
@@ -589,7 +596,8 @@ class FlightLog {
       int? timezone,
       List<FuelReport> fuelReports = const [],
       Gear? gear,
-      String? filename}) {
+      String? filename,
+      this.bleDevicesJson}) {
     if (samples.isEmpty) {
       goodFile = false;
       throw "Creating FlightLog without samples";
@@ -608,6 +616,8 @@ class FlightLog {
     unsaved = false;
 
     try {
+      bleDevicesJson = data["ble_devices"];
+
       // --- Misc
       final maybeImported = data["imported"];
       if (maybeImported != null) {
@@ -686,6 +696,7 @@ class FlightLog {
     _fuelReports = [];
     gForceSamples = [];
     waypoints = [];
+    bleDevicesJson = null;
 
     try {
       for (final line in data.split("\n")) {
@@ -768,7 +779,7 @@ class FlightLog {
     }
   }
 
-  String toJson() {
+  Map<String, dynamic> toJson() {
     // Flatten gForceSamples to 1D array for more compact json string
     final List<num> gSamples = [];
     // Only g-force samples within start-end timestamps will be saved
@@ -791,7 +802,10 @@ class FlightLog {
     if (timezone != null) {
       dict["timezone"] = timezone;
     }
-    return jsonEncode(dict);
+    if (bleDevicesJson != null) {
+      dict["ble_devices"] = bleDevicesJson;
+    }
+    return dict;
   }
 
   String toKML() {

@@ -19,6 +19,8 @@
         "Report Fuel": "Üzemanyagszint jelentése",
         "Fuel Level": "Üzemanyagszint"
     },
+    "Auto Connect": "Auto Connect",
+    "Bluetooth Devices": "Bluetooth Devices",
     "Requires Restarting xcNav": "Az xcNav újraindítása szükséges",
     "about_description": "Ezt a projektet Caleb Johnson indította azzal a céllal, hogy az összes, csoportos távrepülés koordinálásához szükséges eszközt egyetlen alkalmazásba gyűjtse.\n\nEz az alkalmazás örökre ingyenes és nyílt forráskódú. A fenntartásához a te hozzájárulásodra is szükség van.\n\nAz alábbi források segítségével te is bekapcsolódhatsz.",
     "Code": "Kód",
@@ -79,7 +81,7 @@
     "Recent Groups": "Legutóbbi csoportok",
     "dialog_past_group_empty": "Nincs itt semmi...\nVoltál már csoportban korábban?",
     "Checklist": "Ellenőrzőlista",
-    "empty_list": "Hűha, de üres!",
+    "empty_list": "Üres lista!",
     "log_summary": {
         "Distance": "Távolság",
         "Fuel Burn Rate": "Üzemanyag-fogyási arány",

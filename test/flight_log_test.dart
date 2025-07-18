@@ -30,16 +30,16 @@ void main() {
       FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 10).inMilliseconds), 5.0),
     ], gear: gear);
 
-    expect(log.toJson(), FlightLog.fromJson("", jsonDecode(log.toJson())).toJson());
+    expect(jsonEncode(log.toJson()), jsonEncode(FlightLog.fromJson("", jsonDecode(jsonEncode(log.toJson()))).toJson()));
 
-    final loadedLog = FlightLog.fromJson("", jsonDecode(log.toJson()));
+    final loadedLog = FlightLog.fromJson("", jsonDecode(jsonEncode(log.toJson())));
     final newLog = FlightLog(
         samples: loadedLog.samples,
         waypoints: loadedLog.waypoints,
         fuelReports: loadedLog.fuelReports,
         gear: loadedLog.gear,
         filename: loadedLog.filename);
-    expect(jsonDecode(loadedLog.toJson()), jsonDecode(newLog.toJson()));
+    expect(jsonDecode(jsonEncode(loadedLog.toJson())), jsonDecode(jsonEncode(newLog.toJson())));
 
     expect(loadedLog.samples.length, 3);
     expect(loadedLog.fuelReports.length, 2);
