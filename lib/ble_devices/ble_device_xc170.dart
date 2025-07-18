@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:bisection/bisect.dart';
+import 'package:clock/clock.dart';
 import 'package:xcnav/datadog.dart' as dd;
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
+import 'package:xcnav/util.dart';
 
 enum ValueInRange {
   inRange,
@@ -25,14 +27,17 @@ class SensorCalibration {
   /// map input -> output curve
   final List<List<double>> _sensorLUT;
 
+  double get maxValue => _sensorLUT.last[1];
+  double get minValue => _sensorLUT.first[1];
+
   SensorCalibration(this._sensorLUT);
 
   DeviceValue calibrateValue(double rawValue) {
     // Check bounds
     if (rawValue <= _sensorLUT.first[0]) {
-      return DeviceValue(_sensorLUT.first[1], ValueInRange.belowRange);
+      return DeviceValue(minValue, ValueInRange.belowRange);
     } else if (rawValue >= _sensorLUT.last[0]) {
-      return DeviceValue(_sensorLUT.last[1], ValueInRange.aboveRange);
+      return DeviceValue(maxValue, ValueInRange.aboveRange);
     }
 
     // Find the closest value in the LUT
@@ -48,14 +53,23 @@ class SensorCalibration {
   }
 }
 
+class DeviceLogEntry {
+  final DateTime time;
+  final DeviceValue fuel;
+  DeviceLogEntry({required this.time, required this.fuel});
+}
+
 class BleDeviceXc170 extends BleDeviceHandler {
-  final StreamController<DeviceValue> _fuelSensorRawStream = StreamController();
+  final StreamController<DeviceValue> _fuelSensorRawStream = StreamController.broadcast();
 
   Timer? _refreshTimer;
 
   BleDeviceXc170() : super();
 
   Stream<DeviceValue> get fuelSensorRawStream => _fuelSensorRawStream.stream;
+  bool get hasLog => log.isNotEmpty;
+
+  final List<DeviceLogEntry> log = [];
 
   final SensorCalibration _fuelCalibration = SensorCalibration([
     [24, 1], // 18 originally
@@ -91,6 +105,25 @@ class BleDeviceXc170 extends BleDeviceHandler {
   ]);
 
   @override
+  Map<String, dynamic>? toJson() {
+    if (hasLog) {
+      final startTime = log.first.time.millisecondsSinceEpoch;
+      return {
+        "id": runtimeType.toString(),
+        "version": "1.0",
+        "fuel": {
+          "min_value": roundToDigits(_fuelCalibration.minValue, 1),
+          "max_value": roundToDigits(_fuelCalibration.maxValue, 1),
+          "start_time": startTime,
+          "data": log.map((e) => [e.time.millisecondsSinceEpoch - startTime, roundToDigits(e.fuel.value, 2)]).toList()
+        }
+      };
+    } else {
+      return null;
+    }
+  }
+
+  @override
   Future onConnected(BluetoothDevice instance) async {
     await super.onConnected(instance);
 
@@ -101,8 +134,10 @@ class BleDeviceXc170 extends BleDeviceHandler {
           .then((value) {
         if (value.isNotEmpty) {
           final rawValue = (value[0] + (value[1] << 8)).toDouble();
-          _fuelSensorRawStream.sink.add(_fuelCalibration.calibrateValue(rawValue));
-          debugPrint("Fuel sensor raw value: $rawValue");
+          final calibratedValue = _fuelCalibration.calibrateValue(rawValue);
+          _fuelSensorRawStream.sink.add(calibratedValue);
+          log.add(DeviceLogEntry(time: clock.now(), fuel: calibratedValue));
+          // debugPrint("Fuel sensor value: $rawValue == ${calibratedValue.value}");
         } else {
           debugPrint("No data received from fuel sensor characteristic");
         }

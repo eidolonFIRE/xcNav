@@ -33,6 +33,7 @@ import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/services/ble_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/secrets.dart';
@@ -267,7 +268,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       } else {
         if (timer != null) {
           // --- Real Location / Baro
-
           _startBaroService();
 
           if (!positionStreamStarted) {
@@ -295,7 +295,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       // Handle barometer changes (run the vario)
       final baroPrev = baro;
       baro = BarometerEvent(event.pressure + settingsMgr.barometerOffset.value, event.timestamp);
-      ;
       double vario = 0;
       if (baroPrev != null && baroPrev.timestamp.isBefore(baro!.timestamp)) {
         vario = (altFromBaro(baro!.pressure, baroAmbient?.pressure) -
@@ -562,12 +561,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
               : [],
           fuelReports: fuelReports,
           gear: Provider.of<Profile>(globalContext!, listen: false).gear);
-
-      log.save();
-      lastSavedLog = DateTime.now();
-    } else {
-      const msg = "Recording was too short, skipping save.";
-      warn(msg, attributes: {"record_length": recordGeo.length});
+      Map<String, dynamic> deviceLogs = {
+        "ble_devices": {"xc170": bleDeviceXc170.toJson()}
+      };
+      log.save(additionalJson: bleDeviceXc170.hasLog ? deviceLogs : null);
+      lastSavedLog = clock.now();
     }
   }
 
