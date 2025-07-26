@@ -295,7 +295,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       // Handle barometer changes (run the vario)
       final baroPrev = baro;
       baro = BarometerEvent(event.pressure + settingsMgr.barometerOffset.value, event.timestamp);
-      ;
       double vario = 0;
       if (baroPrev != null && baroPrev.timestamp.isBefore(baro!.timestamp)) {
         vario = (altFromBaro(baro!.pressure, baroAmbient?.pressure) -
