@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:clock/clock.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';

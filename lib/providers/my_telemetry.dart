@@ -310,7 +310,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       // Handle barometer errors
       listenBaro?.cancel();
       listenBaro = null;
-      dd.error("Barometer Service Stream Error", errorMessage: error);
+      dd.error("Barometer Service Stream Error", errorMessage: error.toString());
     });
   }
 
