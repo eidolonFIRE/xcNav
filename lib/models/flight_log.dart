@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:bisection/bisect.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/gaussian_filter.dart';
 import 'package:xml/xml.dart';
 import 'package:collection/collection.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:intl/intl.dart';
 
@@ -475,6 +477,22 @@ class FlightLog {
     return completer.future;
   }
 
+  Future<String> export({String fileType = "json"}) async {
+    String outFilename = "";
+    if (samples.isNotEmpty) {
+      outFilename = DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.fromMillisecondsSinceEpoch(samples[0].time));
+    } else {
+      outFilename = p.basenameWithoutExtension(filename ?? DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.now()));
+    }
+    Directory path =
+        (Platform.isIOS ? await getApplicationDocumentsDirectory() : Directory('/storage/emulated/0/Documents'));
+
+    final outFile = File("${path.path}/xcNav_$fileType/$outFilename.$fileType");
+    await outFile.create(recursive: true);
+    await outFile.writeAsString(fileType == "json" ? (rawJson ?? toJson()) : (fileType == "kml" ? toKML() : toGPX()));
+    return outFile.path;
+  }
+
   int compareTo(FlightLog other) {
     if (goodFile && other.goodFile) {
       return other.startTime!.compareTo(startTime!);
@@ -585,7 +603,7 @@ class FlightLog {
     goodFile = true;
   }
 
-  FlightLog.fromJson(String filename, Map<String, dynamic> data, {this.rawJson}) {
+  FlightLog.fromJson(String? filename, Map<String, dynamic> data, {this.rawJson}) {
     _filename = filename;
     unsaved = false;
 

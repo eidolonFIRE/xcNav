@@ -161,7 +161,9 @@
         "Leave": "Leave",
         "Ok": "Ok",
         "Load_All": "Load All",
-        "Load_Selected": "Load Selected"
+        "Load_Selected": "Load Selected",
+        "import": "Import",
+        "export_all": "Export All"
     },
     "Library": "Library",
     "Search": "Search",

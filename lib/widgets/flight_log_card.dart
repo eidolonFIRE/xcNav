@@ -67,53 +67,40 @@ class FlightLogCard extends StatelessWidget {
     );
   }
 
-  void exportLog(BuildContext context, String fileType) {
+  void exportLog(BuildContext context, String fileType) async {
     final log = logStore.logs[logKey]!;
-    String outFilename = "";
-    if (log.samples.isNotEmpty) {
-      outFilename = DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.fromMillisecondsSinceEpoch(log.samples[0].time));
-    } else {
-      outFilename = p.basenameWithoutExtension(log.filename ?? DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.now()));
+    String outFilename = await log.export();
+    if (context.mounted) {
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: const Text("File Exported to:"),
+                content: Text(
+                  outFilename,
+                ),
+                actions: [
+                  ElevatedButton.icon(
+                    label: Text("btn.Open".tr()),
+                    onPressed: () async {
+                      var result = await OpenFile.open(outFilename);
+                      debugPrint(result.message);
+                      // NOTE: Workaround for "high risk" android permission missing
+                      if (result.message.toUpperCase().contains('MANAGE_EXTERNAL_STORAGE')) {
+                        debugPrint("Workaround to MANAGE_EXTERNAL_STORAGE... using temp directory");
+                        final tempFilename = p.basename(outFilename);
+                        final String newpath = '${(await getTemporaryDirectory()).path}/$tempFilename';
+                        await File(outFilename).copy(newpath);
+                        result = await OpenFile.open(newpath);
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.launch,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ],
+              ));
     }
-    (Platform.isIOS ? getApplicationDocumentsDirectory() : Future(() => Directory('/storage/emulated/0/Documents')))
-        .then((Directory path) {
-      var outFile = File("${path.path}/xcNav_$fileType/$outFilename.$fileType");
-      outFile.create(recursive: true).then((value) => value
-              .writeAsString(fileType == "json" ? (log.rawJson ?? "") : (fileType == "kml" ? log.toKML() : log.toGPX()))
-              .then((value) {
-            if (context.mounted) {
-              showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                        title: const Text("File Exported to:"),
-                        content: Text(
-                          outFile.path,
-                        ),
-                        actions: [
-                          ElevatedButton.icon(
-                            label: Text("btn.Open".tr()),
-                            onPressed: () async {
-                              var result = await OpenFile.open(outFile.path);
-                              debugPrint(result.message);
-                              // NOTE: Workaround for "high risk" android permission missing
-                              if (result.message.toUpperCase().contains('MANAGE_EXTERNAL_STORAGE')) {
-                                debugPrint("Workaround to MANAGE_EXTERNAL_STORAGE... using temp directory");
-                                final tempFilename = p.basename(outFile.path);
-                                final String newpath = '${(await getTemporaryDirectory()).path}/$tempFilename';
-                                await File(outFile.path).copy(newpath);
-                                result = await OpenFile.open(newpath);
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.launch,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ],
-                      ));
-            }
-          }));
-    });
   }
 
   void deleteLog(BuildContext context) {

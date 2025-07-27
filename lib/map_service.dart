@@ -113,7 +113,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
         // fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
         // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
         tileProvider: _makeTileProvider(tileName),
-        maxNativeZoom: 17,
+        maxNativeZoom: 16,
         panBuffer: 0,
         // minZoom: 2,
         // additionalOptions: const {"apiKey": "d9344714a8fbf28773ce4c955ea8adfb"},

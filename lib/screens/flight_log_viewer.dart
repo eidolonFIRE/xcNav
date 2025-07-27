@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dialogs/edit_log_filters.dart';
 import 'package:xcnav/log_store.dart';
 import 'package:xcnav/models/flight_log.dart';
@@ -99,29 +103,63 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                   case "import":
                     final defaultDir = await getDownloadsDirectory();
 
-                    final results = await FilePicker.platform
-                        .pickFiles(initialDirectory: defaultDir?.path, allowMultiple: true, type: FileType.any);
+                    final results = await FilePicker.platform.pickFiles(
+                      initialDirectory: defaultDir?.path,
+                      allowMultiple: true,
+                      type: FileType.any,
+                    );
                     if (results != null) {
                       for (final file in results.files) {
                         if (file.name.toLowerCase().endsWith("igc")) {
-                          final rawStr = await file.xFile.readAsString();
-                          final newLog = FlightLog.fromIGC(rawStr);
-                          await newLog.save();
+                          try {
+                            final rawStr = await file.xFile.readAsString();
+                            final newLog = FlightLog.fromIGC(rawStr);
+                            await newLog.save();
+                          } catch (e) {
+                            error(e.toString());
+                          }
+                        } else if (file.name.toLowerCase().endsWith("json")) {
+                          try {
+                            final rawStr = await file.xFile.readAsString();
+                            final newLog = FlightLog.fromJson(null, jsonDecode(rawStr), rawJson: rawStr);
+                            await newLog.save();
+                          } catch (e) {
+                            error(e.toString());
+                          }
                         }
                       }
-                      logStore.refreshLogsFromDirectory();
+                      setState(() {
+                        logStore.refreshLogsFromDirectory();
+                      });
+                    }
+                    break;
+                  case "bulk_export":
+                    List<Future<String>> paths = logStore.logsSliceLogs.map((e) => e.export()).toList();
+                    await Future.wait(paths);
+                    if (context.mounted) {
+                      showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                                title: Text("Exported ${paths.length} logs to documents."),
+                              ));
                     }
                     break;
                 }
               },
               itemBuilder: (context) => <PopupMenuEntry<String>>[
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: "import",
                       child: ListTile(
                         leading: Icon(Icons.file_open),
-                        title: Text("Import IGC"),
+                        title: Text("${"btn.import".tr()} (.igc, .json)"),
                       ),
                     ),
+                    PopupMenuItem(
+                        value: "bulk_export",
+                        child: ListTile(
+                          leading: Icon(Icons.save),
+                          title: Text("${"btn.export_all".tr()} (.json)"),
+                        )),
                   ])
         ],
         bottom: TabBar(controller: mainTabController, tabs: const [
