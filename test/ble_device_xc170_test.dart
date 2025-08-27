@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:xcnav/ble_devices/ble_device_xc170.dart';
+import 'package:xcnav/ble_devices/ble_device_value.dart';
 
 void main() {
   test('SensorCalibration', () {

@@ -496,7 +496,8 @@ class FlightLog {
 
     final outFile = File("${path.path}/xcNav_$fileType/$outFilename.$fileType");
     await outFile.create(recursive: true);
-    await outFile.writeAsString(fileType == "json" ? (rawJson ?? toJson()) : (fileType == "kml" ? toKML() : toGPX()));
+    await outFile.writeAsString(
+        fileType == "json" ? (rawJson ?? jsonEncode(toJson())) : (fileType == "kml" ? toKML() : toGPX()));
     return outFile.path;
   }
 

@@ -564,7 +564,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       Map<String, dynamic> deviceLogs = {
         "ble_devices": {"xc170": bleDeviceXc170.toJson()}
       };
-      log.save(additionalJson: bleDeviceXc170.hasLog ? deviceLogs : null);
+      log.save(additionalJson: deviceLogs);
       lastSavedLog = clock.now();
     }
   }

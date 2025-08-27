@@ -15,6 +15,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/ble_devices/ble_device_value.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170.dart';
 
 // providers
@@ -1026,125 +1027,75 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                   // --- fuel button
                   Align(
                       alignment: Alignment.bottomRight,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        verticalDirection: VerticalDirection.up,
-                        children: [
-                          MapButton(
-                            size: buttonSize,
-                            selected: false,
-                            child: const Icon(Icons.local_gas_station, color: Colors.black, size: 30),
-                            onPressed: () => {editLiveFuelReport(context)},
-                          ),
-                          SizedBox(
-                              width: 2,
-                              height: buttonSize / 6,
-                              child: Container(
-                                color: Colors.black,
-                              )),
-                          // --- Fuel remaining info
-                          Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
-                            return Container(
-                              foregroundDecoration: BoxDecoration(
-                                  border: Border.all(width: 0.5, color: Colors.black),
-                                  borderRadius: const BorderRadius.all(Radius.circular(15))),
-                              child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(15),
-                                  child: BackdropFilter(
-                                      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                      child: Container(
-                                          color: Colors.white38,
-                                          child: Builder(builder: (context) {
-                                            final fuelReport = myTelemetry.fuelReports.lastOrNull;
+                      child: Column(mainAxisSize: MainAxisSize.min, verticalDirection: VerticalDirection.up, children: [
+                        MapButton(
+                          size: buttonSize,
+                          selected: false,
+                          child: const Icon(Icons.local_gas_station, color: Colors.black, size: 30),
+                          onPressed: () => {editLiveFuelReport(context)},
+                        ),
+                        SizedBox(
+                            width: 2,
+                            height: buttonSize / 6,
+                            child: Container(
+                              color: Colors.black,
+                            )),
+                        // --- Fuel remaining info
+                        Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
+                          return Container(
+                            foregroundDecoration: BoxDecoration(
+                                border: Border.all(width: 0.5, color: Colors.black),
+                                borderRadius: const BorderRadius.all(Radius.circular(15))),
+                            child: ClipRRect(
+                                borderRadius: BorderRadius.circular(15),
+                                child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                    child: Container(
+                                        color: Colors.white38,
+                                        child: Builder(builder: (context) {
+                                          final fuelReport = myTelemetry.fuelReports.lastOrNull;
 
-                                            if (fuelReport != null) {
-                                              if (myTelemetry.sumFuelStat == null || !myTelemetry.inFlight) {
-                                                final warn = fuelReport.amount <= 1;
-                                                final style = TextStyle(
-                                                    color: warn ? Colors.red : Colors.black,
-                                                    fontSize: 20,
-                                                    fontWeight: warn ? FontWeight.bold : FontWeight.normal);
-                                                return Padding(
-                                                    padding: const EdgeInsets.all(8.0),
-                                                    child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
-                                                        decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
-                                              } else {
-                                                final etaEmpty = myTelemetry.sumFuelStat!
-                                                    .extrapolateEndurance(fuelReport, from: clock.now());
-
-                                                final warn = etaEmpty < const Duration(minutes: 15);
-                                                final style = TextStyle(
-                                                    color: warn ? Colors.red : Colors.black,
-                                                    fontSize: 20,
-                                                    fontWeight: warn ? FontWeight.bold : FontWeight.normal);
-                                                return Padding(
-                                                    padding: const EdgeInsets.all(8.0),
-                                                    child: Text.rich(richHrMin(duration: etaEmpty, valueStyle: style)));
-                                              }
+                                          if (fuelReport != null) {
+                                            if (myTelemetry.sumFuelStat == null || !myTelemetry.inFlight) {
+                                              final warn = fuelReport.amount <= 1;
+                                              final style = TextStyle(
+                                                  color: warn ? Colors.red : Colors.black,
+                                                  fontSize: 20,
+                                                  fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                              return Padding(
+                                                  padding: const EdgeInsets.all(8.0),
+                                                  child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
+                                                      decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
                                             } else {
-                                              return const Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  "?",
-                                                  style: TextStyle(color: Colors.black, fontSize: 20),
-                                                ),
-                                              );
-                                            }
-                                          })))),
-                            );
-                          }),
+                                              final etaEmpty = myTelemetry.sumFuelStat!
+                                                  .extrapolateEndurance(fuelReport, from: clock.now());
 
-                          // BLE xc170
-                          if (ble_service.bleDeviceXc170.device != null)
-                            Container(
-                                foregroundDecoration: BoxDecoration(
-                                    border: Border.all(width: 0.5, color: Colors.black),
-                                    borderRadius: const BorderRadius.all(Radius.circular(15))),
-                                child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(15),
-                                    child: BackdropFilter(
-                                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                        child: Container(
-                                            color: Colors.white38,
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(8.0),
-                                              child: StreamBuilder(
-                                                  stream: ble_service.bleDeviceXc170.device?.connectionState,
-                                                  builder: (context, state) {
-                                                    return StreamBuilder(
-                                                        stream: ble_service.bleDeviceXc170.fuelSensorRawStream,
-                                                        builder: (context, value) => Text.rich(TextSpan(children: [
-                                                              WidgetSpan(
-                                                                  child: Icon(
-                                                                state.data == BluetoothConnectionState.connected
-                                                                    ? Icons.bluetooth_connected
-                                                                    : Icons.bluetooth_disabled,
-                                                                size: 30,
-                                                                color: state.data == BluetoothConnectionState.connected
-                                                                    ? Colors.blue
-                                                                    : Colors.grey.shade800,
-                                                              )),
-                                                              if (value.data?.status == ValueInRange.aboveRange)
-                                                                TextSpan(
-                                                                    text: ">",
-                                                                    style:
-                                                                        TextStyle(fontSize: 30, color: Colors.green)),
-                                                              if (value.data?.status == ValueInRange.belowRange)
-                                                                TextSpan(
-                                                                    text: "<",
-                                                                    style: TextStyle(fontSize: 30, color: Colors.red)),
-                                                              richValue(UnitType.fuel, value.data?.value ?? 0,
-                                                                  digits: 2,
-                                                                  decimals: 1,
-                                                                  valueStyle: const TextStyle(
-                                                                      color: Colors.black, fontSize: 30),
-                                                                  unitStyle: TextStyle(
-                                                                      color: Colors.grey.shade700, fontSize: 20)),
-                                                            ])));
-                                                  }),
-                                            ))))),
-                        ],
-                      )),
+                                              final warn = etaEmpty < const Duration(minutes: 15);
+                                              final style = TextStyle(
+                                                  color: warn ? Colors.red : Colors.black,
+                                                  fontSize: 20,
+                                                  fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                              return Padding(
+                                                  padding: const EdgeInsets.all(8.0),
+                                                  child: Text.rich(richHrMin(duration: etaEmpty, valueStyle: style)));
+                                            }
+                                          } else {
+                                            return const Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text(
+                                                "?",
+                                                style: TextStyle(color: Colors.black, fontSize: 20),
+                                              ),
+                                            );
+                                          }
+                                        })))),
+                          );
+                        }),
+
+                        // BLE xc170
+                        if (ble_service.bleDeviceXc170.device != null)
+                          Xc170StatusCard(xc170: ble_service.bleDeviceXc170),
+                      ])),
 
                   if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
                     Align(
