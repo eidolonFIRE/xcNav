@@ -200,6 +200,25 @@ class BleDeviceXc170 extends BleDeviceHandler {
   }
 
   @override
+  Map<String, dynamic>? toJson() {
+    if (hasLog) {
+      final startTime = log.first.time.millisecondsSinceEpoch;
+      return {
+        "id": runtimeType.toString(),
+        "version": "1.0",
+        "fuel": {
+          "min_value": roundToDigits(_fuelCalibration.minValue, 1),
+          "max_value": roundToDigits(_fuelCalibration.maxValue, 1),
+          "start_time": startTime,
+          "data": log.map((e) => [e.time.millisecondsSinceEpoch - startTime, roundToDigits(e.fuel.value, 2)]).toList()
+        }
+      };
+    } else {
+      return null;
+    }
+  }
+
+  @override
   Future onConnected(BluetoothDevice instance) async {
     await super.onConnected(instance);
     if (characteristics[SERVICE_UUID]?[telemetry.uuid] != null) {
