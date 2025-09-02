@@ -96,6 +96,16 @@ class Xc170TelemetryCharacteristic {
     fanAmps.addValue((bytes[8] + (bytes[9] << 8)).toDouble(), time);
     fanCtrl.addValue(bytes[10] + (bytes[11] << 8), time);
   }
+
+  Map<String, dynamic>? toJson() {
+    return {
+      "fuel": fuel,
+      "cht": cht,
+      "egt": egt,
+      "rpm": rpm,
+      "fanAmps": fanAmps,
+    };
+  }
 }
 
 //---------------------------
@@ -153,6 +163,7 @@ class Xc170FanControlCharacteristic {
     List<int>? bytes = await characteristic?.read().catchError((error) {
       dd.error("Reading Xc170 FanControl characteristic",
           errorMessage: error.toString(), errorKind: "BLE", attributes: {"char_uuid": uuid});
+      return <int>[];
     });
     if (bytes != null && bytes.length >= 6) {
       _parseData(bytes);
@@ -193,29 +204,10 @@ class BleDeviceXc170 extends BleDeviceHandler {
     return {
       "id": runtimeType.toString(),
       "version": "1.0",
-      "deviceValues": {
-        "fuel": telemetry.fuel,
+      "datas": {
+        "telemetry": telemetry,
       },
     };
-  }
-
-  @override
-  Map<String, dynamic>? toJson() {
-    if (hasLog) {
-      final startTime = log.first.time.millisecondsSinceEpoch;
-      return {
-        "id": runtimeType.toString(),
-        "version": "1.0",
-        "fuel": {
-          "min_value": roundToDigits(_fuelCalibration.minValue, 1),
-          "max_value": roundToDigits(_fuelCalibration.maxValue, 1),
-          "start_time": startTime,
-          "data": log.map((e) => [e.time.millisecondsSinceEpoch - startTime, roundToDigits(e.fuel.value, 2)]).toList()
-        }
-      };
-    } else {
-      return null;
-    }
   }
 
   @override
@@ -273,6 +265,7 @@ class Xc170ConfigDialog extends StatelessWidget {
                   if (value > 1000) {
                     return "Should not be more than 1000";
                   }
+                  return null;
                 },
                 onEditingComplete: () {
                   final value = parseAsInt(chtMinController.text);
@@ -302,6 +295,7 @@ class Xc170ConfigDialog extends StatelessWidget {
                   if (value > 2000) {
                     return "Should not be more than 2000";
                   }
+                  return "";
                 },
                 onEditingComplete: () {
                   final value = parseAsInt(chtMaxController.text);
