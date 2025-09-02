@@ -596,7 +596,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           )
                                         : Container(
                                             transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.rotationZ((e.windDir ?? 0) * pi / 180),
+                                            transform: Matrix4.rotationZ((e.windDir ?? 0) * pi / 180 + pi),
                                             child: SvgPicture.asset("assets/images/simple_arrow.svg",
                                                 colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
                                   ),
