@@ -161,7 +161,9 @@
         "Leave": "Kilépés",
         "Ok": "OK",
         "Load_All": "Összes betöltése",
-        "Load_Selected": "Kijelöltek betöltése"
+        "Load_Selected": "Kijelöltek betöltése",
+        "import": "Importál",
+        "export_all": "Összes exportálása"
     },
     "Library": "Könyvtár",
     "Search": "Keresés",
