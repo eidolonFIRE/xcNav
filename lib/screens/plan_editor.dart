@@ -96,40 +96,6 @@ class _PlanEditorState extends State<PlanEditor> {
     });
   }
 
-  void finishEditingPolyline() {
-    setState(() {
-      // if (editingWp != null && plan?.waypoints.containsKey(editingWp) == true) {
-      //   if (editablePolyline.isNotEmpty) {
-      //     plan!.waypoints[editingWp!]!.latlng = editablePolyline.toList();
-      //   } else {
-      //     plan!.waypoints.remove(editingWp!);
-      //   }
-      // }
-      // editingWp = null;
-      // editablePolyline.clear();
-      // focusMode = FocusMode.unlocked;
-      // selectedWp = null;
-
-      // --- finish editing path
-      if (editablePoints.isNotEmpty) {
-        if (editingWp == null) {
-          var temp = Waypoint(name: "", latlngs: editablePoints.toList());
-          editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)?.then((newWaypoint) {
-            if (newWaypoint != null) {
-              plan!.waypoints[newWaypoint.id] = newWaypoint;
-            }
-          });
-        } else {
-          plan!.waypoints[editingWp]!.latlng = editablePoints.toList();
-          editingWp = null;
-        }
-      } else {
-        plan!.waypoints.remove(editingWp);
-      }
-      setFocusMode(FocusMode.unlocked);
-    });
-  }
-
   void onMapTap(BuildContext context, LatLng latlng) {
     isMapDialOpen.value = false;
     if (editingWp != null && plan!.waypoints.containsKey(editingWp) && plan!.waypoints[editingWp]!.latlng.length == 1) {
@@ -444,17 +410,23 @@ class _PlanEditorState extends State<PlanEditor> {
                             ),
                             onPressed: () {
                               // --- finish editing path
-                              if (focusMode == FocusMode.editPath) {
-                                if (editingWp == null) {
-                                  final temp = Waypoint(name: "", latlngs: editablePoints.toList());
-                                  editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
-                                      ?.then((newWaypoint) {
-                                    if (newWaypoint != null) {
-                                      plan!.waypoints[editingWp!] = newWaypoint;
-                                    }
-                                  });
+                              if (focusMode == FocusMode.editPath || focusMode == FocusMode.addPath) {
+                                // --- finish editing path
+                                if (editablePoints.isNotEmpty) {
+                                  if (editingWp == null) {
+                                    var temp = Waypoint(name: "", latlngs: editablePoints.toList());
+                                    editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
+                                        ?.then((newWaypoint) {
+                                      if (newWaypoint != null) {
+                                        plan!.waypoints[newWaypoint.id] = newWaypoint;
+                                      }
+                                    });
+                                  } else {
+                                    plan!.waypoints[editingWp]!.latlng = editablePoints.toList();
+                                    editingWp = null;
+                                  }
                                 } else {
-                                  plan!.waypoints[editingWp!]!.latlng = editablePoints.toList();
+                                  plan!.waypoints.remove(editingWp);
                                 }
                               }
                               // --- finish editing waypoint
@@ -545,14 +517,12 @@ class _PlanEditorState extends State<PlanEditor> {
                                 waypoint: items[i],
                                 index: i,
                                 onSelect: () {
-                                  setState(() {
-                                    if (editingWp != null) {
-                                      finishEditingPolyline();
-                                    }
+                                  editingWp = null;
+                                  draggingLatLng = null;
 
-                                    mapController.move(items[i].latlng.first, mapController.camera.zoom);
-                                    selectedWp = items[i].id;
-                                  });
+                                  mapController.move(items[i].latlng.first, mapController.camera.zoom);
+                                  selectedWp = items[i].id;
+                                  setFocusMode(FocusMode.unlocked);
                                 },
                                 isSelected: items[i].id == selectedWp,
                               ),

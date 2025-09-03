@@ -1487,7 +1487,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         onPressed: () {
                           final plan = Provider.of<ActivePlan>(context, listen: false);
                           // --- finish editing path
-                          if (focusMode == FocusMode.editPath) {
+                          if (focusMode == FocusMode.editPath || focusMode == FocusMode.addPath) {
                             if (editingWp == null) {
                               final temp = Waypoint(name: "", latlngs: editablePoints.toList());
                               editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
