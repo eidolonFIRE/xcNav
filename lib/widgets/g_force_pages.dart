@@ -68,7 +68,7 @@ class _GForcePagesState extends State<GForcePages> with AutomaticKeepAliveClient
                     );
 
                     final maxG = widget.log.maxG(index: index);
-                    final maxInt = (maxG + 0.5).ceil();
+                    final maxInt = (maxG + 0.8).ceil();
                     final double timeInterval = max(
                         2000, (widget.log.gForceEvents[index].timeRange.duration.inMilliseconds / 1000).round() * 200);
 

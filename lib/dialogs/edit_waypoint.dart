@@ -114,14 +114,17 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
 
                 // --- Edit Icon
                 if (showIconOptions)
-                  Expanded(
-                    child: SizedBox(
-                      width: double.maxFinite,
-                      child: Card(
-                        color: Theme.of(context).colorScheme.surface,
-                        child: GridView.count(
-                          crossAxisCount: 5,
-                          children: iconWidgets,
+                  Flexible(
+                    child: Container(
+                      constraints: BoxConstraints(maxHeight: 260),
+                      child: SizedBox(
+                        width: double.maxFinite,
+                        child: Card(
+                          color: Theme.of(context).colorScheme.surface,
+                          child: GridView.count(
+                            crossAxisCount: 5,
+                            children: iconWidgets,
+                          ),
                         ),
                       ),
                     ),

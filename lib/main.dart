@@ -259,7 +259,7 @@ class XCNav extends StatelessWidget {
         brightness: Brightness.dark,
         bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
-        dialogTheme: DialogTheme(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+        dialogTheme: DialogThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
             foregroundColor: WidgetStateProperty.resolveWith<Color>(

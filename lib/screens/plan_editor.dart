@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -97,40 +96,6 @@ class _PlanEditorState extends State<PlanEditor> {
     });
   }
 
-  void finishEditingPolyline() {
-    setState(() {
-      // if (editingWp != null && plan?.waypoints.containsKey(editingWp) == true) {
-      //   if (editablePolyline.isNotEmpty) {
-      //     plan!.waypoints[editingWp!]!.latlng = editablePolyline.toList();
-      //   } else {
-      //     plan!.waypoints.remove(editingWp!);
-      //   }
-      // }
-      // editingWp = null;
-      // editablePolyline.clear();
-      // focusMode = FocusMode.unlocked;
-      // selectedWp = null;
-
-      // --- finish editing path
-      if (editablePoints.isNotEmpty) {
-        if (editingWp == null) {
-          var temp = Waypoint(name: "", latlngs: editablePoints.toList());
-          editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)?.then((newWaypoint) {
-            if (newWaypoint != null) {
-              plan!.waypoints[newWaypoint.id] = newWaypoint;
-            }
-          });
-        } else {
-          plan!.waypoints[editingWp]!.latlng = editablePoints.toList();
-          editingWp = null;
-        }
-      } else {
-        plan!.waypoints.remove(editingWp);
-      }
-      setFocusMode(FocusMode.unlocked);
-    });
-  }
-
   void onMapTap(BuildContext context, LatLng latlng) {
     isMapDialOpen.value = false;
     if (editingWp != null && plan!.waypoints.containsKey(editingWp) && plan!.waypoints[editingWp]!.latlng.length == 1) {
@@ -189,347 +154,295 @@ class _PlanEditorState extends State<PlanEditor> {
         ),
         body: Container(
           color: Colors.white,
-          child: Stack(
-            children: [
-                  FlutterMap(
-                      key: mapKey,
-                      mapController: mapController,
-                      options: MapOptions(
-                        onMapReady: () {
-                          setState(() {
-                            mapReady = true;
-                          });
-                        },
-                        initialCameraFit: CameraFit.bounds(bounds: plan?.getBounds() ?? defaultMapBounds),
-                        interactionOptions:
-                            const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
-                        onTap: (tapPosition, point) {
-                          // WORKAROUND - calculate relative offset ourselves
-                          final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
-                          if (widgetBox != null) {
-                            final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
-                            final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
-                            // outgoing call...
-                            onMapTap(context, correctedLatLng);
-                          }
-                        },
-                        onLongPress: (tapPosition, point) {
-                          // WORKAROUND - calculate relative offset ourselves
-                          final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
-                          if (widgetBox != null) {
-                            final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
-                            final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
-                            // outgoing call...
-                            onMapLongPress(context, correctedLatLng);
-                          }
-                        },
-                      ),
-                      children: [
-                        Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
+          child: Stack(children: [
+            FlutterMap(
+                key: mapKey,
+                mapController: mapController,
+                options: MapOptions(
+                  onMapReady: () {
+                    setState(() {
+                      mapReady = true;
+                    });
+                  },
+                  initialCameraFit: CameraFit.bounds(bounds: plan?.getBounds() ?? defaultMapBounds),
+                  interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+                  onTap: (tapPosition, point) {
+                    // WORKAROUND - calculate relative offset ourselves
+                    final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
+                    if (widgetBox != null) {
+                      final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
+                      final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
+                      // outgoing call...
+                      onMapTap(context, correctedLatLng);
+                    }
+                  },
+                  onLongPress: (tapPosition, point) {
+                    // WORKAROUND - calculate relative offset ourselves
+                    final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
+                    if (widgetBox != null) {
+                      final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
+                      final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
+                      // outgoing call...
+                      onMapLongPress(context, correctedLatLng);
+                    }
+                  },
+                ),
+                children: [
+                  Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
 
-                        // Flight plan markers
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedWp = polylineHit.value?.hitValues.first;
-                            });
-                          },
-                          onLongPress: () {
-                            final key = polylineHit.value?.hitValues.first;
-                            if (plan!.waypoints.containsKey(key)) {
-                              beginEditingLine(plan!.waypoints[key]!);
-                            }
-                          },
-                          child: PolylineLayer(
-                            hitNotifier: polylineHit,
-                            polylines: plan!.waypoints.values
-                                .where((value) => value.isPath)
-                                .whereNot((element) => element.id == editingWp)
-                                .map((e) => Polyline(
-                                    hitValue: e.id,
-                                    points: e.latlng,
-                                    strokeWidth: e.id == selectedWp ? 8.0 : 4.0,
-                                    color: e.getColor()))
-                                .toList(),
-                          ),
-                        ),
-
-                        // Waypoint markers
-                        MarkerLayer(
-                          markers: plan!.waypoints.values
-                              .where((e) => e.latlng.length == 1 && e.id != editingWp)
-                              .map((e) => Marker(
-                                  point: e.latlng[0],
-                                  height: 60 * (e.id == selectedWp ? 0.8 : 0.6),
-                                  width: 40 * (e.id == selectedWp ? 0.8 : 0.6),
-                                  rotate: true,
-                                  alignment: Alignment.topCenter,
-                                  // anchorPos: AnchorPos.exactly(Anchor(20 * (e.id == selectedWp ? 0.8 : 0.6), 0)),
-                                  // rotateOrigin: Offset(0, 30 * (e.id == selectedWp ? 0.8 : 0.6)),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedWp = e.id;
-                                      });
-                                    },
-                                    onLongPress: () {
-                                      setState(() {
-                                        editingWp = e.id;
-                                        draggingLatLng = null;
-                                      });
-                                    },
-                                    child: WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)),
-                                  )))
-                              .toList(),
-                        ),
-
-                        // --- Draggable waypoints
-                        if (editingWp != null &&
-                            plan!.waypoints.containsKey(editingWp) &&
-                            plan!.waypoints[editingWp]!.latlng.length == 1)
-                          DragMarkers(markers: [
-                            DragMarker(
-                                point: draggingLatLng ?? plan!.waypoints[editingWp]!.latlng.first,
-                                size: const Size(60 * 0.8, 60 * 0.8),
-                                // useLongPress: true,
-                                onTap: (_) => selectedWp = editingWp,
-                                onDragEnd: (p0, p1) {
-                                  setState(() {
-                                    plan!.waypoints[editingWp]!.latlng = [p1];
-                                    dragStart = null;
-                                  });
-                                },
-                                onDragUpdate: (_, p1) {
-                                  draggingLatLng = p1;
-                                },
-                                onDragStart: (p0, p1) {
-                                  setState(() {
-                                    draggingLatLng = p1;
-                                    dragStart = DateTime.now();
-                                  });
-                                },
-                                rotateMarker: true,
-                                builder: (context, latlng, isDragging) => Stack(
-                                      children: [
-                                        Container(
-                                            transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.translationValues(0, -30 * 0.8, 0),
-                                            child: WaypointMarker(plan!.waypoints[editingWp]!, 60 * 0.8)),
-                                        Container(
-                                            transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.translationValues(12, 25, 0),
-                                            child: const Icon(
-                                              Icons.open_with,
-                                              color: Colors.black,
-                                            )),
-                                      ],
-                                    ))
-                          ]),
-
-                        // --- draggable waypoint mode buttons
-                        if (editingWp != null &&
-                            plan!.waypoints.containsKey(editingWp) &&
-                            !plan!.waypoints[editingWp]!.isPath)
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                  rotate: true,
-                                  height: 240,
-                                  point: plan!.waypoints[editingWp]!.latlng.first,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        height: 140,
-                                      ),
-                                      FloatingActionButton.small(
-                                        heroTag: "editWaypoint",
-                                        backgroundColor: Colors.lightBlue,
-                                        onPressed: () {
-                                          editWaypoint(context, plan!.waypoints[editingWp]!,
-                                                  isNew: focusMode == FocusMode.addPath,
-                                                  isPath: plan!.waypoints[editingWp]!.isPath)
-                                              ?.then((newWaypoint) {
-                                            if (newWaypoint != null) {
-                                              plan!.waypoints[newWaypoint.id] = newWaypoint;
-                                            }
-                                          }).then((value) {
-                                            setState(() {
-                                              editingWp = null;
-                                            });
-                                          });
-
-                                          // editingWp = null;
-                                        },
-                                        child: const Icon(Icons.edit),
-                                      ),
-                                      FloatingActionButton.small(
-                                        heroTag: "deleteWaypoint",
-                                        backgroundColor: Colors.red,
-                                        onPressed: () {
-                                          setState(() {
-                                            plan!.waypoints.remove(editingWp!);
-                                            editingWp = null;
-                                          });
-                                        },
-                                        child: const Icon(Icons.delete),
-                                      ),
-                                    ],
-                                  ))
-                            ],
-                          ),
-
-                        // Draggable line editor
-                        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                          PolylineLayer(polylines: polyLines),
-                        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                          DragMarkers(markers: polyEditor.edit()),
-                      ]),
-
-                  // --- Map overlay layers
-                  if (focusMode == FocusMode.addWaypoint)
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Card(
-                        color: Colors.amber.shade400,
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text.rich(
-                            TextSpan(children: [
-                              WidgetSpan(
-                                  child: Icon(
-                                Icons.touch_app,
-                                size: 18,
-                                color: Colors.black,
-                              )),
-                              TextSpan(text: "Tap to place waypoint")
-                            ]),
-                            style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
-                            // textAlign: TextAlign.justify,
-                          ),
-                        ),
-                      ),
+                  // Flight plan markers
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedWp = polylineHit.value?.hitValues.first;
+                      });
+                    },
+                    onLongPress: () {
+                      final key = polylineHit.value?.hitValues.first;
+                      if (plan!.waypoints.containsKey(key)) {
+                        beginEditingLine(plan!.waypoints[key]!);
+                      }
+                    },
+                    child: PolylineLayer(
+                      hitNotifier: polylineHit,
+                      polylines: plan!.waypoints.values
+                          .where((value) => value.isPath)
+                          .whereNot((element) => element.id == editingWp)
+                          .map((e) => Polyline(
+                              hitValue: e.id,
+                              points: e.latlng,
+                              strokeWidth: e.id == selectedWp ? 8.0 : 4.0,
+                              color: e.getColor()))
+                          .toList(),
                     ),
+                  ),
 
-                  Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: SizedBox(
-                            height: 40,
-                            child: MapSelector(
-                              isMapDialOpen: isMapDialOpen,
-                              curLayer: mapTileSrc,
-                              curOpacity: mapOpacity,
-                              onChanged: ((layerName, opacity) {
+                  // Waypoint markers
+                  MarkerLayer(
+                    markers: plan!.waypoints.values
+                        .where((e) => e.latlng.length == 1 && e.id != editingWp)
+                        .map((e) => Marker(
+                            point: e.latlng[0],
+                            height: 60 * (e.id == selectedWp ? 0.8 : 0.6),
+                            width: 40 * (e.id == selectedWp ? 0.8 : 0.6),
+                            rotate: true,
+                            alignment: Alignment.topCenter,
+                            // anchorPos: AnchorPos.exactly(Anchor(20 * (e.id == selectedWp ? 0.8 : 0.6), 0)),
+                            // rotateOrigin: Offset(0, 30 * (e.id == selectedWp ? 0.8 : 0.6)),
+                            child: GestureDetector(
+                              onTap: () {
                                 setState(() {
-                                  mapTileSrc = layerName;
-                                  mapOpacity = opacity;
-                                });
-                              }),
-                            )),
-                      ))
-                ] +
-                ((focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                    ? [
-                        Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Card(
-                                  color: Colors.amber.shade400,
-                                  child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: Text.rich(
-                                        TextSpan(children: [
-                                          WidgetSpan(
-                                              child: Icon(
-                                            Icons.touch_app,
-                                            size: 18,
-                                            color: Colors.black,
-                                          )),
-                                          TextSpan(text: "Tap to add to path".tr())
-                                        ]),
-                                        style:
-                                            TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
-                                      ))),
-                            )),
-                        Align(
-                            alignment: Alignment.bottomRight,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 12),
-                                  child: CircleAvatar(
-                                    radius: 35 / 2,
-                                    backgroundColor: Colors.white,
-                                    child: IconButton(
-                                      padding: EdgeInsets.zero,
-                                      iconSize: 35,
-                                      icon: const Icon(
-                                        Icons.cancel,
-                                        size: 35,
-                                        color: Colors.red,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          // --- Cancel editing of path (don't save changes)
-                                          if (editingWp != null && plan!.waypoints[editingWp!]!.latlng.isEmpty) {
-                                            plan!.waypoints.remove(editingWp!);
-                                          }
-                                          editingWp = null;
-                                          setFocusMode(FocusMode.unlocked);
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                if (editablePoints.length > 1)
-                                  CircleAvatar(
-                                      radius: 35 / 2,
-                                      backgroundColor: Colors.white,
-                                      child: IconButton(
-                                          padding: EdgeInsets.zero,
-                                          iconSize: 35,
-                                          icon: const Icon(
-                                            Icons.check_circle,
-                                            size: 35,
-                                            color: Colors.green,
-                                          ),
-                                          onPressed: () {
-                                            // --- finish editing path
-                                            setState(() {
-                                              finishEditingPolyline();
-                                            });
-                                          }))
-                              ]),
-                            )),
-                        Align(
-                            alignment: Alignment.bottomLeft,
-                            child: TextButton.icon(
-                              icon: const CircleAvatar(
-                                backgroundColor: Colors.white,
-                                radius: 35 / 2,
-                                child: Icon(
-                                  Icons.swap_horizontal_circle,
-                                  color: Colors.black,
-                                  size: 35,
-                                ),
-                              ),
-                              label: const Text("Reverse",
-                                  style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
-                              onPressed: () {
-                                setState(() {
-                                  var temp = editablePoints.toList();
-                                  editablePoints.clear();
-                                  editablePoints.addAll(temp.reversed);
+                                  selectedWp = e.id;
                                 });
                               },
-                            )),
-                      ]
-                    : []),
-          ),
+                              onLongPress: () {
+                                setState(() {
+                                  editingWp = e.id;
+                                  draggingLatLng = null;
+                                  setFocusMode(FocusMode.editWaypoint);
+                                });
+                              },
+                              child: WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)),
+                            )))
+                        .toList(),
+                  ),
+
+                  // --- Draggable waypoints
+                  if (editingWp != null &&
+                      plan!.waypoints.containsKey(editingWp) &&
+                      plan!.waypoints[editingWp]!.latlng.length == 1)
+                    DragMarkers(markers: [
+                      DragMarker(
+                          point: draggingLatLng ?? plan!.waypoints[editingWp]!.latlng.first,
+                          size: const Size(60 * 0.8, 60 * 0.8),
+                          // useLongPress: true,
+                          onTap: (_) => selectedWp = editingWp,
+                          onDragEnd: (p0, p1) {
+                            setState(() {
+                              dragStart = null;
+                            });
+                          },
+                          onDragUpdate: (_, p1) {
+                            draggingLatLng = p1;
+                          },
+                          onDragStart: (p0, p1) {
+                            setState(() {
+                              draggingLatLng = p1;
+                              dragStart = DateTime.now();
+                            });
+                          },
+                          rotateMarker: true,
+                          builder: (context, latlng, isDragging) => Stack(
+                                children: [
+                                  Container(
+                                      transformAlignment: const Alignment(0, 0),
+                                      transform: Matrix4.translationValues(0, -30 * 0.8, 0),
+                                      child: WaypointMarker(plan!.waypoints[editingWp]!, 60 * 0.8)),
+                                  Container(
+                                      transformAlignment: const Alignment(0, 0),
+                                      transform: Matrix4.translationValues(12, 25, 0),
+                                      child: const Icon(
+                                        Icons.open_with,
+                                        color: Colors.black,
+                                      )),
+                                ],
+                              ))
+                    ]),
+
+                  // Draggable line editor
+                  if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                    PolylineLayer(polylines: polyLines),
+                  if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                    DragMarkers(markers: polyEditor.edit()),
+                ]),
+
+            Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: SizedBox(
+                      height: 40,
+                      child: MapSelector(
+                        isMapDialOpen: isMapDialOpen,
+                        curLayer: mapTileSrc,
+                        curOpacity: mapOpacity,
+                        onChanged: ((layerName, opacity) {
+                          setState(() {
+                            mapTileSrc = layerName;
+                            mapOpacity = opacity;
+                          });
+                        }),
+                      )),
+                )),
+
+            // --- Editing waypoint/path buttons
+            if (focusMode == FocusMode.addPath ||
+                focusMode == FocusMode.editPath ||
+                focusMode == FocusMode.editWaypoint)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 80, right: 80, bottom: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.white,
+                        maxRadius: 20,
+                        child: IconButton(
+                          iconSize: 40,
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.delete,
+                            size: 35,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            plan!.waypoints.remove(editingWp!);
+                            editingWp = null;
+                            setFocusMode(FocusMode.unlocked);
+                          },
+                        ),
+                      ),
+                      SizedBox(
+                        width: 10,
+                        height: 1,
+                      ),
+                      CircleAvatar(
+                        backgroundColor: Colors.white,
+                        maxRadius: 20,
+                        child: IconButton(
+                          iconSize: 40,
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.undo,
+                            size: 35,
+                            color: Colors.black,
+                          ),
+                          onPressed: () {
+                            editingWp = null;
+                            draggingLatLng = null;
+                            setFocusMode(FocusMode.unlocked);
+                          },
+                        ),
+                      ),
+                      if (focusMode != FocusMode.addPath)
+                        CircleAvatar(
+                          backgroundColor: Colors.white,
+                          maxRadius: 20,
+                          child: IconButton(
+                            iconSize: 40,
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.edit,
+                              size: 30,
+                              color: Colors.blue,
+                            ),
+                            onPressed: () {
+                              if (editingWp != null) {
+                                editWaypoint(context, plan!.waypoints[editingWp]!,
+                                        isNew: focusMode == FocusMode.addPath,
+                                        isPath: plan!.waypoints[editingWp]!.isPath)
+                                    ?.then((newWaypoint) {
+                                  if (newWaypoint != null) {
+                                    plan!.waypoints[newWaypoint.id] = newWaypoint;
+                                  }
+                                }).then((value) {
+                                  editingWp = null;
+                                });
+                              }
+                              setFocusMode(FocusMode.unlocked);
+                            },
+                          ),
+                        ),
+                      if ((editablePoints.length > 1 || focusMode == FocusMode.editWaypoint) &&
+                          focusMode != FocusMode.measurement)
+                        CircleAvatar(
+                          backgroundColor: Colors.white,
+                          maxRadius: 20,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            iconSize: 40,
+                            icon: const Icon(
+                              Icons.check_circle,
+                              size: 40,
+                              color: Colors.green,
+                            ),
+                            onPressed: () {
+                              // --- finish editing path
+                              if (focusMode == FocusMode.editPath || focusMode == FocusMode.addPath) {
+                                // --- finish editing path
+                                if (editablePoints.isNotEmpty) {
+                                  if (editingWp == null) {
+                                    var temp = Waypoint(name: "", latlngs: editablePoints.toList());
+                                    editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
+                                        ?.then((newWaypoint) {
+                                      if (newWaypoint != null) {
+                                        plan!.waypoints[newWaypoint.id] = newWaypoint;
+                                      }
+                                    });
+                                  } else {
+                                    plan!.waypoints[editingWp]!.latlng = editablePoints.toList();
+                                    editingWp = null;
+                                  }
+                                } else {
+                                  plan!.waypoints.remove(editingWp);
+                                }
+                              }
+                              // --- finish editing waypoint
+                              if (focusMode == FocusMode.editWaypoint && draggingLatLng != null && editingWp != null) {
+                                plan!.waypoints[editingWp]!.latlng = [draggingLatLng!];
+                              }
+                              editingWp = null;
+                              setFocusMode(FocusMode.unlocked);
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+          ]),
         ),
 
         ///
@@ -604,14 +517,12 @@ class _PlanEditorState extends State<PlanEditor> {
                                 waypoint: items[i],
                                 index: i,
                                 onSelect: () {
-                                  setState(() {
-                                    if (editingWp != null) {
-                                      finishEditingPolyline();
-                                    }
+                                  editingWp = null;
+                                  draggingLatLng = null;
 
-                                    mapController.move(items[i].latlng.first, mapController.camera.zoom);
-                                    selectedWp = items[i].id;
-                                  });
+                                  mapController.move(items[i].latlng.first, mapController.camera.zoom);
+                                  selectedWp = items[i].id;
+                                  setFocusMode(FocusMode.unlocked);
                                 },
                                 isSelected: items[i].id == selectedWp,
                               ),

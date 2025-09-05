@@ -65,6 +65,7 @@ enum FocusMode {
   addWaypoint,
   addPath,
   editPath,
+  editWaypoint,
   measurement,
 }
 
@@ -169,7 +170,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         prevFocusMode = focusMode;
       }
       focusMode = mode;
-      if (mode != FocusMode.editPath) editingWp = null;
+      if (mode != FocusMode.editPath && mode != FocusMode.editWaypoint) editingWp = null;
       if (mode == FocusMode.group) lastMapChange = null;
       debugPrint("FocusMode = $mode");
 
@@ -595,7 +596,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           )
                                         : Container(
                                             transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.rotationZ((e.windDir ?? 0) * pi / 180),
+                                            transform: Matrix4.rotationZ((e.windDir ?? 0) * pi / 180 + pi),
                                             child: SvgPicture.asset("assets/images/simple_arrow.svg",
                                                 colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
                                   ),
@@ -624,10 +625,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   },
                                   onLongPress: () {
                                     if (!e.ephemeral) {
-                                      setState(() {
-                                        editingWp = e.id;
-                                        draggingLatLng = null;
-                                      });
+                                      editingWp = e.id;
+                                      setFocusMode(FocusMode.editWaypoint);
                                     }
                                   },
                                   child: WaypointMarker(e, 60 * 0.8),
@@ -645,7 +644,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                             size: const Size(60 * 0.8, 60 * 0.8),
                             onTap: (_) => plan.selectedWp = editingWp,
                             onDragEnd: (p0, p1) {
-                              plan.moveWaypoint(editingWp!, [p1]);
                               dragStart = null;
                             },
                             onDragUpdate: (_, p1) {
@@ -686,54 +684,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               }
                             })
                       ]),
-
-                    // --- draggable waypoint mode buttons
-                    if (editingWp != null &&
-                        plan.waypoints.containsKey(editingWp) &&
-                        !plan.waypoints[editingWp]!.isPath)
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                              rotate: true,
-                              height: 240,
-                              point: plan.waypoints[editingWp]!.latlng.first,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    height: 140,
-                                  ),
-                                  FloatingActionButton.small(
-                                    heroTag: "editWaypoint",
-                                    backgroundColor: Colors.lightBlue,
-                                    onPressed: () {
-                                      editWaypoint(context, plan.waypoints[editingWp]!,
-                                              isNew: focusMode == FocusMode.addPath,
-                                              isPath: plan.waypoints[editingWp]!.isPath)
-                                          ?.then((newWaypoint) {
-                                        if (newWaypoint != null) {
-                                          plan.updateWaypoint(newWaypoint);
-                                        }
-                                      });
-                                      editingWp = null;
-                                    },
-                                    child: const Icon(Icons.edit),
-                                  ),
-                                  FloatingActionButton.small(
-                                    heroTag: "deleteWaypoint",
-                                    backgroundColor: Colors.red,
-                                    onPressed: () {
-                                      setState(() {
-                                        plan.removeWaypoint(editingWp!);
-                                        editingWp = null;
-                                      });
-                                    },
-                                    child: const Icon(Icons.delete),
-                                  ),
-                                ],
-                              ))
-                        ],
-                      ),
 
                     // GA planes (ADSB IN)
                     if (Provider.of<ADSB>(context, listen: false).enabled)
@@ -1095,85 +1045,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           Xc170StatusCard(xc170: ble_service.bleDeviceXc170),
                       ])),
 
-                  if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Card(
-                            color: Colors.amber.shade400,
-                            child: Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text.rich(
-                                TextSpan(children: [
-                                  WidgetSpan(
-                                      child: Icon(
-                                    Icons.touch_app,
-                                    size: 18,
-                                    color: Colors.black,
-                                  )),
-                                  TextSpan(text: "Tap to add to path".tr())
-                                ]),
-                                style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: CircleAvatar(
-                              backgroundColor: Colors.white,
-                              maxRadius: 20,
-                              child: IconButton(
-                                iconSize: 40,
-                                padding: EdgeInsets.zero,
-                                icon: const Icon(
-                                  Icons.cancel,
-                                  size: 40,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  measurementPoints.clear();
-                                  setFocusMode(prevFocusMode);
-                                },
-                              ),
-                            ),
-                          ),
-                          if (editablePoints.length > 1 && focusMode != FocusMode.measurement)
-                            CircleAvatar(
-                              backgroundColor: Colors.white,
-                              maxRadius: 20,
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                iconSize: 40,
-                                icon: const Icon(
-                                  Icons.check_circle,
-                                  size: 40,
-                                  color: Colors.green,
-                                ),
-                                onPressed: () {
-                                  // --- finish editing path
-                                  var plan = Provider.of<ActivePlan>(context, listen: false);
-                                  if (editingWp == null) {
-                                    var temp = Waypoint(name: "", latlngs: editablePoints.toList());
-                                    editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
-                                        ?.then((newWaypoint) {
-                                      if (newWaypoint != null) {
-                                        plan.updateWaypoint(newWaypoint);
-                                      }
-                                    });
-                                  } else {
-                                    plan.moveWaypoint(editingWp!, editablePoints.toList());
-                                    editingWp = null;
-                                  }
-                                  setFocusMode(prevFocusMode);
-                                },
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-
                   // --- Chat bubbles
                   Consumer<ChatMessages>(
                     builder: (context, chat, child) {
@@ -1350,7 +1221,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       } else {
                         setFocusMode(FocusMode.measurement);
                       }
-                      // setFocusMode(FocusMode.measurement);
                     },
                     selected: false,
                     child: Icon(
@@ -1471,8 +1341,130 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                   )),
         ),
 
+        // --- Editing waypoint/path buttons
+        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath || focusMode == FocusMode.editWaypoint)
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 80, right: 80, bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white,
+                    maxRadius: 20,
+                    child: IconButton(
+                      iconSize: 40,
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
+                        Icons.delete,
+                        size: 35,
+                        color: Colors.red,
+                      ),
+                      onPressed: () {
+                        if (editingWp != null) {
+                          final plan = Provider.of<ActivePlan>(context, listen: false);
+                          plan.removeWaypoint(editingWp!);
+                          editingWp == null;
+                        }
+                        setFocusMode(prevFocusMode);
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: 10,
+                    height: 1,
+                  ),
+                  CircleAvatar(
+                    backgroundColor: Colors.white,
+                    maxRadius: 20,
+                    child: IconButton(
+                      iconSize: 40,
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
+                        Icons.undo,
+                        size: 35,
+                        color: Colors.black,
+                      ),
+                      onPressed: () {
+                        draggingLatLng = null;
+                        setFocusMode(prevFocusMode);
+                      },
+                    ),
+                  ),
+                  if (focusMode != FocusMode.addPath)
+                    CircleAvatar(
+                      backgroundColor: Colors.white,
+                      maxRadius: 20,
+                      child: IconButton(
+                        iconSize: 40,
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(
+                          Icons.edit,
+                          size: 30,
+                          color: Colors.blue,
+                        ),
+                        onPressed: () {
+                          if (editingWp != null) {
+                            final plan = Provider.of<ActivePlan>(context, listen: false);
+                            editWaypoint(context, plan.waypoints[editingWp]!,
+                                    isNew: false, isPath: plan.waypoints[editingWp]!.isPath)
+                                ?.then((newWaypoint) {
+                              if (newWaypoint != null) {
+                                plan.updateWaypoint(newWaypoint);
+                              }
+                            });
+                            editingWp = null;
+                          }
+                          setFocusMode(prevFocusMode);
+                        },
+                      ),
+                    ),
+                  if ((editablePoints.length > 1 || focusMode == FocusMode.editWaypoint) &&
+                      focusMode != FocusMode.measurement)
+                    CircleAvatar(
+                      backgroundColor: Colors.white,
+                      maxRadius: 20,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        iconSize: 40,
+                        icon: const Icon(
+                          Icons.check_circle,
+                          size: 40,
+                          color: Colors.green,
+                        ),
+                        onPressed: () {
+                          final plan = Provider.of<ActivePlan>(context, listen: false);
+                          // --- finish editing path
+                          if (focusMode == FocusMode.editPath || focusMode == FocusMode.addPath) {
+                            if (editingWp == null) {
+                              final temp = Waypoint(name: "", latlngs: editablePoints.toList());
+                              editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
+                                  ?.then((newWaypoint) {
+                                if (newWaypoint != null) {
+                                  plan.updateWaypoint(newWaypoint);
+                                }
+                              });
+                            } else {
+                              plan.moveWaypoint(editingWp!, editablePoints.toList());
+                              editingWp = null;
+                            }
+                          }
+                          // --- finish editing waypoint
+                          if (focusMode == FocusMode.editWaypoint && draggingLatLng != null && editingWp != null) {
+                            plan.moveWaypoint(editingWp!, [draggingLatLng!]);
+                          }
+                          setFocusMode(prevFocusMode);
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
         // --- Current waypoint info
-        if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath)
+        if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath && focusMode != FocusMode.editWaypoint)
           Consumer<ActivePlan>(
             builder: (context, activePlan, _) {
               final curWaypoint = activePlan.getSelectedWp();

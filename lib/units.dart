@@ -64,7 +64,7 @@ String get fuelRateStr {
   if (_unitFuel == DisplayUnitsFuel.kWh) {
     return " kW";
   } else {
-    return " ${getUnitStr(UnitType.fuel)}/${"time.hour.short.one"}";
+    return " ${getUnitStr(UnitType.fuel)}/${"time.hour.short.one".tr()}";
   }
 }
 
