@@ -18,6 +18,22 @@ StreamSubscription<List<ScanResult>>? _devicesListener;
 Timer? autoScan;
 bool scanning = false;
 
+BleDeviceHandler? getHandler({String? name, DeviceIdentifier? deviceId}) {
+  if (name != null) {
+    final handler = _deviceHandlers[name];
+    if (handler != null && handler.device != null) {
+      return handler;
+    }
+  } else if (deviceId != null) {
+    for (final each in _deviceHandlers.values) {
+      if (each.device != null && each.device?.remoteId == deviceId) {
+        return each;
+      }
+    }
+  }
+  return null;
+}
+
 void scan() async {
   debugPrint("BLE Scanning...");
   // if (_devicesListener != null) {

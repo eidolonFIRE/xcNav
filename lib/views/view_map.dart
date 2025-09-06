@@ -1039,11 +1039,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                         })))),
                           );
                         }),
-
-                        // BLE xc170
-                        if (ble_service.bleDeviceXc170.device != null)
-                          Xc170StatusCard(xc170: ble_service.bleDeviceXc170),
                       ])),
+
+                  // --- BLE xc170
+                  if (ble_service.bleDeviceXc170.device != null) Xc170StatusCard(xc170: ble_service.bleDeviceXc170),
 
                   // --- Chat bubbles
                   Consumer<ChatMessages>(

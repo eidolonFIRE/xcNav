@@ -14,7 +14,7 @@ class Xc170TelemetryCharacteristic {
   final String uuid;
   BluetoothCharacteristic? characteristic;
 
-  late final fuel = BleLoggedValue<double>(
+  final fuel = BleLoggedValue<double>(
       calibration: MapValue<double>([
     [24, 1], // 18 originally
     [304, 1.5],
@@ -47,15 +47,15 @@ class Xc170TelemetryCharacteristic {
     [8049, 15],
     [8180, 15.5], // 8190 originally
   ]));
-  late final BleLoggedValue<int> cht;
-  late final BleLoggedValue<int> egt;
-  late final BleLoggedValue<int> rpm;
-  late final fanAmps = BleLoggedValue<double>(
+  final cht = BleLoggedValue<int>();
+  final egt = BleLoggedValue<int>();
+  final rpm = BleLoggedValue<int>();
+  final fanAmps = BleLoggedValue<double>(
       calibration: MapValue<double>([
     [0.0, 0],
     [50000.0, 50.0]
   ]));
-  late final BleLoggedValue<int> fanCtrl;
+  final fanCtrl = BleLoggedValue<int>();
 
   Xc170TelemetryCharacteristic({required this.uuid});
 
@@ -203,11 +203,16 @@ class BleDeviceXc170 extends BleDeviceHandler {
   Map<String, dynamic>? toJson() {
     return {
       "id": runtimeType.toString(),
-      "version": "1.0",
+      "version": "1.1",
       "datas": {
         "telemetry": telemetry,
       },
     };
+  }
+
+  @override
+  Widget configDialog() {
+    return Xc170ConfigDialog(xc170: this);
   }
 
   @override
@@ -250,7 +255,7 @@ class Xc170ConfigDialog extends StatelessWidget {
           Form(
               child: Row(mainAxisSize: MainAxisSize.min, children: [
             SizedBox(
-              width: 40,
+              width: 80,
               child: TextFormField(
                 controller: chtMinController,
                 keyboardType: TextInputType.number,
@@ -267,6 +272,10 @@ class Xc170ConfigDialog extends StatelessWidget {
                   }
                   return null;
                 },
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.all(4)),
                 onEditingComplete: () {
                   final value = parseAsInt(chtMinController.text);
                   if (value != null) {
@@ -280,7 +289,7 @@ class Xc170ConfigDialog extends StatelessWidget {
               child: Divider(),
             ),
             SizedBox(
-              width: 40,
+              width: 80,
               child: TextFormField(
                 controller: chtMaxController,
                 keyboardType: TextInputType.number,
@@ -297,6 +306,10 @@ class Xc170ConfigDialog extends StatelessWidget {
                   }
                   return "";
                 },
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.all(4)),
                 onEditingComplete: () {
                   final value = parseAsInt(chtMaxController.text);
                   if (value != null) {
@@ -307,8 +320,8 @@ class Xc170ConfigDialog extends StatelessWidget {
             )
           ])),
           SizedBox(
-              width: 40,
-              height: 30,
+              width: 240,
+              height: 80,
               child: StatefulBuilder(builder: (context, setState) {
                 return Slider(
                   max: 180,
@@ -357,25 +370,11 @@ class Xc170StatusCard extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                ElevatedButton.icon(
-                                  icon: Icon(Icons.wind_power),
-                                  label: Text("Set"),
-                                  onPressed: () async {
-                                    if (context.mounted) {
-                                      showDialog(
-                                          context: context, builder: (context) => Xc170ConfigDialog(xc170: xc170));
-                                    }
-                                  },
-                                ),
                                 StreamBuilder(
-                                    stream: xc170.telemetry.fuel.valueRawStream,
+                                    stream: xc170.telemetry.rpm.valueRawStream,
                                     builder: (context, value) => Text.rich(TextSpan(children: [
                                           TextSpan(
-                                            text: printDouble(
-                                              value: value.data ?? 0,
-                                              digits: 4,
-                                              decimals: 0,
-                                            ),
+                                            text: value.data.toString(),
                                             style: const TextStyle(color: Colors.black, fontSize: 30),
                                           ),
                                           WidgetSpan(

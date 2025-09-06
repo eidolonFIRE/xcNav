@@ -48,7 +48,7 @@ class BleLoggedValue<T extends num> {
 
   final MapValue<T>? calibration;
 
-  BleLoggedValue({required this.calibration});
+  BleLoggedValue({this.calibration});
 
   void addValue(T value, DateTime? timestamp) {
     T calibratedValue = calibration == null ? value : calibration!.mapValue(value);

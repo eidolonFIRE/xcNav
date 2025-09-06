@@ -15,6 +15,10 @@ abstract class BleDeviceHandler {
     throw UnimplementedError();
   }
 
+  Widget configDialog() {
+    return Container();
+  }
+
   void onDisconnected() {
     debugPrint("Disconnected from device: ${device?.advName} ${device?.remoteId}");
 
