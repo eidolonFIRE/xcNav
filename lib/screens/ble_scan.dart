@@ -109,18 +109,23 @@ class _ScanScreenState extends State<ScanScreen> {
                                     ),
                                     style: TextStyle(fontSize: 30),
                                   ),
-                                  if (device.isConnected)
-                                    IconButton(
-                                        onPressed: () {
-                                          if (context.mounted) {
-                                            final handler = ble_service.getHandler(deviceId: device.remoteId);
-                                            if (handler != null) {
-                                              showDialog(
-                                                  context: context, builder: (context) => handler.configDialog());
-                                            }
-                                          }
-                                        },
-                                        icon: Icon(Icons.settings)),
+                                  StreamBuilder(
+                                      stream: device.connectionState,
+                                      builder: (context, connected) =>
+                                          (connected.data == BluetoothConnectionState.connected)
+                                              ? IconButton(
+                                                  onPressed: () {
+                                                    if (context.mounted) {
+                                                      final handler = ble_service.getHandler(deviceId: device.remoteId);
+                                                      if (handler != null) {
+                                                        showDialog(
+                                                            context: context,
+                                                            builder: (context) => handler.configDialog());
+                                                      }
+                                                    }
+                                                  },
+                                                  icon: Icon(Icons.settings))
+                                              : Container()),
                                 ],
                               ),
                               Container(

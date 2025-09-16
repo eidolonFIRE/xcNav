@@ -54,12 +54,11 @@ class BleDeviceData:
 
 
 #--- Logs
-logFuel = BleDeviceData(inFile["ble_devices"]["xc170"]["deviceValues"]["fuel"], trim_start=args.trim_start, trim_end=args.trim_end)
-logFanCtrl = BleDeviceData(inFile["ble_devices"]["xc170"]["deviceValues"]["fanCtrl"], trim_start=args.trim_start, trim_end=args.trim_end)
-logFanAmps = BleDeviceData(inFile["ble_devices"]["xc170"]["deviceValues"]["fanAmps"], trim_start=args.trim_start, trim_end=args.trim_end)
-logCHT = BleDeviceData(inFile["ble_devices"]["xc170"]["deviceValues"]["cht"], trim_start=args.trim_start, trim_end=args.trim_end)
-logEGT = BleDeviceData(inFile["ble_devices"]["xc170"]["deviceValues"]["egt"], trim_start=args.trim_start, trim_end=args.trim_end)
-logRPM = BleDeviceData(inFile["ble_devices"]["xc170"]["deviceValues"]["rpm"], trim_start=args.trim_start, trim_end=args.trim_end)
+logFuel = BleDeviceData(inFile["ble_devices"]["xc170"]["datas"]["telemetry"]["fuel"], trim_start=args.trim_start, trim_end=args.trim_end)
+logFanAmps = BleDeviceData(inFile["ble_devices"]["xc170"]["datas"]["telemetry"]["fanAmps"], trim_start=args.trim_start, trim_end=args.trim_end)
+logCHT = BleDeviceData(inFile["ble_devices"]["xc170"]["datas"]["telemetry"]["cht"], trim_start=args.trim_start, trim_end=args.trim_end)
+logEGT = BleDeviceData(inFile["ble_devices"]["xc170"]["datas"]["telemetry"]["egt"], trim_start=args.trim_start, trim_end=args.trim_end)
+logRPM = BleDeviceData(inFile["ble_devices"]["xc170"]["datas"]["telemetry"]["rpm"], trim_start=args.trim_start, trim_end=args.trim_end)
 
 
 
@@ -169,7 +168,7 @@ def plotCorrRpmAmps(ax: Axes, rpm: BleDeviceData, amps: BleDeviceData):
     ax.set_title(f"Fan Amps x Engine RPM")
     ax.scatter(x, y, alpha=0.1, linewidths=0, color="red", s=20)
     ax.plot(x[order], p(x[order]), color="black", linewidth=2, linestyle="--")
-    ax.set_ylim(bottom=0, top=10)
+    # ax.set_ylim(bottom=0, top=10)
     ax.set_xlim(left=2700, right=7000)
     ax.set_ylabel("Amps")
     ax.grid(visible=True)
