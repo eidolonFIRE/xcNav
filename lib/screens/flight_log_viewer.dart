@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:open_file/open_file.dart';
+import 'package:path/path.dart' as path;
 
+import 'package:archive/archive.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -134,14 +138,26 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                     }
                     break;
                   case "bulk_export":
-                    List<Future<String>> paths = logStore.logsSliceLogs.map((e) => e.export()).toList();
-                    await Future.wait(paths);
-                    if (context.mounted) {
-                      showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                                title: Text("Exported ${paths.length} logs to documents."),
-                              ));
+                    List<Future<String>> futurePaths = logStore.logsSliceLogs.map((e) => e.export()).toList();
+                    final paths = await Future.wait(futurePaths);
+                    if (Platform.isIOS) {
+                      final archive = Archive();
+                      for (final each in paths) {
+                        archive.add(ArchiveFile.bytes(path.basename(each), File(each).readAsBytesSync()));
+                      }
+                      final outputFilename =
+                          "${(await getApplicationDocumentsDirectory()).path}/xcNav_exported_${paths.length}_logs.zip";
+                      final zipFile = File(outputFilename);
+                      zipFile.writeAsBytesSync(ZipEncoder().encodeBytes(archive));
+                      await OpenFile.open(outputFilename);
+                    } else {
+                      if (context.mounted) {
+                        showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                                  title: Text("Exported ${paths.length} logs to documents."),
+                                ));
+                      }
                     }
                     break;
                 }

@@ -491,9 +491,8 @@ class FlightLog {
     } else {
       outFilename = p.basenameWithoutExtension(filename ?? DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.now()));
     }
-    Directory path = (Platform.isIOS
-        ? (await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory())
-        : Directory('/storage/emulated/0/Documents'));
+    Directory path =
+        (Platform.isIOS ? await getApplicationDocumentsDirectory() : Directory('/storage/emulated/0/Documents'));
 
     final outFile = File("${path.path}/xcNav_$fileType/$outFilename.$fileType");
     await outFile.create(recursive: true);
