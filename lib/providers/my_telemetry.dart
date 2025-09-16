@@ -303,6 +303,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             1000;
         if (vario.isFinite) {
           varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
+        } else {
+          varioSmooth.value = 0;
         }
       }
     }, onError: (error) {
@@ -701,13 +703,16 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       // Maybe no barometer in device?
       if (geoPrev != null) {
         final vario = (geo!.alt - geoPrev!.alt) / (geo!.time - geoPrev!.time) * 1000;
-        varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
+        if (vario.isFinite) {
+          varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
+        } else {
+          varioSmooth.value = 0;
+        }
       }
     }
 
     speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
 
-    geo!.prevGnd = geoPrev?.ground;
     await sampleDem(geo!.latlng, true).then((value) {
       if (value != null) {
         geo!.ground = value;
@@ -727,7 +732,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (globalContext != null && settingsMgr.autoRecordFlight.value) {
       if (inFlight) {
         // Is moving slowly near the ground?
-        if (speedSmooth.value < 2.5 && varioSmooth.value.abs() < 0.2 && geo!.alt - (geo!.ground ?? geo!.alt) < 30) {
+        if (speedSmooth.value < 2.5 && varioSmooth.value.abs() < 0.2 && (geo!.alt - (geo!.ground ?? geo!.alt)) < 30) {
           if (geoPrev != null) {
             triggerHyst += geo!.time - geoPrev!.time;
           } else {

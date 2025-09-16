@@ -29,14 +29,7 @@ class Geo {
   double altGps = 0;
 
   /// Ground Elevation
-  double? _gnd;
-  double? prevGnd;
-  set ground(double? value) {
-    _gnd = value;
-  }
-
-  ///
-  double? get ground => _gnd ?? prevGnd;
+  double? ground;
 
   /// milliseconds since epoch
   int time = 0;
@@ -150,10 +143,8 @@ class Geo {
       "time": time,
       "hdg": roundToDigits(hdg, 2),
       "spd": roundToDigits(spd, 3),
+      if (ground != null) "ground": roundToDigits(ground!, 2)
     };
-    if (ground != null) {
-      dict["ground"] = roundToDigits(ground!, 2);
-    }
     return dict;
   }
 
