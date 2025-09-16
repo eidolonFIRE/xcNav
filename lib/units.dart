@@ -235,6 +235,7 @@ String printDoubleSimple(double value, {decimals = 1}) {
   return trimZeros(value.toStringAsFixed(decimals));
 }
 
+/// autoDecimalThresh: auto add decimal when value is less than threshold
 String printDouble(
     {required double value,
     required int digits,

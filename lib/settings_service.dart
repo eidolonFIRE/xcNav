@@ -244,8 +244,8 @@ class SettingsMgr {
   late final SettingConfig<MapTileSrc> mainMapTileSrc;
   late final SettingConfig<double> mainMapOpacity;
   late final SettingConfig<String> datadogSdkId;
-
   late final SettingConfig<AltimeterMode> audioCueAltimeter;
+  late final SettingConfig<List<String>> bleAutoDevices;
 
   SettingsMgr(SharedPreferences prefs) {
     // --- General
@@ -409,6 +409,9 @@ class SettingsMgr {
 
     audioCueAltimeter = SettingConfig(this, prefs, "Audio Cues", "audioCueAltimeter", AltimeterMode.msl,
         title: "Altimeter Mode", icon: const Icon(Icons.vertical_align_top), hidden: true);
+
+    bleAutoDevices =
+        SettingConfig(this, prefs, "ble", "bleAutoConnectDevices", [], title: "Auto Connect Devices", hidden: true);
   }
 }
 

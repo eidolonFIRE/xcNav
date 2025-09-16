@@ -67,6 +67,30 @@ class TimestampDouble {
   int get hashCode => time.hashCode + value.hashCode;
 }
 
+class TimestampValue<T extends num> {
+  /// Milliseconds since epoch
+  final int time;
+  final T value;
+
+  TimestampValue(this.time, this.value);
+
+  @override
+  bool operator ==(Object other) {
+    if (other is TimestampValue<T>) {
+      return other.time == time && other.value == value;
+    } else {
+      return false;
+    }
+  }
+
+  @override
+  int get hashCode => time.hashCode + value.hashCode;
+
+  dynamic toJson() {
+    return [time, value];
+  }
+}
+
 class Range<T> {
   final T start;
   final T end;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
@@ -7,14 +9,32 @@ abstract class BleDeviceHandler {
   BluetoothDevice? device;
   Map<String, Map<String, BluetoothCharacteristic>> characteristics = {};
 
+  Timer? reconnector;
+
+  dynamic toJson() {
+    throw UnimplementedError();
+  }
+
+  Widget configDialog() {
+    return Container();
+  }
+
   void onDisconnected() {
-    if (device == null || (device?.isDisconnected ?? true)) return;
     debugPrint("Disconnected from device: ${device?.advName} ${device?.remoteId}");
-    device = null;
-    characteristics.clear();
+
+    if (device != null) {
+      reconnector?.cancel();
+      reconnector = Timer.periodic(Duration(seconds: 20), (timer) {
+        debugPrint("Attempting reconnect to: ${device?.advName} ${device?.remoteId}");
+        device?.connect();
+      });
+    }
   }
 
   Future onConnected(BluetoothDevice instance) async {
+    reconnector?.cancel();
+    reconnector = null;
+
     device = instance;
     debugPrint("Connected to device: ${device!.advName} ${device?.remoteId}");
 

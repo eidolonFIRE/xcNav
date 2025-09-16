@@ -54,6 +54,7 @@ import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/secrets.dart';
 import 'package:xcnav/airports.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/services/ble_service.dart' as ble_service;
 
 LatLng lastKnownLatLng = const LatLng(37, -122);
 
@@ -207,6 +208,10 @@ class XCNav extends StatelessWidget {
     ttsService = TtsService();
 
     Provider.of<MyTelemetry>(context, listen: false).globalContext = context;
+
+    if (settingsMgr.bleAutoDevices.value.isNotEmpty) {
+      ble_service.scan();
+    }
 
     debugPrint("Building App");
 

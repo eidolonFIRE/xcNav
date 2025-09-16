@@ -128,7 +128,7 @@ class _MainMenuState extends State<MainMenu> {
             leading: const Icon(Icons.radar, size: 30),
             title: Text("ADSB-in", style: Theme.of(context).textTheme.headlineSmall),
             trailing: Switch.adaptive(
-              activeColor: Colors.lightBlue,
+              activeThumbColor: Colors.lightBlue,
               value: Provider.of<ADSB>(context).enabled,
               onChanged: (value) => {Provider.of<ADSB>(context, listen: false).enabled = value},
             ),
