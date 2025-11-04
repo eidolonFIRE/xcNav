@@ -210,6 +210,7 @@ class SettingsMgr {
   late final SettingConfig<double> altimeterVsiThresh;
   late final SettingConfig<bool> mapControlsRightSide;
   late final SettingConfig<bool> showPilotNames;
+  late final SettingConfig<bool> hideWeatherObservations;
   // late final SettingConfig<bool> showWeatherOverlay;
   // late final SettingConfig<bool> showAirspaceOverlay;
   late final SettingConfig<bool> groupViewWaypoint;
@@ -292,6 +293,10 @@ class SettingsMgr {
         icon: const Icon(Icons.swap_horiz));
     showPilotNames = SettingConfig(this, prefs, "UI", "showPilotNames", false,
         title: "always_show_pilot_names", description: "", icon: const Icon(Icons.abc));
+    hideWeatherObservations = SettingConfig(this, prefs, "UI", "hideWeatherObservations", false,
+        title: "hide_wind_observations",
+        description: "Hide wind observations from weather stations on map.",
+        icon: const Icon(Icons.air));
 
     // showWeatherOverlay = SettingConfig(this, prefs, "UI", "showWeatherOverlay", false,
     //     title: "Show weather overlay", description: "", icon: const Icon(Icons.cloud));
