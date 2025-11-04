@@ -361,7 +361,7 @@ class SettingsMgr {
                 })
         ])));
 
-    // --- ServoCarb
+    // --- Experimental
     barometerOffset = SettingConfig(this, prefs, "Experimental", "barometerOffset", 0,
         title: "barometer_offset",
         icon: const Icon(Icons.height),
