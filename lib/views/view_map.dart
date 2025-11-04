@@ -105,7 +105,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
   bool hideWaypoints = false;
-  bool hideWeatherObservations = false;
 
   DateTime? lastSavedLastKnownLatLng;
 
@@ -522,7 +521,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     //           .toList()),
 
                     // WeatherObservations
-                    if (mapReady && !hideWeatherObservations && mapController.camera.zoom > 7)
+                    if (mapReady && !settingsMgr.hideWeatherObservations.value && mapController.camera.zoom > 7)
                       MarkerLayer(
                           markers: getWeatherObservations(mapController.camera.visibleBounds)
                               .map((e) => Marker(
@@ -574,7 +573,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                   ))
                               .toList()),
 
-                    if (mapReady && !hideWeatherObservations && mapController.camera.zoom > 7)
+                    if (mapReady && !settingsMgr.hideWeatherObservations.value && mapController.camera.zoom > 7)
                       MarkerLayer(
                           markers: getWeatherObservations(mapController.camera.visibleBounds)
                               .map(
@@ -1520,7 +1519,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 curLayer: settingsMgr.mainMapTileSrc.value,
                 curOpacity: settingsMgr.mainMapOpacity.value,
                 hideWaypoints: hideWaypoints,
-                hideWeatherObservations: hideWeatherObservations,
+                hideWeatherObservations: settingsMgr.hideWeatherObservations.value,
                 onChangedWaypoints: (hidden) {
                   setState(() {
                     hideWaypoints = hidden;
@@ -1528,7 +1527,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 },
                 onChangedWeatherObservations: (hidden) {
                   setState(() {
-                    hideWeatherObservations = hidden;
+                    settingsMgr.hideWeatherObservations.value = hidden;
                     if (!hidden) {
                       weatherServiceResetSomeTimers();
                     }
