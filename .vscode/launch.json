@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "xcNav (Flutter SM S928U1)",
+            "program": "lib/main.dart",
+            "deviceId": "R5CX11ESNZZ",
+            "request": "launch",
+            "type": "dart"
+        }
+    ]
+}
