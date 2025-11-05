@@ -44,6 +44,7 @@
       "right_hand_ui": "Интерфейс для правшей",
       "always_show_pilot_names": "Показывать имена пилотов",
       "hide_wind_observations": "Скрыть наблюдения за ветром",
+      "use_gps_altitude": "Использовать GPS только для определения высоты",
       "group_view_includes_waypoints": "Путевые точки на экране группы",
       "Distance": "Расстояние",
       "Speed": "Скорость",

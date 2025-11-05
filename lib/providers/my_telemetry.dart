@@ -398,7 +398,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             accuracy: LocationAccuracy.best,
             distanceFilter: 0,
             forceLocationManager: false,
-            intervalDuration: const Duration(milliseconds: 500),
+            intervalDuration: const Duration(milliseconds: 2000),
             foregroundNotificationConfig: const ForegroundNotificationConfig(
                 notificationText: "Still sending your position to the group.",
                 notificationTitle: "xcNav",
@@ -699,6 +699,12 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   void updateGeo(Position position, {bool bypassRecording = false}) async {
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient, useGpsAltitude: settingsMgr.useGpsAltitude.value);
+
+    // Preserve previous ground elevation to avoid AGL spinner while new DEM data loads
+    if (geoPrev?.ground != null) {
+      geo!.ground = geoPrev!.ground;
+    }
+
     if (baro == null || settingsMgr.useGpsAltitude.value) {
       // Use GPS-based vario when barometer unavailable or GPS-only mode enabled
       if (geoPrev != null) {
@@ -713,15 +719,20 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
 
-    await sampleDem(geo!.latlng, true).then((value) {
+    recordGeo.add(geo!);
+
+    // Notify listeners immediately so GPS altitude updates without delay
+    notifyListeners();
+
+    // Fetch ground elevation asynchronously without blocking
+    sampleDem(geo!.latlng, true).then((value) {
       if (value != null) {
         geo!.ground = value;
+        notifyListeners(); // Notify again when ground elevation is available
       }
     }).timeout(const Duration(milliseconds: 1000), onTimeout: () {
       warn("DEM service timeout", attributes: {"lat": geo!.lat, "lng": geo!.lng});
     });
-
-    recordGeo.add(geo!);
 
     // fetch ambient baro from weather service
     if (baroAmbient == null && baroAmbientRequestCount < 10) {
@@ -779,8 +790,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         saveFlight();
       }
     }
-
-    notifyListeners();
   }
 
   Polyline buildFlightTrace() {

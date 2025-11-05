@@ -375,7 +375,7 @@ class SettingsMgr {
     showServoCarbMenu = SettingConfig(this, prefs, "Experimental", "showServoCarbMenu", false,
         title: "show_servocarb", icon: const Icon(Icons.settings_applications_sharp));
     useGpsAltitude = SettingConfig(this, prefs, "Experimental", "useGpsAltitude", false,
-        title: "Use GPS Only for Altitude",
+        title: "use_gps_altitude",
         icon: const Icon(Icons.satellite_alt),
         description: "Ignore barometric pressure and use GPS MSL altitude for all calculations.");
 

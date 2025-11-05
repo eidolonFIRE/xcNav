@@ -44,6 +44,7 @@
             "right_hand_ui": "Right-handed UI",
             "always_show_pilot_names": "Always Show Pilot Names",
             "hide_wind_observations": "Hide Wind Observations",
+            "use_gps_altitude": "Use GPS Only for Altitude",
             "group_view_includes_waypoints": "Group View Includes Waypoints",
             "Distance": "Distance",
             "Speed": "Speed",

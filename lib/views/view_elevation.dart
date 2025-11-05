@@ -125,73 +125,76 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
               ),
 
             // --- Barometer control
-            ListTile(
-              minVerticalPadding: 20,
-              visualDensity: VisualDensity.compact,
-              // leading: const Icon(Icons.thermostat),
-              title: Text("Ambient Pressure".tr()),
-              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                IconButton(
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      if (myTelemetry.geo != null) {
-                        myTelemetry.snapBarometerTo(settingsMgr.ambientPressureSource.value,
-                            latlng: myTelemetry.geo?.latlng);
-                      }
-                    },
-                    iconSize: 18,
-                    icon: settingsMgr.ambientPressureSource.value == BarometerSrc.weatherkit
-                        ? (myTelemetry.baroFromWeatherkit
-                            ? const Icon(Icons.public, color: Colors.lightGreen)
-                            : const Icon(
-                                Icons.public_off,
-                                color: Colors.red,
-                              ))
-                        : Icon(Icons.refresh)),
-                Text(
-                  printDouble(value: myTelemetry.baroAmbient?.pressure ?? 1013.25, digits: 4, decimals: 2),
-                  style:
-                      TextStyle(fontSize: 20, color: myTelemetry.baroFromWeatherkit ? Colors.lightGreen : Colors.white),
-                ),
-                VerticalDivider(
-                  color: Colors.grey.shade900,
-                ),
-                IconButton(
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => {
-                          setState(() {
-                            myTelemetry.baroFromWeatherkit = false;
-                            myTelemetry.baroAmbient =
-                                BarometerEvent((myTelemetry.baroAmbient?.pressure ?? 1013.25) + 0.25, clock.now());
-                          })
-                        },
-                    icon: const Icon(
-                      Icons.add_circle,
-                      size: 20,
-                    )),
-                IconButton(
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => {
-                          setState(() {
-                            myTelemetry.baroFromWeatherkit = false;
-                            myTelemetry.baroAmbient =
-                                BarometerEvent((myTelemetry.baroAmbient?.pressure ?? 1013.25) - 0.25, clock.now());
-                          })
-                        },
-                    icon: const Icon(
-                      Icons.remove_circle,
-                      size: 20,
-                    )),
-              ]),
-            ),
+            if (!settingsMgr.useGpsAltitude.value)
+              ListTile(
+                minVerticalPadding: 20,
+                visualDensity: VisualDensity.compact,
+                // leading: const Icon(Icons.thermostat),
+                title: Text("Ambient Pressure".tr()),
+                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                  IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        if (myTelemetry.geo != null) {
+                          myTelemetry.snapBarometerTo(settingsMgr.ambientPressureSource.value,
+                              latlng: myTelemetry.geo?.latlng);
+                        }
+                      },
+                      iconSize: 18,
+                      icon: settingsMgr.ambientPressureSource.value == BarometerSrc.weatherkit
+                          ? (myTelemetry.baroFromWeatherkit
+                              ? const Icon(Icons.public, color: Colors.lightGreen)
+                              : const Icon(
+                                  Icons.public_off,
+                                  color: Colors.red,
+                                ))
+                          : Icon(Icons.refresh)),
+                  Text(
+                    printDouble(value: myTelemetry.baroAmbient?.pressure ?? 1013.25, digits: 4, decimals: 2),
+                    style:
+                        TextStyle(fontSize: 20, color: myTelemetry.baroFromWeatherkit ? Colors.lightGreen : Colors.white),
+                  ),
+                  VerticalDivider(
+                    color: Colors.grey.shade900,
+                  ),
+                  IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => {
+                            setState(() {
+                              myTelemetry.baroFromWeatherkit = false;
+                              myTelemetry.baroAmbient =
+                                  BarometerEvent((myTelemetry.baroAmbient?.pressure ?? 1013.25) + 0.25, clock.now());
+                            })
+                          },
+                      icon: const Icon(
+                        Icons.add_circle,
+                        size: 20,
+                      )),
+                  IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => {
+                            setState(() {
+                              myTelemetry.baroFromWeatherkit = false;
+                              myTelemetry.baroAmbient =
+                                  BarometerEvent((myTelemetry.baroAmbient?.pressure ?? 1013.25) - 0.25, clock.now());
+                            })
+                          },
+                      icon: const Icon(
+                        Icons.remove_circle,
+                        size: 20,
+                      )),
+                ]),
+              ),
 
-            Divider(
-              height: 0,
-              color: Colors.grey.shade900,
-            ),
+            if (!settingsMgr.useGpsAltitude.value)
+              Divider(
+                height: 0,
+                color: Colors.grey.shade900,
+              ),
 
             // --- Density Altitude
-            if (!myTelemetry.inFlight &&
+            if (!settingsMgr.useGpsAltitude.value &&
+                !myTelemetry.inFlight &&
                 myTelemetry.baroAmbient != null &&
                 myTelemetry.ambientTemperature != null &&
                 myTelemetry.geo != null)
@@ -230,7 +233,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
                   ),
                   Text.rich(richValue(UnitType.distFine, myTelemetry.geo!.altGps,
                       digits: 6,
-                      decimals: -2,
+                      decimals: 0,
                       valueStyle: Theme.of(context).textTheme.headlineMedium,
                       unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)))
                 ]),
