@@ -231,6 +231,7 @@ class SettingsMgr {
   late final SettingConfig<double> barometerOffset;
   late final SettingConfig<bool> showServoCarbMenu;
   late final SettingConfig<bool> useGpsAltitude;
+  late final SettingConfig<int> gpsUpdateInterval;
 
   // --- Debug Tools
   late final SettingConfig<bool> spoofLocation;
@@ -378,6 +379,11 @@ class SettingsMgr {
         title: "use_gps_altitude",
         icon: const Icon(Icons.satellite_alt),
         description: "Ignore barometric pressure and use GPS MSL altitude for all calculations.");
+    gpsUpdateInterval = SettingConfig(this, prefs, "Experimental", "gpsUpdateInterval", 3000,
+        title: "gps_update_interval",
+        icon: const Icon(Icons.speed),
+        description: "GPS update interval in milliseconds (Android only). Lower values use more battery.",
+        setter: (value) => value < 500 ? 500 : value);
 
     // --- Debug Tools
     spoofLocation = SettingConfig(this, prefs, "Debug Tools", "", false,

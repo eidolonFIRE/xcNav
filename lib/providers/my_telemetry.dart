@@ -398,7 +398,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             accuracy: LocationAccuracy.best,
             distanceFilter: 0,
             forceLocationManager: false,
-            intervalDuration: const Duration(milliseconds: 2000),
+            intervalDuration: Duration(milliseconds: settingsMgr.gpsUpdateInterval.value),
             foregroundNotificationConfig: const ForegroundNotificationConfig(
                 notificationText: "Still sending your position to the group.",
                 notificationTitle: "xcNav",
