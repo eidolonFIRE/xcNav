@@ -719,20 +719,15 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
 
-    recordGeo.add(geo!);
-
-    // Notify listeners immediately so GPS altitude updates without delay
-    notifyListeners();
-
-    // Fetch ground elevation asynchronously without blocking
-    sampleDem(geo!.latlng, true).then((value) {
+    await sampleDem(geo!.latlng, true).then((value) {
       if (value != null) {
         geo!.ground = value;
-        notifyListeners(); // Notify again when ground elevation is available
       }
     }).timeout(const Duration(milliseconds: 1000), onTimeout: () {
       warn("DEM service timeout", attributes: {"lat": geo!.lat, "lng": geo!.lng});
     });
+
+    recordGeo.add(geo!);
 
     // fetch ambient baro from weather service
     if (baroAmbient == null && baroAmbientRequestCount < 10) {
@@ -790,6 +785,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         saveFlight();
       }
     }
+
+    notifyListeners();
   }
 
   Polyline buildFlightTrace() {
