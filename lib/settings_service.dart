@@ -230,6 +230,7 @@ class SettingsMgr {
   // --- ServoCarb
   late final SettingConfig<double> barometerOffset;
   late final SettingConfig<bool> showServoCarbMenu;
+  late final SettingConfig<bool> useGpsAltitude;
 
   // --- Debug Tools
   late final SettingConfig<bool> spoofLocation;
@@ -373,6 +374,10 @@ class SettingsMgr {
         description: "Add offset to barometer reading for calibration.");
     showServoCarbMenu = SettingConfig(this, prefs, "Experimental", "showServoCarbMenu", false,
         title: "show_servocarb", icon: const Icon(Icons.settings_applications_sharp));
+    useGpsAltitude = SettingConfig(this, prefs, "Experimental", "useGpsAltitude", false,
+        title: "Use GPS Only for Altitude",
+        icon: const Icon(Icons.satellite_alt),
+        description: "Ignore barometric pressure and use GPS MSL altitude for all calculations.");
 
     // --- Debug Tools
     spoofLocation = SettingConfig(this, prefs, "Debug Tools", "", false,

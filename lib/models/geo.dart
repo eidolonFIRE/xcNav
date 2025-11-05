@@ -46,7 +46,7 @@ class Geo {
     time = timestamp ?? DateTime.now().millisecondsSinceEpoch;
   }
 
-  Geo.fromPosition(Position location, Geo? prev, BarometerEvent? baro, BarometerEvent? baroAmbient) {
+  Geo.fromPosition(Position location, Geo? prev, BarometerEvent? baro, BarometerEvent? baroAmbient, {bool useGpsAltitude = false}) {
     lat = location.latitude;
     lng = location.longitude;
     time = location.timestamp.millisecondsSinceEpoch;
@@ -67,11 +67,12 @@ class Geo {
       hdg = prev?.hdg ?? location.heading;
     }
 
-    if (baro != null) {
-      // altitude / vario filtering
-      alt = altFromBaro(baro.pressure, baroAmbient?.pressure);
-    } else {
+    if (useGpsAltitude || baro == null) {
+      // Use GPS altitude when explicitly requested or when barometer is unavailable
       alt = location.altitude;
+    } else {
+      // altitude / vario filtering with barometer
+      alt = altFromBaro(baro.pressure, baroAmbient?.pressure);
     }
   }
 

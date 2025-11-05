@@ -398,7 +398,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             accuracy: LocationAccuracy.best,
             distanceFilter: 0,
             forceLocationManager: false,
-            intervalDuration: const Duration(seconds: 3),
+            intervalDuration: const Duration(milliseconds: 500),
             foregroundNotificationConfig: const ForegroundNotificationConfig(
                 notificationText: "Still sending your position to the group.",
                 notificationTitle: "xcNav",
@@ -698,9 +698,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   void updateGeo(Position position, {bool bypassRecording = false}) async {
     geoPrev = geo;
-    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
-    if (baro == null) {
-      // Maybe no barometer in device?
+    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient, useGpsAltitude: settingsMgr.useGpsAltitude.value);
+    if (baro == null || settingsMgr.useGpsAltitude.value) {
+      // Use GPS-based vario when barometer unavailable or GPS-only mode enabled
       if (geoPrev != null) {
         final vario = (geo!.alt - geoPrev!.alt) / (geo!.time - geoPrev!.time) * 1000;
         if (vario.isFinite) {
