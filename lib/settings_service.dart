@@ -383,7 +383,8 @@ class SettingsMgr {
         title: "gps_update_interval",
         icon: const Icon(Icons.speed),
         description: "GPS update interval in milliseconds (Android only). Lower values use more battery.",
-        setter: (value) => value < 500 ? 500 : value);
+        setter: (value) => value < 500 ? 500 : value,
+        hidden: defaultTargetPlatform != TargetPlatform.android);
 
     // --- Debug Tools
     spoofLocation = SettingConfig(this, prefs, "Debug Tools", "", false,

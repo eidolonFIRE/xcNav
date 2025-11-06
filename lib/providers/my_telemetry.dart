@@ -217,6 +217,21 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     final activePlan = Provider.of<ActivePlan>(globalContext!, listen: false);
     _setupServiceStatusStream(globalContext!);
+
+    // Listen for GPS-only altitude setting changes
+    settingsMgr.useGpsAltitude.listenable.addListener(() {
+      _startBaroService(); // This will stop or start the service based on the setting
+    });
+
+    // Listen for GPS update interval changes
+    settingsMgr.gpsUpdateInterval.listenable.addListener(() {
+      if (positionStreamStarted && _positionStreamSubscription != null) {
+        // Restart location listener with new interval
+        _toggleListening(globalContext!); // Stop
+        _toggleListening(globalContext!); // Start with new settings
+      }
+    });
+
     settingsMgr.spoofLocation.listenable.addListener(() {
       if (settingsMgr.spoofLocation.value) {
         if (timer == null) {
@@ -290,6 +305,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       listenBaro?.cancel();
       listenBaro = null;
     }
+
+    // Don't start barometer service if GPS-only altitude mode is enabled
+    if (settingsMgr.useGpsAltitude.value) {
+      debugPrint("Barometer Service disabled (GPS-only mode)");
+      return;
+    }
+
     debugPrint("Starting Barometer Service Stream");
     listenBaro = barometerEventStream(samplingPeriod: SensorInterval.normalInterval).listen((event) {
       // Handle barometer changes (run the vario)
