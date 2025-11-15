@@ -45,8 +45,6 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
   List<ElevSample?>? prevSamples;
 
   final barometerTextController = TextEditingController();
-  final barometerOverrideTextController =
-      TextEditingController(text: settingsMgr.barometerOffset.value.toStringAsFixed(2));
 
   List<Duration?> lookBehindOptions = [
     null,
