@@ -2,6 +2,10 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"name": "xc170",
+			"path": "../xc170"
 		}
 	],
 	"settings": {

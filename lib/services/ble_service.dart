@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
+import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170.dart';
 import 'package:xcnav/settings_service.dart';
 
 final BleDeviceXc170 bleDeviceXc170 = BleDeviceXc170();
+final BleDeviceBigBattery bleDeviceBigBattery = BleDeviceBigBattery();
 
-final Map<String, BleDeviceHandler> _deviceHandlers = {
-  "xc170": bleDeviceXc170,
-};
+final Map<String, BleDeviceHandler> _deviceHandlers = {"xc170": bleDeviceXc170, "BigBattery": bleDeviceBigBattery};
 
 final Map<String, StreamSubscription<BluetoothConnectionState>> _deviceStateListener = {};
 StreamSubscription<List<ScanResult>>? _devicesListener;
