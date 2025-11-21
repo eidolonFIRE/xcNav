@@ -21,6 +21,7 @@ import 'package:xcnav/widgets/elevation_replay.dart';
 import 'package:xcnav/widgets/g_force_pages.dart';
 import 'package:xcnav/widgets/log_summary.dart';
 import 'package:xcnav/widgets/map_selector.dart';
+import 'package:xcnav/widgets/replay_tab.dart';
 import 'package:xcnav/widgets/speed_histogram.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
@@ -32,6 +33,7 @@ class LogReplay extends StatefulWidget {
 }
 
 class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMixin {
+  static const int _replayTabIndex = 1;
   final mapKey = GlobalKey(debugLabel: "replayMap");
   final mapController = MapController();
   bool mapReady = false;
@@ -45,6 +47,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   bool logLoaded = false;
 
   double windowHeight = 400;
+  double bottomViewPadding = 0;
 
   late final TabController tabController;
 
@@ -58,11 +61,21 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   /// Selected index range of log
   ValueNotifier<Range<int>> selectedIndexRange = ValueNotifier(Range(0, 1));
   late ValueNotifier<DateTimeRange> selectedTimeRange;
+  ValueNotifier<int> replaySampleIndex = ValueNotifier(0);
+  List<double> cumulativeReplayDistances = [];
 
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 5, vsync: this);
+    tabController = TabController(length: 6, vsync: this);
+    tabController.addListener(() {
+      if (!mounted) return;
+      setState(() {});
+      if (!tabController.indexIsChanging &&
+          tabController.index == _replayTabIndex) {
+        _focusReplayOnCurrentRange();
+      }
+    });
   }
 
   @override
@@ -79,11 +92,17 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
       if (log.goodFile) {
         logLoaded = true;
+        _initializeReplayData();
       } else {
         error("Error loading log in replay screen.", attributes: {"filename": log.filename});
       }
     }
-    windowHeight = MediaQuery.of(context).size.height;
+    final mediaQuery = MediaQuery.of(context);
+    bottomViewPadding = mediaQuery.viewPadding.bottom;
+    windowHeight = mediaQuery.size.height - bottomViewPadding;
+    if (windowHeight <= 0) {
+      windowHeight = mediaQuery.size.height;
+    }
     if (mainDividerPosition < 0) {
       mainDividerPosition = (windowHeight - 80) * 0.5;
     }
@@ -98,8 +117,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
   void gotoGForce(int index) {
     scrollToTimeRange(log.gForceEvents[index].timeRange);
-    if (tabController.index != 3) {
-      tabController.animateTo(3, duration: const Duration(milliseconds: 200));
+    if (tabController.index != 4) {
+      tabController.animateTo(4, duration: const Duration(milliseconds: 200));
       Future.delayed(const Duration(milliseconds: 220)).then((_) => gForcePageController.jumpToPage(index));
     } else {
       gForcePageController.jumpToPage(index);
@@ -126,6 +145,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
         end: DateTime.fromMillisecondsSinceEpoch(log.samples[endIndex].time));
     selectedIndexRange.value = Range(startIndex, endIndex);
     fitMap();
+    _updateReplayTime(center);
   }
 
   void fitMap() {
@@ -137,6 +157,183 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
         padding: EdgeInsets.all(50),
         minZoom: 4,
         maxZoom: 14));
+  }
+
+  void _initializeReplayData() {
+    if (log.samples.isEmpty || cumulativeReplayDistances.isNotEmpty) {
+      return;
+    }
+
+    cumulativeReplayDistances =
+        List<double>.filled(log.samples.length, 0, growable: false);
+    double runningDistance = 0;
+    for (int i = 1; i < log.samples.length; i++) {
+      runningDistance += log.samples[i - 1].distanceTo(log.samples[i]);
+      cumulativeReplayDistances[i] = runningDistance;
+    }
+    replaySampleIndex.value = 0;
+  }
+
+  void _setReplayIndex(int index, {bool followMap = false}) {
+    if (log.samples.isEmpty) return;
+    final clampedIndex = max(0, min(index, log.samples.length - 1));
+    if (replaySampleIndex.value == clampedIndex) return;
+    replaySampleIndex.value = clampedIndex;
+    if (followMap && mapReady) {
+      mapController.move(
+          log.samples[clampedIndex].latlng, mapController.camera.zoom);
+    }
+  }
+
+  void _updateReplayTime(DateTime time, {bool followMap = false}) {
+    _setReplayIndex(log.timeToSampleIndex(time), followMap: followMap);
+  }
+
+  double _replayDistanceForIndex(int index) {
+    if (cumulativeReplayDistances.isEmpty) {
+      return 0;
+    }
+    final clampedIndex =
+        max(0, min(index, cumulativeReplayDistances.length - 1));
+    return cumulativeReplayDistances[clampedIndex];
+  }
+
+  void _focusReplayOnCurrentRange() {
+    if (!logLoaded || log.samples.isEmpty) return;
+    final range = selectedIndexRange.value;
+    final centerIndex = (range.start + range.end) ~/ 2;
+    _setReplayIndex(centerIndex, followMap: true);
+  }
+
+  Widget _buildRangeSlider() {
+    return ValueListenableBuilder<DateTimeRange>(
+        key: const ValueKey("range_slider"),
+        valueListenable: selectedTimeRange,
+        builder: (context, range, _) {
+          return SfRangeSlider(
+            values: SfRangeValues(range.start, range.end),
+            dragMode: SliderDragMode.both,
+            min: log.startTime,
+            max: log.endTime,
+            enableTooltip: true,
+            tooltipTextFormatterCallback: (value, formattedText) {
+              DateTime valueTime = value;
+              return (valueTime == range.end ? "+" : "") +
+                  richHrMin(
+                          duration: valueTime.difference(valueTime == range.end
+                              ? range.start
+                              : log.startTime!))
+                      .toPlainText();
+            },
+            onChanged: (newValue) {
+              scrollToTimeRange(
+                  DateTimeRange(start: newValue.start, end: newValue.end));
+            },
+          );
+        });
+  }
+
+  Widget _buildReplaySlider() {
+    return ValueListenableBuilder<int>(
+        key: const ValueKey("replay_slider"),
+        valueListenable: replaySampleIndex,
+        builder: (context, index, _) {
+          if (log.samples.isEmpty) {
+            return const SizedBox.shrink();
+          }
+          final safeIndex = max(0, min(index, log.samples.length - 1));
+          final DateTime replayTime =
+              DateTime.fromMillisecondsSinceEpoch(log.samples[safeIndex].time);
+          return SfSlider(
+            value: replayTime,
+            min: log.startTime,
+            max: log.endTime,
+            enableTooltip: true,
+            tooltipTextFormatterCallback: (value, formattedText) {
+              final DateTime valueTime = value;
+              return richHrMin(
+                      duration: valueTime.difference(log.startTime!),
+                      longUnits: false)
+                  .toPlainText();
+            },
+            onChanged: (dynamic newValue) {
+              if (newValue is DateTime) {
+                _updateReplayTime(newValue, followMap: true);
+              }
+            },
+          );
+        });
+  }
+
+  Widget _buildTimeScrubber() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      child: tabController.index == _replayTabIndex
+          ? _buildReplaySlider()
+          : _buildRangeSlider(),
+    );
+  }
+
+  Widget _buildReplayTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ValueListenableBuilder<int>(
+          valueListenable: replaySampleIndex,
+          builder: (context, sampleIndex, _) {
+            if (log.samples.isEmpty) {
+              return const Center(child: Text("Replay data unavailable"));
+            }
+            final safeIndex = max(0, min(sampleIndex, log.samples.length - 1));
+            final sample = log.samples[safeIndex];
+            final Duration elapsed =
+                Duration(milliseconds: sample.time - log.samples.first.time);
+            final double distance = _replayDistanceForIndex(safeIndex);
+            const valueStyle = TextStyle(
+                fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white);
+            const unitStyle = TextStyle(fontSize: 12, color: Colors.grey);
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Replay".tr(),
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    ReplayStatusField(
+                        label: "Time".tr(),
+                        child: Text.rich(richHrMin(
+                            duration: elapsed,
+                            valueStyle: valueStyle,
+                            unitStyle: unitStyle))),
+                    ReplayStatusField(
+                        label: "Altitude".tr(),
+                        child: Text.rich(richValue(
+                            UnitType.distFine, sample.alt,
+                            decimals: 0,
+                            valueStyle: valueStyle,
+                            unitStyle: unitStyle))),
+                    ReplayStatusField(
+                        label: "Speed".tr(),
+                        child: Text.rich(richValue(UnitType.speed, sample.spd,
+                            decimals: 1,
+                            valueStyle: valueStyle,
+                            unitStyle: unitStyle))),
+                    ReplayStatusField(
+                        label: "Distance".tr(),
+                        child: Text.rich(richValue(
+                            UnitType.distCoarse, distance,
+                            decimals: 1,
+                            valueStyle: valueStyle,
+                            unitStyle: unitStyle))),
+                  ],
+                ),
+              ],
+            );
+          }),
+    );
   }
 
   void editFuelReport(BuildContext context, int reportIndex) {
@@ -254,7 +451,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
             )
           ],
         ),
-        body: Column(
+        body: SafeArea(top: false, maintainBottomViewPadding: true, child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.max,
           children: [
@@ -296,18 +493,49 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                       .toList(),
                                 ),
 
-                              // Log line - base
-                              PolylineLayer(polylines: [
-                                Polyline(
-                                    points: log.samples.map((e) => e.latlng).toList(),
-                                    strokeWidth: 3,
-                                    borderColor: Colors.black,
-                                    // borderStrokeWidth: 1,
-                                    color: Colors.amber,
-                                    pattern: StrokePattern.dotted()
-                                    // gradientColors: [Colors.amber, Colors.orange],
-                                    )
-                              ]),
+                              if (tabController.index != _replayTabIndex)
+                                // Log line - base
+                                PolylineLayer(polylines: [
+                                  Polyline(
+                                      points: log.samples.map((e) => e.latlng).toList(),
+                                      strokeWidth: 3,
+                                      borderColor: Colors.black,
+                                      // borderStrokeWidth: 1,
+                                      color: Colors.amber,
+                                      pattern: StrokePattern.dotted()
+                                      // gradientColors: [Colors.amber, Colors.orange],
+                                      )
+                                ]),
+
+                              if (tabController.index == _replayTabIndex)
+                                ValueListenableBuilder<int>(
+                                    valueListenable: replaySampleIndex,
+                                    builder: (context, replayIndex, _) {
+                                      if (log.samples.length < 2) {
+                                        return PolylineLayer(
+                                            polylines: const <Polyline>[]);
+                                      }
+                                      final safeIndex = max(0, min(replayIndex, log.samples.length - 1));
+                                      final beforePoints = log.samples.take(safeIndex + 1).map((e) => e.latlng).toList();
+                                      final afterPoints = log.samples.sublist(safeIndex).map((e) => e.latlng).toList();
+                                      return PolylineLayer(polylines: [
+                                        if (afterPoints.length > 1)
+                                          Polyline(
+                                              points: afterPoints,
+                                              strokeWidth: 3,
+                                              borderColor: Colors.black,
+                                              color: Colors.amber,
+                                              pattern:
+                                                  StrokePattern.dotted()),
+                                        if (beforePoints.length > 1)
+                                          Polyline(
+                                              points: beforePoints,
+                                              strokeWidth: 4,
+                                              borderColor: Colors.black,
+                                              borderStrokeWidth: 1,
+                                              color: Colors.amber),
+                                      ]);
+                                    }),
 
                               // Waypoint markers
                               if (!hideWaypoints)
@@ -324,21 +552,45 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                         .toList()),
 
                               // --- Log Line
-                              ValueListenableBuilder<Range>(
-                                  valueListenable: selectedIndexRange,
-                                  builder: (context, range, _) {
-                                    return PolylineLayer(polylines: [
-                                      Polyline(
-                                          points:
-                                              log.samples.sublist(range.start, range.end).map((e) => e.latlng).toList(),
-                                          strokeWidth: 4,
-                                          borderColor: Colors.black,
-                                          borderStrokeWidth: 1,
-                                          color: Colors.amber
-                                          // gradientColors: [Colors.amber, Colors.orange],
-                                          )
-                                    ]);
-                                  }),
+                              if (tabController.index != _replayTabIndex)
+                                ValueListenableBuilder<Range>(
+                                    valueListenable: selectedIndexRange,
+                                    builder: (context, range, _) {
+                                      return PolylineLayer(polylines: [
+                                        Polyline(
+                                            points:
+                                                log.samples.sublist(range.start, range.end).map((e) => e.latlng).toList(),
+                                            strokeWidth: 4,
+                                            borderColor: Colors.black,
+                                            borderStrokeWidth: 1,
+                                            color: Colors.amber
+                                            // gradientColors: [Colors.amber, Colors.orange],
+                                            )
+                                      ]);
+                                    }),
+
+                              if (tabController.index == _replayTabIndex)
+                                ValueListenableBuilder<int>(
+                                    valueListenable: replaySampleIndex,
+                                    builder: (context, replayIndex, _) {
+                                      if (log.samples.isEmpty) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      final safeIndex = max(0, min(replayIndex, log.samples.length - 1));
+                                      final sample = log.samples[safeIndex];
+                                      const double arrowSize = 20;
+                                      return MarkerLayer(markers: [
+                                        Marker(
+                                            alignment: Alignment.center,
+                                            point: sample.latlng,
+                                            width: arrowSize,
+                                            height: arrowSize,
+                                            rotate: true,
+                                            child: Transform.rotate(
+                                                angle: sample.hdg,
+                                                child: const ReplayMapArrow(size: arrowSize)))
+                                      ]);
+                                    }),
 
                               // --- Fuel reports
                               MarkerLayer(
@@ -437,6 +689,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                             return LogSummary(log: log.cropLog(range));
                           }),
                     ),
+
+                    // --- Replay
+                    _buildReplayTab(),
 
                     // --- Elevation Plot
                     Padding(
@@ -597,30 +852,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
             ),
 
             // --- Time Scrubber
-            ValueListenableBuilder<DateTimeRange>(
-                valueListenable: selectedTimeRange,
-                builder: (context, range, _) {
-                  return SfRangeSlider(
-                    values: SfRangeValues(range.start, range.end),
-                    dragMode: SliderDragMode.both,
-                    min: log.startTime,
-                    max: log.endTime,
-                    enableTooltip: true,
-                    tooltipTextFormatterCallback: (value, formattedText) {
-                      DateTime valueTime = value;
-                      return (valueTime == range.end ? "+" : "") +
-                          richHrMin(
-                                  duration: valueTime.difference(valueTime == range.end ? range.start : log.startTime!))
-                              .toPlainText();
-                    },
-                    onChanged: (newValue) {
-                      scrollToTimeRange(DateTimeRange(start: newValue.start, end: newValue.end));
-                    },
-                  );
-                }),
+            _buildTimeScrubber(),
 
-            TabBar(labelPadding: const EdgeInsets.all(0), controller: tabController, tabs: [
+            TabBar(labelPadding: EdgeInsets.zero, controller: tabController, tabs: [
               Tab(icon: Icon(Icons.info), text: "Summary".tr()),
+              Tab(icon: const ReplayTabIcon(), text: "Replay".tr()),
               Tab(
                 icon: Icon(Icons.area_chart),
                 text: "Altitude".tr(),
@@ -630,7 +866,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
               Tab(icon: Icon(Icons.local_gas_station), text: "Fuel".tr()),
             ]),
           ],
-        ),
+        ),),
       ),
     );
   }

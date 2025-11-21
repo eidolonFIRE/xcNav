@@ -1,4 +1,4 @@
-
+// ignore_for_file: avoid_print
 // This is a unit test to pump a flight log (*.json file) through
 // the wind estimator and print out the results onscreen
 
