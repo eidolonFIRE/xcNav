@@ -80,7 +80,7 @@ void scan() async {
 
 Future connect(BluetoothDevice device) async {
   debugPrint("Connecting to device: ${device.advName} ${device.remoteId.str}");
-  await device.connect();
+  await device.connect(license: License.free);
 
   // Arm autoScan so we auto-connect if disconnected
   // Timer(Duration(seconds: 30), () {

@@ -1,4 +1,3 @@
-
 // This is a unit test to pump a flight log (*.json file) through
 // the wind estimator and print out the results onscreen
 
@@ -10,7 +9,6 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xcnav/models/flight_log.dart';
@@ -28,8 +26,7 @@ void main() {
     final data = jsonDecode(content) as Map<String, dynamic>;
     final log = FlightLog.fromJson(path, data, rawJson: content);
 
-
-    final int logStartTimeSec = log.samples.first.time ~/ 1000;
+    // final int logStartTimeSec = log.samples.first.time ~/ 1000;
 
     final wind = Wind(isRunningReplayFromLog: true);
 
@@ -38,25 +35,25 @@ void main() {
     wind.addListener(() {
       final r = wind.result;
       if (r != null) {
-        final windSpeed = r.windSpd;
-        final hdgDeg = (r.windHdg * 180 / pi) % 360;
-        final airSpeed = r.airspeed;
+        // final windSpeed = r.windSpd;
+        // final hdgDeg = (r.windHdg * 180 / pi) % 360;
+        // final airSpeed = r.airspeed;
 
         // Speeds are in m/s
         // For knots, multiply by 1.943844
         // For kph, multiply by 3.6
         // For mph, multiply by 2.23694
-        final windSpeedMph = windSpeed * 2.23694;
-        final airSpeedMph = airSpeed * 2.23694;
+        // final windSpeedMph = windSpeed * 2.23694;
+        // final airSpeedMph = airSpeed * 2.23694;
 
         // Elapsed minutes from first to latest log entry
-        final int latestTimeSec = r.timestamp.millisecondsSinceEpoch ~/ 1000.0;
-        final double elapsedMin = (latestTimeSec - logStartTimeSec) / 60.0;
+        // final int latestTimeSec = r.timestamp.millisecondsSinceEpoch ~/ 1000.0;
+        // final double elapsedMin = (latestTimeSec - logStartTimeSec) / 60.0;
 
         successfulWindReports++;
 
-        print('${elapsedMin.toStringAsFixed(1)}m: windSpeed=${windSpeedMph.toStringAsFixed(2)}mph '
-              'hdg=${hdgDeg.toStringAsFixed(1)}° airSpeed=${airSpeedMph.toStringAsFixed(2)}mph');
+        // print('${elapsedMin.toStringAsFixed(1)}m: windSpeed=${windSpeedMph.toStringAsFixed(2)}mph '
+        //       'hdg=${hdgDeg.toStringAsFixed(1)}° airSpeed=${airSpeedMph.toStringAsFixed(2)}mph');
       }
     });
 
@@ -73,10 +70,9 @@ void main() {
     }
 
     final double reportPct = 100.0 * successfulWindReports / log.samples.length;
-    print('Got a wind report for ${reportPct.toStringAsFixed(1)}% of the samples');
+    // print('Got a wind report for ${reportPct.toStringAsFixed(1)}% of the samples');
 
     // Pass criteria: require wind reports for > 50%% of samples
-    expect(reportPct, greaterThan(50.0),
-        reason: 'Insufficient wind reports; require > 50% coverage.');
+    expect(reportPct, greaterThan(50.0), reason: 'Insufficient wind reports; require > 50% coverage.');
   });
 }

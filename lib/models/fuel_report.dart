@@ -75,7 +75,7 @@ class FuelStat {
   }
 
   /// Stats are combined with weight; biasing towards the longest duration
-  operator +(FuelStat other) {
+  FuelStat operator +(FuelStat other) {
     final ratio = durationTime.inMilliseconds / (durationTime.inMilliseconds + other.durationTime.inMilliseconds);
     double weight(a, b) {
       return a * ratio + (1 - ratio) * b;

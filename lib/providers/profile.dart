@@ -43,7 +43,7 @@ class Profile with ChangeNotifier {
     hash = _hash();
   }
 
-  load() async {
+  void load() async {
     prefs = await SharedPreferences.getInstance();
 
     name = prefs.getString("profile.name");
@@ -82,7 +82,7 @@ class Profile with ChangeNotifier {
     return null;
   }
 
-  eraseIdentity() {
+  void eraseIdentity() {
     prefs.remove("profile.name");
     prefs.remove("profile.id");
     prefs.remove("profile.secretID");
@@ -99,7 +99,7 @@ class Profile with ChangeNotifier {
     });
   }
 
-  updateAvatarHash() {
+  void updateAvatarHash() {
     if (_avatarRaw != null) {
       avatarHash = md5.convert(_avatarRaw!).toString();
     } else {
@@ -107,7 +107,7 @@ class Profile with ChangeNotifier {
     }
   }
 
-  updateNameAvatar(String newName, Uint8List newRawAvatar) {
+  void updateNameAvatar(String newName, Uint8List newRawAvatar) {
     name = newName.trim();
     _avatarRaw = newRawAvatar;
     avatar = Image.memory(newRawAvatar);
@@ -148,7 +148,7 @@ class Profile with ChangeNotifier {
     });
   }
 
-  updateID(String newID, String newSecretID) {
+  void updateID(String newID, String newSecretID) {
     id = newID;
     secretID = newSecretID;
 

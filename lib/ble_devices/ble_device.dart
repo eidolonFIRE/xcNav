@@ -26,7 +26,7 @@ abstract class BleDeviceHandler {
       reconnector?.cancel();
       reconnector = Timer.periodic(Duration(seconds: 20), (timer) {
         debugPrint("Attempting reconnect to: ${device?.advName} ${device?.remoteId}");
-        device?.connect();
+        device?.connect(license: License.free);
       });
     }
   }
