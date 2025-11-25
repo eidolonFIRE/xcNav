@@ -475,7 +475,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         adsb.refresh(geo!, inFlight);
 
         if (inFlight) {
-          audioCueService.cueMyTelemetry(geo!);
+          audioCueService.cueMyTelemetry(geo!, speedSmoothed: speedSmooth.value);
           audioCueService.cueNextWaypoint(geo!, speedSmooth.value);
           audioCueService.cueGroupAwareness(geo!);
           audioCueService.cueFuel(sumFuelStat, fuelReports.lastOrNull);

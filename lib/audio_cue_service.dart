@@ -162,7 +162,7 @@ class AudioCueService {
     }
   }
 
-  void cueMyTelemetry(Geo myGeo) {
+  void cueMyTelemetry(Geo myGeo, {double? speedSmoothed}) {
     // --- My Telemetry
     if (mode != null && (config["My Telemetry"] ?? false)) {
       // --- Altitude
@@ -194,9 +194,9 @@ class AudioCueService {
       if (lastSpd == null ||
           DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(maxInterval)) ||
           (DateTime.fromMillisecondsSinceEpoch(myGeo.time).isAfter(lastSpd!.timestamp.add(minInterval)) &&
-              ((lastSpd!.value - unitConverters[UnitType.speed]!(myGeo.spd)).abs() >= spdPrecision))) {
-        lastSpd =
-            LastReport(unitConverters[UnitType.speed]!(myGeo.spd), DateTime.fromMillisecondsSinceEpoch(myGeo.time));
+              ((lastSpd!.value - unitConverters[UnitType.speed]!(speedSmoothed ?? myGeo.spd)).abs() >= spdPrecision))) {
+        lastSpd = LastReport(unitConverters[UnitType.speed]!(speedSmoothed ?? myGeo.spd),
+            DateTime.fromMillisecondsSinceEpoch(myGeo.time));
 
         final text = "Speed: ${lastSpd!.value.round()}";
         ttsService.speak(AudioMessage(text,
