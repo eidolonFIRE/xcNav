@@ -56,8 +56,8 @@ class _QRScannerState extends State<QRScanner> {
                         : TextButton.icon(
                             iconAlignment: IconAlignment.end,
                             onPressed: () => {
-                              Share.share(
-                                  Provider.of<Group>(context, listen: false).currentGroupID?.toUpperCase() ?? "")
+                              SharePlus.instance.share(ShareParams(
+                                  text: Provider.of<Group>(context, listen: false).currentGroupID?.toUpperCase() ?? ""))
                             },
                             icon: const Icon(
                               Icons.share,

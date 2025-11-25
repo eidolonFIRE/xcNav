@@ -15,7 +15,7 @@ publish_to: none # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.9.17+201
+version: 2.10.0+210
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -46,22 +46,22 @@ dependencies:
   shared_preferences: ^2.0.13
   image_picker: ^1.0.4
   custom_image_crop: any
-  share_plus: ^10.0.2
+  share_plus: ^12.0.1
   web_socket_channel: ^3.0.0
   flutter_image_compress: ^2.0.4
   path_provider: ^2.0.9
   flutter_svg: ^2.0.9
-  geolocator: ^13.0.1
-  flutter_local_notifications: ^18.0.1
+  geolocator: ^14.0.2
+  flutter_local_notifications: ^19.5.0
   focus_detector: ^2.0.1
-  file_picker: ^9.0.0
+  file_picker: ^10.3.7
   xml: ^6.1.0
-  permission_handler: ^11.0.0
+  permission_handler: ^12.0.1
   flutter_tts: ^4.0.2
   wakelock_plus: ^1.1.4
   package_info_plus: ^8.0.0
   flutter_slidable: ^4.0.0
-  network_info_plus: ^6.0.1
+  network_info_plus: ^7.0.0
   url_launcher: ^6.1.2
   crypto: ^3.0.2
   # usb_serial: ^0.5.1
@@ -79,15 +79,15 @@ dependencies:
   flutter_speed_dial: ^7.0.0
   flutter_colorpicker: ^1.0.3
   screenshot: ^3.0.0
-  fl_chart: ^0.70.2
+  fl_chart: ^1.1.1
   datadog_flutter_plugin: ^2.1.0
   flutter_native_splash: ^2.2.18
   clock: ^1.1.1
-  flutter_blue_plus: ^1.31.7
+  flutter_blue_plus: ^2.0.2
   webview_flutter: ^4.8.0
-  sensors_plus: ^6.0.1
+  sensors_plus: ^7.0.0
   smooth_page_indicator: ^1.2.0+3
-  syncfusion_flutter_sliders: ^28.2.6
+  syncfusion_flutter_sliders: ^31.2.12
   wheel_picker: ^0.2.1
   easy_localization: ^3.0.7+1
   path: ^1.9.1
@@ -100,7 +100,7 @@ dev_dependencies:
   mocktail_image_network: any
   flutter_local_notifications_platform_interface: any
   plugin_platform_interface: any
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   patrol_finders: any
 
 # For information on the generic Dart part of this file, see the

@@ -25,7 +25,7 @@ class LogStore with ChangeNotifier {
   }
 
   List<LogFilter>? _logFilters;
-  set logFilters(newValue) {
+  set logFilters(List<LogFilter>? newValue) {
     _logsSlice = null;
     _logFilters = newValue;
     notifyListeners();

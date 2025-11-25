@@ -16,7 +16,7 @@ class CarbNeedleConfig {
   /// Field of view in Radians
   double get fov => _fov;
   late final double _fov;
-  set fov(value) {
+  set fov(double value) {
     _fov = value;
     save();
   }
@@ -25,7 +25,7 @@ class CarbNeedleConfig {
 
   int get pwmStart => _pwmStart;
   late final int _pwmStart;
-  set pwmStart(value) {
+  set pwmStart(int value) {
     _pwmStart = value;
     save();
   }
@@ -33,7 +33,7 @@ class CarbNeedleConfig {
   /// PWM settings
   late final int _pwmEnd;
   int get pwmEnd => _pwmEnd;
-  set pwmEnd(value) {
+  set pwmEnd(int value) {
     _pwmEnd = value;
     save();
   }

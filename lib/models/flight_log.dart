@@ -66,7 +66,7 @@ class FlightLog {
   // =========================================
   Gear? _gear;
   Gear? get gear => _gear;
-  set gear(newGear) {
+  set gear(Gear? newGear) {
     _gear = newGear;
     unsaved = true;
   }
@@ -477,7 +477,7 @@ class FlightLog {
     }
     final encoded = jsonEncode(logJson);
     debugPrint(encoded);
-    saveFileToAppDocs(filename: filename, data: encoded).then((value) {
+    saveFileToAppDocs(filename: _filename!, data: encoded).then((value) {
       unsaved = false;
       completer.complete(true);
     });

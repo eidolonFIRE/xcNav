@@ -180,7 +180,7 @@ String colorWheel(double pos) {
 
 /// Save string to file.
 /// Returns `true` if success.
-Future<bool> saveFileToAppDocs({required filename, required String data}) async {
+Future<bool> saveFileToAppDocs({required String filename, required String data}) async {
   try {
     final file = File(filename);
     await file.create(recursive: true);

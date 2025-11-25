@@ -525,7 +525,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  void stopFlight({bypassRecording = false}) {
+  void stopFlight({bool bypassRecording = false}) {
     if (_inFlight && geo != null) {
       _inFlight = false;
       debugPrint("Flight Ended");
