@@ -98,7 +98,7 @@
     "Summary": "Összegzés",
     "Altitude": "Magasság",
     "G-Force": "G-erő",
-    "Laurch": "Indítás",
+    "launch": "Indítás",
     "Landing": "Leszállás",
     "dialog_select_range_with_slider": "Használja a csúszkát a megtartandó napló időtartamának kiválasztásához.",
     "Invalid Selection": "Érvénytelen kiválasztás",

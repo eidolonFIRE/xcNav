@@ -166,6 +166,14 @@ String printHrMinLexical(Duration duration) {
   }
 }
 
+String simpleHrMinSec(Duration duration) {
+  if (duration.inHours > 0) {
+    return "${duration.inHours}:${(duration.inMinutes % 60).toString().padLeft(2, "0")}:${(duration.inSeconds % 60).toString().padLeft(2, "0")}";
+  } else {
+    return "${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, "0")}";
+  }
+}
+
 TextSpan richHrMin({required Duration? duration, TextStyle? valueStyle, TextStyle? unitStyle, bool longUnits = false}) {
   if (duration == null) {
     return TextSpan(text: "∞", style: valueStyle);

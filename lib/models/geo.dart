@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/douglas_peucker.dart';
 import 'package:xcnav/models/path_intercept.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
@@ -18,6 +19,15 @@ double ambientFromAlt(double altitudeMeters, double pressure) {
   final double scale = 145366.45 / meters2Feet;
   final double term = 1 - (altitudeMeters / scale);
   return pressure / pow(term, 1 / exponent);
+}
+
+double calcAltGained(List<Geo> samples) {
+  double gained = 0;
+  final values = douglasPeucker(samples.map((e) => e.alt).toList(), 3);
+  for (int t = 0; t < values.length - 1; t++) {
+    gained = gained + max(0, values[t + 1] - values[t]);
+  }
+  return gained;
 }
 
 class Geo {

@@ -98,7 +98,7 @@
   "Summary": "Сводка",
   "Altitude": "Высота",
   "G-Force": "Перегрузка",
-  "Laurch": "Взлёт",
+  "Launch": "Взлёт",
   "Landing": "Посадка",
   "dialog_select_range_with_slider": "Используйте ползунок, чтобы выбрать диапазон журнала для сохранения.",
   "Invalid Selection": "Неверный выбор",

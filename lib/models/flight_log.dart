@@ -261,13 +261,7 @@ class FlightLog {
 
   /// Meters
   double get altGained {
-    if (_altGained == null) {
-      _altGained = 0;
-      final values = douglasPeucker(samples.map((e) => e.alt).toList(), 3);
-      for (int t = 0; t < values.length - 1; t++) {
-        _altGained = _altGained! + max(0, values[t + 1] - values[t]);
-      }
-    }
+    _altGained ??= calcAltGained(samples);
     return _altGained!;
   }
 
@@ -512,6 +506,11 @@ class FlightLog {
   /// Find the nearest sample index
   int timeToSampleIndex(DateTime time) {
     return nearestIndex(samples.map((e) => e.time).toList(), time.millisecondsSinceEpoch);
+  }
+
+  /// Find the nearest g-force sample index
+  int timeToGForceSampleIndex(DateTime time) {
+    return nearestIndex(gForceSamples.map((e) => e.time).toList(), time.millisecondsSinceEpoch);
   }
 
   /// Return a copy of this log with a trimmed timeline.
