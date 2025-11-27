@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
 import 'package:intl/intl.dart' as intl;
-import 'package:syncfusion_flutter_sliders/sliders.dart';
+import 'package:vector_math/vector_math_64.dart' as vector;
 
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dialogs/confirm_log_crop.dart';
@@ -15,8 +15,9 @@ import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
+import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/log_view.dart';
 import 'package:xcnav/units.dart';
-import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/elevation_replay.dart';
 import 'package:xcnav/widgets/g_force_pages.dart';
 import 'package:xcnav/widgets/log_summary.dart';
@@ -39,9 +40,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   bool hideWaypoints = false;
   double mapOpacity = 1.0;
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
+  ValueNotifier<Geo?> selectedGeo = ValueNotifier(null);
 
   String? logKey;
   late FlightLog log;
+  late LogView logView;
   bool logLoaded = false;
 
   double windowHeight = 400;
@@ -49,33 +52,67 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   late final TabController tabController;
 
   late final List<int> logGForceIndeces;
-  final gForcePageController = PageController();
-
   final fuelScrollController = ScrollController();
 
-  double mainDividerPosition = -1;
+  final chartTransformController = TransformationController();
 
-  /// Selected index range of log
-  ValueNotifier<Range<int>> selectedIndexRange = ValueNotifier(Range(0, 1));
-  late ValueNotifier<DateTimeRange> selectedTimeRange;
+  double mainDividerPosition = -1;
 
   @override
   void initState() {
     super.initState();
     tabController = TabController(length: 5, vsync: this);
+    chartTransformController.addListener(() {
+      selectedGeo.value = null;
+
+      final mat4 = chartTransformController.value;
+      final scale = mat4.getMaxScaleOnAxis();
+      final offset = -mat4.getTranslation()[0];
+      final pixelW = MediaQuery.of(context).size.width - 18;
+
+      final start = log.startTime!.millisecondsSinceEpoch;
+      final end = log.endTime!.millisecondsSinceEpoch;
+      final duration = end - start;
+      final width = (duration / scale).round();
+      final offsetReal = (offset * width / pixelW).round();
+
+      // debugPrint("scale: $scale  offset: ${(offset / scale).round()} offsetReal: ${(offsetReal / 1000).round()}  width: ${(width / 1000).round()}");
+
+      logView.timeRange = DateTimeRange(
+          start: DateTime.fromMillisecondsSinceEpoch(start + offsetReal),
+          end: DateTime.fromMillisecondsSinceEpoch(start + offsetReal + width));
+    });
+
+    // (dateRange.start - log.startTime!.millisecondsSinceEpoch) * pixelW / (duration / scale) = offset
+  }
+
+  void setChartTransform(DateTimeRange dateRange) {
+    selectedGeo.value = null;
+
+    final curTrans = chartTransformController.value.getTranslation();
+    final pixelW = MediaQuery.of(context).size.width - 18;
+    final scale = log.durationTime.inMilliseconds / dateRange.duration.inMilliseconds;
+    chartTransformController.value.setFromTranslationRotationScale(
+        vector.Vector3(
+            -(dateRange.start.millisecondsSinceEpoch - log.startTime!.millisecondsSinceEpoch) *
+                pixelW /
+                (log.durationTime.inMilliseconds / scale),
+            curTrans[1],
+            curTrans[2]),
+        vector.Quaternion.identity(),
+        vector.Vector3(scale, 1, 1));
   }
 
   @override
   void didChangeDependencies() {
     if (!logLoaded) {
-      debugPrint("Loading log $logKey");
       final args = ModalRoute.of(context)!.settings.arguments as Map<String, Object>;
       logKey ??= args["logKey"] as String;
+      debugPrint("Loading log $logKey");
 
       log = logStore.logs[logKey]!;
 
-      selectedIndexRange.value = Range(0, log.samples.length - 1);
-      selectedTimeRange = ValueNotifier(DateTimeRange(start: log.startTime!, end: log.endTime!));
+      logView = LogView(log);
 
       if (log.goodFile) {
         logLoaded = true;
@@ -96,42 +133,18 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  void gotoGForce(int index) {
-    scrollToTimeRange(log.gForceEvents[index].timeRange);
-    if (tabController.index != 3) {
-      tabController.animateTo(3, duration: const Duration(milliseconds: 200));
-      Future.delayed(const Duration(milliseconds: 220)).then((_) => gForcePageController.jumpToPage(index));
+  void selectTime(double? time) {
+    if (time != null) {
+      selectedGeo.value = log.samples[log.timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(time.round()))];
     } else {
-      gForcePageController.jumpToPage(index);
+      selectedGeo.value = null;
     }
-  }
-
-  void scrollToTimeRange(DateTimeRange range) {
-    final startIndex = log.timeToSampleIndex(range.start);
-    final endIndex = log.timeToSampleIndex(range.end);
-    selectedTimeRange.value = DateTimeRange(
-        start: DateTime.fromMillisecondsSinceEpoch(log.samples[startIndex].time),
-        end: DateTime.fromMillisecondsSinceEpoch(log.samples[endIndex].time));
-    selectedIndexRange.value = Range(startIndex, endIndex);
-    fitMap();
-  }
-
-  void scrollToTime(DateTime center) {
-    mapController.move(log.samples[log.timeToSampleIndex(center)].latlng, mapController.camera.zoom);
-    final durWidth = selectedTimeRange.value.duration;
-    final startIndex = log.timeToSampleIndex(center.subtract(durWidth * 0.5));
-    final endIndex = log.timeToSampleIndex(center.add(durWidth * 0.5));
-    selectedTimeRange.value = DateTimeRange(
-        start: DateTime.fromMillisecondsSinceEpoch(log.samples[startIndex].time),
-        end: DateTime.fromMillisecondsSinceEpoch(log.samples[endIndex].time));
-    selectedIndexRange.value = Range(startIndex, endIndex);
-    fitMap();
   }
 
   void fitMap() {
     mapController.fitCamera(CameraFit.coordinates(
         coordinates: log.samples
-            .sublist(selectedIndexRange.value.start, selectedIndexRange.value.end)
+            .sublist(logView.sampleIndexRange.start, logView.sampleIndexRange.end)
             .map((e) => e.latlng)
             .toList(),
         padding: EdgeInsets.all(50),
@@ -205,23 +218,23 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
                     break;
                   case "crop":
-                    if (selectedIndexRange.value.start <= 2 && selectedIndexRange.value.end >= log.samples.length - 3) {
+                    if (logView.sampleIndexRange.start <= 2 && logView.sampleIndexRange.end >= log.samples.length - 3) {
                       showCropCutSuggestion(context);
                     } else {
                       confirmLogCrop(context,
                               trimStart: Duration(
                                   milliseconds:
-                                      log.samples[selectedIndexRange.value.start].time - log.samples.first.time),
+                                      log.samples[logView.sampleIndexRange.start].time - log.samples.first.time),
                               trimEnd: Duration(
                                   milliseconds:
-                                      -log.samples[selectedIndexRange.value.end].time + log.samples.last.time))
+                                      -log.samples[logView.sampleIndexRange.end].time + log.samples.last.time))
                           .then((confirmed) {
                         setState(() {
                           if (confirmed ?? false) {
-                            final newLog = log.cropLog(selectedIndexRange.value);
+                            final newLog = log.cropLog(logView.sampleIndexRange);
                             logStore.updateLog(logKey!, newLog);
                             log = newLog;
-                            scrollToTimeRange(DateTimeRange(start: newLog.startTime!, end: newLog.endTime!));
+                            logView.timeRange = DateTimeRange(start: newLog.startTime!, end: newLog.endTime!);
                           }
                         });
                       });
@@ -324,13 +337,15 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                         .toList()),
 
                               // --- Log Line
-                              ValueListenableBuilder<Range>(
-                                  valueListenable: selectedIndexRange,
-                                  builder: (context, range, _) {
+                              ListenableBuilder(
+                                  listenable: logView,
+                                  builder: (context, _) {
                                     return PolylineLayer(polylines: [
                                       Polyline(
-                                          points:
-                                              log.samples.sublist(range.start, range.end).map((e) => e.latlng).toList(),
+                                          points: log.samples
+                                              .sublist(logView.sampleIndexRange.start, logView.sampleIndexRange.end)
+                                              .map((e) => e.latlng)
+                                              .toList(),
                                           strokeWidth: 4,
                                           borderColor: Colors.black,
                                           borderStrokeWidth: 1,
@@ -351,7 +366,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                         child: GestureDetector(
                                             onTap: () {
                                               setState(() {
-                                                scrollToTime(e.time);
+                                                // TODO - scrollToTime
+                                                // logView.timeRange = (e.time);
                                               });
                                             },
                                             onLongPress: () {
@@ -368,6 +384,30 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                                 color: Colors.blue))))
                                     .toList(),
                               ),
+
+                              // --- "ME" marker if selected
+                              ValueListenableBuilder<Geo?>(
+                                  valueListenable: selectedGeo,
+                                  builder: (context, geo, _) {
+                                    if (geo != null) {
+                                      return MarkerLayer(
+                                        markers: [
+                                          Marker(
+                                            width: 40.0,
+                                            height: 40.0,
+                                            point: geo.latlng,
+                                            child: Container(
+                                              transformAlignment: const Alignment(0, 0),
+                                              transform: Matrix4.rotationZ(geo.hdg),
+                                              child: Image.asset("assets/images/red_arrow.png"),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    } else {
+                                      return Container();
+                                    }
+                                  }),
                             ]),
 
                         // --- Map Tile Selector
@@ -431,40 +471,47 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     // --- Summary
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 10, 10, 10),
-                      child: ValueListenableBuilder<Range<int>>(
-                          valueListenable: selectedIndexRange,
-                          builder: (context, range, _) {
-                            return LogSummary(log: log.cropLog(range));
-                          }),
+                      child: LogSummary(log: log),
                     ),
 
                     // --- Elevation Plot
                     Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: ElevationReplay(
-                          log: log,
                           showVario: true,
-                          selectedIndexRange: selectedIndexRange,
-                          onSelectedGForce: gotoGForce,
+                          logView: logView,
+                          onSelectedGForce: (index) {
+                            logView.timeRange = log.gForceEvents[index].timeRange;
+                          },
+                          onSelectedTime: selectTime,
+                          transformController: chartTransformController,
                         )),
 
                     // --- Speed Histogram
                     Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: SpeedHistogram(
-                          log: log,
-                          selectedIndexRange: selectedIndexRange,
+                          transformController: chartTransformController,
+                          logView: logView,
+                          onSelectedTime: selectTime,
                         )),
 
                     // --- G-force event pages
                     (log.gForceEvents.isEmpty)
                         ? Center(child: Text("empty_list".tr()))
-                        : GForcePages(
-                            pageController: gForcePageController,
-                            log: log,
-                            onPageChanged: (index) {
-                              scrollToTimeRange(log.gForceEvents[index].timeRange);
-                            },
+                        : Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: GForcePages(
+                              onSelectedTime: selectTime,
+                              onPageChanged: (index) {
+                                setState(() {
+                                  logView.timeRange = log.gForceEvents[index].timeRange;
+                                  setChartTransform(logView.timeRange);
+                                });
+                              },
+                              transformController: chartTransformController,
+                              logView: logView,
+                            ),
                           ),
 
                     // --- Fuel
@@ -595,29 +642,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     ),
                   ]),
             ),
-
-            // --- Time Scrubber
-            ValueListenableBuilder<DateTimeRange>(
-                valueListenable: selectedTimeRange,
-                builder: (context, range, _) {
-                  return SfRangeSlider(
-                    values: SfRangeValues(range.start, range.end),
-                    dragMode: SliderDragMode.both,
-                    min: log.startTime,
-                    max: log.endTime,
-                    enableTooltip: true,
-                    tooltipTextFormatterCallback: (value, formattedText) {
-                      DateTime valueTime = value;
-                      return (valueTime == range.end ? "+" : "") +
-                          richHrMin(
-                                  duration: valueTime.difference(valueTime == range.end ? range.start : log.startTime!))
-                              .toPlainText();
-                    },
-                    onChanged: (newValue) {
-                      scrollToTimeRange(DateTimeRange(start: newValue.start, end: newValue.end));
-                    },
-                  );
-                }),
 
             TabBar(labelPadding: const EdgeInsets.all(0), controller: tabController, tabs: [
               Tab(icon: Icon(Icons.info), text: "Summary".tr()),

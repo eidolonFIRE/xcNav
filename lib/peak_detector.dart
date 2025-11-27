@@ -9,7 +9,8 @@ class PeakDetectorResult {
 
   // PeakDetectorResult(this.peaks, this.valleys);
 
-  PeakDetectorResult.fromValues(List<TimestampDouble> values, {int radius = 10, double thresh = 0.3}) {
+  PeakDetectorResult.fromValues(List<TimestampDouble> values,
+      {int radius = 10, double thresh = 0.3, double? peakThreshold}) {
     peaks = [];
     valleys = [];
 
@@ -21,7 +22,9 @@ class PeakDetectorResult {
       final value = values[i].value;
       if (value == localMax && (value - localMin).abs() > thresh) {
         if (peaks.isEmpty || peaks.last.time < values[i - radius].time) {
-          peaks.add(values[i]);
+          if (peakThreshold == null || values[i].value >= peakThreshold) {
+            peaks.add(values[i]);
+          }
         }
       } else if (value == localMin && (value - localMax).abs() > thresh) {
         if (valleys.isEmpty || valleys.last.time < values[i - radius].time) {

@@ -24,6 +24,36 @@ void setSystemUI() {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
 }
 
+double verticalLineInterval(Duration windowSize) {
+  return windowSize.inSeconds < 10
+      ? 1000
+      : (windowSize.inSeconds < 60 ? 10000 : (windowSize.inMinutes < 10 ? 60000 : 600000));
+}
+
+Color gradientInterp(List<Color> colors, List<double> stops, double value) {
+  // Check bounds
+  if (value <= stops.first) {
+    return colors.first;
+  } else if (value >= stops.last) {
+    return colors.last;
+  }
+
+  // Find the closest value in the LUT
+  int index = bisect_right(stops, value);
+
+  final x1 = stops[index - 1];
+  final x2 = stops[index];
+  final y1 = colors[index - 1];
+  final y2 = colors[index];
+
+  // Linear interpolation
+  return Color.fromARGB(
+      255,
+      min(255, max(0, ((y2.r + (y2.r - y1.r) * ((value - x1) / (x2 - x1))) * 255.0).round())),
+      min(255, max(0, ((y2.g + (y2.g - y1.g) * ((value - x1) / (x2 - x1))) * 255.0).round())),
+      min(255, max(0, ((y2.b + (y2.b - y1.b) * ((value - x1) / (x2 - x1))) * 255.0).round())));
+}
+
 /// a or b but smaller by a factor
 TextStyle? resolveSmallerStyle(TextStyle? a, TextStyle? b, {double factor = 0.6}) {
   if (a != null || b != null) {

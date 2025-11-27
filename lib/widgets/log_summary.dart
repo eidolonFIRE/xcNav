@@ -32,7 +32,7 @@ class LogSummary extends StatelessWidget {
               Text.rich(
                   richHrMin(
                       duration: log.durationTime,
-                      longUnits: true,
+                      longUnits: false,
                       // valueStyle: Theme.of(context).textTheme.bodyMedium!,
                       unitStyle: unitStyle),
                   textAlign: TextAlign.end)
@@ -55,7 +55,14 @@ class LogSummary extends StatelessWidget {
               height: 10,
             ),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text("log_summary.Max Altitude".tr()),
+              Text.rich(TextSpan(children: [
+                WidgetSpan(
+                    child: Icon(
+                  Icons.vertical_align_top,
+                  size: 20,
+                )),
+                TextSpan(text: "log_summary.Max Altitude".tr()),
+              ])),
               Text.rich(
                 richValue(UnitType.distFine, log.maxAlt, decimals: 1, unitStyle: unitStyle),
                 textAlign: TextAlign.end,
@@ -69,7 +76,14 @@ class LogSummary extends StatelessWidget {
               ),
             ]),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text("log_summary.Total Elev Gain".tr()),
+              Text.rich(TextSpan(children: [
+                WidgetSpan(
+                    child: Icon(
+                  Icons.show_chart,
+                  size: 20,
+                )),
+                TextSpan(text: "log_summary.Total Elev Gain".tr())
+              ])),
               Text.rich(
                 richValue(UnitType.distFine, log.altGained, decimals: 0, unitStyle: unitStyle),
                 textAlign: TextAlign.end,

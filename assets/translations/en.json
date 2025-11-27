@@ -98,7 +98,7 @@
     "Summary": "Summary",
     "Altitude": "Altitude",
     "G-Force": "G-Force",
-    "Laurch": "Launch",
+    "Launch": "Launch",
     "Landing": "Landing",
     "dialog_select_range_with_slider": "Use the range slider to select the duration of the log to keep.",
     "Invalid Selection": "Invalid Selection",
