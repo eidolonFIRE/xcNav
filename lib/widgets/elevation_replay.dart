@@ -167,7 +167,9 @@ class ElevationReplay extends StatelessWidget {
               ),
               if (showVario)
                 Expanded(
-                    child: LineChart(
+                    child: Stack(
+                  children: [
+                    LineChart(
                         transformationConfig: FlTransformationConfig(
                             scaleAxis: FlScaleAxis.horizontal,
                             transformationController: transformController,
@@ -220,7 +222,32 @@ class ElevationReplay extends StatelessWidget {
                                   sideTitles: SideTitles(showTitles: false),
                                 ),
                                 rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false))))))
+                                bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false))))),
+
+                    /// --- Stats
+                    Align(
+                        alignment: Alignment.topRight,
+                        child: Card(
+                          margin: EdgeInsets.zero,
+                          color: Colors.grey.shade800.withAlpha(100),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text.rich(TextSpan(children: [
+                                  TextSpan(text: "\u{0078}\u{0304}  ", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  richValue(
+                                      UnitType.vario,
+                                      (logView.samples.last.alt - logView.samples.first.alt) /
+                                          logView.timeRange.duration.inSeconds)
+                                ])),
+                              ],
+                            ),
+                          ),
+                        ))
+                  ],
+                ))
             ],
           );
         });

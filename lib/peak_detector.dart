@@ -15,8 +15,8 @@ class PeakDetectorResult {
     valleys = [];
 
     // Slide window to find peaks
-    for (int i = radius; i < values.length - radius; i++) {
-      final window = values.sublist(i - radius, i + radius + 1).map((e) => e.value);
+    for (int i = 0; i < values.length; i++) {
+      final window = values.sublist(max(0, i - radius), min(values.length, i + radius + 1)).map((e) => e.value);
       final localMax = window.max;
       final localMin = window.min;
       final value = values[i].value;

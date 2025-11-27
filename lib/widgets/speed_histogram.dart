@@ -144,9 +144,9 @@ class SpeedHistogram extends StatelessWidget {
                     .speedHistogram(logView.sampleIndexRange.start, logView.sampleIndexRange.end, width: maxX);
                 final peaks = PeakDetectorResult.fromValues(
                     hist.values.mapIndexed((i, v) => TimestampDouble(i * 1000, v.toDouble())).toList(),
-                    radius: 1,
-                    thresh: hist.values.max / 7,
-                    peakThreshold: hist.values.max / 7);
+                    radius: 4,
+                    thresh: hist.values.sum / 30,
+                    peakThreshold: hist.values.sum / 20);
 
                 final peaksData = LineChartBarData(
                     show: true,
