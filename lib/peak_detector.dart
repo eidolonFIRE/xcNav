@@ -16,18 +16,20 @@ class PeakDetectorResult {
 
     // Slide window to find peaks
     for (int i = 0; i < values.length; i++) {
-      final window = values.sublist(max(0, i - radius), min(values.length, i + radius + 1)).map((e) => e.value);
+      final left = max(0, i - radius);
+      final right = min(values.length, i + radius + 1);
+      final window = values.sublist(left, right).map((e) => e.value);
       final localMax = window.max;
       final localMin = window.min;
       final value = values[i].value;
       if (value == localMax && (value - localMin).abs() > thresh) {
-        if (peaks.isEmpty || peaks.last.time < values[i - radius].time) {
+        if (peaks.isEmpty || peaks.last.time < values[left].time) {
           if (peakThreshold == null || values[i].value >= peakThreshold) {
             peaks.add(values[i]);
           }
         }
       } else if (value == localMin && (value - localMax).abs() > thresh) {
-        if (valleys.isEmpty || valleys.last.time < values[i - radius].time) {
+        if (valleys.isEmpty || valleys.last.time < values[left].time) {
           valleys.add(values[i]);
         }
       }
