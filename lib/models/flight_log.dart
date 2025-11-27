@@ -10,13 +10,9 @@ import 'package:xcnav/gaussian_filter.dart';
 import 'package:xml/xml.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
-
 import 'package:intl/intl.dart';
 
 import 'package:xcnav/util.dart';
-
-import 'package:xcnav/douglas_peucker.dart';
-
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/log_store.dart';
 

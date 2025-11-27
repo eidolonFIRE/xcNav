@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:xcnav/dialogs/leave_group.dart';
 import 'package:xcnav/dialogs/select_past_group.dart';
 
@@ -46,16 +47,6 @@ class _GroupDetailsState extends State<GroupDetails> {
           style: Theme.of(context).textTheme.bodyLarge,
         ),
         actions: [
-          // IconButton(
-          //     iconSize: 35,
-          //     onPressed: () => {Navigator.pushNamed(context, "/qrScanner")},
-          //     icon: const Icon(
-          //       Icons.qr_code_scanner,
-          //       color: Colors.lightBlue,
-          //     )),
-          // const VerticalDivider(
-          //   thickness: 2,
-          // ),
           IconButton(onPressed: () => {selectPastGroup(context)}, icon: const Icon(Icons.history)),
           IconButton(
               onPressed: () => {promptLeaveGroup(context)},
@@ -77,6 +68,17 @@ class _GroupDetailsState extends State<GroupDetails> {
                                     style: Theme.of(context).textTheme.headlineSmall,
                                   ),
                                 ]),
+                                trailing: p.geo == null
+                                    ? Container()
+                                    : IconButton(
+                                        onPressed: () {
+                                          SharePlus.instance.share(ShareParams(
+                                              text: "${p.geo?.latlng.latitude},${p.geo?.latlng.longitude}"));
+                                        },
+                                        icon: Icon(
+                                          Icons.share,
+                                          color: Colors.blue,
+                                        )),
                                 subtitle: (group.activePilots.contains(p))
                                     ? Text.rich(TextSpan(children: [
                                         // speed

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/pilot.dart';
@@ -163,14 +164,12 @@ void showPilotInfo(BuildContext context, String pilotId) {
                           )),
                           TableCell(
                               child: Text.rich(
-                            TextSpan(children: [
-                              richHrMin(
-                                valueStyle: valueStyle,
-                                unitStyle: unitStyle,
-                                duration: etaIntercept.time!,
-                                longUnits: true,
-                              )
-                            ]),
+                            richHrMin(
+                              valueStyle: valueStyle,
+                              unitStyle: unitStyle,
+                              duration: etaIntercept.time!,
+                              longUnits: true,
+                            ),
                             softWrap: false,
                           ))
                         ]),
@@ -224,6 +223,42 @@ void showPilotInfo(BuildContext context, String pilotId) {
                             softWrap: false,
                           ))
                         ]),
+
+                      // --- Position
+                      if (pilot.geo != null)
+                        TableRow(children: [
+                          TableCell(
+                              child: Text(
+                            "Position",
+                            textAlign: TextAlign.end,
+                          )),
+                          TableCell(
+                              child: SizedBox(
+                            height: cellHeight,
+                            child: VerticalDivider(
+                              color: Colors.grey.shade900,
+                            ),
+                          )),
+                          TableCell(
+                              child: Text.rich(
+                            TextSpan(children: [
+                              TextSpan(
+                                  text:
+                                      "${pilot.geo?.latlng.latitude.toStringAsFixed(4)}, ${pilot.geo?.latlng.longitude.toStringAsFixed(4)}"),
+                              WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: IconButton(
+                                      onPressed: () {
+                                        SharePlus.instance.share(ShareParams(
+                                            text: "${pilot.geo?.latlng.latitude},${pilot.geo?.latlng.longitude}"));
+                                      },
+                                      icon: Icon(
+                                        Icons.share,
+                                        color: Colors.blue,
+                                      )))
+                            ]),
+                          ))
+                        ])
                     ]),
               );
             } else {

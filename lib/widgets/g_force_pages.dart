@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:xcnav/models/log_view.dart';
 import 'package:xcnav/peak_detector.dart';
 import 'package:xcnav/units.dart';
