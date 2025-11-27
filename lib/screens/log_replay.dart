@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:easy_localization/easy_localization.dart' as tr;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -15,9 +16,9 @@ import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
-import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/log_view.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/elevation_replay.dart';
 import 'package:xcnav/widgets/g_force_pages.dart';
 import 'package:xcnav/widgets/log_summary.dart';
@@ -40,7 +41,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   bool hideWaypoints = false;
   double mapOpacity = 1.0;
   ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
-  ValueNotifier<Geo?> selectedGeo = ValueNotifier(null);
+  ValueNotifier<DateTime?> selectedTime = ValueNotifier(null);
 
   String? logKey;
   late FlightLog log;
@@ -63,7 +64,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
     super.initState();
     tabController = TabController(length: 5, vsync: this);
     chartTransformController.addListener(() {
-      selectedGeo.value = null;
+      selectedTime.value = null;
 
       final mat4 = chartTransformController.value;
       final scale = mat4.getMaxScaleOnAxis();
@@ -87,7 +88,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   }
 
   void setChartTransform(DateTimeRange dateRange) {
-    selectedGeo.value = null;
+    selectedTime.value = null;
 
     final curTrans = chartTransformController.value.getTranslation();
     final pixelW = MediaQuery.of(context).size.width - 18;
@@ -135,9 +136,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
   void selectTime(double? time) {
     if (time != null) {
-      selectedGeo.value = log.samples[log.timeToSampleIndex(DateTime.fromMillisecondsSinceEpoch(time.round()))];
+      selectedTime.value = DateTime.fromMillisecondsSinceEpoch(time.round());
     } else {
-      selectedGeo.value = null;
+      selectedTime.value = null;
     }
   }
 
@@ -386,10 +387,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               ),
 
                               // --- "ME" marker if selected
-                              ValueListenableBuilder<Geo?>(
-                                  valueListenable: selectedGeo,
-                                  builder: (context, geo, _) {
-                                    if (geo != null) {
+                              ValueListenableBuilder<DateTime?>(
+                                  valueListenable: selectedTime,
+                                  builder: (context, time, _) {
+                                    if (time != null) {
+                                      final geo = log.samples[log.timeToSampleIndex(time)];
                                       return MarkerLayer(
                                         markers: [
                                           Marker(
@@ -409,6 +411,89 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                     }
                                   }),
                             ]),
+
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: DefaultTextStyle(
+                            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                            child: ValueListenableBuilder<DateTime?>(
+                                valueListenable: selectedTime,
+                                builder: (context, time, _) {
+                                  if (time == null) {
+                                    return Container();
+                                  } else {
+                                    final geo = log.samples[log.timeToSampleIndex(time)];
+                                    return Container(
+                                        foregroundDecoration: BoxDecoration(
+                                            border: Border.all(width: 0.5, color: Colors.black),
+                                            borderRadius: const BorderRadius.all(Radius.circular(15))),
+                                        child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(15),
+                                            child: BackdropFilter(
+                                                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                                child: Container(
+                                                    color: Colors.white38,
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          // --- Speed
+                                                          Text.rich(TextSpan(children: [
+                                                            WidgetSpan(
+                                                                child: Icon(
+                                                              Icons.speed,
+                                                              size: 16,
+                                                              color: Colors.black,
+                                                            )),
+                                                            TextSpan(text: " "),
+                                                            richValue(UnitType.speed, geo.spd,
+                                                                unitStyle: TextStyle(fontWeight: FontWeight.normal)),
+                                                          ])),
+                                                          // --- Altitude
+                                                          Text.rich(TextSpan(children: [
+                                                            TextSpan(
+                                                                text: "MSL ",
+                                                                style: TextStyle(fontWeight: FontWeight.normal)),
+                                                            richValue(UnitType.distFine, geo.alt,
+                                                                unitStyle: TextStyle(fontWeight: FontWeight.normal)),
+                                                          ])),
+                                                          if (geo.ground != null)
+                                                            Text.rich(TextSpan(children: [
+                                                              TextSpan(
+                                                                  text: "AGL ",
+                                                                  style: TextStyle(fontWeight: FontWeight.normal)),
+                                                              richValue(UnitType.distFine, geo.alt - geo.ground!,
+                                                                  unitStyle: TextStyle(fontWeight: FontWeight.normal)),
+                                                            ])),
+                                                          // --- Vario
+                                                          Text.rich(TextSpan(children: [
+                                                            WidgetSpan(
+                                                                child: Icon(
+                                                              Icons.height,
+                                                              size: 16,
+                                                              color: Colors.black,
+                                                            )),
+                                                            TextSpan(text: " "),
+                                                            richValue(
+                                                                UnitType.vario,
+                                                                log
+                                                                    .varioLogSmoothed[nearestIndex(
+                                                                        log.varioLogSmoothed
+                                                                            .map((e) => e.time)
+                                                                            .toList(),
+                                                                        time.millisecondsSinceEpoch)]
+                                                                    .value,
+                                                                unitStyle: TextStyle(fontWeight: FontWeight.normal)),
+                                                          ])),
+                                                        ],
+                                                      ),
+                                                    )))));
+                                  }
+                                }),
+                          ),
+                        ),
 
                         // --- Map Tile Selector
                         Align(

@@ -124,6 +124,18 @@ class ElevationReplay extends StatelessWidget {
                                 Text.rich(TextSpan(children: [
                                   WidgetSpan(
                                       child: Icon(
+                                    Icons.timer,
+                                    size: 16,
+                                  )),
+                                  TextSpan(text: "  "),
+                                  TextSpan(
+                                      text: simpleHrMinSec(Duration(
+                                          milliseconds: logView.samples.map((e) => e.time).toList().max -
+                                              logView.samples.map((e) => e.time).toList().min)))
+                                ])),
+                                Text.rich(TextSpan(children: [
+                                  WidgetSpan(
+                                      child: Icon(
                                     Icons.vertical_align_top,
                                     size: 18,
                                   )),
@@ -142,18 +154,6 @@ class ElevationReplay extends StatelessWidget {
                                       text:
                                           "  ${unitConverters[UnitType.distFine]!(calcAltGained(logView.samples)).round()} "),
                                   TextSpan(text: getUnitStr(UnitType.distFine))
-                                ])),
-                                Text.rich(TextSpan(children: [
-                                  WidgetSpan(
-                                      child: Icon(
-                                    Icons.timer,
-                                    size: 16,
-                                  )),
-                                  TextSpan(text: "  "),
-                                  TextSpan(
-                                      text: simpleHrMinSec(Duration(
-                                          milliseconds: logView.samples.map((e) => e.time).toList().max -
-                                              logView.samples.map((e) => e.time).toList().min)))
                                 ])),
                               ],
                             ),
@@ -205,7 +205,7 @@ class ElevationReplay extends StatelessWidget {
                               });
                               return touchedSpots.map((LineBarSpot touchedSpot) {
                                 return LineTooltipItem(
-                                  "${touchedSpot.y.toStringAsFixed(1)} ${getUnitStr(UnitType.vario)}",
+                                  "${touchedSpot.y.round()} ${getUnitStr(UnitType.vario)}",
                                   const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 );
                               }).toList();

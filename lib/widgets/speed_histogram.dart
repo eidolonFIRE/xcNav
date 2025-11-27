@@ -104,17 +104,6 @@ class SpeedHistogram extends StatelessWidget {
                                 Text.rich(TextSpan(children: [
                                   WidgetSpan(
                                       child: Icon(
-                                    Icons.vertical_align_top,
-                                    size: 16,
-                                  )),
-                                  TextSpan(
-                                      text:
-                                          "  ${logView.samples.map((e) => unitConverters[UnitType.speed]!(e.spd)).max.toStringAsFixed(1)} "),
-                                  TextSpan(text: getUnitStr(UnitType.speed)),
-                                ])),
-                                Text.rich(TextSpan(children: [
-                                  WidgetSpan(
-                                      child: Icon(
                                     Icons.timer,
                                     size: 16,
                                   )),
@@ -123,6 +112,17 @@ class SpeedHistogram extends StatelessWidget {
                                       text: simpleHrMinSec(Duration(
                                           milliseconds: logView.samples.map((e) => e.time).toList().max -
                                               logView.samples.map((e) => e.time).toList().min)))
+                                ])),
+                                Text.rich(TextSpan(children: [
+                                  WidgetSpan(
+                                      child: Icon(
+                                    Icons.vertical_align_top,
+                                    size: 16,
+                                  )),
+                                  TextSpan(
+                                      text:
+                                          "  ${logView.samples.map((e) => unitConverters[UnitType.speed]!(e.spd)).max.toStringAsFixed(1)} "),
+                                  TextSpan(text: getUnitStr(UnitType.speed)),
                                 ])),
                               ],
                             ),

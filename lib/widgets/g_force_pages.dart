@@ -174,10 +174,10 @@ class GForcePages extends StatelessWidget {
                             ),
                           ))),
 
-                  // --- Stats - Top
+                  // --- Stats - bottom
                   if ((keyPoints.peaks.isNotEmpty || keyPoints.valleys.isNotEmpty))
                     Align(
-                        alignment: Alignment.topRight,
+                        alignment: Alignment.bottomRight,
                         child: Card(
                           margin: EdgeInsets.zero,
                           color: Colors.grey.shade800.withAlpha(100),
@@ -216,10 +216,10 @@ class GForcePages extends StatelessWidget {
                           ),
                         )),
 
-                  // --- Stats - Bottom
+                  // --- Stats - top
                   if ((keyPoints.peaks.isNotEmpty || keyPoints.valleys.isNotEmpty))
                     Align(
-                        alignment: Alignment.bottomRight,
+                        alignment: Alignment.topRight,
                         child: Card(
                           margin: EdgeInsets.zero,
                           color: Colors.grey.shade800.withAlpha(100),
@@ -229,6 +229,18 @@ class GForcePages extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                Text.rich(TextSpan(children: [
+                                  WidgetSpan(
+                                      child: Icon(
+                                    Icons.timer,
+                                    size: 16,
+                                  )),
+                                  TextSpan(text: "  "),
+                                  TextSpan(
+                                      text: simpleHrMinSec(Duration(
+                                          milliseconds: logView.samples.map((e) => e.time).toList().max -
+                                              logView.samples.map((e) => e.time).toList().min)))
+                                ])),
                                 if (keyPoints.peaks.isNotEmpty)
                                   Text.rich(TextSpan(children: [
                                     WidgetSpan(
@@ -239,22 +251,6 @@ class GForcePages extends StatelessWidget {
                                     )),
                                     TextSpan(text: "  ${keyPoints.peaks.map((e) => e.value).max.toStringAsFixed(1)}G"),
                                   ])),
-                                Text.rich(TextSpan(children: [
-                                  WidgetSpan(
-                                      child: Icon(
-                                    Icons.timer,
-                                    size: 16,
-                                  )),
-                                  TextSpan(text: "  "),
-                                  TextSpan(
-                                      text: simpleHrMinSec(Duration(
-                                          milliseconds: (keyPoints.valleys.map((e) => e.time).toList() +
-                                                      keyPoints.peaks.map((e) => e.time).toList())
-                                                  .max -
-                                              (keyPoints.valleys.map((e) => e.time).toList() +
-                                                      keyPoints.peaks.map((e) => e.time).toList())
-                                                  .min)))
-                                ])),
                                 if (keyPoints.valleys.isNotEmpty)
                                   Text.rich(TextSpan(children: [
                                     WidgetSpan(
