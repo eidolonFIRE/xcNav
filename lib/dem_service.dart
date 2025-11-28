@@ -26,7 +26,7 @@ Future initDemCache() async {
       _demTileLayer = TileLayer(
           urlTemplate: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
           tileProvider: FMTCTileProvider(
-              stores: {"dem": BrowseStoreStrategy.readUpdateCreate}, cachedValidDuration: const Duration(days: 60)));
+              stores: {"dem": BrowseStoreStrategy.readUpdateCreate}, cachedValidDuration: const Duration(days: 90)));
     } else {
       error("DEM store not ready!");
     }

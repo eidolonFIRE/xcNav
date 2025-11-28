@@ -74,7 +74,7 @@ class _ADSBhelpState extends State<ADSBhelp> with SingleTickerProviderStateMixin
                     child: GestureDetector(
                       onTap: () => {launchUrl(Uri.parse("https://uavionix.com/products/pingusb/"))},
                       child: Image.network(
-                          "https://mlimxgb6oftt.i.optimole.com/iOeAD64.AtMc~34070/w:672/h:1500/q:mauto/https://uavionix.com/wp-content/uploads/2020/11/pingUSB.png"),
+                          "https://uavionix.com/wp-content/uploads/2025/04/pingUSB_productheader_1x1.png"),
                     ),
                   ),
                 ]),
