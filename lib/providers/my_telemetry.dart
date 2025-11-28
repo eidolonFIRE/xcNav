@@ -732,22 +732,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (globalContext != null && settingsMgr.autoRecordFlight.value) {
       if (inFlight) {
         // Is moving slowly near the ground?
-        if (speedSmooth.value < 2.5 && varioSmooth.value.abs() < 0.2 && (geo!.alt - (geo!.ground ?? geo!.alt)) < 30) {
-          if (geoPrev != null) {
-            triggerHyst += geo!.time - geoPrev!.time;
-          } else {
-            triggerHyst += const Duration(seconds: 1).inMilliseconds;
-          }
-        } else {
-          triggerHyst = 0;
-        }
-        if (triggerHyst > 60000) {
-          // Landed!
-          stopFlight(bypassRecording: bypassRecording);
-        }
-      } else {
-        // Is moving a normal speed and above the ground?
-        if (4.0 < geo!.spd && geo!.spd < 25 && geo!.alt - (geo!.ground ?? 0) > 30) {
+        // Only acount for AGL if ground data available.
+        if (speedSmooth.value < 2.5 &&
+            varioSmooth.value.abs() < 0.2 &&
+            (geo!.ground != null ? (geo!.alt - geo!.ground!) < 30 : true)) {
           if (geoPrev != null) {
             triggerHyst += geo!.time - geoPrev!.time;
           } else {
@@ -757,6 +745,22 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           triggerHyst = 0;
         }
         if (triggerHyst > 30000) {
+          // Landed!
+          stopFlight(bypassRecording: bypassRecording);
+        }
+      } else {
+        // Is moving a normal speed and above the ground?
+        // Only acount for AGL if ground data available.
+        if (4.0 < geo!.spd && geo!.spd < 25 && (geo!.ground != null ? geo!.alt - geo!.ground! > 30 : true)) {
+          if (geoPrev != null) {
+            triggerHyst += geo!.time - geoPrev!.time;
+          } else {
+            triggerHyst += const Duration(seconds: 1).inMilliseconds;
+          }
+        } else {
+          triggerHyst = 0;
+        }
+        if (triggerHyst > 15000) {
           // Launched!
           startFlight();
         }
