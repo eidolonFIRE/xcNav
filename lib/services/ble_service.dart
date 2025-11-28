@@ -35,6 +35,9 @@ BleDeviceHandler? getHandler({String? name, DeviceIdentifier? deviceId}) {
 }
 
 void scan() async {
+  if (FlutterBluePlus.adapterStateNow != BluetoothAdapterState.on) {
+    return;
+  }
   debugPrint("BLE Scanning...");
   // if (_devicesListener != null) {
   //   debugPrint("Cancelling previous scan listener");

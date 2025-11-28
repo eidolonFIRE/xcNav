@@ -192,11 +192,7 @@ class _MainMenuState extends State<MainMenu> {
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
                 onPressed: () {
-                  showAudioCueConfigDialog(context, audioCueService.config).then((value) {
-                    if (value != null) {
-                      audioCueService.config = value;
-                    }
-                  });
+                  showAudioCueConfigDialog(context);
                 },
                 icon: const Icon(Icons.settings)),
           ]),

@@ -84,7 +84,7 @@ class SettingConfig<T> {
           _value = ValueNotifier<T>(defaultValue);
         } else {
           switch (T.toString()) {
-            // NOTE: Need to add each supporte enum here
+            // NOTE: Need to add each supported enum here
             case "DisplayUnitsDist":
               _value = ValueNotifier<T>(DisplayUnitsDist.values[loadedInt] as T);
               break;

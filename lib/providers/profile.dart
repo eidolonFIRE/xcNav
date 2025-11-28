@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
@@ -11,6 +10,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'package:xcnav/models/gear.dart';
 import 'package:xcnav/secrets.dart';
+import 'package:xcnav/util.dart';
 
 class Profile with ChangeNotifier {
   String? name;
@@ -72,15 +72,6 @@ class Profile with ChangeNotifier {
   }
 
   bool get isValid => nameValidator(name) == null && id != null;
-
-  static String? nameValidator(String? name) {
-    if (name != null) {
-      if (name.trim().length < 2) return "warning_must_be_2_char".tr();
-    } else {
-      return "warning_empty".tr();
-    }
-    return null;
-  }
 
   void eraseIdentity() {
     prefs.remove("profile.name");

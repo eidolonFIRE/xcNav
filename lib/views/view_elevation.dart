@@ -30,7 +30,7 @@ class ViewElevation extends StatefulWidget {
   State<ViewElevation> createState() => ViewElevationState();
 }
 
-class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveClientMixin<ViewElevation> {
+class ViewElevationState extends State<ViewElevation> {
   // ignore: annotate_overrides
   bool get wantKeepAlive => true;
 
@@ -53,7 +53,7 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
     const Duration(minutes: 10),
   ];
 
-  Future<List<ElevSample?>> doSamples(Geo geo, Waypoint? waypoint, double speed) async {
+  List<ElevSample> doSamples(Geo geo, Waypoint? waypoint, double speed) {
     waypointETA = waypoint?.eta(geo, speed);
 
     /// Use either the selected duration, or derive from ETA to waypoint (plus over-shoot a little)
@@ -65,37 +65,22 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
             : (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 10000.0 : 8046.72));
     // `max` check here will only save computer for nearby points by setting min resolution to 20.
     final sampleInterval = max(20, forecastDist / 100).ceil();
-    // debugPrint("DEM sample interval: $sampleInterval");
-
-    Completer<List<ElevSample?>> samplesCompleter = Completer();
-    List<Completer<ElevSample?>> completers = [];
-
-    // Build up a list of individual tasks that need to complete
-    // debugPrint("ForecastDist: ${forecastDist}, Interval: ${sampleInterval}");
+    final List<ElevSample> values = [];
     for (double dist = 0; dist < forecastDist; dist += sampleInterval) {
-      final Completer<ElevSample?> newCompleter = Completer();
       final sampleLatlng = (waypoint != null && waypointETA != null)
           ? waypoint.interpolate(dist, waypointETA!.pathIntercept?.index ?? 0, initialLatlng: geo.latlng).latlng
           : latlngCalc.offset(geo.latlng, dist, geo.hdg / pi * 180);
-      // debugPrint("${sampleLatlng}");
-      sampleDem(sampleLatlng, false).then((elevation) {
-        if (elevation != null) {
-          newCompleter.complete(ElevSample(sampleLatlng, dist * distScale, elevation));
-        } else {
-          newCompleter.complete(null);
-        }
-      });
-      completers.add(newCompleter);
+      final elev = sampleDem(sampleLatlng, false);
+      if (elev != null) {
+        values.add(ElevSample(sampleLatlng, dist * distScale, elev));
+      }
     }
-
-    // Wait for all the samples to complete
-    Future.wait(completers.map((e) => e.future).toList()).then((value) => samplesCompleter.complete(value));
-    return samplesCompleter.future;
+    return values;
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
+    // super.build(context);
     debugPrint("Build /view_elevation");
 
     return Consumer<ActivePlan>(builder: (context, activePlan, _) {
@@ -239,38 +224,26 @@ class ViewElevationState extends State<ViewElevation> with AutomaticKeepAliveCli
             // --- Elevation Plot
             if (myTelemetry.recordGeo.length > 1)
               Expanded(
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  // constraints: const BoxConstraints(maxHeight: 400),
-                  child: ClipRect(
-                      child: FutureBuilder<List<ElevSample?>>(
-                          future: doSamples(
-                              myTelemetry.recordGeo.last, activePlan.getSelectedWp(), myTelemetry.speedSmooth.value),
-                          initialData: prevSamples ?? [],
-                          builder: (context, groundSamples) {
-                            prevSamples = groundSamples.data;
-                            final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-                            final oldestTimestamp = lookBehind != null
-                                ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.last.time)
-                                    .subtract(lookBehind!)
-                                : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time);
-                            final history =
-                                myTelemetry.getHistory(oldestTimestamp, interval: const Duration(seconds: 30));
-                            if (history.length < 2) {
-                              return const Center(
-                                  child: SizedBox(width: 60, height: 60, child: CircularProgressIndicator()));
-                            } else {
-                              return CustomPaint(
-                                painter: ElevationPlotPainter(history, groundSamples.data ?? [], distScale,
-                                    waypoint: activePlan.getSelectedWp(),
-                                    waypointETA: waypointETA,
-                                    liveSpeed: myTelemetry.speedSmooth.value,
-                                    liveVario: myTelemetry.varioSmooth.value),
-                              );
-                            }
-                          })),
-                ),
-              ),
+                  child: SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      // constraints: const BoxConstraints(maxHeight: 400),
+                      child: ClipRect(
+                          child: CustomPaint(
+                        painter: ElevationPlotPainter(
+                            myTelemetry.getHistory(
+                                lookBehind != null
+                                    ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.last.time)
+                                        .subtract(lookBehind!)
+                                    : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time),
+                                interval: const Duration(seconds: 30)),
+                            doSamples(
+                                myTelemetry.recordGeo.last, activePlan.getSelectedWp(), myTelemetry.speedSmooth.value),
+                            distScale,
+                            waypoint: activePlan.getSelectedWp(),
+                            waypointETA: waypointETA,
+                            liveSpeed: myTelemetry.speedSmooth.value,
+                            liveVario: myTelemetry.varioSmooth.value),
+                      )))),
 
             // --- View Controls
             if (myTelemetry.recordGeo.length > 1)

@@ -55,7 +55,7 @@ class Waypoint {
   bool _isReversed = false;
   List<LatLng>? _latlngOriented;
 
-  List<double>? _elevation;
+  List<double?>? _elevation;
 
   /// Cached distances between oriented latlng points
   List<double>? _segsOriented;
@@ -160,19 +160,9 @@ class Waypoint {
     _segsOriented = null;
   }
 
-  /// Elevation per latlng point. (will be lazy loaded so it may return [0, ...] at first)
-  List<double> get elevation {
-    if (_elevation != null) {
-      return _elevation!;
-    } else {
-      final futures = latlng.map((e) => sampleDem(e, true)).toList();
-      Future.wait(futures).then((values) {
-        _elevation = values.map((e) => e ?? 0).toList();
-      });
-
-      // Return a dummy list for now
-      return List.filled(latlng.length, 0);
-    }
+  List<double?> get elevation {
+    _elevation ??= latlng.map((e) => sampleDem(e, true)).toList();
+    return _elevation!;
   }
 
   /// Segment distances between latlng points
