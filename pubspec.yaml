@@ -90,6 +90,7 @@ dependencies:
   easy_localization: ^3.0.7+1
   path: ^1.9.1
   archive: ^4.0.7
+  selectable_autolink_text: ^2.6.0
 
 dev_dependencies:
   flutter_test:

@@ -1269,6 +1269,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  selectable_autolink_text:
+    dependency: "direct main"
+    description:
+      name: selectable_autolink_text
+      sha256: "62182129f4f1246473eba5839bb9641a58e8ae42b73237b65aaf373140cedf3d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.6.0"
   sensors_plus:
     dependency: "direct main"
     description:

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:selectable_autolink_text/selectable_autolink_text.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -43,10 +46,13 @@ class ChatBubble extends StatelessWidget {
                               bottomRight: rightSide ? const Radius.circular(1) : const Radius.circular(12))),
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
-                        child: SelectableText(
+                        child: SelectableAutoLinkText(
                           text,
+                          linkStyle: TextStyle(color: Colors.blue.shade800, decoration: TextDecoration.underline),
                           textAlign: TextAlign.start,
                           style: const TextStyle(fontSize: 22, color: Colors.black),
+                          onTap: (link) => launchUrl(Uri.parse(link)),
+                          onLongPress: (text) => SharePlus.instance.share(ShareParams(text: text)),
                         ),
                       ),
                     ),
