@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/datadog.dart';
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/state_geo.dart';
 import 'package:xcnav/util.dart';
 
@@ -250,7 +251,7 @@ class WeatherObservationService {
   void _weatherServiceTick(Timer timer) async {
     // debugPrint("(WEATHER) - tick");
 
-    if (mapBounds == null) {
+    if (mapBounds == null || settingsMgr.hideWeatherObservations.value) {
       // Do nothing
       return;
     }
