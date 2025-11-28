@@ -200,6 +200,16 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                               trailing = Switch.adaptive(
                                                   value: value as bool, onChanged: (value) => e.config!.value = value);
                                               break;
+                                            case "int":
+                                              trailing = SizedBox(
+                                                width: 80,
+                                                child: TextFormField(
+                                                    textAlign: TextAlign.center,
+                                                    keyboardType: TextInputType.number,
+                                                    initialValue: (value as int).toString(),
+                                                    onChanged: (value) => e.config!.value = int.tryParse(value) ?? 0),
+                                              );
+                                              break;
                                             case "double":
                                               trailing = SizedBox(
                                                 width: 80,

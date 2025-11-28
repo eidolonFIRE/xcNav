@@ -217,6 +217,21 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     final activePlan = Provider.of<ActivePlan>(globalContext!, listen: false);
     _setupServiceStatusStream(globalContext!);
+
+    // Listen for GPS-only altitude setting changes
+    settingsMgr.useGpsAltitude.listenable.addListener(() {
+      _startBaroService(); // This will stop or start the service based on the setting
+    });
+
+    // Listen for GPS update interval changes
+    settingsMgr.gpsUpdateInterval.listenable.addListener(() {
+      if (positionStreamStarted && _positionStreamSubscription != null) {
+        // Restart location listener with new interval
+        _toggleListening(globalContext!); // Stop
+        _toggleListening(globalContext!); // Start with new settings
+      }
+    });
+
     settingsMgr.spoofLocation.listenable.addListener(() {
       if (settingsMgr.spoofLocation.value) {
         if (timer == null) {
@@ -290,6 +305,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       listenBaro?.cancel();
       listenBaro = null;
     }
+
+    // Don't start barometer service if GPS-only altitude mode is enabled
+    if (settingsMgr.useGpsAltitude.value) {
+      debugPrint("Barometer Service disabled (GPS-only mode)");
+      return;
+    }
+
     debugPrint("Starting Barometer Service Stream");
     listenBaro = barometerEventStream(samplingPeriod: SensorInterval.normalInterval).listen((event) {
       // Handle barometer changes (run the vario)
@@ -398,7 +420,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
             accuracy: LocationAccuracy.best,
             distanceFilter: 0,
             forceLocationManager: false,
-            intervalDuration: const Duration(seconds: 3),
+            intervalDuration: Duration(milliseconds: settingsMgr.gpsUpdateInterval.value),
             foregroundNotificationConfig: const ForegroundNotificationConfig(
                 notificationText: "Still sending your position to the group.",
                 notificationTitle: "xcNav",
@@ -698,9 +720,15 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   void updateGeo(Position position, {bool bypassRecording = false}) async {
     geoPrev = geo;
-    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
-    if (baro == null) {
-      // Maybe no barometer in device?
+    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient, useGpsAltitude: settingsMgr.useGpsAltitude.value);
+
+    // Preserve previous ground elevation to avoid AGL spinner while new DEM data loads
+    if (geoPrev?.ground != null) {
+      geo!.ground = geoPrev!.ground;
+    }
+
+    if (baro == null || settingsMgr.useGpsAltitude.value) {
+      // Use GPS-based vario when barometer unavailable or GPS-only mode enabled
       if (geoPrev != null) {
         final vario = (geo!.alt - geoPrev!.alt) / (geo!.time - geoPrev!.time) * 1000;
         if (vario.isFinite) {
