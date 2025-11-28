@@ -86,8 +86,6 @@ dependencies:
   flutter_blue_plus: ^2.0.2
   webview_flutter: ^4.8.0
   sensors_plus: ^7.0.0
-  smooth_page_indicator: ^1.2.0+3
-  syncfusion_flutter_sliders: ^31.2.12
   wheel_picker: ^0.2.1
   easy_localization: ^3.0.7+1
   path: ^1.9.1

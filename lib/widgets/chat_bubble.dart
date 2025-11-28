@@ -43,10 +43,8 @@ class ChatBubble extends StatelessWidget {
                               bottomRight: rightSide ? const Radius.circular(1) : const Radius.circular(12))),
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
-                        child: Text(
+                        child: SelectableText(
                           text,
-                          maxLines: 15,
-                          overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.start,
                           style: const TextStyle(fontSize: 22, color: Colors.black),
                         ),
