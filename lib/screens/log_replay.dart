@@ -412,6 +412,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   }),
                             ]),
 
+                        // --- Instrument data for currently selected time
                         Align(
                           alignment: Alignment.topLeft,
                           child: DefaultTextStyle(
@@ -487,6 +488,46 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                                                     .value,
                                                                 unitStyle: TextStyle(fontWeight: FontWeight.normal)),
                                                           ])),
+                                                          //
+                                                          SizedBox(
+                                                            width: 60,
+                                                            child: Divider(
+                                                              color: Colors.grey,
+                                                              height: 10,
+                                                            ),
+                                                          ),
+                                                          // --- Elapsed Time
+                                                          Text.rich(TextSpan(children: [
+                                                            WidgetSpan(
+                                                                child: Icon(
+                                                              Icons.timer_outlined,
+                                                              size: 16,
+                                                              color: Colors.black,
+                                                            )),
+                                                            TextSpan(text: " "),
+                                                            richHrMin(
+                                                                duration:
+                                                                    selectedTime.value!.difference(log.startTime!),
+                                                                unitStyle: TextStyle(fontWeight: FontWeight.normal))
+                                                          ])),
+                                                          // --- Elapsed Distance
+                                                          Text.rich(TextSpan(children: [
+                                                            WidgetSpan(
+                                                                child: Icon(
+                                                              Icons.straighten,
+                                                              size: 16,
+                                                              color: Colors.black,
+                                                            )),
+                                                            TextSpan(text: " "),
+                                                            richValue(
+                                                                UnitType.distCoarse,
+                                                                decimals: 1,
+                                                                removeZeros: false,
+                                                                log
+                                                                    .cropLog(Range(0, log.timeToSampleIndex(time)))
+                                                                    .durationDist,
+                                                                unitStyle: TextStyle(fontWeight: FontWeight.normal))
+                                                          ]))
                                                         ],
                                                       ),
                                                     )))));
