@@ -296,13 +296,13 @@ class ElevationPlotPainter extends CustomPainter {
           final double pointEta =
               (waypointETA!.distance - waypoint!.lengthBetweenIndexs(index, waypoint!.latlngOriented.length - 1)) *
                   distScale;
-          points.add(Offset(scaleX(geoData.last.time + pointEta.toInt()), scaleY(waypoint!.elevation[index])));
+          points.add(Offset(scaleX(geoData.last.time + pointEta.toInt()), scaleY(waypoint!.elevation[index] ?? 0)));
         }
         canvas.drawPoints(ui.PointMode.polygon, points, _paintPath..color = waypoint!.getColor());
       } else {
         // --- Waypoint: Point
         final dx = scaleX((waypointETA!.distance * distScale + geoData.last.time).round()) - 20;
-        final dy = scaleY(waypoint!.elevation[0]) - 60;
+        final dy = scaleY(waypoint!.elevation[0] ?? 0) - 60;
         canvas.translate(dx, dy);
         const scaleFactor = 0.266;
         canvas.scale(scaleFactor, scaleFactor);

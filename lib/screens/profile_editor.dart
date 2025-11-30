@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:screenshot/screenshot.dart';
 
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/util.dart';
 
 class ProfileEditor extends StatefulWidget {
   const ProfileEditor({super.key});
@@ -54,7 +55,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
 
     var profile = Provider.of<Profile>(context, listen: false);
     currentName = profile.name;
-    isOptional = Profile.nameValidator(currentName) == null;
+    isOptional = nameValidator(currentName) == null;
     nameController.value = TextEditingValue(text: currentName ?? "");
 
     // initial image
@@ -263,7 +264,7 @@ class _ProfileEditorState extends State<ProfileEditor> {
                   maxLength: 20,
                   style: Theme.of(context).textTheme.headlineSmall,
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ ]"))],
-                  validator: Profile.nameValidator,
+                  validator: nameValidator,
                   decoration: const InputDecoration(
                     label: Text("Display Name *"),
                     border: OutlineInputBorder(),

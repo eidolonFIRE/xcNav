@@ -475,6 +475,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         adsb.refresh(geo!, inFlight);
 
         if (inFlight) {
+          audioCueService.cueElevationTriggers(geo!);
           audioCueService.cueMyTelemetry(geo!, speedSmoothed: speedSmooth.value);
           audioCueService.cueNextWaypoint(geo!, speedSmooth.value);
           audioCueService.cueGroupAwareness(geo!);
@@ -696,7 +697,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  void updateGeo(Position position, {bool bypassRecording = false}) async {
+  void updateGeo(Position position, {bool bypassRecording = false}) {
     geoPrev = geo;
     geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient);
     if (baro == null) {
@@ -712,14 +713,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
-
-    await sampleDem(geo!.latlng, true).then((value) {
-      if (value != null) {
-        geo!.ground = value;
-      }
-    }).timeout(const Duration(milliseconds: 1000), onTimeout: () {
-      warn("DEM service timeout", attributes: {"lat": geo!.lat, "lng": geo!.lng});
-    });
+    geo!.ground = sampleDem(geo!.latlng, true);
 
     recordGeo.add(geo!);
 

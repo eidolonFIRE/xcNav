@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:bisection/bisect.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -28,6 +29,24 @@ double verticalLineInterval(Duration windowSize) {
   return windowSize.inSeconds < 10
       ? 1000
       : (windowSize.inSeconds < 60 ? 10000 : (windowSize.inMinutes < 10 ? 60000 : 600000));
+}
+
+String? nameValidator(String? name) {
+  if (name != null) {
+    if (name.trim().length < 2) return "warning_must_be_2_char".tr();
+  } else {
+    return "warning_empty".tr();
+  }
+  return null;
+}
+
+String? numberValidator(String? number) {
+  if (number != null && number.trim().isNotEmpty) {
+    if (parseAsDouble(number) == null) return "warning_unrecognized_format".tr();
+  } else {
+    return "warning_empty".tr();
+  }
+  return null;
 }
 
 Color gradientInterp(List<Color> colors, List<double> stops, double value) {

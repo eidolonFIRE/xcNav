@@ -29,24 +29,24 @@ List<Marker> buildMeasurementMarkers(List<LatLng> points) {
             padding: const EdgeInsets.only(left: 4, right: 4),
             child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
               // --- Elevation
-              FutureBuilder<double?>(
-                  future: sampleDem(e, false),
-                  builder: (context, snapshot) => Text.rich(
-                        snapshot.data != null
-                            ? richValue(UnitType.distFine, snapshot.data!,
-                                digits: 5, valueStyle: valueStyle, unitStyle: unitStyle)
-                            : const WidgetSpan(
-                                child: Padding(
-                                padding: EdgeInsets.all(4.0),
-                                child: SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator.adaptive(
-                                      strokeWidth: 3,
-                                    )),
+              Builder(builder: (context) {
+                final value = sampleDem(e, false);
+                return Text.rich(
+                  value != null
+                      ? richValue(UnitType.distFine, value, digits: 5, valueStyle: valueStyle, unitStyle: unitStyle)
+                      : const WidgetSpan(
+                          child: Padding(
+                          padding: EdgeInsets.all(4.0),
+                          child: SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator.adaptive(
+                                strokeWidth: 3,
                               )),
-                        softWrap: false,
-                      )),
+                        )),
+                  softWrap: false,
+                );
+              }),
               // --- Cumulative Distance
               if (index > 0 || points.length > 1)
                 Text.rich(

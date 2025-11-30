@@ -106,7 +106,7 @@ class Client with ChangeNotifier {
         });
         if (globalContext.mounted) {
           Profile profile = Provider.of<Profile>(globalContext, listen: false);
-          if (Profile.nameValidator(profile.name) == null) {
+          if (nameValidator(profile.name) == null) {
             authenticate(profile);
           }
 

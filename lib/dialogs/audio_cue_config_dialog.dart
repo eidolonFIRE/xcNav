@@ -1,23 +1,24 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/audio_cue_service.dart';
+import 'package:xcnav/dialogs/elevation_triggers_dialog.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 
-Future<Map<String, bool>?> showAudioCueConfigDialog(BuildContext context, Map<String, bool> config) {
-  return showDialog<Map<String, bool>>(
+void showAudioCueConfigDialog(BuildContext context) {
+  showDialog<Map<String, bool>>(
     context: context,
     builder: (context) => StatefulBuilder(
         builder: ((context, setState) => SimpleDialog(
             children:
                 // --- Each Entry
-                config.entries
+                audioCueService.config.entries
                     .map<Widget>((entry) => SwitchListTile(
                         value: entry.value,
                         secondary: Icon(AudioCueService.icons[entry.key]),
                         title: Text("audio_cue.${entry.key}".tr()),
                         onChanged: (newValue) => setState(
-                              () => config[entry.key] = newValue,
+                              () => audioCueService.config[entry.key] = newValue,
                             )))
                     .toList()
                   ..insert(
@@ -40,14 +41,15 @@ Future<Map<String, bool>?> showAudioCueConfigDialog(BuildContext context, Map<St
                                   ]),
                             );
                           }))
-                  ..add(// --- Accept Changes
-                      Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 16, top: 16),
-                      child: IconButton(
-                          icon: const Icon(Icons.check, color: Colors.lightGreen),
-                          onPressed: () => Navigator.pop(context, config)),
-                    )
-                  ]))))),
+                  ..add(ListTile(
+                    leading: Icon(Icons.list),
+                    title: Text("Custom Triggers"),
+                    trailing: IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          showElevationTriggersDialog(context);
+                        },
+                        icon: Icon(Icons.edit)),
+                  ))))),
   );
 }

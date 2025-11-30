@@ -179,7 +179,7 @@
     "Path": "Path",
     "no_waypoints_yet_long_press_to_add": "No waypoints added yet... \n\nLong-press on the map to begin.",
     "hint_collection_name": "Collection Name",
-    "warning_empty": "Must not be empty",
+    "warning_empty": "Empty",
     "warning_name_in_use": "Name already in use",
     "warning_unrecognized_format": "Unrecognized Format",
     "warning_must_be_2_char": "Must be at least 2 characters.",

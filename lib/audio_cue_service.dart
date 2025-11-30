@@ -4,6 +4,7 @@ import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/models/elevation_trigger.dart';
 import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/message.dart';
@@ -28,6 +29,8 @@ class LastReport<T> {
 }
 
 late AudioCueService audioCueService;
+
+List<ElevationTrigger> customElevationTriggers = [];
 
 class AudioCueService {
   late final TtsService ttsService;
@@ -142,6 +145,7 @@ class AudioCueService {
         }
       }
       mode = _prefs?.getInt("audio_cues_mode");
+      loadElevationTriggers();
     });
   }
 
@@ -159,6 +163,64 @@ class AudioCueService {
       _prefs?.setInt("audio_cues_mode", newmode);
     } else {
       _prefs?.remove("audio_cues_mode");
+    }
+  }
+
+  void loadElevationTriggers() {
+    final strs = _prefs?.getStringList("customElevationTriggers") ?? [];
+    customElevationTriggers = strs.map((e) => ElevationTrigger.fromJson(jsonDecode(e))).toList();
+  }
+
+  void saveElevationTriggers() {
+    _prefs?.setStringList("customElevationTriggers", customElevationTriggers.map((e) => jsonEncode(e)).toList());
+  }
+
+  void cueElevationTriggers(Geo myGeo) {
+    for (final trigger in customElevationTriggers) {
+      if (trigger.enabled) {
+        if (trigger.altimeterMode == AltimeterMode.msl) {
+          // --- MSL mode
+          if (trigger.isTriggered) {
+            if ((trigger.direction == TriggerDirection.up && myGeo.alt < trigger.elevation - 30) ||
+                (trigger.direction == TriggerDirection.down && myGeo.alt > trigger.elevation + 30)) {
+              trigger.isTriggered = false;
+              debugPrint("Cleared: ${trigger.name}");
+            }
+          } else {
+            if ((trigger.direction == TriggerDirection.up && myGeo.alt >= trigger.elevation) ||
+                (trigger.direction == TriggerDirection.down && myGeo.alt <= trigger.elevation)) {
+              trigger.isTriggered = true;
+              debugPrint("Fired: ${trigger.name}");
+              for (int t = 0; t < trigger.calloutRepeats; t++) {
+                ttsService.speak(AudioMessage(
+                    trigger.customCallout ?? unitConverters[UnitType.distFine]!(trigger.elevation).round().toString()));
+              }
+            }
+          }
+        } else {
+          // --- AGL mode
+          if (myGeo.ground != null) {
+            if (trigger.isTriggered) {
+              if ((trigger.direction == TriggerDirection.up && (myGeo.alt - myGeo.ground!) < trigger.elevation - 30) ||
+                  (trigger.direction == TriggerDirection.down &&
+                      (myGeo.alt - myGeo.ground!) > trigger.elevation + 30)) {
+                trigger.isTriggered = false;
+                debugPrint("Cleared: ${trigger.name}");
+              }
+            } else {
+              if ((trigger.direction == TriggerDirection.up && (myGeo.alt - myGeo.ground!) >= trigger.elevation) ||
+                  (trigger.direction == TriggerDirection.down && (myGeo.alt - myGeo.ground!) <= trigger.elevation)) {
+                trigger.isTriggered = true;
+                debugPrint("Fired: ${trigger.name}");
+                for (int t = 0; t < trigger.calloutRepeats; t++) {
+                  ttsService.speak(AudioMessage(trigger.customCallout ??
+                      unitConverters[UnitType.distFine]!(trigger.elevation).round().toString()));
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 

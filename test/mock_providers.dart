@@ -15,6 +15,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/util.dart';
 
 Position get mockPosition => Position(
       latitude: 37,
@@ -147,7 +148,7 @@ class MockClient extends Client {
   void connect() async {
     state = ClientState.connected;
     Profile profile = Provider.of<Profile>(globalContext, listen: false);
-    if (Profile.nameValidator(profile.name) == null) {
+    if (nameValidator(profile.name) == null) {
       authenticate(profile);
     }
 
