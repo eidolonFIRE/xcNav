@@ -207,7 +207,8 @@ class ElevationReplay extends StatelessWidget {
                               });
                               return touchedSpots.map((LineBarSpot touchedSpot) {
                                 return LineTooltipItem(
-                                  "${touchedSpot.y.round()} ${getUnitStr(UnitType.vario)}",
+                                  richValue(UnitType.vario, touchedSpot.y / unitConverters[UnitType.vario]!(1))
+                                      .toPlainText(),
                                   const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 );
                               }).toList();
