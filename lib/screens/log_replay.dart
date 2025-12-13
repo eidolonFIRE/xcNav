@@ -242,7 +242,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     }
                     break;
                   case "xc170":
-                    Navigator.pushNamed(context, "/xc170Report", arguments: {"logKey": logKey});
+                    Navigator.pushNamed(context, "/xc170Report", arguments: {"logKey": logKey!});
                     break;
                 }
               },
@@ -267,6 +267,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         style: TextStyle(color: Colors.red),
                       ),
                     )),
+                if (log.bleDevicesJson?.containsKey("xc170") ?? false) PopupMenuDivider(),
                 if (log.bleDevicesJson?.containsKey("xc170") ?? false)
                   PopupMenuItem(
                       value: "xc170",
