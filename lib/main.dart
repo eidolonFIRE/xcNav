@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:focus_detector/focus_detector.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:xcnav/ble_devices/ble_device_xc170_report.dart';
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/locale.dart';
 
@@ -311,6 +312,7 @@ class XCNav extends StatelessWidget {
         "/logReplay": (context) => const LogReplay(),
         "/servoCarb": (context) => const ServoCarb(),
         "/bleScan": (context) => const ScanScreen(),
+        "/xc170Report": (context) => const Xc170ReportScreen(),
       },
     );
   }

@@ -241,6 +241,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                       });
                     }
                     break;
+                  case "xc170":
+                    Navigator.pushNamed(context, "/xc170Report", arguments: {"logKey": logKey!});
+                    break;
                 }
               },
               itemBuilder: (context) => <PopupMenuEntry<String>>[
@@ -264,6 +267,17 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         style: TextStyle(color: Colors.red),
                       ),
                     )),
+                if (log.bleDevicesJson?.containsKey("xc170") ?? false) PopupMenuDivider(),
+                if (log.bleDevicesJson?.containsKey("xc170") ?? false)
+                  PopupMenuItem(
+                      value: "xc170",
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.bluetooth,
+                          size: 32,
+                        ),
+                        title: Text("Xc170 Report"),
+                      ))
               ],
             )
           ],
