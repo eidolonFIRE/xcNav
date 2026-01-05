@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
 import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170.dart';
@@ -35,7 +36,15 @@ BleDeviceHandler? getHandler({String? name, DeviceIdentifier? deviceId}) {
 }
 
 void scan() async {
+  if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.off) {
+    return;
+  }
+  if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.unauthorized) {
+    Permission.bluetooth.request();
+    return;
+  }
   if (FlutterBluePlus.adapterStateNow != BluetoothAdapterState.on) {
+    debugPrint("Bluetooth Adapter state: ${FlutterBluePlus.adapterStateNow}");
     return;
   }
   debugPrint("BLE Scanning...");

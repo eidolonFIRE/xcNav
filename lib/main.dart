@@ -211,7 +211,9 @@ class XCNav extends StatelessWidget {
     Provider.of<MyTelemetry>(context, listen: false).globalContext = context;
 
     if (settingsMgr.bleAutoDevices.value.isNotEmpty) {
-      ble_service.scan();
+      Timer(Duration(seconds: 20), () {
+        ble_service.scan();
+      });
     }
 
     debugPrint("Building App");
