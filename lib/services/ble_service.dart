@@ -43,10 +43,6 @@ void scan() async {
     Permission.bluetooth.request();
     return;
   }
-  if (FlutterBluePlus.adapterStateNow != BluetoothAdapterState.on) {
-    debugPrint("Bluetooth Adapter state: ${FlutterBluePlus.adapterStateNow}");
-    return;
-  }
   debugPrint("BLE Scanning...");
   // if (_devicesListener != null) {
   //   debugPrint("Cancelling previous scan listener");

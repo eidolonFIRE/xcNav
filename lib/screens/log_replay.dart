@@ -381,8 +381,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                         child: GestureDetector(
                                             onTap: () {
                                               setState(() {
-                                                // TODO - scrollToTime
-                                                // logView.timeRange = (e.time);
+                                                selectTime(e.time.millisecondsSinceEpoch.toDouble());
                                               });
                                             },
                                             onLongPress: () {
