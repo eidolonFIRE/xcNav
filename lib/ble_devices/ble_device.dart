@@ -6,6 +6,8 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 /// Base class for a bluetooth device handler.
 /// Performs basic utilitys such as mapping the characteristics of a device.
 abstract class BleDeviceHandler {
+  // ignore: non_constant_identifier_names
+  final String SERVICE_UUID = "00000000-0000-0000-0000-000000000000";
   BluetoothDevice? device;
   Map<String, Map<String, BluetoothCharacteristic>> characteristics = {};
 
@@ -44,7 +46,7 @@ abstract class BleDeviceHandler {
     for (var service in services) {
       debugPrint("Service UUID: ${service.uuid}");
       for (var characteristic in service.characteristics) {
-        debugPrint("  Characteristic UUID: ${characteristic.uuid}");
+        debugPrint("  Characteristic UUID: ${characteristic.uuid.toString()}");
         characteristics[service.uuid.toString()] ??= {};
         characteristics[service.uuid.toString()]![characteristic.uuid.toString()] = characteristic;
       }

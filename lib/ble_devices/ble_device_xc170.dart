@@ -74,9 +74,7 @@ class Xc170TelemetryCharacteristic {
         }
       }).catchError((error) {
         dd.error("Reading Xc170 Telemetry characteristic",
-            errorMessage: error.toString(),
-            errorKind: "BLE",
-            attributes: {"char_uuid": uuid});
+            errorMessage: error.toString(), errorKind: "BLE", attributes: {"char_uuid": uuid});
       });
     });
   }
@@ -155,9 +153,7 @@ class Xc170FanControlCharacteristic {
   Future<void> push() async {
     await characteristic?.write(_packData()).catchError((error) {
       dd.error("Writing Xc170 FanControl characteristic",
-          errorMessage: error.toString(),
-          errorKind: "BLE",
-          attributes: {"char_uuid": uuid});
+          errorMessage: error.toString(), errorKind: "BLE", attributes: {"char_uuid": uuid});
     });
     // Read back to verify
     await pull();
@@ -166,9 +162,7 @@ class Xc170FanControlCharacteristic {
   Future<void> pull() async {
     List<int>? bytes = await characteristic?.read().catchError((error) {
       dd.error("Reading Xc170 FanControl characteristic",
-          errorMessage: error.toString(),
-          errorKind: "BLE",
-          attributes: {"char_uuid": uuid});
+          errorMessage: error.toString(), errorKind: "BLE", attributes: {"char_uuid": uuid});
       return <int>[];
     });
     if (bytes != null && bytes.length >= 6) {
@@ -188,30 +182,23 @@ class Xc170FanControlCharacteristic {
   }
 
   List<int> _packData() {
-    return [
-      _override & 0xff,
-      _override >> 8,
-      _chtMin & 0xff,
-      _chtMin >> 8,
-      _chtMax & 0xff,
-      _chtMax >> 8
-    ];
+    return [_override & 0xff, _override >> 8, _chtMin & 0xff, _chtMin >> 8, _chtMax & 0xff, _chtMax >> 8];
   }
 }
 
 //---------------------------
 
 class BleDeviceXc170 extends BleDeviceHandler {
-  // ignore: non_constant_identifier_names
+  @override
+  // ignore: overridden_fields, non_constant_identifier_names
   final SERVICE_UUID = "e1e7af55-0c37-4f29-80bf-f447757738b0";
 
   BleDeviceXc170() : super();
 
-  final Xc170TelemetryCharacteristic telemetry = Xc170TelemetryCharacteristic(
-      uuid: "e1e7af55-9460-40f3-8b57-af0e56b471c3");
+  final Xc170TelemetryCharacteristic telemetry =
+      Xc170TelemetryCharacteristic(uuid: "e1e7af55-9460-40f3-8b57-af0e56b471c3");
   final Xc170FanControlCharacteristic fanControl =
-      Xc170FanControlCharacteristic(
-          uuid: "e1e7af55-6eb0-40a7-bd9e-496d6b874940");
+      Xc170FanControlCharacteristic(uuid: "e1e7af55-6eb0-40a7-bd9e-496d6b874940");
 
   @override
   Map<String, dynamic>? toJson() {
@@ -233,12 +220,10 @@ class BleDeviceXc170 extends BleDeviceHandler {
   Future onConnected(BluetoothDevice instance) async {
     await super.onConnected(instance);
     if (characteristics[SERVICE_UUID]?[telemetry.uuid] != null) {
-      telemetry
-          .setupRefreshTimer(characteristics[SERVICE_UUID]![telemetry.uuid]!);
+      telemetry.setupRefreshTimer(characteristics[SERVICE_UUID]![telemetry.uuid]!);
     }
     if (characteristics[SERVICE_UUID]?[fanControl.uuid] != null) {
-      fanControl.characteristic =
-          characteristics[SERVICE_UUID]![fanControl.uuid];
+      fanControl.characteristic = characteristics[SERVICE_UUID]![fanControl.uuid];
       fanControl.pull();
     }
   }
@@ -261,10 +246,8 @@ class Xc170ConfigDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     // Note: using stale state here...
     double override = xc170.fanControl._override.toDouble();
-    final chtMinController = TextEditingController(
-        text: (xc170.fanControl._chtMin / 10).toStringAsFixed(1));
-    final chtMaxController = TextEditingController(
-        text: (xc170.fanControl._chtMax / 10).toStringAsFixed(1));
+    final chtMinController = TextEditingController(text: (xc170.fanControl._chtMin / 10).toStringAsFixed(1));
+    final chtMaxController = TextEditingController(text: (xc170.fanControl._chtMax / 10).toStringAsFixed(1));
     return AlertDialog(
       title: Text("Xc170 Ble Device Config"),
       content: Column(
@@ -292,8 +275,7 @@ class Xc170ConfigDialog extends StatelessWidget {
                 },
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     contentPadding: const EdgeInsets.all(4)),
                 onEditingComplete: () {
                   final value = parseAsDouble(chtMinController.text);
@@ -327,8 +309,7 @@ class Xc170ConfigDialog extends StatelessWidget {
                 },
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     contentPadding: const EdgeInsets.all(4)),
                 onEditingComplete: () {
                   final value = parseAsDouble(chtMaxController.text);
@@ -397,15 +378,11 @@ class Xc170StatusCard extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   StreamBuilder(
-                                      stream:
-                                          xc170.telemetry.rpm.valueRawStream,
-                                      builder: (context, value) =>
-                                          Text.rich(TextSpan(children: [
+                                      stream: xc170.telemetry.rpm.valueRawStream,
+                                      builder: (context, value) => Text.rich(TextSpan(children: [
                                             TextSpan(
                                               text: value.data.toString(),
-                                              style: const TextStyle(
-                                                  color: Colors.black,
-                                                  fontSize: 30),
+                                              style: const TextStyle(color: Colors.black, fontSize: 30),
                                             ),
                                             WidgetSpan(
                                                 child: Icon(
@@ -414,42 +391,28 @@ class Xc170StatusCard extends StatelessWidget {
                                             )),
                                           ]))),
                                   StreamBuilder(
-                                      stream:
-                                          xc170.telemetry.cht.valueRawStream,
+                                      stream: xc170.telemetry.cht.valueRawStream,
                                       builder: (context, value) => Text.rich(
                                           TextSpan(children: [
                                             TextSpan(
-                                              text: printDouble(
-                                                  value: value.data ?? 0,
-                                                  digits: 3,
-                                                  decimals: 0),
-                                              style:
-                                                  const TextStyle(fontSize: 30),
+                                              text: printDouble(value: value.data ?? 0, digits: 3, decimals: 0),
+                                              style: const TextStyle(fontSize: 30),
                                             ),
                                             WidgetSpan(
                                                 child: Icon(
                                               Icons.thermostat,
                                               color: Colors.black,
                                             )),
-                                            TextSpan(
-                                                text: "CHT ",
-                                                style: const TextStyle(
-                                                    fontSize: 20)),
+                                            TextSpan(text: "CHT ", style: const TextStyle(fontSize: 20)),
                                           ]),
-                                          style: TextStyle(
-                                              color: (value.data ?? 0) > 230
-                                                  ? Colors.red
-                                                  : Colors.black))),
+                                          style:
+                                              TextStyle(color: (value.data ?? 0) > 230 ? Colors.red : Colors.black))),
                                   StreamBuilder(
-                                      stream:
-                                          xc170.telemetry.egt.valueRawStream,
+                                      stream: xc170.telemetry.egt.valueRawStream,
                                       builder: (context, value) => Text.rich(
                                           TextSpan(children: [
                                             TextSpan(
-                                              text: printDouble(
-                                                  value: value.data ?? 0,
-                                                  digits: 3,
-                                                  decimals: 0),
+                                              text: printDouble(value: value.data ?? 0, digits: 3, decimals: 0),
                                               style: TextStyle(fontSize: 30),
                                             ),
                                             WidgetSpan(
@@ -457,17 +420,12 @@ class Xc170StatusCard extends StatelessWidget {
                                               Icons.thermostat,
                                               color: Colors.black,
                                             )),
-                                            TextSpan(
-                                                text: "EGT ",
-                                                style: TextStyle(fontSize: 20)),
+                                            TextSpan(text: "EGT ", style: TextStyle(fontSize: 20)),
                                           ]),
-                                          style: TextStyle(
-                                              color: (value.data ?? 0) > 600
-                                                  ? Colors.red
-                                                  : Colors.black))),
+                                          style:
+                                              TextStyle(color: (value.data ?? 0) > 600 ? Colors.red : Colors.black))),
                                   StreamBuilder(
-                                      stream: xc170
-                                          .telemetry.fanAmps.valueRawStream,
+                                      stream: xc170.telemetry.fanAmps.valueRawStream,
                                       builder: (context, value) => Text.rich(
                                             TextSpan(children: [
                                               TextSpan(
@@ -476,72 +434,44 @@ class Xc170StatusCard extends StatelessWidget {
                                                   digits: 2,
                                                   decimals: 1,
                                                 ),
-                                                style: const TextStyle(
-                                                    fontSize: 30),
+                                                style: const TextStyle(fontSize: 30),
                                               ),
                                               TextSpan(
-                                                  text: "A",
-                                                  style: const TextStyle(
-                                                      color: Colors.black,
-                                                      fontSize: 20)),
+                                                  text: "A", style: const TextStyle(color: Colors.black, fontSize: 20)),
                                               WidgetSpan(
                                                   child: Icon(
                                                 Icons.wind_power,
                                                 color: Colors.black,
                                               )),
                                             ]),
-                                            style:
-                                                TextStyle(color: Colors.black),
+                                            style: TextStyle(color: Colors.black),
                                           )),
                                   StreamBuilder(
-                                      stream:
-                                          xc170.telemetry.fuel.valueRawStream,
-                                      builder: (context, value) => value.data ==
-                                              null
+                                      stream: xc170.telemetry.fuel.valueRawStream,
+                                      builder: (context, value) => value.data == null
                                           ? Text("?")
                                           : Text.rich(TextSpan(children: [
                                               WidgetSpan(
                                                   child: Icon(
-                                                state.data ==
-                                                        BluetoothConnectionState
-                                                            .connected
+                                                state.data == BluetoothConnectionState.connected
                                                     ? Icons.bluetooth_connected
                                                     : Icons.bluetooth_disabled,
                                                 size: 30,
-                                                color: state.data ==
-                                                        BluetoothConnectionState
-                                                            .connected
+                                                color: state.data == BluetoothConnectionState.connected
                                                     ? Colors.blue
                                                     : Colors.grey.shade800,
                                               )),
-                                              if (value.data! >=
-                                                  xc170.telemetry.fuel
-                                                      .calibration!.maxValue)
+                                              if (value.data! >= xc170.telemetry.fuel.calibration!.maxValue)
                                                 TextSpan(
-                                                    text: ">",
-                                                    style: TextStyle(
-                                                        fontSize: 30,
-                                                        color: Colors.green)),
-                                              if (value.data! <=
-                                                  xc170.telemetry.fuel
-                                                      .calibration!.minValue)
-                                                TextSpan(
-                                                    text: "<",
-                                                    style: TextStyle(
-                                                        fontSize: 30,
-                                                        color: Colors.red)),
-                                              richValue(UnitType.fuel,
-                                                  value.data ?? 0,
+                                                    text: ">", style: TextStyle(fontSize: 30, color: Colors.green)),
+                                              if (value.data! <= xc170.telemetry.fuel.calibration!.minValue)
+                                                TextSpan(text: "<", style: TextStyle(fontSize: 30, color: Colors.red)),
+                                              richValue(UnitType.fuel, value.data ?? 0,
                                                   digits: 2,
                                                   decimals: 1,
                                                   removeZeros: false,
-                                                  valueStyle: const TextStyle(
-                                                      color: Colors.black,
-                                                      fontSize: 30),
-                                                  unitStyle: TextStyle(
-                                                      color:
-                                                          Colors.grey.shade700,
-                                                      fontSize: 20)),
+                                                  valueStyle: const TextStyle(color: Colors.black, fontSize: 30),
+                                                  unitStyle: TextStyle(color: Colors.grey.shade700, fontSize: 20)),
                                             ]))),
                                 ],
                               );

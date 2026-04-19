@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
+import 'package:xcnav/ble_devices/ble_device_runleader.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170.dart';
 
 // providers
@@ -1049,6 +1050,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                   // --- Big Battery
                   if (ble_service.bleDeviceBigBattery.device != null)
                     BigBatteryStatusCard(bigBattery: ble_service.bleDeviceBigBattery),
+
+                  // --- Runleader
+                  if (ble_service.bleDeviceRunleader.device != null)
+                    RunleaderStatusCard(runleader: ble_service.bleDeviceRunleader),
 
                   // --- Chat bubbles
                   Consumer<ChatMessages>(

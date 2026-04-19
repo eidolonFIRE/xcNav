@@ -89,7 +89,8 @@ class BigBatteryTelemetryCharacteristic {
 //---------------------------
 
 class BleDeviceBigBattery extends BleDeviceHandler {
-  // ignore: non_constant_identifier_names
+  @override
+  // ignore: overridden_fields, non_constant_identifier_names
   final SERVICE_UUID = "457d390a-3b4d-4151-810b-31261f4722c0";
 
   BleDeviceBigBattery() : super();

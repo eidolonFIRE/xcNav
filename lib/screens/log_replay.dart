@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
 import 'package:intl/intl.dart' as intl;
+// ignore: depend_on_referenced_packages
 import 'package:vector_math/vector_math_64.dart' as vector;
 
 import 'package:xcnav/datadog.dart';

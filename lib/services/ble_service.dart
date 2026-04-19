@@ -5,13 +5,19 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
 import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
+import 'package:xcnav/ble_devices/ble_device_runleader.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170.dart';
 import 'package:xcnav/settings_service.dart';
 
 final BleDeviceXc170 bleDeviceXc170 = BleDeviceXc170();
 final BleDeviceBigBattery bleDeviceBigBattery = BleDeviceBigBattery();
+final BleDeviceRunleader bleDeviceRunleader = BleDeviceRunleader();
 
-final Map<String, BleDeviceHandler> _deviceHandlers = {"xc170": bleDeviceXc170, "BigBattery": bleDeviceBigBattery};
+final Map<String, BleDeviceHandler> _deviceHandlersByName = {
+  r'xc170': bleDeviceXc170,
+  r'BigBattery': bleDeviceBigBattery,
+  r'[aA]i[lL]ink_[0-9a-zA-Z]{4}': bleDeviceRunleader
+};
 
 final Map<String, StreamSubscription<BluetoothConnectionState>> _deviceStateListener = {};
 StreamSubscription<List<ScanResult>>? _devicesListener;
@@ -21,12 +27,14 @@ bool scanning = false;
 
 BleDeviceHandler? getHandler({String? name, DeviceIdentifier? deviceId}) {
   if (name != null) {
-    final handler = _deviceHandlers[name];
-    if (handler != null && handler.device != null) {
-      return handler;
+    for (final entry in _deviceHandlersByName.entries) {
+      final regex = RegExp(entry.key);
+      if (regex.hasMatch(name)) {
+        return entry.value;
+      }
     }
   } else if (deviceId != null) {
-    for (final each in _deviceHandlers.values) {
+    for (final each in _deviceHandlersByName.values) {
       if (each.device != null && each.device?.remoteId == deviceId) {
         return each;
       }
@@ -44,52 +52,55 @@ void scan() async {
     return;
   }
   debugPrint("BLE Scanning...");
-  // if (_devicesListener != null) {
-  //   debugPrint("Cancelling previous scan listener");
-  //   await _devicesListener!.cancel();
-  // }
   _devicesListener ??= FlutterBluePlus.scanResults.listen((results) {
     for (ScanResult result in results) {
       final device = result.device;
-      if (_deviceHandlers.containsKey(device.advName)) {
-        final handler = _deviceHandlers[device.advName]!;
-        if (handler.device?.hashCode == device.hashCode) {
-          // Already associated
-          debugPrint("Already associated: ${device.advName} ${device.remoteId.str}");
-        } else {
-          debugPrint("Found device: ${device.advName} ${device.remoteId.str}");
+      final handler = getHandler(name: device.advName);
 
-          // Cancel any existing listener for this device
-          if (_deviceStateListener[device.remoteId.str] != null) {
-            _deviceStateListener[device.remoteId.str]?.cancel();
-          }
-          // Start new listener for this device
-          _deviceStateListener[device.remoteId.str] = device.connectionState.listen((state) {
-            if (state == BluetoothConnectionState.disconnected) {
-              handler.onDisconnected();
-            } else if (state == BluetoothConnectionState.connected) {
-              handler.onConnected(device);
-            }
-          });
+      if (handler == null) {
+        debugPrint("Unknown device found: ${device.advName} ${device.remoteId.str}");
+        continue;
+      }
 
-          if (settingsMgr.bleAutoDevices.value.contains(device.remoteId.str) && !device.isConnected) {
-            debugPrint("Auto connecting to ${device.advName}:${device.remoteId.str}");
-            connect(device);
-          }
-        }
+      if (handler.device?.hashCode == device.hashCode) {
+        // Already associated
+        debugPrint("Already associated: ${device.advName} ${device.remoteId.str}");
       } else {
-        debugPrint("Unknown device found: ${device.advName}");
+        debugPrint("Found device: ${device.advName} ${device.remoteId.str}");
+
+        // Cancel any existing listener for this device
+        if (_deviceStateListener[device.remoteId.str] != null) {
+          _deviceStateListener[device.remoteId.str]?.cancel();
+        }
+        // Start new listener for this device
+        _deviceStateListener[device.remoteId.str] = device.connectionState.listen((state) {
+          if (state == BluetoothConnectionState.disconnected) {
+            if (handler.device?.isConnected ?? false) {
+              debugPrint("Deveice disconnected: ${device.advName} ${device.remoteId.str}");
+              handler.onDisconnected();
+            }
+          } else if (state == BluetoothConnectionState.connected) {
+            handler.onConnected(device);
+          }
+        });
+
+        if (settingsMgr.bleAutoDevices.value.contains(device.remoteId.str) && !device.isConnected) {
+          debugPrint("Auto connecting to ${device.advName}:${device.remoteId.str}");
+          connect(device);
+        }
       }
     }
   });
 
-  await FlutterBluePlus.startScan(withNames: _deviceHandlers.keys.toList(), timeout: Duration(seconds: 10));
+  await FlutterBluePlus.startScan(
+      withKeywords: ["AiLink_", "xc170", "BigBattery"],
+      // withServices: _deviceHandlersByName.values.map((e) => Guid.fromString(e.SERVICE_UUID)).toList(),
+      timeout: Duration(seconds: 10));
 }
 
 Future connect(BluetoothDevice device) async {
   debugPrint("Connecting to device: ${device.advName} ${device.remoteId.str}");
   await device.connect(license: License.free);
-
   // Arm autoScan so we auto-connect if disconnected
   // Timer(Duration(seconds: 30), () {
   //   debugPrint("BLE autoScan armed (was $autoScan)");
@@ -99,7 +110,7 @@ Future connect(BluetoothDevice device) async {
 
 Future disconnect(BluetoothDevice device) async {
   debugPrint("Disconnecting from device: ${device.advName} ${device.remoteId.str}");
-  final handler = _deviceHandlers[device.advName];
+  final handler = getHandler(deviceId: device.remoteId);
   if (handler != null) {
     handler.device = null;
   }

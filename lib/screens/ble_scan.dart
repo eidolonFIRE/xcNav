@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -85,10 +87,13 @@ class _ScanScreenState extends State<ScanScreen> {
                             ),
                           ].map((e) => Padding(padding: EdgeInsets.all(8.0), child: e)).toList()));
                 }
+                // This device doesn't advertise once it has a single connection, so it won't show back up in the list
+                final runLeader = ble_service.getHandler(name: "AiLink_1234");
+
                 return ListView.builder(
-                    itemCount: results.data?.length ?? 0,
+                    itemCount: (results.data?.length ?? 0) + (runLeader?.device != null ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final device = results.data![index].device;
+                      final device = index < results.data!.length ? results.data![index].device : runLeader!.device!;
 
                       return Card(
                           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
