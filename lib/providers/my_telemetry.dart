@@ -564,6 +564,12 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
               : [],
           fuelReports: fuelReports,
           gear: Provider.of<Profile>(globalContext!, listen: false).gear);
+
+      if (log.timeRange != null) {
+        bleDeviceXc170.trimToRange(log.timeRange!);
+        bleDeviceRunleader.trimToRange(log.timeRange!);
+      }
+
       Map<String, dynamic> deviceLogs = {
         "ble_devices": {
           if (bleDeviceXc170.device != null) "xc170": bleDeviceXc170.toJson(),

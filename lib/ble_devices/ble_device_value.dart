@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bisection/bisect.dart';
 import 'package:clock/clock.dart';
+import 'package:flutter/material.dart';
 import 'package:xcnav/util.dart';
 
 class MapValue<T extends num> {
@@ -66,5 +67,9 @@ class BleLoggedValue<T extends num> {
           .map((e) => [e.time - startTime, e.value is double ? roundToDigits(e.value as double, 2) : e.value])
           .toList()
     };
+  }
+
+  void trimToRange(DateTimeRange range) {
+    log.removeWhere((e) => e.time < range.start.millisecondsSinceEpoch || e.time > range.end.millisecondsSinceEpoch);
   }
 }

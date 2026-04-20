@@ -106,6 +106,14 @@ class Xc170TelemetryCharacteristic {
       "fanAmps": fanAmps,
     };
   }
+
+  void trimToRange(DateTimeRange range) {
+    fuel.trimToRange(range);
+    cht.trimToRange(range);
+    egt.trimToRange(range);
+    rpm.trimToRange(range);
+    fanAmps.trimToRange(range);
+  }
 }
 
 //---------------------------
@@ -232,6 +240,10 @@ class BleDeviceXc170 extends BleDeviceHandler {
   void onDisconnected() {
     super.onDisconnected();
     telemetry.stopRefresh();
+  }
+
+  void trimToRange(DateTimeRange range) {
+    telemetry.trimToRange(range);
   }
 }
 

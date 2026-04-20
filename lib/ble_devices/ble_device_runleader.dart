@@ -66,6 +66,10 @@ class RunleaderTelemetryCharacteristic {
       "rpm": rpm,
     };
   }
+
+  void trimToRange(DateTimeRange range) {
+    rpm.trimToRange(range);
+  }
 }
 
 class RunleaderConfigCharacteristic {
@@ -207,6 +211,10 @@ class BleDeviceRunleader extends BleDeviceHandler {
   void onDisconnected() {
     super.onDisconnected();
     telemetry.stopRefresh();
+  }
+
+  void trimToRange(DateTimeRange range) {
+    telemetry.trimToRange(range);
   }
 }
 
