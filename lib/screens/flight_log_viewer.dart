@@ -268,14 +268,12 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                           ),
                           SizedBox(
                             height: 200,
-                            child: ClipRect(
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 20, top: 4),
                               child: Padding(
-                                padding: const EdgeInsets.only(right: 20, top: 4),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: ChartLogDurationHist(
-                                    logs: logStore.logsSliceLogs,
-                                  ),
+                                padding: const EdgeInsets.all(10.0),
+                                child: ChartLogDurationHist(
+                                  logs: logStore.logsSliceLogs,
                                 ),
                               ),
                             ),

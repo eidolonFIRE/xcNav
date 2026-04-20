@@ -84,6 +84,7 @@ class ChartLogDurationHist extends StatelessWidget {
   Widget build(BuildContext context) {
     return LineChart(
       LineChartData(
+        clipData: FlClipData.all(),
         gridData: const FlGridData(verticalInterval: 1),
         minY: 0,
         lineBarsData: [
