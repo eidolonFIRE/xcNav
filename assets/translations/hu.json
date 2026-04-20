@@ -44,6 +44,8 @@
             "right_hand_ui": "Jobbkezes felhasználói felület",
             "always_show_pilot_names": "Pilótanevek mindig látszanak",
             "hide_wind_observations": "Szélmegfigyelések elrejtése",
+            "use_gps_altitude": "Csak GPS használata magasságméréshez",
+            "gps_update_interval": "GPS frissítési intervallum (ms)",
             "group_view_includes_waypoints": "A csoportnézet tartalmazza az útvonalpontokat",
             "Distance": "Távolság",
             "Speed": "Sebesség",
