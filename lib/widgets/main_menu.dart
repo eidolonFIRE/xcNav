@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
 import 'package:xcnav/dialogs/edit_gear.dart';
-import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
@@ -121,46 +120,6 @@ class _MainMenuState extends State<MainMenu> {
                 )),
 
         Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
-
-        // --- ADSB
-        ListTile(
-            minVerticalPadding: 20,
-            leading: const Icon(Icons.radar, size: 30),
-            title: Text("ADSB-in", style: Theme.of(context).textTheme.headlineSmall),
-            trailing: Switch.adaptive(
-              activeThumbColor: Colors.lightBlue,
-              value: Provider.of<ADSB>(context).enabled,
-              onChanged: (value) => {Provider.of<ADSB>(context, listen: false).enabled = value},
-            ),
-            subtitle: Provider.of<ADSB>(context).enabled
-                ? (Provider.of<ADSB>(context).lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 60)
-                    ? Text.rich(TextSpan(children: [
-                        WidgetSpan(
-                            alignment: PlaceholderAlignment.middle,
-                            child: Icon(
-                              Icons.check,
-                              color: Colors.green,
-                            )),
-                        TextSpan(text: "  ${"Connected".tr()}")
-                      ]))
-                    : Text.rich(TextSpan(children: [
-                        const WidgetSpan(
-                            alignment: PlaceholderAlignment.middle,
-                            child: Icon(
-                              Icons.link_off,
-                              color: Colors.amber,
-                            )),
-                        TextSpan(text: "  ${"No Data".tr()}"),
-                        WidgetSpan(
-                            alignment: PlaceholderAlignment.middle,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 15),
-                              child: GestureDetector(
-                                  onTap: () => {Navigator.popAndPushNamed(context, "/adsbHelp")},
-                                  child: const Icon(Icons.help, size: 20, color: Colors.lightBlue)),
-                            )),
-                      ]))
-                : null),
 
         // --- Audio Cues
         Padding(

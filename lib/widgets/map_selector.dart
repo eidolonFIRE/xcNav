@@ -2,7 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:provider/provider.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/providers/adsb.dart';
 
 class MapSelector extends StatelessWidget {
   static const opacityLevels = [0.3, 0.6, 1.0];
@@ -14,19 +16,20 @@ class MapSelector extends StatelessWidget {
   final Function(bool hidden)? onChangedWaypoints;
   final Function(bool hidden)? onChangedWeatherObservations;
   final bool leftAlign;
+  final bool showAdsb;
 
-  const MapSelector({
-    required this.curLayer,
-    required this.curOpacity,
-    required this.onChanged,
-    super.key,
-    required this.isMapDialOpen,
-    this.leftAlign = false,
-    this.hideWaypoints = false,
-    this.hideWeatherObservations = false,
-    this.onChangedWaypoints,
-    this.onChangedWeatherObservations,
-  });
+  const MapSelector(
+      {required this.curLayer,
+      required this.curOpacity,
+      required this.onChanged,
+      super.key,
+      required this.isMapDialOpen,
+      this.leftAlign = false,
+      this.hideWaypoints = false,
+      this.hideWeatherObservations = false,
+      this.onChangedWaypoints,
+      this.onChangedWeatherObservations,
+      this.showAdsb = false});
 
   final ValueNotifier<bool> isMapDialOpen;
 
@@ -96,17 +99,65 @@ class MapSelector extends StatelessWidget {
                               }
                             })),
                   if (onChangedWeatherObservations != null)
-                    if (true)
-                      SpeedDialChild(
-                          label: "Hide Wind".tr(),
-                          child: Checkbox.adaptive(
-                              value: hideWeatherObservations,
-                              onChanged: (value) {
-                                if (value != null) {
-                                  onChangedWeatherObservations?.call(value);
-                                  isMapDialOpen.value = false;
-                                }
-                              }))
+                    SpeedDialChild(
+                        label: "Hide Wind".tr(),
+                        child: Checkbox.adaptive(
+                            value: hideWeatherObservations,
+                            onChanged: (value) {
+                              if (value != null) {
+                                onChangedWeatherObservations?.call(value);
+                                isMapDialOpen.value = false;
+                              }
+                            })),
+                  if (showAdsb)
+                    SpeedDialChild(
+                      labelWidget: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text("ADSB-in"),
+                              (Provider.of<ADSB>(context).lastHeartbeat >
+                                      DateTime.now().millisecondsSinceEpoch - 1000 * 60)
+                                  ? Text.rich(TextSpan(children: [
+                                      WidgetSpan(
+                                          alignment: PlaceholderAlignment.middle,
+                                          child: Icon(
+                                            Icons.check,
+                                            color: Colors.green,
+                                          )),
+                                      TextSpan(text: "  ${"Connected".tr()}")
+                                    ]))
+                                  : Text.rich(TextSpan(children: [
+                                      const WidgetSpan(
+                                          alignment: PlaceholderAlignment.middle,
+                                          child: Icon(
+                                            Icons.link_off,
+                                            color: Colors.amber,
+                                          )),
+                                      TextSpan(text: "  ${"No Data".tr()}"),
+                                      WidgetSpan(
+                                          alignment: PlaceholderAlignment.middle,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(left: 15),
+                                            child: GestureDetector(
+                                                onTap: () => {Navigator.popAndPushNamed(context, "/adsbHelp")},
+                                                child: const Icon(Icons.help, size: 20, color: Colors.lightBlue)),
+                                          )),
+                                    ])),
+                            ],
+                          ),
+                        ),
+                      ),
+                      child: Checkbox.adaptive(
+                        value: Provider.of<ADSB>(context).enabled,
+                        onChanged: (value) {
+                          Provider.of<ADSB>(context, listen: false).enabled = value ?? false;
+                          isMapDialOpen.value = false;
+                        },
+                      ),
+                    ),
                 ]);
   }
 }
