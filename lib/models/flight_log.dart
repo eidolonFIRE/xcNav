@@ -205,6 +205,21 @@ class FlightLog {
     return _speedHistMaxIndex!;
   }
 
+  final Map<String, List<TimestampDouble>> _bleDeviceSeriesCache = {};
+  List<TimestampDouble> getBleDeviceSeries(String device, String key) {
+    final name = "$device-$key";
+    if (!_bleDeviceSeriesCache.containsKey(name)) {
+      int startTime = parseAsInt(bleDevicesJson?[device]["datas"]["telemetry"][key]["start_time"]) ?? 0;
+      List<dynamic> series = bleDevicesJson?[device]["datas"]["telemetry"][key]["data"] ?? [];
+      _bleDeviceSeriesCache[name] = series
+          .map((e) =>
+              TimestampDouble((e[0] as int) + startTime, e[1] is double ? e[1] as double : (e[1] as int).toDouble()))
+          .where((e) => e.time >= startTime && e.time <= endTime!.millisecondsSinceEpoch)
+          .toList();
+    }
+    return _bleDeviceSeriesCache[name]!;
+  }
+
   HistogramData<int> speedHistogram(int start, int end, {int? width}) {
     List<int> values = List.filled(max(width ?? 0, 13), 0, growable: true);
 

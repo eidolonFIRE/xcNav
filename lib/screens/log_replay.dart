@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart' as tr;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart' as intl;
 // ignore: depend_on_referenced_packages
 import 'package:vector_math/vector_math_64.dart' as vector;
@@ -21,6 +22,7 @@ import 'package:xcnav/models/log_view.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/elevation_replay.dart';
+import 'package:xcnav/widgets/engine_replay.dart';
 import 'package:xcnav/widgets/g_force_pages.dart';
 import 'package:xcnav/widgets/log_summary.dart';
 import 'package:xcnav/widgets/map_selector.dart';
@@ -63,7 +65,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 5, vsync: this);
+    tabController = TabController(length: 6, vsync: this);
     chartTransformController.addListener(() {
       selectedTime.value = null;
 
@@ -197,6 +199,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     debugPrint("Build /logReplay");
 
+    bool hasxc170 = (log.bleDevicesJson?["xc170"]?["datas"]["telemetry"]?["rpm"]?["data"]?.length ?? 0) > 0;
+    bool hasRunLeader = (log.bleDevicesJson?["runleader"]?["datas"]?["telemetry"]?["rpm"]?["data"]?.length ?? 0) > 0;
+    bool showEngineTab = hasxc170 || hasRunLeader;
+
     return PopScope(
       onPopInvokedWithResult: (_, __) {
         if (log.goodFile && log.unsaved) {
@@ -268,8 +274,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         style: TextStyle(color: Colors.red),
                       ),
                     )),
-                if (log.bleDevicesJson?.containsKey("xc170") ?? false) PopupMenuDivider(),
-                if (log.bleDevicesJson?.containsKey("xc170") ?? false)
+                if (hasxc170) PopupMenuDivider(),
+                if (hasxc170)
                   PopupMenuItem(
                       value: "xc170",
                       child: ListTile(
@@ -780,6 +786,16 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         ),
                       ),
                     ),
+
+                    // --- Engine Plot
+                    Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: EngineReplay(
+                          logView: logView,
+                          onSelectedTime: selectTime,
+                          rpmSource: hasRunLeader ? "runleader" : "xc170",
+                          transformController: chartTransformController,
+                        )),
                   ]),
             ),
 
@@ -792,6 +808,10 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
               Tab(icon: Icon(Icons.speed), text: "Speed".tr()),
               Tab(icon: Icon(Icons.g_mobiledata), text: "G-Force".tr()),
               Tab(icon: Icon(Icons.local_gas_station), text: "Fuel".tr()),
+              if (showEngineTab)
+                Tab(
+                    icon: SizedBox(height: 24, child: SvgPicture.asset("assets/images/engine.svg")),
+                    text: "Engine".tr()),
             ]),
           ],
         ),

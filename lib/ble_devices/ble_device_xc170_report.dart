@@ -33,25 +33,15 @@ class _Xc170ReportScreenState extends State<Xc170ReportScreen> {
     super.didChangeDependencies();
   }
 
-  List<TimestampDouble> parseTimeSeries(String key) {
-    int startTime = parseAsInt(log.bleDevicesJson?["xc170"]["datas"]["telemetry"][key]["start_time"]) ?? 0;
-    List<dynamic> series = log.bleDevicesJson?["xc170"]["datas"]["telemetry"][key]["data"] ?? [];
-    return series
-        .map((e) =>
-            TimestampDouble((e[0] as int) + startTime, e[1] is double ? e[1] as double : (e[1] as int).toDouble()))
-        .where((e) => e.time >= log.startTime!.millisecondsSinceEpoch && e.time <= log.endTime!.millisecondsSinceEpoch)
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final fuelData = parseTimeSeries("fuel");
+    final fuelData = log.getBleDeviceSeries("xc170", "fuel");
     final fuelTrend = getLinearTrendlineTuned(values: fuelData, outlierThresh: 0.5, iterations: 1);
 
-    final chtData = parseTimeSeries("cht");
-    final egtData = parseTimeSeries("egt");
-    final rpmData = parseTimeSeries("rpm");
-    final fanAmpsData = parseTimeSeries("fanAmps"); // milliamps
+    final chtData = log.getBleDeviceSeries("xc170", "cht");
+    final egtData = log.getBleDeviceSeries("xc170", "egt");
+    final rpmData = log.getBleDeviceSeries("xc170", "rpm");
+    final fanAmpsData = log.getBleDeviceSeries("xc170", "fanAmps"); // milliamps
     double fanAmpsIntegral = 0;
     for (int i = 0; i < fanAmpsData.length - 1; i++) {
       final mean = fanAmpsData[i].value + fanAmpsData[i + 1].value;

@@ -73,10 +73,30 @@ class LogView with ChangeNotifier {
     _timeRange = newRange;
     _gForceIndexRange = null;
     _sampleIndexRange = null;
+    _varioLogSmoothed = null;
     notifyListeners();
   }
 
   LogView(this.log) {
     _timeRange = log.timeRange!;
+  }
+
+  List<TimestampDouble>? _varioLogSmoothed;
+  List<TimestampDouble> get varioLogSmoothed {
+    _varioLogSmoothed ??= log.varioLogSmoothed
+        .where((element) =>
+            element.time >= _timeRange.start.millisecondsSinceEpoch &&
+            element.time <= _timeRange.end.millisecondsSinceEpoch)
+        .toList();
+    return _varioLogSmoothed!;
+  }
+
+  List<TimestampDouble> getBleDeviceSeries(String device, String key) {
+    return log
+        .getBleDeviceSeries(device, key)
+        .where((element) =>
+            element.time >= _timeRange.start.millisecondsSinceEpoch &&
+            element.time <= _timeRange.end.millisecondsSinceEpoch)
+        .toList();
   }
 }

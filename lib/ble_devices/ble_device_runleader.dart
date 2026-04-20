@@ -61,18 +61,6 @@ class RunleaderTelemetryCharacteristic {
     return data;
   }
 
-  Future<void> pull() async {
-    characteristic?.read().then((bytes) {
-      if (bytes.length > 1) {
-        int value = bytes[0] + bytes[1] << 8;
-        rpm.addValue(value, clock.now());
-      }
-    }).catchError((error) {
-      dd.error("Reading Runleader characteristic",
-          errorMessage: error.toString(), errorKind: "BLE", attributes: {"char_uuid": uuid});
-    });
-  }
-
   Map<String, dynamic>? toJson() {
     return {
       "rpm": rpm,
@@ -154,19 +142,6 @@ class RunleaderConfigCharacteristic {
     debugPrint("RunLeader: Pushing Config ${data.map((e) => e.toRadixString(16)).toList()}");
     await characteristic?.write(data).catchError((error) {
       dd.error("Writing config characteristic",
-          errorMessage: error.toString(), errorKind: "BLE", attributes: {"char_uuid": uuid});
-    });
-    // Read back to verify
-    // await pull();
-  }
-
-  Future<void> pull() async {
-    characteristic?.read().then((bytes) {
-      if (bytes.length > 1) {
-        debugPrint("Runleader - Config pulled: ${bytes.toList()}");
-      }
-    }).catchError((error) {
-      dd.error("Reading Runleader characteristic",
           errorMessage: error.toString(), errorKind: "BLE", attributes: {"char_uuid": uuid});
     });
   }

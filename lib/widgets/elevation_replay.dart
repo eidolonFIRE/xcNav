@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/models/geo.dart';
@@ -35,6 +36,9 @@ class ElevationReplay extends StatelessWidget {
               Expanded(
                 child: Stack(
                   children: [
+                    Align(
+                        alignment: Alignment.topLeft,
+                        child: Text("Elevation".tr(), style: TextStyle(color: Colors.grey))),
                     LineChart(
                         transformationConfig: FlTransformationConfig(
                             scaleAxis: FlScaleAxis.horizontal,
@@ -169,6 +173,8 @@ class ElevationReplay extends StatelessWidget {
                 Expanded(
                     child: Stack(
                   children: [
+                    Align(
+                        alignment: Alignment.topLeft, child: Text("Vario".tr(), style: TextStyle(color: Colors.grey))),
                     LineChart(
                         transformationConfig: FlTransformationConfig(
                             scaleAxis: FlScaleAxis.horizontal,

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/models/log_view.dart';
@@ -25,6 +26,8 @@ class SpeedHistogram extends StatelessWidget {
               builder: (context, _) {
                 return Stack(
                   children: [
+                    Align(
+                        alignment: Alignment.topLeft, child: Text("Speed".tr(), style: TextStyle(color: Colors.grey))),
                     LineChart(
                         transformationConfig: FlTransformationConfig(
                             scaleAxis: FlScaleAxis.horizontal,
@@ -163,6 +166,9 @@ class SpeedHistogram extends StatelessWidget {
 
                 return Stack(
                   children: [
+                    Align(
+                        alignment: Alignment.topLeft,
+                        child: Text("Histogram".tr(), style: TextStyle(color: Colors.grey))),
                     LineChart(LineChartData(
                         clipData: FlClipData.all(),
 
@@ -238,7 +244,7 @@ class SpeedHistogram extends StatelessWidget {
                     // --- Stats
                     if ((peaks.peaks.isNotEmpty || peaks.valleys.isNotEmpty))
                       Align(
-                          alignment: Alignment.topLeft,
+                          alignment: Alignment.topRight,
                           child: Card(
                             margin: EdgeInsets.zero,
                             color: Colors.grey.shade800.withAlpha(100),
