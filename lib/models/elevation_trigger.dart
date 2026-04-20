@@ -16,7 +16,8 @@ class ElevationTrigger {
   late final int calloutRepeats;
 
   late bool enabled;
-  bool isTriggered = false;
+  // Trigger start as fired to prevent firing as soon as in-flight for < alt cases.
+  bool isTriggered = true;
 
   ElevationTrigger(
       {required this.name,
