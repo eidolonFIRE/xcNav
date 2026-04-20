@@ -56,7 +56,8 @@ class Geo {
     time = timestamp ?? DateTime.now().millisecondsSinceEpoch;
   }
 
-  Geo.fromPosition(Position location, Geo? prev, BarometerEvent? baro, BarometerEvent? baroAmbient, {bool useGpsAltitude = false}) {
+  Geo.fromPosition(Position location, Geo? prev, BarometerEvent? baro, BarometerEvent? baroAmbient,
+      {bool forceGpsAltitude = false}) {
     lat = location.latitude;
     lng = location.longitude;
     time = location.timestamp.millisecondsSinceEpoch;
@@ -77,7 +78,7 @@ class Geo {
       hdg = prev?.hdg ?? location.heading;
     }
 
-    if (useGpsAltitude || baro == null) {
+    if (forceGpsAltitude || baro == null) {
       // Use GPS altitude when explicitly requested or when barometer is unavailable
       alt = location.altitude;
     } else {

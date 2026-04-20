@@ -109,7 +109,7 @@ class ViewElevationState extends State<ViewElevation> {
               ),
 
             // --- Barometer control
-            if (!settingsMgr.useGpsAltitude.value)
+            if (!settingsMgr.forceGpsAltitude.value)
               ListTile(
                 minVerticalPadding: 20,
                 visualDensity: VisualDensity.compact,
@@ -135,8 +135,8 @@ class ViewElevationState extends State<ViewElevation> {
                           : Icon(Icons.refresh)),
                   Text(
                     printDouble(value: myTelemetry.baroAmbient?.pressure ?? 1013.25, digits: 4, decimals: 2),
-                    style:
-                        TextStyle(fontSize: 20, color: myTelemetry.baroFromWeatherkit ? Colors.lightGreen : Colors.white),
+                    style: TextStyle(
+                        fontSize: 20, color: myTelemetry.baroFromWeatherkit ? Colors.lightGreen : Colors.white),
                   ),
                   VerticalDivider(
                     color: Colors.grey.shade900,
@@ -170,14 +170,14 @@ class ViewElevationState extends State<ViewElevation> {
                 ]),
               ),
 
-            if (!settingsMgr.useGpsAltitude.value)
+            if (!settingsMgr.forceGpsAltitude.value)
               Divider(
                 height: 0,
                 color: Colors.grey.shade900,
               ),
 
             // --- Density Altitude
-            if (!settingsMgr.useGpsAltitude.value &&
+            if (!settingsMgr.forceGpsAltitude.value &&
                 !myTelemetry.inFlight &&
                 myTelemetry.baroAmbient != null &&
                 myTelemetry.ambientTemperature != null &&

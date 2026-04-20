@@ -219,17 +219,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     _setupServiceStatusStream(globalContext!);
 
     // Listen for GPS-only altitude setting changes
-    settingsMgr.useGpsAltitude.listenable.addListener(() {
+    settingsMgr.forceGpsAltitude.listenable.addListener(() {
       _startBaroService(); // This will stop or start the service based on the setting
-    });
-
-    // Listen for GPS update interval changes
-    settingsMgr.gpsUpdateInterval.listenable.addListener(() {
-      if (positionStreamStarted && _positionStreamSubscription != null) {
-        // Restart location listener with new interval
-        _toggleListening(globalContext!); // Stop
-        _toggleListening(globalContext!); // Start with new settings
-      }
     });
 
     settingsMgr.spoofLocation.listenable.addListener(() {
@@ -307,7 +298,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     // Don't start barometer service if GPS-only altitude mode is enabled
-    if (settingsMgr.useGpsAltitude.value) {
+    if (settingsMgr.forceGpsAltitude.value) {
       debugPrint("Barometer Service disabled (GPS-only mode)");
       return;
     }
@@ -730,14 +721,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   void updateGeo(Position position, {bool bypassRecording = false}) {
     geoPrev = geo;
-    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient, useGpsAltitude: settingsMgr.useGpsAltitude.value);
+    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient, forceGpsAltitude: settingsMgr.forceGpsAltitude.value);
 
-    // Preserve previous ground elevation to avoid AGL spinner while new DEM data loads
-    if (geoPrev?.ground != null) {
-      geo!.ground = geoPrev!.ground;
-    }
-
-    if (baro == null || settingsMgr.useGpsAltitude.value) {
+    if (baro == null || settingsMgr.forceGpsAltitude.value) {
       // Use GPS-based vario when barometer unavailable or GPS-only mode enabled
       if (geoPrev != null) {
         final vario = (geo!.alt - geoPrev!.alt) / (geo!.time - geoPrev!.time) * 1000;
