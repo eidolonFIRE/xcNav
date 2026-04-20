@@ -201,6 +201,8 @@
         "other_details": "Other Details",
         "other_details_example": "flight box, camping bag, etc..."
     },
+    "Histogram": "Histogram",
+    "RPM": "RPM",
     "Date Range": "Date Range",
     "Search Gear": "Search Gear",
     "Telemetry": "Telemetry",

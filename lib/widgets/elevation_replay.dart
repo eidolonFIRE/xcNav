@@ -38,7 +38,7 @@ class ElevationReplay extends StatelessWidget {
                   children: [
                     Align(
                         alignment: Alignment.topLeft,
-                        child: Text("Elevation".tr(), style: TextStyle(color: Colors.grey))),
+                        child: Text("Altitude".tr(), style: TextStyle(color: Colors.grey))),
                     LineChart(
                         transformationConfig: FlTransformationConfig(
                             scaleAxis: FlScaleAxis.horizontal,

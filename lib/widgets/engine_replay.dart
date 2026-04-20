@@ -50,7 +50,7 @@ class EngineReplay extends StatelessWidget {
                   children: [
                     Align(
                         alignment: Alignment.topLeft,
-                        child: Text("Engine RPM".tr(), style: TextStyle(color: Colors.grey))),
+                        child: Text("${"gear.Engine".tr()} ${"RPM".tr()}", style: TextStyle(color: Colors.grey))),
                     LineChart(
                         transformationConfig: FlTransformationConfig(
                             scaleAxis: FlScaleAxis.horizontal,
@@ -146,7 +146,7 @@ class EngineReplay extends StatelessWidget {
                   children: [
                     Align(
                         alignment: Alignment.topLeft,
-                        child: Text("Vario / RPM".tr(), style: TextStyle(color: Colors.grey))),
+                        child: Text("${"Vario".tr()} / ${"RPM".tr()}", style: TextStyle(color: Colors.grey))),
                     LineChart(LineChartData(
                         clipData: FlClipData.all(),
                         lineTouchData: LineTouchData(enabled: false),

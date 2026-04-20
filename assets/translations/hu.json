@@ -201,6 +201,8 @@
         "other_details": "Egyéb részletek",
         "other_details_example": "repülődoboz, sátorzsák, stb..."
     },
+    "Histogram": "Hisztogram",
+    "RPM": "RPM",
     "Date Range": "Dátumtartomány",
     "Search Gear": "Felszerelés keresése",
     "Telemetry": "Telemetria",

@@ -201,6 +201,8 @@
     "other_details": "Доп. детали",
     "other_details_example": "палатка, провизия и т.д."
   },
+  "Histogram": "Гистограмма",
+  "RPM": "Обороты",
   "Date Range": "Диапазон дат",
   "Search Gear": "Поиск снаряжения",
   "Telemetry": "Телеметрия",

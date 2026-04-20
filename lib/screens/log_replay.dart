@@ -811,7 +811,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
               if (showEngineTab)
                 Tab(
                     icon: SizedBox(height: 24, child: SvgPicture.asset("assets/images/engine.svg")),
-                    text: "Engine".tr()),
+                    text: "gear.Engine".tr()),
             ]),
           ],
         ),
