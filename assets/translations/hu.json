@@ -250,7 +250,8 @@
                 "fuel": {
                     "liter": "L",
                     "gal": "gal",
-                    "kWh": "kWh"
+                    "kWh": "kWh",
+                    "percent": "%"
                 }
             }
         },
@@ -278,7 +279,8 @@
                 "fuel": {
                     "liter": "liter",
                     "gal": "gallon",
-                    "kWh": "kilowattóra"
+                    "kWh": "kilowattóra",
+                    "percent": "százalék"
                 }
             }
         }

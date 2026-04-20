@@ -250,7 +250,8 @@
                 "fuel": {
                     "liter": "L",
                     "gal": "gal",
-                    "kWh": "kWh"
+                    "kWh": "kWh",
+                    "percent": "%"
                 }
             }
         },
@@ -278,7 +279,8 @@
                 "fuel": {
                     "liter": "liters",
                     "gal": "gallons",
-                    "kWh": "kilowatt hours"
+                    "kWh": "kilowatt hours",
+                    "percent": "percent"
                 }
             }
         }

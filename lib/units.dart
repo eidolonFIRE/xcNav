@@ -38,6 +38,7 @@ enum DisplayUnitsFuel {
   liter,
   gal,
   kWh,
+  percent,
 }
 
 String getUnitStr(UnitType type, {bool lexical = false, dynamic override}) {
@@ -151,6 +152,9 @@ void configUnits({DisplayUnitsSpeed? speed, DisplayUnitsVario? vario, DisplayUni
         break;
       case DisplayUnitsFuel.kWh:
         unitConverters[UnitType.fuel] = (double value) => value;
+      case DisplayUnitsFuel.percent:
+        unitConverters[UnitType.fuel] = (double value) => value;
+        break;
     }
   }
 }
