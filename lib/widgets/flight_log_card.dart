@@ -69,7 +69,7 @@ class FlightLogCard extends StatelessWidget {
 
   void exportLog(BuildContext context, String fileType) async {
     final log = logStore.logs[logKey]!;
-    String outFilename = await log.export();
+    String outFilename = await log.export(fileType: fileType);
     if (context.mounted) {
       showDialog(
           context: context,
