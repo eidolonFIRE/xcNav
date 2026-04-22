@@ -750,9 +750,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (inFlight) {
         // Is moving slowly near the ground?
         // Only acount for AGL if ground data available.
-        if (speedSmooth.value < 2.5 &&
+        if (speedSmooth.value < 1.7 &&
             varioSmooth.value.abs() < 0.2 &&
-            (geo!.ground != null ? (geo!.alt - geo!.ground!) < 30 : true)) {
+            (geo!.ground != null ? (geo!.alt - geo!.ground!) < 100 : true)) {
           if (geoPrev != null) {
             triggerHyst += geo!.time - geoPrev!.time;
           } else {
