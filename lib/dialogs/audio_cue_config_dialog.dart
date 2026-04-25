@@ -11,16 +11,24 @@ void showAudioCueConfigDialog(BuildContext context) {
     builder: (context) => StatefulBuilder(
         builder: ((context, setState) => SimpleDialog(
             children:
-                // --- Each Entry
-                audioCueService.config.entries
-                    .map<Widget>((entry) => SwitchListTile(
-                        value: entry.value,
-                        secondary: Icon(AudioCueService.icons[entry.key]),
-                        title: Text("audio_cue.${entry.key}".tr()),
-                        onChanged: (newValue) => setState(
-                              () => audioCueService.config[entry.key] = newValue,
-                            )))
-                    .toList()
+                // --- Chat
+                <Widget>[
+                      SwitchListTile(
+                          secondary: settingsMgr.chatTTS.icon,
+                          title: Text(settingsMgr.chatTTS.title),
+                          value: settingsMgr.chatTTS.value,
+                          onChanged: (newValue) => setState(() => settingsMgr.chatTTS.value = newValue))
+                    ] +
+                    // --- Each Entry
+                    audioCueService.config.entries
+                        .map<Widget>((entry) => SwitchListTile(
+                            value: entry.value,
+                            secondary: Icon(AudioCueService.icons[entry.key]),
+                            title: Text("audio_cue.${entry.key}".tr()),
+                            onChanged: (newValue) => setState(
+                                  () => audioCueService.config[entry.key] = newValue,
+                                )))
+                        .toList()
                   ..insert(
                       1,
                       ValueListenableBuilder(

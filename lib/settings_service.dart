@@ -411,7 +411,8 @@ class SettingsMgr {
         ));
 
     // --- Hidden
-    chatTTS = SettingConfig(this, prefs, "UI", "chatTTS", false, title: "Chat text-to-speech", hidden: true);
+    chatTTS = SettingConfig(this, prefs, "UI", "chatTTS", false,
+        title: "Chat text-to-speech", icon: const Icon(Icons.volume_up), hidden: true);
     groundModeTelem = SettingConfig(this, prefs, "General", "groundModeTelem", false,
         title: "Ground Mode Telemetry",
         icon: const Icon(Icons.minor_crash),
