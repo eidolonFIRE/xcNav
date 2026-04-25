@@ -1269,7 +1269,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           alignment: Alignment.topCenter,
           child: Consumer<MyTelemetry>(
               builder: (context, myTelemetry, _) => GestureDetector(
-                    onLongPress: () {
+                    onTap: () {
                       if (myTelemetry.inFlight) {
                         showDialog(
                             context: context,
