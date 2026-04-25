@@ -61,11 +61,15 @@
             "clear_avatar_cache": "Clear Avatar Cache",
             "erase_identity": "Erase Identity",
             "barometer_offset": "Barometer Offset",
-            "ambient_pressure_source": "Ambient Pressure Source"
+            "ambient_pressure_source": "Ambient Pressure Source",
+            "configure_sms_notifications": "SMS Notifications"
         }
     },
+    "message_template": "Message Template",
+    "Always": "Always",
     "WeatherKit": "WeatherKit",
     "Snap To Ground": "Snap To Ground",
+    "not_at_lz_waypoint": "Not at LZ or Waypoint",
     "Distance": "Distance",
     "Speed": "Speed",
     "Vario": "Vario",
@@ -74,6 +78,7 @@
     "start": "start",
     "end": "end",
     "off": "off",
+    "Off": "Off",
     "small": "small",
     "medium": "medium",
     "large": "large",
@@ -101,6 +106,7 @@
     "Altitude": "Altitude",
     "G-Force": "G-Force",
     "Launch": "Launch",
+    "Takeoff": "Takeoff",
     "Landing": "Landing",
     "dialog_select_range_with_slider": "Use the range slider to select the duration of the log to keep.",
     "Invalid Selection": "Invalid Selection",
@@ -121,6 +127,7 @@
     "GPS Altitude": "GPS Altitude",
     "dialog": {
         "confirm": {
+            "sms": "Send Test SMS?",
             "sure": "Are you sure?",
             "manual_stop": "Manually stop?",
             "trim_log": "Trim log to selection?",
@@ -142,6 +149,7 @@
         "Edit Gear": "Edit Gear",
         "All": "All",
         "Save": "Save",
+        "Send": "Send",
         "Now": "Now",
         "Saving": "Saving",
         "Cancel": "Cancel",

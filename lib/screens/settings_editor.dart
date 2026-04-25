@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:xcnav/dialogs/config_sms_notifications_dialog.dart';
 import 'package:xcnav/locale.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 
@@ -54,6 +55,10 @@ class _SettingsEditorState extends State<SettingsEditor> {
     });
 
     // --- Hookup actions
+    settingsMgr.configSmsNotifications.callback = () {
+      showConfigSmsNotificationsDialog(context, settingsMgr.prefsInstance);
+    };
+
     settingsMgr.clearMapCache.callback = () {
       setState(() {
         emptyMapTileCache();

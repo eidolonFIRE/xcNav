@@ -61,11 +61,15 @@
       "clear_avatar_cache": "Очистить кэш аватаров",
       "erase_identity": "Удалить личные данные",
       "barometer_offset": "Смещение барометра",
-      "ambient_pressure_source": "Источник атмосферного давления"
+      "ambient_pressure_source": "Источник атмосферного давления",
+      "configure_sms_notifications": "SMS-уведомления"
     }
   },
+  "message_template": "Шаблон сообщения",
+  "Always": "Всегда",
   "WeatherKit": "WeatherKit",
   "Snap To Ground": "Привязка к земле",
+  "not_at_lz_waypoint": "Не на аэродроме или путевой точке",
   "Distance": "Расстояние",
   "Speed": "Скорость",
   "Vario": "Варио",
@@ -74,6 +78,7 @@
   "start": "начало",
   "end": "конец",
   "off": "выкл",
+  "Off": "выкл",
   "small": "мал",
   "medium": "сред",
   "large": "большой",
@@ -101,6 +106,7 @@
   "Altitude": "Высота",
   "G-Force": "Перегрузка",
   "Launch": "Взлёт",
+  "Takeoff": "Взлёт",
   "Landing": "Посадка",
   "dialog_select_range_with_slider": "Используйте ползунок, чтобы выбрать диапазон журнала для сохранения.",
   "Invalid Selection": "Неверный выбор",
@@ -121,6 +127,7 @@
   "GPS Altitude": "GPS-высота",
   "dialog": {
     "confirm": {
+      "sms": "Отправить тестовое SMS?",
       "sure": "Вы уверены?",
       "manual_stop": "Остановить вручную?",
       "trim_log": "Отрезать журнал до выделенной строки?",
@@ -142,6 +149,7 @@
     "Edit Gear": "Редактировать снаряжение",
     "All": "Все",
     "Save": "Сохранить",
+    "Send": "отправлять",
     "Now": "Сейчас",
     "Saving": "Сохранение",
     "Cancel": "Отмена",

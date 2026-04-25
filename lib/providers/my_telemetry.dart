@@ -38,6 +38,7 @@ import 'package:xcnav/services/ble_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/secrets.dart';
+import 'package:xcnav/sms.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 
@@ -537,6 +538,18 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       gForceRecord.removeWhere((a) => a.time < launchGeo!.time);
 
       notifyListeners();
+
+      // SMS Notifications
+      if (settingsMgr.smsNotifyTakeoff.value != "off") {
+        smsSendNotification(
+            addresses: settingsMgr.smsNotifyNumbers.value,
+            template: settingsMgr.smsNotifyTakeoffTemplate.value,
+            latlng: geo!.latlng,
+            pilotName: settingsMgr.pilotName.value,
+            waypoints: globalContext != null
+                ? Provider.of<ActivePlan>(globalContext!, listen: false).waypoints.values.toList()
+                : null);
+      }
     }
   }
 
@@ -559,6 +572,38 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
 
       notifyListeners();
+
+      // SMS Notifications
+      if (settingsMgr.smsNotifyLanding.value != "off") {
+        if (settingsMgr.smsNotifyLanding.value == "new") {
+          // Only send if not by a waypoint
+          final waypoints = Provider.of<ActivePlan>(globalContext!, listen: false).waypoints.values.toList();
+          final nearestWaypoint = waypoints
+              .where((e) => e.isPath == false && latlngCalc.distance(e.latlng.first, geo!.latlng) < 500)
+              .toList()
+              .sorted((a, b) =>
+                  (latlngCalc.distance(a.latlng.first, geo!.latlng) - latlngCalc.distance(b.latlng.first, geo!.latlng))
+                      .round())
+              .firstOrNull;
+          if (nearestWaypoint == null) {
+            smsSendNotification(
+                addresses: settingsMgr.smsNotifyNumbers.value,
+                template: settingsMgr.smsNotifyLandingTemplate.value,
+                latlng: geo!.latlng,
+                pilotName: settingsMgr.pilotName.value,
+                waypoints: waypoints);
+          }
+        } else {
+          smsSendNotification(
+              addresses: settingsMgr.smsNotifyNumbers.value,
+              template: settingsMgr.smsNotifyLandingTemplate.value,
+              latlng: geo!.latlng,
+              pilotName: settingsMgr.pilotName.value,
+              waypoints: globalContext != null
+                  ? Provider.of<ActivePlan>(globalContext!, listen: false).waypoints.values.toList()
+                  : null);
+        }
+      }
     }
   }
 

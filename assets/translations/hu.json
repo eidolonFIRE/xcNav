@@ -61,11 +61,15 @@
             "clear_avatar_cache": "Avatar cache törlése",
             "erase_identity": "Azonosító törlése",
             "barometer_offset": "Barométer eltolás",
-            "ambient_pressure_source": "Környezeti nyomásforrás"
+            "ambient_pressure_source": "Környezeti nyomásforrás",
+            "configure_sms_notifications": "SMS-értesítések"
         }
     },
+    "message_template": "Üzenetsablon",
+    "Always": "Mindig",
     "WeatherKit": "WeatherKit",
     "Snap To Ground": "Illesztés a földhöz",
+    "not_at_lz_waypoint": "Nem a repülőtéren vagy az ellenőrzőponton",
     "Distance": "Távolság",
     "Speed": "Sebesség",
     "Vario": "Vario",
@@ -74,6 +78,7 @@
     "start": "indítás",
     "end": "befejezés",
     "off": "ki",
+    "Off": "Ki",
     "small": "kicsi",
     "medium": "közepes",
     "large": "nagy",
@@ -100,7 +105,8 @@
     "Summary": "Összegzés",
     "Altitude": "Magasság",
     "G-Force": "G-erő",
-    "launch": "Indítás",
+    "Launch": "Indítás",
+    "Takeoff": "Felszállás",
     "Landing": "Leszállás",
     "dialog_select_range_with_slider": "Használja a csúszkát a megtartandó napló időtartamának kiválasztásához.",
     "Invalid Selection": "Érvénytelen kiválasztás",
@@ -121,6 +127,7 @@
     "GPS Altitude": "GPS magasság",
     "dialog": {
         "confirm": {
+            "sms": "Küldj teszt SMS-t?",
             "sure": "Biztos vagy benne?",
             "manual_stop": "Leállítás kézzel?",
             "trim_log": "Napló vágása a kijelöléshez?",
@@ -142,6 +149,7 @@
         "Edit Gear": "Felszerelés szerkesztése",
         "All": "Összes",
         "Save": "Mentés",
+        "Send": "Elküld",
         "Now": "Most",
         "Saving": "Mentés folyamatban",
         "Cancel": "Mégse",

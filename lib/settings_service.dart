@@ -205,6 +205,7 @@ class SettingsMgr {
   late final SettingConfig<bool> groundMode;
   late final SettingConfig<bool> autoRecordFlight;
   late final SettingConfig<BarometerSrc> ambientPressureSource;
+  late final SettingAction configSmsNotifications;
 
   // --- UI
   late final SettingConfig<AltimeterMode> primaryAltimeter;
@@ -241,6 +242,7 @@ class SettingsMgr {
   late final SettingAction eraseIdentity;
 
   // --- Hidden
+  late final SettingConfig<String> pilotName;
   late final SettingConfig<bool> chatTTS;
   late final SettingConfig<bool> groundModeTelem;
   late final SettingConfig<bool> northlockMap;
@@ -250,8 +252,15 @@ class SettingsMgr {
   late final SettingConfig<String> datadogSdkId;
   late final SettingConfig<AltimeterMode> audioCueAltimeter;
   late final SettingConfig<List<String>> bleAutoDevices;
+  // --- Hidden: sms notifications
+  late final SettingConfig<String> smsNotifyTakeoff;
+  late final SettingConfig<List<String>> smsNotifyNumbers;
+  late final SettingConfig<String> smsNotifyLanding;
+  late final SettingConfig<String> smsNotifyTakeoffTemplate;
+  late final SettingConfig<String> smsNotifyLandingTemplate;
 
   SettingsMgr(SharedPreferences prefs) {
+    prefsInstance = prefs;
     // --- General
     languageOverride = SettingConfig(
       this,
@@ -277,6 +286,9 @@ class SettingsMgr {
         title: "ambient_pressure_source",
         icon: const Icon(Icons.thermostat_auto),
         description: "Source of ambient pressure weather data.");
+
+    configSmsNotifications = SettingAction(this, "General", () => null,
+        title: "configure_sms_notifications", actionIcon: const Icon(Icons.settings));
 
     // --- UI
     primaryAltimeter = SettingConfig(this, prefs, "UI", "primaryAltimeter", AltimeterMode.msl,
@@ -411,6 +423,7 @@ class SettingsMgr {
         ));
 
     // --- Hidden
+    pilotName = SettingConfig(this, prefs, "profile", "pilotName", "", title: "Pilot Name", hidden: true);
     chatTTS = SettingConfig(this, prefs, "UI", "chatTTS", false, title: "Chat text-to-speech", hidden: true);
     groundModeTelem = SettingConfig(this, prefs, "General", "groundModeTelem", false,
         title: "Ground Mode Telemetry",
@@ -430,6 +443,20 @@ class SettingsMgr {
 
     bleAutoDevices =
         SettingConfig(this, prefs, "ble", "bleAutoConnectDevices", [], title: "Auto Connect Devices", hidden: true);
+
+    // --- Hidden: sms notifications
+    smsNotifyTakeoff =
+        SettingConfig(this, prefs, "smsNotify", "takeoff", "off", title: "SMS Notifications for Takeoff", hidden: true);
+    smsNotifyNumbers =
+        SettingConfig(this, prefs, "smsNotify", "numbers", [], title: "Takeoff Phone Numbers", hidden: true);
+    smsNotifyLanding =
+        SettingConfig(this, prefs, "smsNotify", "landing", "off", title: "Landing Notification Mode", hidden: true);
+    smsNotifyTakeoffTemplate = SettingConfig(
+        this, prefs, "smsNotify", "takeoffTemplate", "{name} launched at {time} from {location} {google_maps}",
+        title: "SMS Takeoff Notification Template", hidden: true);
+    smsNotifyLandingTemplate = SettingConfig(
+        this, prefs, "smsNotify", "landingTemplate", "{name} landed {near} at {time}, {location} {google_maps}",
+        title: "SMS Landing Notification Template", hidden: true);
   }
 }
 

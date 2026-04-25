@@ -531,6 +531,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.1.1"
+  flutter_native_contact_picker:
+    dependency: "direct main"
+    description:
+      name: flutter_native_contact_picker
+      sha256: "496dda39ffb608abb742ca507d491c2825dc1a6f35fefdece724c93fbe6acf6a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.11"
   flutter_native_splash:
     dependency: "direct main"
     description:
