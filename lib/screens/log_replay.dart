@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:easy_localization/easy_localization.dart' as tr;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -205,6 +206,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
     return PopScope(
       onPopInvokedWithResult: (_, __) {
+        ScaffoldMessenger.of(context).clearMaterialBanners();
         if (log.goodFile && log.unsaved) {
           log.save();
         }
@@ -304,21 +306,37 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                             key: mapKey,
                             mapController: mapController,
                             options: MapOptions(
-                              initialCameraFit: CameraFit.bounds(
-                                  bounds: log.getBounds(), padding: EdgeInsets.all(50), minZoom: 4, maxZoom: 14),
-                              onMapReady: () {
-                                setState(() {
-                                  mapReady = true;
-                                });
-                              },
-                              interactionOptions:
-                                  const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
-                              onPositionChanged: (mapPosition, hasGesture) {
-                                if (hasGesture) {
-                                  isMapDialOpen.value = false;
-                                }
-                              },
-                            ),
+                                initialCameraFit: CameraFit.bounds(
+                                    bounds: log.getBounds(), padding: EdgeInsets.all(50), minZoom: 4, maxZoom: 14),
+                                onMapReady: () {
+                                  setState(() {
+                                    mapReady = true;
+                                  });
+                                },
+                                interactionOptions:
+                                    const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+                                onPositionChanged: (mapPosition, hasGesture) {
+                                  if (hasGesture) {
+                                    isMapDialOpen.value = false;
+                                  }
+                                },
+                                onLongPress: (pos, latlng) {
+                                  // Copy latlng to clipboard
+                                  Clipboard.setData(ClipboardData(
+                                      text:
+                                          "${latlng.latitude.toStringAsFixed(6)},${latlng.longitude.toStringAsFixed(8)}"));
+                                  ScaffoldMessenger.of(context).showMaterialBanner(MaterialBanner(
+                                    padding: EdgeInsets.all(20),
+                                    content: Text("Lat,Long copied to clipboard"),
+                                    leading: Icon(Icons.copy),
+                                    backgroundColor: Colors.green,
+                                    actions: <Widget>[
+                                      TextButton(
+                                          onPressed: () => ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+                                          child: Text('DISMISS')),
+                                    ],
+                                  ));
+                                }),
                             children: [
                               Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
 

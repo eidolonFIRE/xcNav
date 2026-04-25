@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'package:xcnav/models/gear.dart';
 import 'package:xcnav/secrets.dart';
-import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
 
 class Profile with ChangeNotifier {
@@ -48,9 +47,6 @@ class Profile with ChangeNotifier {
     prefs = await SharedPreferences.getInstance();
 
     name = prefs.getString("profile.name");
-
-    // TODO: clean this up after a few releases
-    settingsMgr.pilotName.value = name ?? "";
 
     id = prefs.getString("profile.id");
     secretID = prefs.getString("profile.secretID");
