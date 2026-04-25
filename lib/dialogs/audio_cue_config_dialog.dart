@@ -29,15 +29,16 @@ void showAudioCueConfigDialog(BuildContext context) {
                             return ListTile(
                               leading: settingsMgr.audioCueAltimeter.icon,
                               title: Text(settingsMgr.audioCueAltimeter.title),
-                              trailing: DropdownButton<AltimeterMode>(
-                                  onChanged: (newValue) => {
+                              trailing: DropdownMenu<AltimeterMode>(
+                                  width: 100,
+                                  onSelected: (newValue) => {
                                         settingsMgr.audioCueAltimeter.value =
                                             newValue ?? settingsMgr.audioCueAltimeter.defaultValue
                                       },
-                                  value: value,
-                                  items: const [
-                                    DropdownMenuItem(value: AltimeterMode.msl, child: Text("MSL")),
-                                    DropdownMenuItem(value: AltimeterMode.agl, child: Text("AGL")),
+                                  initialSelection: value,
+                                  dropdownMenuEntries: const [
+                                    DropdownMenuEntry(value: AltimeterMode.msl, label: "MSL"),
+                                    DropdownMenuEntry(value: AltimeterMode.agl, label: "AGL"),
                                   ]),
                             );
                           }))

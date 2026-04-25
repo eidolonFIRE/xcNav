@@ -240,92 +240,91 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                               );
                                               break;
                                             case "DisplayUnitsDist":
-                                              trailing = DropdownButton<DisplayUnitsDist>(
-                                                  onChanged: (value) =>
+                                              trailing = DropdownMenuFormField<DisplayUnitsDist>(
+                                                  onSelected: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
-                                                  value: e.config!.value,
-                                                  items: [
-                                                    DropdownMenuItem(
-                                                        value: DisplayUnitsDist.imperial, child: Text("Imperial".tr())),
-                                                    DropdownMenuItem(
-                                                        value: DisplayUnitsDist.metric, child: Text("Metric".tr())),
+                                                  initialSelection: e.config!.value,
+                                                  dropdownMenuEntries: [
+                                                    DropdownMenuEntry(
+                                                        value: DisplayUnitsDist.imperial, label: "Imperial".tr()),
+                                                    DropdownMenuEntry(
+                                                        value: DisplayUnitsDist.metric, label: "Metric".tr()),
                                                   ]);
                                               break;
                                             case "DisplayUnitsSpeed":
-                                              trailing = DropdownButton<DisplayUnitsSpeed>(
-                                                  onChanged: (value) =>
+                                              trailing = DropdownMenuFormField<DisplayUnitsSpeed>(
+                                                  onSelected: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
-                                                  value: e.config!.value,
-                                                  items: DisplayUnitsSpeed.values
-                                                      .map((e) => DropdownMenuItem(
+                                                  initialSelection: e.config!.value,
+                                                  dropdownMenuEntries: DisplayUnitsSpeed.values
+                                                      .map((e) => DropdownMenuEntry(
                                                           value: e,
-                                                          child: Text(
-                                                              getUnitStr(UnitType.speed, lexical: false, override: e))))
+                                                          label:
+                                                              getUnitStr(UnitType.speed, lexical: false, override: e)))
                                                       .toList());
                                               break;
                                             case "DisplayUnitsVario":
-                                              trailing = DropdownButton<DisplayUnitsVario>(
-                                                  onChanged: (value) =>
+                                              trailing = DropdownMenuFormField<DisplayUnitsVario>(
+                                                  onSelected: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
-                                                  value: e.config!.value,
-                                                  items: DisplayUnitsVario.values
-                                                      .map((e) => DropdownMenuItem(
+                                                  initialSelection: e.config!.value,
+                                                  dropdownMenuEntries: DisplayUnitsVario.values
+                                                      .map((e) => DropdownMenuEntry(
                                                           value: e,
-                                                          child: Text(
-                                                              getUnitStr(UnitType.vario, lexical: false, override: e))))
+                                                          label:
+                                                              getUnitStr(UnitType.vario, lexical: false, override: e)))
                                                       .toList());
                                               break;
                                             case "DisplayUnitsFuel":
-                                              trailing = DropdownButton<DisplayUnitsFuel>(
-                                                  onChanged: (value) =>
+                                              trailing = DropdownMenuFormField<DisplayUnitsFuel>(
+                                                  onSelected: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
-                                                  value: e.config!.value,
-                                                  items: DisplayUnitsFuel.values
-                                                      .map((e) => DropdownMenuItem(
+                                                  initialSelection: e.config!.value,
+                                                  dropdownMenuEntries: DisplayUnitsFuel.values
+                                                      .map((e) => DropdownMenuEntry(
                                                           value: e,
-                                                          child: Text(
-                                                              getUnitStr(UnitType.fuel, lexical: false, override: e))))
+                                                          label:
+                                                              getUnitStr(UnitType.fuel, lexical: false, override: e)))
                                                       .toList());
                                               break;
                                             case "AltimeterMode":
-                                              trailing = DropdownButton<AltimeterMode>(
-                                                  onChanged: (value) =>
+                                              trailing = DropdownMenuFormField<AltimeterMode>(
+                                                  onSelected: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
-                                                  value: e.config!.value,
-                                                  items: const [
-                                                    DropdownMenuItem(value: AltimeterMode.agl, child: Text("AGL")),
-                                                    DropdownMenuItem(value: AltimeterMode.msl, child: Text("MSL")),
+                                                  initialSelection: e.config!.value,
+                                                  dropdownMenuEntries: const [
+                                                    DropdownMenuEntry(value: AltimeterMode.agl, label: "AGL"),
+                                                    DropdownMenuEntry(value: AltimeterMode.msl, label: "MSL"),
                                                   ]);
                                               break;
                                             case "ProximitySize":
-                                              trailing = DropdownButton<ProximitySize>(
-                                                  onChanged: (value) =>
+                                              trailing = DropdownMenuFormField<ProximitySize>(
+                                                  onSelected: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
-                                                  value: e.config!.value,
-                                                  items: ProximitySize.values
-                                                      .map((e) => DropdownMenuItem(
-                                                          value: e, child: Text(e.toString().split(".").last.tr())))
+                                                  initialSelection: e.config!.value,
+                                                  dropdownMenuEntries: ProximitySize.values
+                                                      .map((e) => DropdownMenuEntry(
+                                                          value: e, label: e.toString().split(".").last.tr()))
                                                       .toList());
                                               break;
                                             case "LanguageOverride":
-                                              trailing = DropdownButton<LanguageOverride>(
-                                                  onChanged: (value) =>
+                                              trailing = DropdownMenuFormField<LanguageOverride>(
+                                                  onSelected: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
-                                                  value: e.config!.value,
-                                                  items: LanguageOverride.values
-                                                      .map((e) => DropdownMenuItem(
-                                                          value: e, child: Text(languageNames[e] ?? "None")))
+                                                  initialSelection: e.config!.value,
+                                                  dropdownMenuEntries: LanguageOverride.values
+                                                      .map((e) => DropdownMenuEntry(
+                                                          value: e, label: languageNames[e] ?? "None"))
                                                       .toList());
                                               break;
                                             case "BarometerSrc":
-                                              trailing = DropdownButton<BarometerSrc>(
-                                                  onChanged: (value) =>
+                                              trailing = DropdownMenuFormField<BarometerSrc>(
+                                                  onSelected: (value) =>
                                                       {e.config!.value = value ?? e.config!.defaultValue},
-                                                  value: e.config!.value,
-                                                  items: BarometerSrc.values
-                                                      .map((e) => DropdownMenuItem(
-                                                          value: e,
-                                                          child: Text(barometerSrcString[e] ?? "Unknown").tr()))
+                                                  initialSelection: e.config!.value,
+                                                  dropdownMenuEntries: BarometerSrc.values
+                                                      .map((e) => DropdownMenuEntry(
+                                                          value: e, label: (barometerSrcString[e] ?? "Unknown").tr()))
                                                       .toList());
                                               break;
                                             default:

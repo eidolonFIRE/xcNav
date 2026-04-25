@@ -58,6 +58,9 @@ import 'package:xcnav/util.dart';
 import 'package:xcnav/services/ble_service.dart' as ble_service;
 
 LatLng lastKnownLatLng = const LatLng(37, -122);
+const darkishColor = Color.fromARGB(255, 50, 50, 50);
+const darkColor = Color.fromARGB(255, 42, 42, 42);
+const darkerColor = Color.fromARGB(255, 38, 38, 38);
 
 void main() async {
   runZonedGuarded(() async {
@@ -218,8 +221,6 @@ class XCNav extends StatelessWidget {
 
     debugPrint("Building App");
 
-    const darkColor = Color.fromARGB(255, 42, 42, 42);
-
     // --- Setup Audio Cue Service
     audioCueService = AudioCueService(
       ttsService: ttsService,
@@ -252,17 +253,32 @@ class XCNav extends StatelessWidget {
 
         colorScheme: const ColorScheme.dark(surface: darkColor, primary: Colors.lightBlue),
         appBarTheme: const AppBarTheme(toolbarTextStyle: TextStyle(fontSize: 40), backgroundColor: darkColor),
-
         textTheme: const TextTheme(
             bodyLarge: TextStyle(fontSize: 18),
             headlineLarge: TextStyle(color: Colors.white),
             headlineMedium: TextStyle(color: Colors.white)),
-        dropdownMenuTheme: const DropdownMenuThemeData(textStyle: TextStyle(color: Colors.white)),
+        dropdownMenuTheme: DropdownMenuThemeData(
+            textStyle: TextStyle(color: Colors.white),
+            inputDecorationTheme: InputDecorationTheme(
+              visualDensity: VisualDensity.compact,
+              isDense: true,
+              contentPadding: EdgeInsets.all(4),
+              filled: true,
+              fillColor: darkishColor,
+              border: OutlineInputBorder(borderSide: BorderSide.none),
+              outlineBorder: BorderSide.none,
+            )),
 
+        inputDecorationTheme: InputDecorationThemeData(
+            constraints: BoxConstraints.tight(Size.fromHeight(38)),
+            fillColor: darkishColor,
+            filled: true,
+            border: OutlineInputBorder(borderSide: BorderSide.none),
+            contentPadding: EdgeInsets.all(4)),
         brightness: Brightness.dark,
         bottomSheetTheme: const BottomSheetThemeData(backgroundColor: darkColor),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(backgroundColor: darkColor),
-        dialogTheme: DialogThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+        dialogTheme: DialogThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ButtonStyle(
             foregroundColor: WidgetStateProperty.resolveWith<Color>(
@@ -274,14 +290,14 @@ class XCNav extends StatelessWidget {
             minimumSize: WidgetStateProperty.resolveWith<Size>((states) => const Size(30, 40)),
             padding: WidgetStateProperty.resolveWith<EdgeInsetsGeometry>((states) => const EdgeInsets.all(12)),
             shape: WidgetStateProperty.resolveWith<OutlinedBorder>((_) {
-              return RoundedRectangleBorder(borderRadius: BorderRadius.circular(10));
+              return RoundedRectangleBorder(borderRadius: BorderRadius.circular(8));
             }),
             textStyle: WidgetStateProperty.resolveWith<TextStyle>(
                 (states) => const TextStyle(color: Colors.white, fontSize: 20)),
           ),
         ),
         toggleButtonsTheme: ToggleButtonsThemeData(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             selectedColor: Colors.white,
             selectedBorderColor: Colors.blue,
             fillColor: Colors.black54),

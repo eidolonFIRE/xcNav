@@ -50,9 +50,6 @@ Future<FuelReport?> dialogEditFuelReport(
                           controller: fuelAmountController,
                           textAlign: TextAlign.center,
                           style: const TextStyle(fontSize: 24),
-                          decoration: InputDecoration(
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                              contentPadding: const EdgeInsets.all(4)),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
                           autofocus: true,
                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\.]'))],

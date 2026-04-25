@@ -195,6 +195,7 @@ class SettingMgrItem {
 class SettingsMgr {
   /// Flat look-up list of settings
   Set ids = {};
+  late final SharedPreferences prefsInstance;
 
   /// Look-up list of settings by catagory
   Map<String, List<SettingMgrItem>> settings = {};

@@ -50,7 +50,7 @@ Future<ElevationTrigger?> editElevationTriggerDialog(BuildContext context, {Elev
                     children: [
                       Text("Altitude"),
                       SizedBox(
-                        width: 80,
+                        width: 60,
                         child: TextFormField(
                           textAlign: TextAlign.end,
                           controller: editElevation,
@@ -58,47 +58,48 @@ Future<ElevationTrigger?> editElevationTriggerDialog(BuildContext context, {Elev
                           keyboardType: TextInputType.numberWithOptions(decimal: false, signed: true),
                         ),
                       ),
-                      SizedBox(
-                        width: 55,
-                        child: DropdownButton<AltimeterMode>(
-                            onChanged: (value) => {
-                                  setState(() {
-                                    if (value != null) {
-                                      editAltMode = value;
-                                    }
-                                  })
-                                },
-                            value: editAltMode,
-                            items: const [
-                              DropdownMenuItem(value: AltimeterMode.agl, child: Text("AGL")),
-                              DropdownMenuItem(value: AltimeterMode.msl, child: Text("MSL")),
-                            ]),
-                      )
+                      DropdownMenuFormField<AltimeterMode>(
+                          width: 100,
+                          onSelected: (value) => {
+                                setState(() {
+                                  if (value != null) {
+                                    editAltMode = value;
+                                  }
+                                })
+                              },
+                          initialSelection: editAltMode,
+                          dropdownMenuEntries: const [
+                            DropdownMenuEntry(value: AltimeterMode.agl, label: "AGL"),
+                            DropdownMenuEntry(value: AltimeterMode.msl, label: "MSL"),
+                          ])
                     ],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text("Direction  "),
+                      DropdownMenuFormField<TriggerDirection>(
+                          width: 120,
+                          onSelected: (value) => {
+                                setState(() {
+                                  if (value != null) {
+                                    editDirection = value;
+                                  }
+                                })
+                              },
+                          initialSelection: editDirection,
+                          dropdownMenuEntries: const [
+                            DropdownMenuEntry(value: TriggerDirection.up, label: "Up"),
+                            DropdownMenuEntry(value: TriggerDirection.down, label: "Down"),
+                          ]),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Callouts"),
                       SizedBox(
-                        width: 60,
-                        child: DropdownButton<TriggerDirection>(
-                            onChanged: (value) => {
-                                  setState(() {
-                                    if (value != null) {
-                                      editDirection = value;
-                                    }
-                                  })
-                                },
-                            value: editDirection,
-                            items: const [
-                              DropdownMenuItem(value: TriggerDirection.up, child: Text("Up")),
-                              DropdownMenuItem(value: TriggerDirection.down, child: Text("Down")),
-                            ]),
-                      ),
-                      Text("  Callouts"),
-                      SizedBox(
-                        width: 30,
+                        width: 80,
                         child: TextFormField(
                           textAlign: TextAlign.end,
                           controller: editCalloutRepeats,

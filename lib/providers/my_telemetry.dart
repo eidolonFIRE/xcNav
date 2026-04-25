@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:bisection/bisect.dart';
 import 'package:clock/clock.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
