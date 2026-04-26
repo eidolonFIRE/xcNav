@@ -180,14 +180,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         listenIMU?.cancel();
         if (positionStreamStarted) {
           positionStreamStarted = !positionStreamStarted;
-          _toggleListening(globalContext!);
+          _stopGpsService();
         }
       } else {
         _startBaroService();
         _startIMUService();
         if (!positionStreamStarted) {
           positionStreamStarted = !positionStreamStarted;
-          _toggleListening(globalContext!);
+          _startGpsService(globalContext!);
         }
         _serviceStatusStreamSubscription?.resume();
       }
@@ -367,14 +367,12 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }).listen((serviceStatus) {
         if (serviceStatus == ServiceStatus.enabled) {
           if (positionStreamStarted) {
-            if (context.mounted) {
-              _toggleListening(context);
-            }
+            _stopGpsService();
           }
           if (defaultTargetPlatform == TargetPlatform.iOS && !positionStreamStarted) {
             positionStreamStarted = true;
             if (context.mounted) {
-              _toggleListening(context);
+              _startGpsService(context);
             }
           }
           debugPrint("Location Service Enabled");
@@ -391,14 +389,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       // Initial start of the position stream
       if (!positionStreamStarted && defaultTargetPlatform == TargetPlatform.android) {
         positionStreamStarted = true;
-        _toggleListening(context);
+        _startGpsService(context);
       }
     }
   }
 
-  void _toggleListening(BuildContext context) {
-    debugPrint("Toggle Location Listening");
+  void _startGpsService(BuildContext context) {
     if (_positionStreamSubscription == null) {
+      debugPrint("Start GPS listening");
       late LocationSettings locationSettings;
 
       if (defaultTargetPlatform == TargetPlatform.android) {
@@ -429,9 +427,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
 
       positionStream = _geolocatorPlatform.getPositionStream(locationSettings: locationSettings);
-    }
-
-    if (_positionStreamSubscription == null) {
       _positionStreamSubscription = positionStream!.handleError((error) {
         _positionStreamSubscription?.cancel();
         _positionStreamSubscription = null;
@@ -442,10 +437,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       });
 
       debugPrint('Listening for position updates RESUMED');
-    } else {
+    }
+  }
+
+  void _stopGpsService() {
+    if (_positionStreamSubscription != null) {
       _positionStreamSubscription?.cancel();
       _positionStreamSubscription = null;
-      debugPrint('Listening for position updates PAUSED');
+      debugPrint('Stop GPS listening');
     }
   }
 
@@ -462,7 +461,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (geo != null) {
         final elapsed = clock.now().difference(DateTime.fromMillisecondsSinceEpoch(geo!.time));
         _standbyTimer += elapsed;
-        if (_standbyTimer > Duration(minutes: 10)) {
+        if (_standbyTimer > Duration(minutes: 20)) {
           debugPrint("/!\\ App in standby to save power.");
 
           setStandby(true);
