@@ -504,7 +504,6 @@ class Client with ChangeNotifier {
       requestGroupInfo(group.currentGroupID);
       // NOTE: This helps iOS devices show up immediately. They don't
       //       send location updates while the device isn't moving.
-      final myTelemetry = Provider.of<MyTelemetry>(globalContext, listen: false);
       if (myTelemetry.geo != null) sendTelemetry(myTelemetry.geo!);
     }
   }

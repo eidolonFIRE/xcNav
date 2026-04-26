@@ -2,13 +2,11 @@ import 'package:clock/clock.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/units.dart';
 
 Future editLiveFuelReport(BuildContext context) {
-  final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
   final fuelAmountLaunch = TextEditingController();
   final fuelAmountNow = TextEditingController();
 

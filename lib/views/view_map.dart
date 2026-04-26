@@ -181,7 +181,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   }
 
   void refreshMapView() {
-    Geo? geo = Provider.of<MyTelemetry>(context, listen: false).geo;
+    Geo? geo = myTelemetry.geo;
 
     if (geo != null) {
       LatLng? center;
@@ -320,7 +320,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     interactionOptions: InteractionOptions(
                         flags: InteractiveFlag.all &
                             (settingsMgr.northlockMap.value ? ~InteractiveFlag.rotate : InteractiveFlag.all)),
-                    initialCenter: Provider.of<MyTelemetry>(context, listen: false).geo?.latlng ?? lastKnownLatLng,
+                    initialCenter: myTelemetry.geo?.latlng ?? lastKnownLatLng,
                     initialZoom: 12.0,
                     minZoom: 2,
                     onTap: (tapPosition, point) {
@@ -369,8 +369,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                     // TFRs
                     FutureBuilder<List<TFR>?>(
-                        future:
-                            getTFRs(Provider.of<MyTelemetry>(context, listen: false).geo?.latlng ?? lastKnownLatLng),
+                        future: getTFRs(myTelemetry.geo?.latlng ?? lastKnownLatLng),
                         builder: (context, tfrsFuture) {
                           if (tfrsFuture.hasData) {
                             List<Polygon> polygons = [];
@@ -417,15 +416,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               .toList()),
 
                     // Flight Log
-                    if (Provider.of<MyTelemetry>(context, listen: false).flightTrace.isNotEmpty)
-                      PolylineLayer(polylines: [Provider.of<MyTelemetry>(context, listen: false).buildFlightTrace()]),
+                    if (myTelemetry.flightTrace.isNotEmpty) PolylineLayer(polylines: [myTelemetry.buildFlightTrace()]),
 
                     // ADSB Proximity
-                    if (Provider.of<ADSB>(context, listen: false).enabled &&
-                        Provider.of<MyTelemetry>(context, listen: false).geo != null)
+                    if (Provider.of<ADSB>(context, listen: false).enabled && myTelemetry.geo != null)
                       CircleLayer(circles: [
                         CircleMarker(
-                            point: Provider.of<MyTelemetry>(context, listen: false).geo!.latlng,
+                            point: myTelemetry.geo!.latlng,
                             color: Colors.transparent,
                             borderStrokeWidth: 1,
                             borderColor: Colors.black54,
@@ -434,11 +431,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ]),
 
                     // Next waypoint: path
-                    if (Provider.of<MyTelemetry>(context, listen: false).geo != null && plan.selectedWp != null)
-                      PolylineLayer(
-                        polylines: plan.buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: true).geo!,
-                            (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
-                            baseTiles: settingsMgr.mainMapTileSrc.value),
+                    if (myTelemetry.geo != null && plan.selectedWp != null)
+                      ListenableBuilder(
+                        listenable: myTelemetry,
+                        builder: (context, _) => PolylineLayer(
+                            polylines: plan.buildNextWpIndicator(myTelemetry.geo!,
+                                (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
+                                baseTiles: settingsMgr.mainMapTileSrc.value)),
                       ),
 
                     // Waypoints: paths
@@ -491,23 +490,31 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ),
 
                     // Next waypoint: barbs
-                    if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
-                      MarkerLayer(
-                          markers: plan
-                              .buildNextWpBarbs(Provider.of<MyTelemetry>(context, listen: true).geo!,
-                                  (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344))
-                              .map((e) => Marker(
-                                  point: e.latlng,
-                                  width: 20,
-                                  height: 20,
-                                  child: IgnorePointer(
-                                    child: Container(
-                                        transformAlignment: const Alignment(0, 0),
-                                        transform: Matrix4.rotationZ(e.hdg),
-                                        child: SvgPicture.asset("assets/images/chevron.svg",
-                                            colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
-                                  )))
-                              .toList()),
+                    if (myTelemetry.geo != null)
+                      ListenableBuilder(
+                          listenable: myTelemetry,
+                          builder: (context, _) {
+                            return MarkerLayer(
+                                markers: plan
+                                    .buildNextWpBarbs(
+                                        myTelemetry.geo!,
+                                        (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric
+                                            ? 1000
+                                            : 1609.344))
+                                    .map((e) => Marker(
+                                        point: e.latlng,
+                                        width: 20,
+                                        height: 20,
+                                        child: IgnorePointer(
+                                          child: Container(
+                                              transformAlignment: const Alignment(0, 0),
+                                              transform: Matrix4.rotationZ(e.hdg),
+                                              child: SvgPicture.asset("assets/images/chevron.svg",
+                                                  colorFilter:
+                                                      const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
+                                        )))
+                                    .toList());
+                          }),
 
                     // Measurement: yellow line
                     if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
@@ -703,8 +710,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     transformAlignment: const Alignment(0, 0),
                                     transform: Matrix4.rotationZ(-mapController.camera.rotation * pi / 180),
                                     child: Opacity(
-                                      opacity: getGAtransparency(
-                                          e.alt - (Provider.of<MyTelemetry>(context, listen: false).geo?.alt ?? 0)),
+                                      opacity: getGAtransparency(e.alt - (myTelemetry.geo?.alt ?? 0)),
                                       child: Stack(
                                         clipBehavior: Clip.none,
                                         children: [
@@ -728,7 +734,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           ),
 
                                           /// --- Relative Altitude
-                                          if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
+                                          if (myTelemetry.geo != null)
                                             Container(
                                                 transform: Matrix4.translationValues(40, 0, 0),
                                                 transformAlignment: const Alignment(0, 0),
@@ -736,24 +742,14 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                                   TextSpan(children: [
                                                     WidgetSpan(
                                                       child: Icon(
-                                                        (e.alt -
-                                                                    Provider.of<MyTelemetry>(context, listen: false)
-                                                                        .geo!
-                                                                        .alt) >
-                                                                0
+                                                        (e.alt - myTelemetry.geo!.alt) > 0
                                                             ? Icons.keyboard_arrow_up
                                                             : Icons.keyboard_arrow_down,
                                                         color: Colors.black,
                                                         size: 21,
                                                       ),
                                                     ),
-                                                    richValue(
-                                                        UnitType.distFine,
-                                                        (e.alt -
-                                                                Provider.of<MyTelemetry>(context, listen: false)
-                                                                    .geo!
-                                                                    .alt)
-                                                            .abs(),
+                                                    richValue(UnitType.distFine, (e.alt - myTelemetry.geo!.alt).abs(),
                                                         digits: 5,
                                                         valueStyle: const TextStyle(color: Colors.black),
                                                         unitStyle:
@@ -788,92 +784,100 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                     pilot,
                                     20,
                                     hdg: pilot.geo!.hdg + mapController.camera.rotation * pi / 180,
-                                    relAlt: pilot.geo!.alt - Provider.of<MyTelemetry>(context, listen: false).geo!.alt,
+                                    relAlt: pilot.geo!.alt - myTelemetry.geo!.alt,
                                   ))))
                           .toList(),
                     ),
 
                     // Fuel Warning
-                    Consumer2<MyTelemetry, ActivePlan>(builder: (context, myTelemetry, activePlan, _) {
-                      if (myTelemetry.sumFuelStat != null && myTelemetry.geo != null && activePlan.selectedWp != null) {
-                        final waypointETA = activePlan.getSelectedWp()!.eta(myTelemetry.geo!, 1);
-                        final enduranceDist = myTelemetry.speedSmooth.value *
-                            myTelemetry.sumFuelStat!
-                                .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now())
-                                .inSeconds;
+                    ListenableBuilder(
+                        listenable: myTelemetry,
+                        builder: (context, _) {
+                          return Consumer<ActivePlan>(builder: (context, activePlan, _) {
+                            if (myTelemetry.sumFuelStat != null &&
+                                myTelemetry.geo != null &&
+                                activePlan.selectedWp != null) {
+                              final waypointETA = activePlan.getSelectedWp()!.eta(myTelemetry.geo!, 1);
+                              final enduranceDist = myTelemetry.speedSmooth.value *
+                                  myTelemetry.sumFuelStat!
+                                      .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now())
+                                      .inSeconds;
 
-                        if (waypointETA.distance >= enduranceDist && enduranceDist >= 0) {
-                          final fuelIntercept = activePlan.getSelectedWp()!.interpolate(
-                              enduranceDist, waypointETA.pathIntercept?.index ?? 0,
-                              initialLatlng: myTelemetry.geo!.latlng);
+                              if (waypointETA.distance >= enduranceDist && enduranceDist >= 0) {
+                                final fuelIntercept = activePlan.getSelectedWp()!.interpolate(
+                                    enduranceDist, waypointETA.pathIntercept?.index ?? 0,
+                                    initialLatlng: myTelemetry.geo!.latlng);
 
-                          return MarkerLayer(
-                            markers: [
-                              Marker(
-                                width: 50,
-                                height: 50,
-                                point: fuelIntercept.latlng,
-                                child: const Stack(
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsets.only(top: 10),
-                                      child: Center(
-                                        child: Icon(
-                                          Icons.circle,
-                                          size: 30,
-                                          color: Colors.black,
-                                        ),
+                                return MarkerLayer(
+                                  markers: [
+                                    Marker(
+                                      width: 50,
+                                      height: 50,
+                                      point: fuelIntercept.latlng,
+                                      child: const Stack(
+                                        children: [
+                                          Padding(
+                                            padding: EdgeInsets.only(top: 10),
+                                            child: Center(
+                                              child: Icon(
+                                                Icons.circle,
+                                                size: 30,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.warning_rounded,
+                                            size: 50,
+                                            color: Colors.black,
+                                          ),
+                                          Center(
+                                            child: Padding(
+                                              padding: EdgeInsets.only(top: 11, left: 3),
+                                              child: Icon(
+                                                Icons.local_gas_station,
+                                                size: 25,
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    Icon(
-                                      Icons.warning_rounded,
-                                      size: 50,
-                                      color: Colors.black,
-                                    ),
-                                    Center(
-                                      child: Padding(
-                                        padding: EdgeInsets.only(top: 11, left: 3),
-                                        child: Icon(
-                                          Icons.local_gas_station,
-                                          size: 25,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ),
+                                    )
                                   ],
-                                ),
-                              )
-                            ],
-                          );
-                        } else {
-                          return Container();
-                        }
-                      } else {
-                        return Container();
-                      }
-                    }),
+                                );
+                              } else {
+                                return Container();
+                              }
+                            } else {
+                              return Container();
+                            }
+                          });
+                        }),
 
                     // "ME" Live Location Marker
-                    Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
-                      if (myTelemetry.geo != null) {
-                        return MarkerLayer(
-                          markers: [
-                            Marker(
-                              width: 50.0,
-                              height: 50.0,
-                              point: myTelemetry.geo!.latlng,
-                              child: Container(
-                                transformAlignment: const Alignment(0, 0),
-                                transform: Matrix4.rotationZ(myTelemetry.geo!.hdg),
-                                child: Image.asset("assets/images/red_arrow.png"),
-                              ),
-                            ),
-                          ],
-                        );
-                      } else {
-                        return Container();
-                      }
-                    }),
+                    ListenableBuilder(
+                        listenable: myTelemetry,
+                        builder: (context, _) {
+                          if (myTelemetry.geo != null) {
+                            return MarkerLayer(
+                              markers: [
+                                Marker(
+                                  width: 50.0,
+                                  height: 50.0,
+                                  point: myTelemetry.geo!.latlng,
+                                  child: Container(
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: Matrix4.rotationZ(myTelemetry.geo!.hdg),
+                                    child: Image.asset("assets/images/red_arrow.png"),
+                                  ),
+                                ),
+                              ],
+                            );
+                          } else {
+                            return Container();
+                          }
+                        }),
 
                     // Measurement Polyline
                     if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
@@ -992,56 +996,59 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               color: Colors.black,
                             )),
                         // --- Fuel remaining info
-                        Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
-                          return Container(
-                            foregroundDecoration: BoxDecoration(
-                                border: Border.all(width: 0.5, color: Colors.black),
-                                borderRadius: const BorderRadius.all(Radius.circular(15))),
-                            child: ClipRRect(
-                                borderRadius: BorderRadius.circular(15),
-                                child: BackdropFilter(
-                                    filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                    child: Container(
-                                        color: Colors.white38,
-                                        child: Builder(builder: (context) {
-                                          final fuelReport = myTelemetry.fuelReports.lastOrNull;
+                        ListenableBuilder(
+                            listenable: myTelemetry,
+                            builder: (context, _) {
+                              return Container(
+                                foregroundDecoration: BoxDecoration(
+                                    border: Border.all(width: 0.5, color: Colors.black),
+                                    borderRadius: const BorderRadius.all(Radius.circular(15))),
+                                child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(15),
+                                    child: BackdropFilter(
+                                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                        child: Container(
+                                            color: Colors.white38,
+                                            child: Builder(builder: (context) {
+                                              final fuelReport = myTelemetry.fuelReports.lastOrNull;
 
-                                          if (fuelReport != null) {
-                                            if (myTelemetry.sumFuelStat == null || !myTelemetry.inFlight) {
-                                              final warn = fuelReport.amount <= 1;
-                                              final style = TextStyle(
-                                                  color: warn ? Colors.red : Colors.black,
-                                                  fontSize: 20,
-                                                  fontWeight: warn ? FontWeight.bold : FontWeight.normal);
-                                              return Padding(
-                                                  padding: const EdgeInsets.all(8.0),
-                                                  child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
-                                                      decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
-                                            } else {
-                                              final etaEmpty = myTelemetry.sumFuelStat!
-                                                  .extrapolateEndurance(fuelReport, from: clock.now());
+                                              if (fuelReport != null) {
+                                                if (myTelemetry.sumFuelStat == null || !myTelemetry.inFlight) {
+                                                  final warn = fuelReport.amount <= 1;
+                                                  final style = TextStyle(
+                                                      color: warn ? Colors.red : Colors.black,
+                                                      fontSize: 20,
+                                                      fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                                  return Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
+                                                          decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
+                                                } else {
+                                                  final etaEmpty = myTelemetry.sumFuelStat!
+                                                      .extrapolateEndurance(fuelReport, from: clock.now());
 
-                                              final warn = etaEmpty < const Duration(minutes: 15);
-                                              final style = TextStyle(
-                                                  color: warn ? Colors.red : Colors.black,
-                                                  fontSize: 20,
-                                                  fontWeight: warn ? FontWeight.bold : FontWeight.normal);
-                                              return Padding(
-                                                  padding: const EdgeInsets.all(8.0),
-                                                  child: Text.rich(richHrMin(duration: etaEmpty, valueStyle: style)));
-                                            }
-                                          } else {
-                                            return const Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child: Text(
-                                                "?",
-                                                style: TextStyle(color: Colors.black, fontSize: 20),
-                                              ),
-                                            );
-                                          }
-                                        })))),
-                          );
-                        }),
+                                                  final warn = etaEmpty < const Duration(minutes: 15);
+                                                  final style = TextStyle(
+                                                      color: warn ? Colors.red : Colors.black,
+                                                      fontSize: 20,
+                                                      fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                                  return Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child:
+                                                          Text.rich(richHrMin(duration: etaEmpty, valueStyle: style)));
+                                                }
+                                              } else {
+                                                return const Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Text(
+                                                    "?",
+                                                    style: TextStyle(color: Colors.black, fontSize: 20),
+                                                  ),
+                                                );
+                                              }
+                                            })))),
+                              );
+                            }),
                       ])),
 
                   // --- BLE xc170
@@ -1267,8 +1274,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         // --- Flight Timer
         Align(
           alignment: Alignment.topCenter,
-          child: Consumer<MyTelemetry>(
-              builder: (context, myTelemetry, _) => GestureDetector(
+          child: ListenableBuilder(
+              listenable: myTelemetry,
+              builder: (context, _) => GestureDetector(
                     onTap: () {
                       if (myTelemetry.inFlight) {
                         showDialog(

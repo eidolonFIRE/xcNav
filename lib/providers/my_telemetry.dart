@@ -25,6 +25,7 @@ import 'package:xcnav/datadog.dart' as dd;
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/vector.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/notifications.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/client.dart';
@@ -57,6 +58,9 @@ class FlightEvent {
 class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   BuildContext? globalContext;
   bool isInitialized = false;
+
+  Duration _standbyTimer = Duration.zero;
+  bool _inStandby = false;
 
   Geo? geo;
   Geo? geoPrev;
@@ -166,6 +170,30 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     _startIMUService();
   }
 
+  void setStandby(bool inStandby) {
+    if (inStandby != _inStandby) {
+      debugPrint("/!\\ Set Standby: $inStandby");
+      _standbyTimer = Duration.zero;
+      _inStandby = inStandby;
+      if (_inStandby) {
+        listenBaro?.cancel();
+        listenIMU?.cancel();
+        if (positionStreamStarted) {
+          positionStreamStarted = !positionStreamStarted;
+          _toggleListening(globalContext!);
+        }
+      } else {
+        _startBaroService();
+        _startIMUService();
+        if (!positionStreamStarted) {
+          positionStreamStarted = !positionStreamStarted;
+          _toggleListening(globalContext!);
+        }
+        _serviceStatusStreamSubscription?.resume();
+      }
+    }
+  }
+
   void init() {
     debugPrint("Init /MyTelemetry");
 
@@ -205,12 +233,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (settingsMgr.spoofLocation.value) {
         if (timer == null) {
           // --- Spoof Location / Disable Baro
-          listenBaro?.cancel();
-          listenIMU?.cancel();
-          if (positionStreamStarted) {
-            positionStreamStarted = !positionStreamStarted;
-            _toggleListening(globalContext!);
-          }
+          setStandby(true);
           debugPrint("--- Starting Location Spoofer ---");
           baro = null;
 
@@ -252,13 +275,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       } else {
         if (timer != null) {
           // --- Real Location / Baro
-          _startBaroService();
-
-          if (!positionStreamStarted) {
-            positionStreamStarted = !positionStreamStarted;
-            _toggleListening(globalContext!);
-          }
-          _serviceStatusStreamSubscription!.resume();
+          setStandby(false);
           debugPrint("--- Stopping Location Spoofer ---");
           timer?.cancel();
           timer = null;
@@ -439,6 +456,19 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     final adsb = Provider.of<ADSB>(context, listen: false);
 
     // debugPrint("geoUpdate (${position.timestamp}): ${position.altitude}, ${position.latitude} x ${position.longitude}");
+
+    // Update standby check
+    if (!inFlight && !appInFocus()) {
+      if (geo != null) {
+        final elapsed = clock.now().difference(DateTime.fromMillisecondsSinceEpoch(geo!.time));
+        _standbyTimer += elapsed;
+        if (_standbyTimer > Duration(minutes: 10)) {
+          debugPrint("/!\\ App in standby to save power.");
+
+          setStandby(true);
+        }
+      }
+    }
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
       updateGeo(position, bypassRecording: settingsMgr.groundMode.value || bypassRecording);
@@ -750,3 +780,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 }
+
+/// Global single instance
+final myTelemetry = MyTelemetry();

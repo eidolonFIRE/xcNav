@@ -88,109 +88,111 @@ class ViewElevationState extends State<ViewElevation> {
       ];
       lookAhead = lookAhead ?? lookAheadOptions.first;
       if (activePlan.selectedWp != null) lookAheadOptions.add(activePlan.selectedWp);
-      return Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            // --- Elevation Plot
-            if (myTelemetry.recordGeo.length > 1)
-              Expanded(
-                  child: SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      // constraints: const BoxConstraints(maxHeight: 400),
-                      child: ClipRect(
-                          child: CustomPaint(
-                        painter: ElevationPlotPainter(
-                            myTelemetry.getHistory(
-                                lookBehind != null
-                                    ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.last.time)
-                                        .subtract(lookBehind!)
-                                    : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time),
-                                interval: const Duration(seconds: 30)),
-                            doSamples(
-                                myTelemetry.recordGeo.last, activePlan.getSelectedWp(), myTelemetry.speedSmooth.value),
-                            distScale,
-                            waypoint: activePlan.getSelectedWp(),
-                            waypointETA: waypointETA,
-                            liveSpeed: myTelemetry.speedSmooth.value,
-                            liveVario: myTelemetry.varioSmooth.value),
-                      )))),
+      return ListenableBuilder(
+          listenable: myTelemetry,
+          builder: (context, _) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // --- Elevation Plot
+                if (myTelemetry.recordGeo.length > 1)
+                  Expanded(
+                      child: SizedBox(
+                          width: MediaQuery.of(context).size.width,
+                          // constraints: const BoxConstraints(maxHeight: 400),
+                          child: ClipRect(
+                              child: CustomPaint(
+                            painter: ElevationPlotPainter(
+                                myTelemetry.getHistory(
+                                    lookBehind != null
+                                        ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.last.time)
+                                            .subtract(lookBehind!)
+                                        : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time),
+                                    interval: const Duration(seconds: 30)),
+                                doSamples(myTelemetry.recordGeo.last, activePlan.getSelectedWp(),
+                                    myTelemetry.speedSmooth.value),
+                                distScale,
+                                waypoint: activePlan.getSelectedWp(),
+                                waypointETA: waypointETA,
+                                liveSpeed: myTelemetry.speedSmooth.value,
+                                liveVario: myTelemetry.varioSmooth.value),
+                          )))),
 
-            // --- View Controls
-            if (myTelemetry.recordGeo.length > 1)
-              Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ToggleButtons(
-                        borderRadius: BorderRadius.circular(20),
-                        constraints:
-                            BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
-                        onPressed: (index) => setState(() {
-                              lookBehind = lookBehindOptions[index];
-                            }),
-                        isSelected: lookBehindOptions.map((e) => e == lookBehind).toList(),
-                        children: lookBehindOptions
-                            .map((e) => e != null
-                                ? (e != lookBehindOptions.last
-                                    ? Text("${e.inMinutes}")
-                                    : Text.rich(richHrMin(
-                                        duration: e, unitStyle: const TextStyle(fontSize: 10, color: Colors.grey))))
-                                : Text("btn.All".tr()))
-                            .toList()),
-                    const Expanded(
-                        child: Divider(
-                      thickness: 2,
-                    )),
-                    ToggleButtons(
-                        borderRadius: BorderRadius.circular(20),
-                        constraints:
-                            BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
-                        onPressed: (index) => setState(() {
-                              lookAhead = lookAheadOptions[index];
-                            }),
-                        isSelected: lookAheadOptions.map((e) => e == lookAhead).toList(),
-                        children: lookAheadOptions.map((e) {
-                          switch (e.runtimeType.toString()) {
-                            case "double":
-                              return e == lookAheadOptions.first
-                                  ? Text.rich(richValue(UnitType.distCoarse, e,
-                                      unitStyle: const TextStyle(fontSize: 10, color: Colors.grey)))
-                                  : Text(printValue(UnitType.distCoarse, e,
-                                          digits: 3, decimals: 0, autoDecimalThresh: 1) ??
-                                      "");
+                // --- View Controls
+                if (myTelemetry.recordGeo.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ToggleButtons(
+                            borderRadius: BorderRadius.circular(20),
+                            constraints:
+                                BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
+                            onPressed: (index) => setState(() {
+                                  lookBehind = lookBehindOptions[index];
+                                }),
+                            isSelected: lookBehindOptions.map((e) => e == lookBehind).toList(),
+                            children: lookBehindOptions
+                                .map((e) => e != null
+                                    ? (e != lookBehindOptions.last
+                                        ? Text("${e.inMinutes}")
+                                        : Text.rich(richHrMin(
+                                            duration: e, unitStyle: const TextStyle(fontSize: 10, color: Colors.grey))))
+                                    : Text("btn.All".tr()))
+                                .toList()),
+                        const Expanded(
+                            child: Divider(
+                          thickness: 2,
+                        )),
+                        ToggleButtons(
+                            borderRadius: BorderRadius.circular(20),
+                            constraints:
+                                BoxConstraints(minWidth: (MediaQuery.of(context).size.width - 20) / 9, minHeight: 40),
+                            onPressed: (index) => setState(() {
+                                  lookAhead = lookAheadOptions[index];
+                                }),
+                            isSelected: lookAheadOptions.map((e) => e == lookAhead).toList(),
+                            children: lookAheadOptions.map((e) {
+                              switch (e.runtimeType.toString()) {
+                                case "double":
+                                  return e == lookAheadOptions.first
+                                      ? Text.rich(richValue(UnitType.distCoarse, e,
+                                          unitStyle: const TextStyle(fontSize: 10, color: Colors.grey)))
+                                      : Text(printValue(UnitType.distCoarse, e,
+                                              digits: 3, decimals: 0, autoDecimalThresh: 1) ??
+                                          "");
 
-                            case "String":
-                              final selectedWp = activePlan.getSelectedWp();
-                              if (selectedWp == null) {
-                                return Container();
-                              } else {
-                                return SizedBox(
-                                  width: 30,
-                                  height: 30,
-                                  child: selectedWp.isPath
-                                      ? SvgPicture.asset(
-                                          "assets/images/path.svg",
-                                          colorFilter: ColorFilter.mode(selectedWp.getColor(), BlendMode.srcIn),
-                                        )
-                                      : WaypointMarker(selectedWp, 30),
-                                );
+                                case "String":
+                                  final selectedWp = activePlan.getSelectedWp();
+                                  if (selectedWp == null) {
+                                    return Container();
+                                  } else {
+                                    return SizedBox(
+                                      width: 30,
+                                      height: 30,
+                                      child: selectedWp.isPath
+                                          ? SvgPicture.asset(
+                                              "assets/images/path.svg",
+                                              colorFilter: ColorFilter.mode(selectedWp.getColor(), BlendMode.srcIn),
+                                            )
+                                          : WaypointMarker(selectedWp, 30),
+                                    );
+                                  }
+                                default:
+                                  return Container();
                               }
-                            default:
-                              return Container();
-                          }
-                        }).toList()),
-                  ],
-                ),
-              ),
+                            }).toList()),
+                      ],
+                    ),
+                  ),
 
-            Container(
-              height: 20,
-            )
-          ],
-        );
-      });
+                Container(
+                  height: 20,
+                )
+              ],
+            );
+          });
     });
   }
 }

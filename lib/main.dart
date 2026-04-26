@@ -152,10 +152,6 @@ void main() async {
         child: MultiProvider(
             providers: [
               ChangeNotifierProvider(
-                create: (_) => MyTelemetry(),
-                lazy: false,
-              ),
-              ChangeNotifierProvider(
                 create: (_) => Wind(),
                 lazy: false,
               ),
@@ -189,7 +185,12 @@ void main() async {
               )
             ],
             child: FocusDetector(
-                onFocusGained: () => {setFocus(true)}, onFocusLost: () => {setFocus(false)}, child: const XCNav()))));
+                onFocusGained: () {
+                  setFocus(true);
+                  myTelemetry.setStandby(false);
+                },
+                onFocusLost: () => {setFocus(false)},
+                child: const XCNav()))));
   }, (e, s) {
     DatadogSdk.instance.rum?.addErrorInfo(e.toString(), RumErrorSource.source, stackTrace: s);
     throw e;
@@ -201,6 +202,8 @@ class XCNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    myTelemetry.globalContext = context;
+
     DefaultAssetBundle.of(context).loadString("assets/airports.json").then((value) => loadAirports(value));
 
     WakelockPlus.enable();
@@ -210,8 +213,6 @@ class XCNav extends StatelessWidget {
     configLocalNotification();
 
     ttsService = TtsService();
-
-    Provider.of<MyTelemetry>(context, listen: false).globalContext = context;
 
     if (settingsMgr.bleAutoDevices.value.isNotEmpty) {
       Timer(Duration(seconds: 20), () {

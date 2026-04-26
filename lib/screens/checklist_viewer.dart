@@ -4,7 +4,6 @@ import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:xcnav/models/checklist.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 
@@ -73,7 +72,7 @@ class _ChecklistViewerState extends State<ChecklistViewer> {
         }
       }
       setState(() {
-        if (Provider.of<MyTelemetry>(context, listen: false).inFlight) {
+        if (myTelemetry.inFlight) {
           curChecklist = "Landing";
         } else {
           curChecklist = "Preflight";

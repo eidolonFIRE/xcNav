@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/settings_service.dart';
@@ -21,7 +20,6 @@ class _WeatherViewerState extends State<WeatherViewer> {
   @override
   void initState() {
     super.initState();
-    final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
 
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)

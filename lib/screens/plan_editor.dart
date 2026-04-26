@@ -138,7 +138,7 @@ class _PlanEditorState extends State<PlanEditor> {
   Widget build(BuildContext context) {
     plan ??= ModalRoute.of(context)!.settings.arguments as FlightPlan;
 
-    final center = Provider.of<MyTelemetry>(context, listen: false).geo ?? defaultGeo;
+    final center = myTelemetry.geo ?? defaultGeo;
     final defaultMapBounds =
         padLatLngBounds(LatLngBounds.fromPoints([center.latlng, LatLng(center.lat, center.lng + 0.05)]), 2);
 

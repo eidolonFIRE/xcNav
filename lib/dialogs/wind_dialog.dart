@@ -308,8 +308,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                       : activePlan.mapMeasurement) ??
                   (activePlan.selectedWp != null
                       ? activePlan
-                          .buildNextWpIndicator(Provider.of<MyTelemetry>(context, listen: false).geo!, 10000,
-                              baseTiles: MapTileSrc.topo)
+                          .buildNextWpIndicator(myTelemetry.geo!, 10000, baseTiles: MapTileSrc.topo)
                           .first
                           .points
                       : null);
@@ -481,9 +480,6 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                 listenable: newRoute,
                                                 builder: (context, _) {
                                                   final selectedWp = activePlan.getSelectedWp();
-
-                                                  final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-
                                                   final fuelIntercept = (getAirspeed() != null &&
                                                           getWindHdg() != null &&
                                                           getWindspeed() != null &&
@@ -564,27 +560,31 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                             ),
 
                                                           // "ME" Live Location Marker
-                                                          Consumer<MyTelemetry>(builder: (context, myTelemetry, _) {
-                                                            if (myTelemetry.geo != null) {
-                                                              return MarkerLayer(
-                                                                markers: [
-                                                                  Marker(
-                                                                    width: 25.0,
-                                                                    height: 25.0,
-                                                                    point: myTelemetry.geo!.latlng,
-                                                                    child: Container(
-                                                                      transformAlignment: const Alignment(0, 0),
-                                                                      transform:
-                                                                          Matrix4.rotationZ(myTelemetry.geo!.hdg),
-                                                                      child: Image.asset("assets/images/red_arrow.png"),
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              );
-                                                            } else {
-                                                              return Container();
-                                                            }
-                                                          }),
+
+                                                          ListenableBuilder(
+                                                              listenable: myTelemetry,
+                                                              builder: (context, _) {
+                                                                if (myTelemetry.geo != null) {
+                                                                  return MarkerLayer(
+                                                                    markers: [
+                                                                      Marker(
+                                                                        width: 25.0,
+                                                                        height: 25.0,
+                                                                        point: myTelemetry.geo!.latlng,
+                                                                        child: Container(
+                                                                          transformAlignment: const Alignment(0, 0),
+                                                                          transform:
+                                                                              Matrix4.rotationZ(myTelemetry.geo!.hdg),
+                                                                          child: Image.asset(
+                                                                              "assets/images/red_arrow.png"),
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  );
+                                                                } else {
+                                                                  return Container();
+                                                                }
+                                                              }),
 
                                                           if (fuelIntercept != null)
                                                             MarkerLayer(

@@ -54,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-    Provider.of<MyTelemetry>(context, listen: false).addListener(() {
+    myTelemetry.addListener(() {
       if (viewMapKey.currentState?.mapReady ?? false) {
         if (viewMapKey.currentState?.isDragging ?? false) {
           // Update skipped because user is dragging something on the map
@@ -84,11 +84,9 @@ class _MyHomePageState extends State<MyHomePage> {
       // --- Check permissions
       checkPermissions(context).then((failed) {
         if (context.mounted) {
-          final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
           if (failed == false && !myTelemetry.isInitialized) {
             // get initial location
             debugPrint("Getting initial location from GPS");
-            final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
             GeolocatorPlatform.instance.getCurrentPosition().then((location) {
               debugPrint("initial location: $location");
               myTelemetry.updateGeo(location);
@@ -170,9 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
             automaticallyImplyLeading: false,
             leadingWidth: 35,
             toolbarHeight: topInstrumentsHeight,
-            title: settingsMgr.groundMode.value
-                ? groundControlBar(context)
-                : TopInstruments(myTelemetry: Provider.of<MyTelemetry>(context, listen: false)),
+            title: settingsMgr.groundMode.value ? groundControlBar(context) : TopInstruments(myTelemetry: myTelemetry),
             // actions: [IconButton(onPressed: () {}, icon: Icon(Icons.timer_outlined))],
           ),
           // --- Main Menu

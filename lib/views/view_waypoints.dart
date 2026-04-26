@@ -72,7 +72,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
       retval +=
           ((compareColor(a.getColor(), filterColor!) - compareColor(b.getColor(), filterColor!)) * colorWeight).toInt();
     }
-    final geo = Provider.of<MyTelemetry>(context, listen: false).geo;
+    final geo = myTelemetry.geo;
     if (filterDist && geo != null) {
       retval +=
           ((geo.getIntercept(a.latlngOriented).dist - geo.getIntercept(b.latlngOriented).dist) * distWeight).round();
@@ -362,7 +362,7 @@ class ViewWaypointsState extends State<ViewWaypoints> {
                     child: WaypointCard(
                       waypoint: items[i],
                       index: i,
-                      refLatlng: Provider.of<MyTelemetry>(context, listen: false).geo?.latlng,
+                      refLatlng: myTelemetry.geo?.latlng,
                       onSelect: () {
                         debugPrint("Selected ${items[i].id} (prev: ${activePlan.selectedWp}");
                         if (activePlan.selectedWp == items[i].id) {

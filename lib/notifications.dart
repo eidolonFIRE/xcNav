@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 bool _inFocus = false;
@@ -6,7 +7,12 @@ bool _inFocus = false;
 final List<int> _notifications = [];
 
 void setFocus(bool focused) {
+  debugPrint("App focused: $focused");
   _inFocus = focused;
+}
+
+bool appInFocus() {
+  return _inFocus;
 }
 
 void configLocalNotification() {

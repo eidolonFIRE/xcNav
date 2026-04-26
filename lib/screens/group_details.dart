@@ -92,12 +92,10 @@ class _GroupDetailsState extends State<GroupDetails> {
 
                                         const TextSpan(style: fillStyle, text: " MSL, "),
                                         // dist
-                                        if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
-                                          richValue(UnitType.distCoarse,
-                                              p.geo!.distanceTo(Provider.of<MyTelemetry>(context, listen: false).geo!),
+                                        if (myTelemetry.geo != null)
+                                          richValue(UnitType.distCoarse, p.geo!.distanceTo(myTelemetry.geo!),
                                               decimals: 1, valueStyle: valueStyle, unitStyle: unitStyle),
-                                        if (Provider.of<MyTelemetry>(context, listen: false).geo != null)
-                                          const TextSpan(style: fillStyle, text: " away"),
+                                        if (myTelemetry.geo != null) const TextSpan(style: fillStyle, text: " away"),
                                       ]))
                                     : (p.geo != null
                                         ? Text.rich(TextSpan(children: [
