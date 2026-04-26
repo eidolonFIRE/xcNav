@@ -15,6 +15,7 @@ import 'package:xcnav/dialogs/confirm_log_crop.dart';
 import 'package:xcnav/dialogs/edit_gear.dart';
 import 'package:xcnav/dialogs/edit_fuel_report.dart';
 import 'package:xcnav/dialogs/label_flag.dart';
+import 'package:xcnav/dialogs/rename_dialog.dart';
 import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
@@ -219,6 +220,16 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
             PopupMenuButton<String>(
               onSelected: (value) {
                 switch (value) {
+                  case "rename":
+                    showRenameDialog(context, text: log.customTitle).then((value) {
+                      setState(() {
+                        if (value != null) {
+                          log.customTitle = value;
+                        }
+                      });
+                    });
+
+                    break;
                   case "edit_gear":
                     editGear(context, gear: log.gear).then((newGear) {
                       if (newGear != null) {
@@ -256,6 +267,13 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 }
               },
               itemBuilder: (context) => <PopupMenuEntry<String>>[
+                PopupMenuItem(
+                    value: "rename",
+                    child: ListTile(
+                        leading: Icon(
+                          Icons.edit,
+                        ),
+                        title: Text("btn.Rename".tr()))),
                 PopupMenuItem(
                   value: "edit_gear",
                   child: ListTile(

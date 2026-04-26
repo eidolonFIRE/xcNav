@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as p;
+import 'package:xcnav/dialogs/rename_dialog.dart';
 
 import 'package:xcnav/log_store.dart';
 import 'package:xcnav/map_service.dart';
@@ -226,126 +227,147 @@ class FlightLogCard extends StatelessWidget {
               ),
 
             // --- Title bar
-            Container(
-              color: Colors.white54,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                // mainAxisSize: MainAxisSize.max,
-                children: [
-                  // --- Title
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Text(
-                        log.title,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 6,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge!
-                            .merge(TextStyle(color: log.goodFile ? Colors.black : Colors.red)),
+            StatefulBuilder(builder: (context, setState) {
+              return Container(
+                color: Colors.white54,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // mainAxisSize: MainAxisSize.max,
+                  children: [
+                    // --- Title
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Text(
+                          log.title,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 6,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge!
+                              .merge(TextStyle(color: log.goodFile ? Colors.black : Colors.red)),
+                        ),
                       ),
                     ),
-                  ),
-                  if (log.imported != null)
-                    Text(
-                      "Imported from: ${log.imported!}",
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  PopupMenuButton(
-                      icon: const Icon(
-                        Icons.more_vert,
-                        color: Colors.black,
+                    if (log.imported != null)
+                      Text(
+                        "Imported from: ${log.imported!}",
+                        style: const TextStyle(color: Colors.red),
                       ),
-                      onSelected: (value) {
-                        switch (value) {
-                          case "restore_waypoints":
-                            restoreWaypoints(context);
-                            break;
+                    PopupMenuButton(
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Colors.black,
+                        ),
+                        onSelected: (value) {
+                          switch (value) {
+                            case "rename":
+                              showRenameDialog(context, text: log.customTitle).then((value) {
+                                if (value != null) {
+                                  setState(() {
+                                    log.customTitle = value;
+                                  });
+                                }
+                              });
+                              break;
+                            case "restore_waypoints":
+                              restoreWaypoints(context);
+                              break;
 
-                          case "export_kml":
-                            exportLog(context, "kml");
-                            break;
+                            case "export_kml":
+                              exportLog(context, "kml");
+                              break;
 
-                          case "export_gpx":
-                            exportLog(context, "gpx");
-                            break;
+                            case "export_gpx":
+                              exportLog(context, "gpx");
+                              break;
 
-                          case "export_json":
-                            exportLog(context, "json");
-                            break;
+                            case "export_json":
+                              exportLog(context, "json");
+                              break;
 
-                          case "delete":
-                            deleteLog(context);
-                            break;
-                        }
-                      },
-                      itemBuilder: (context) => <PopupMenuEntry<String>>[
-                            if (log.waypoints.isNotEmpty)
+                            case "delete":
+                              deleteLog(context);
+                              break;
+                          }
+                        },
+                        itemBuilder: (context) => <PopupMenuEntry<String>>[
+                              if (log.goodFile)
+                                PopupMenuItem(
+                                    value: "rename",
+                                    child: ListTile(
+                                        leading: Icon(
+                                          Icons.edit,
+                                          size: 28,
+                                        ),
+                                        title: Text("btn.Rename".tr()))),
+                              if (log.waypoints.isNotEmpty)
+                                const PopupMenuItem(
+                                    value: "restore_waypoints",
+                                    child: ListTile(
+                                        leading: Icon(Icons.place, size: 28), title: Text("Recover Waypoints"))),
                               const PopupMenuItem(
-                                  value: "restore_waypoints",
-                                  child:
-                                      ListTile(leading: Icon(Icons.place, size: 28), title: Text("Recover Waypoints"))),
-                            const PopupMenuItem(
-                                enabled: false,
-                                child: Padding(
-                                  padding: EdgeInsets.only(left: 16),
-                                  child: Text("Export Options:"),
-                                )),
-                            if (log.goodFile)
+                                  enabled: false,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(left: 16),
+                                    child: Text("Export Options:"),
+                                  )),
+                              if (log.goodFile)
+                                const PopupMenuItem(
+                                    value: "export_kml",
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.file_download,
+                                        size: 28,
+                                      ),
+                                      title: Text.rich(TextSpan(children: [
+                                        TextSpan(text: "KML ", style: TextStyle(fontSize: 20)),
+                                        TextSpan(
+                                            text: "(Google Earth)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                                      ])),
+                                    )),
+                              if (log.goodFile)
+                                const PopupMenuItem(
+                                    value: "export_gpx",
+                                    child: ListTile(
+                                      leading: Icon(
+                                        Icons.file_download,
+                                        size: 28,
+                                      ),
+                                      title: Text.rich(TextSpan(children: [
+                                        TextSpan(text: "GPX ", style: TextStyle(fontSize: 20)),
+                                        TextSpan(
+                                            text: "(Ayvri.com)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                                      ])),
+                                    )),
                               const PopupMenuItem(
-                                  value: "export_kml",
+                                  value: "export_json",
                                   child: ListTile(
                                     leading: Icon(
                                       Icons.file_download,
                                       size: 28,
                                     ),
                                     title: Text.rich(TextSpan(children: [
-                                      TextSpan(text: "KML ", style: TextStyle(fontSize: 20)),
-                                      TextSpan(
-                                          text: "(Google Earth)", style: TextStyle(fontSize: 20, color: Colors.grey))
+                                      TextSpan(text: "Json ", style: TextStyle(fontSize: 20)),
+                                      TextSpan(text: "(raw file)", style: TextStyle(fontSize: 20, color: Colors.grey))
                                     ])),
                                   )),
-                            if (log.goodFile)
-                              const PopupMenuItem(
-                                  value: "export_gpx",
+                              const PopupMenuDivider(),
+                              PopupMenuItem(
+                                  value: "delete",
                                   child: ListTile(
                                     leading: Icon(
-                                      Icons.file_download,
+                                      Icons.delete,
+                                      color: Colors.red,
                                       size: 28,
                                     ),
-                                    title: Text.rich(TextSpan(children: [
-                                      TextSpan(text: "GPX ", style: TextStyle(fontSize: 20)),
-                                      TextSpan(text: "(Ayvri.com)", style: TextStyle(fontSize: 20, color: Colors.grey))
-                                    ])),
-                                  )),
-                            const PopupMenuItem(
-                                value: "export_json",
-                                child: ListTile(
-                                  leading: Icon(
-                                    Icons.file_download,
-                                    size: 28,
-                                  ),
-                                  title: Text.rich(TextSpan(children: [
-                                    TextSpan(text: "Json ", style: TextStyle(fontSize: 20)),
-                                    TextSpan(text: "(raw file)", style: TextStyle(fontSize: 20, color: Colors.grey))
-                                  ])),
-                                )),
-                            const PopupMenuDivider(),
-                            PopupMenuItem(
-                                value: "delete",
-                                child: ListTile(
-                                  leading: Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                    size: 28,
-                                  ),
-                                  title: Text("btn.Delete".tr(), style: TextStyle(fontSize: 20)),
-                                ))
-                          ])
-                ],
-              ),
-            ),
+                                    title: Text("btn.Delete".tr(), style: TextStyle(fontSize: 20)),
+                                  ))
+                            ])
+                  ],
+                ),
+              );
+            }),
           ]),
         ),
       ),

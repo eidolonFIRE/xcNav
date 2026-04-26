@@ -41,10 +41,22 @@ class FlightLog {
 
   String get title {
     if (goodFile) {
-      return DateFormat("MMM d - yyyy").format(DateTime.fromMillisecondsSinceEpoch(samples.first.time));
+      if (_customTitle != null && _customTitle!.isNotEmpty) {
+        return "${DateFormat("MMM d").format(DateTime.fromMillisecondsSinceEpoch(samples.first.time))} - $_customTitle";
+      } else {
+        return DateFormat("MMM d - yyyy").format(DateTime.fromMillisecondsSinceEpoch(samples.first.time));
+      }
     } else {
       return "Broken Log! $filename";
     }
+  }
+
+  // =========================================
+  String? _customTitle;
+  String? get customTitle => _customTitle;
+  set customTitle(String? newTitle) {
+    _customTitle = newTitle;
+    unsaved = true;
   }
 
   // =========================================
@@ -628,6 +640,8 @@ class FlightLog {
 
     try {
       bleDevicesJson = data["ble_devices"];
+
+      _customTitle = data["customTitle"];
 
       // --- Misc
       final maybeImported = data["imported"];
