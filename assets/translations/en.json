@@ -64,7 +64,6 @@
             "ambient_pressure_source": "Ambient Pressure Source"
         }
     },
-    "WeatherKit": "WeatherKit",
     "Snap To Ground": "Snap To Ground",
     "Distance": "Distance",
     "Speed": "Speed",

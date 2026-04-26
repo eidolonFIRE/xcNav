@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -72,26 +74,30 @@ class _MyHomePageState extends State<MyHomePage> {
         debugPrint("Profile not yet loaded...");
         profile.onLoad.then((_) {
           if (!profile.isValid) {
-            Navigator.pushNamed(context, "/profileEditor");
+            if (context.mounted) {
+              Navigator.pushNamed(context, "/profileEditor");
+            }
           }
         });
       }
 
       // --- Check permissions
       checkPermissions(context).then((failed) {
-        final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-        if (failed == false && !myTelemetry.isInitialized) {
-          // get initial location
-          debugPrint("Getting initial location from GPS");
+        if (context.mounted) {
           final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
-          GeolocatorPlatform.instance.getCurrentPosition().then((location) {
-            debugPrint("initial location: $location");
-            myTelemetry.updateGeo(location);
-            myTelemetry.init();
+          if (failed == false && !myTelemetry.isInitialized) {
+            // get initial location
+            debugPrint("Getting initial location from GPS");
+            final myTelemetry = Provider.of<MyTelemetry>(context, listen: false);
+            GeolocatorPlatform.instance.getCurrentPosition().then((location) {
+              debugPrint("initial location: $location");
+              myTelemetry.updateGeo(location);
+              myTelemetry.init();
 
-            // Setup the backend
-            selectEndpoint(LatLng(location.latitude, location.longitude));
-          });
+              // Setup the backend
+              selectEndpoint(LatLng(location.latitude, location.longitude));
+            });
+          }
         }
       });
     });

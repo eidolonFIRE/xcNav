@@ -25,7 +25,9 @@ Future<bool?> checkPermissions(BuildContext context) async {
 
       if (await Permission.locationAlways.isPermanentlyDenied || !locAlwaysStatus.isGranted) {
         debugPrint("Location was permanently denied, opening app settings.");
-        await showDialog(context: context, builder: (context) => const RequestLocationDialog());
+        if (context.mounted) {
+          await showDialog(context: context, builder: (context) => const RequestLocationDialog());
+        }
       }
     } else {
       debugPrint("Checking location permissions...");

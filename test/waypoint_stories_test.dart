@@ -1,4 +1,3 @@
-import 'package:clock/clock.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -93,10 +92,6 @@ void main() {
     'Create and delete a waypoint',
     ($) async {
       SharedPreferences.setMockInitialValues({
-        "weatherKit.last.time": clock.now().millisecondsSinceEpoch - 10000,
-        "weatherKit.last.value": 1351.0,
-        "weatherKit.last.lat": 37.0,
-        "weatherKit.last.lng": -121.0,
         "profile.name": "Mr Test",
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
@@ -154,10 +149,6 @@ void main() {
 
   patrolWidgetTest('Save waypoint to library', ($) async {
     SharedPreferences.setMockInitialValues({
-      "weatherKit.last.time": clock.now().millisecondsSinceEpoch - 10000,
-      "weatherKit.last.value": 1351.0,
-      "weatherKit.last.lat": 37.0,
-      "weatherKit.last.lng": -121.0,
       "profile.name": "Mr Test",
       "profile.id": "1234",
       "profile.secretID": "1234abcd",

@@ -64,7 +64,6 @@
             "ambient_pressure_source": "Környezeti nyomásforrás"
         }
     },
-    "WeatherKit": "WeatherKit",
     "Snap To Ground": "Illesztés a földhöz",
     "Distance": "Távolság",
     "Speed": "Sebesség",

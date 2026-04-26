@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:bisection/bisect.dart';
 import 'package:clock/clock.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -14,9 +12,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/audio_cue_service.dart';
-import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/douglas_peucker.dart';
 import 'package:xcnav/fake_path.dart';
@@ -37,23 +33,10 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/services/ble_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/wind.dart';
-import 'package:xcnav/secrets.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 
 enum FlightEventType { init, takeoff, land }
-
-enum BarometerSrc {
-  weatherkit,
-  snapToGround,
-  gpsAlt,
-}
-
-final Map<BarometerSrc, String> barometerSrcString = {
-  BarometerSrc.weatherkit: "WeatherKit",
-  BarometerSrc.snapToGround: "Snap To Ground",
-  BarometerSrc.gpsAlt: "GPS Altitude",
-};
 
 /// Meters
 double densityAlt(BarometerEvent ambientPressure, double ambientTemp) {
@@ -111,14 +94,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Microseconds since last sample of `gForce`
   int gForceCounter = 0;
 
-  /// Ambient barometric reading fetched from web API
+  /// Ambient barometric pressure
   BarometerEvent? baroAmbient;
-  bool baroAmbientRequested = false;
-  int baroAmbientRequestCount = 0;
-  bool baroFromWeatherkit = false;
-
-  /// Ambient Temp in F, according to weatherkit
-  double? ambientTemperature;
 
   StreamSubscription<BarometerEvent>? listenBaro;
   StreamSubscription<AccelerometerEvent>? listenIMU;
@@ -308,7 +285,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     listenBaro = barometerEventStream(samplingPeriod: SensorInterval.normalInterval).listen((event) {
       // Handle barometer changes (run the vario)
       final baroPrev = baro;
-      baro = BarometerEvent(event.pressure + settingsMgr.barometerOffset.value, event.timestamp);
+      baro = BarometerEvent(event.pressure, event.timestamp);
       double vario = 0;
       if (baroPrev != null && baroPrev.timestamp.isBefore(baro!.timestamp)) {
         vario = (altFromBaro(baro!.pressure, baroAmbient?.pressure) -
@@ -642,82 +619,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     _sumFuelStat = null;
   }
 
-  void snapBarometerTo(BarometerSrc src, {LatLng? latlng}) {
-    switch (src) {
-      case BarometerSrc.weatherkit:
-        if (latlng != null) {
-          fetchAmbPressure(latlng);
-        }
-
-      case BarometerSrc.snapToGround:
-        debugPrint("Snapping ambient pressure to ground.");
-        baroAmbient =
-            BarometerEvent(ambientFromAlt(geo!.ground ?? geo?.altGps ?? 0, baro?.pressure ?? 1013.25), clock.now());
-        break;
-      case BarometerSrc.gpsAlt:
-        debugPrint("Snapping ambient pressure to gps altitude. ${geo?.altGps}");
-        baroAmbient = BarometerEvent(ambientFromAlt(geo?.altGps ?? 0, baro?.pressure ?? 1013.25), clock.now());
-    }
-  }
-
-  void fetchAmbPressure(LatLng latlng, {force = false}) async {
-    // First check if we've recently
-    if (!force) {
-      final prefs = await SharedPreferences.getInstance();
-      final lastTime = prefs.getInt("weatherKit.last.time");
-      if (lastTime != null &&
-          clock.now().difference(DateTime.fromMillisecondsSinceEpoch(lastTime)) < const Duration(minutes: 10)) {
-        final lastLat = prefs.getDouble("weatherKit.last.lat");
-        final lastLng = prefs.getDouble("weatherKit.last.lng");
-        if (lastLng != null && lastLat != null) {
-          if (latlngCalc.distance(LatLng(lastLat, lastLng), latlng) < 1000) {
-            // Recent query available!
-            final lastValue = prefs.getDouble("weatherKit.last.value");
-            if (lastValue != null) {
-              baroAmbient = BarometerEvent(lastValue, clock.now());
-              debugPrint("Baro pulled from memory. Skipped weatherKit call.");
-              return;
-            }
-          }
-        }
-      }
-    }
-
-    try {
-      if (!baroAmbientRequested) {
-        baroAmbientRequested = true;
-        http.get(
-            Uri.parse(
-                "https://weatherkit.apple.com/api/v1/weather/en_US/${latlng.latitude.toStringAsFixed(5)}/${latlng.longitude.toStringAsFixed(5)}?dataSets=currentWeather"),
-            headers: {"Authorization": "Bearer $weatherkitToken"}).then((response) {
-          if (response.statusCode != 200) {
-            baroAmbientRequestCount++;
-            // throw "Failed to reach weatherkit resource! (attempt $baroAmbientRequestCount) ${response.statusCode} : ${response.body}";
-          } else {
-            final payload = jsonDecode(response.body);
-            baroAmbient = BarometerEvent(payload["currentWeather"]["pressure"], clock.now());
-            ambientTemperature = payload["currentWeather"]["temperature"] * 9 / 5 + 32;
-            debugPrint("Ambient pressure found: ${baroAmbient?.pressure} ( ${ambientTemperature}F )");
-            baroFromWeatherkit = true;
-            baroAmbientRequestCount = 0;
-
-            // Save for later
-            SharedPreferences.getInstance().then((prefs) {
-              prefs.setInt("weatherKit.last.time", clock.now().millisecondsSinceEpoch);
-              prefs.setDouble("weatherKit.last.lat", latlng.latitude);
-              prefs.setDouble("weatherKit.last.lng", latlng.longitude);
-              prefs.setDouble("weatherKit.last.value", baroAmbient!.pressure);
-            });
-          }
-          baroAmbientRequested = false;
-        });
-      }
-    } catch (err, trace) {
-      error("WeatherKit",
-          errorMessage: err.toString(),
-          errorStackTrace: trace,
-          attributes: {"lat": latlng.latitude.toStringAsFixed(5), "lng": latlng.longitude.toStringAsFixed(5)});
-    }
+  BarometerEvent snapBarometerToGpsAlt(double altitude) {
+    return BarometerEvent(ambientFromAlt(altitude, baro?.pressure ?? 1013.25), clock.now());
   }
 
   void updateGeo(Position position, {bool bypassRecording = false}) {
@@ -741,9 +644,17 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     recordGeo.add(geo!);
 
-    // fetch ambient baro from weather service
-    if (baroAmbient == null && baroAmbientRequestCount < 10) {
-      snapBarometerTo(settingsMgr.ambientPressureSource.value, latlng: geo?.latlng);
+    // Drift barometric ambient toward GPS altitude
+    if (inFlight) {
+      // adjust slowly
+      final target = snapBarometerToGpsAlt(geo!.altGps);
+      final current = baroAmbient?.pressure ?? target.pressure;
+      final mixed = (current) + (target.pressure - current) * 0.1;
+      baroAmbient = BarometerEvent(mixed, target.timestamp);
+    } else {
+      // snap to GPS altitude
+      debugPrint("Snapping ambient pressure to gps altitude. ${unitConverters[UnitType.distFine]!(geo!.altGps)}");
+      baroAmbient = snapBarometerToGpsAlt(geo!.altGps);
     }
 
     // --- In-Flight detector

@@ -64,7 +64,6 @@
       "ambient_pressure_source": "Источник атмосферного давления"
     }
   },
-  "WeatherKit": "WeatherKit",
   "Snap To Ground": "Привязка к земле",
   "Distance": "Расстояние",
   "Speed": "Скорость",

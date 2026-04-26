@@ -1,14 +1,10 @@
-import 'dart:io';
 import 'dart:math';
 
-import 'package:clock/clock.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/models/eta.dart';
@@ -96,133 +92,6 @@ class ViewElevationState extends State<ViewElevation> {
         return Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            if (Platform.isIOS)
-              GestureDetector(
-                onTap: () => launchUrl(Uri.parse("https://weatherkit.apple.com/legal-attribution.html")),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Image.asset(
-                    "assets/external/apple_weather.png",
-                    height: 20,
-                  ),
-                ),
-              ),
-
-            // --- Barometer control
-            if (!settingsMgr.forceGpsAltitude.value)
-              ListTile(
-                minVerticalPadding: 20,
-                visualDensity: VisualDensity.compact,
-                // leading: const Icon(Icons.thermostat),
-                title: Text("Ambient Pressure".tr()),
-                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                  IconButton(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () {
-                        if (myTelemetry.geo != null) {
-                          myTelemetry.snapBarometerTo(settingsMgr.ambientPressureSource.value,
-                              latlng: myTelemetry.geo?.latlng);
-                        }
-                      },
-                      iconSize: 18,
-                      icon: settingsMgr.ambientPressureSource.value == BarometerSrc.weatherkit
-                          ? (myTelemetry.baroFromWeatherkit
-                              ? const Icon(Icons.public, color: Colors.lightGreen)
-                              : const Icon(
-                                  Icons.public_off,
-                                  color: Colors.red,
-                                ))
-                          : Icon(Icons.refresh)),
-                  Text(
-                    printDouble(value: myTelemetry.baroAmbient?.pressure ?? 1013.25, digits: 4, decimals: 2),
-                    style: TextStyle(
-                        fontSize: 20, color: myTelemetry.baroFromWeatherkit ? Colors.lightGreen : Colors.white),
-                  ),
-                  VerticalDivider(
-                    color: Colors.grey.shade900,
-                  ),
-                  IconButton(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () => {
-                            setState(() {
-                              myTelemetry.baroFromWeatherkit = false;
-                              myTelemetry.baroAmbient =
-                                  BarometerEvent((myTelemetry.baroAmbient?.pressure ?? 1013.25) + 0.25, clock.now());
-                            })
-                          },
-                      icon: const Icon(
-                        Icons.add_circle,
-                        size: 20,
-                      )),
-                  IconButton(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () => {
-                            setState(() {
-                              myTelemetry.baroFromWeatherkit = false;
-                              myTelemetry.baroAmbient =
-                                  BarometerEvent((myTelemetry.baroAmbient?.pressure ?? 1013.25) - 0.25, clock.now());
-                            })
-                          },
-                      icon: const Icon(
-                        Icons.remove_circle,
-                        size: 20,
-                      )),
-                ]),
-              ),
-
-            if (!settingsMgr.forceGpsAltitude.value)
-              Divider(
-                height: 0,
-                color: Colors.grey.shade900,
-              ),
-
-            // --- Density Altitude
-            if (!settingsMgr.forceGpsAltitude.value &&
-                !myTelemetry.inFlight &&
-                myTelemetry.baroAmbient != null &&
-                myTelemetry.ambientTemperature != null &&
-                myTelemetry.geo != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(
-                    "Density Altitude".tr(),
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(
-                    width: 20,
-                  ),
-                  Text.rich(richValue(
-                      UnitType.distFine,
-                      densityAlt(myTelemetry.baroAmbient!, myTelemetry.ambientTemperature!) +
-                          (myTelemetry.geo!.ground ?? myTelemetry.geo!.alt),
-                      digits: 6,
-                      decimals: -2,
-                      valueStyle: Theme.of(context).textTheme.headlineMedium,
-                      unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)))
-                ]),
-              ),
-
-            // --- GPS Altitude
-            if (myTelemetry.geo != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(
-                    "GPS Altitude".tr(),
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(
-                    width: 20,
-                  ),
-                  Text.rich(richValue(UnitType.distFine, myTelemetry.geo!.altGps,
-                      digits: 6,
-                      decimals: 0,
-                      valueStyle: Theme.of(context).textTheme.headlineMedium,
-                      unitStyle: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)))
-                ]),
-              ),
-
             // --- Elevation Plot
             if (myTelemetry.recordGeo.length > 1)
               Expanded(

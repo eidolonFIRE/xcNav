@@ -8,7 +8,6 @@ import 'package:xcnav/locale.dart';
 import 'package:xcnav/map_service.dart';
 
 import 'package:xcnav/providers/adsb.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 
@@ -109,9 +108,6 @@ class SettingConfig<T> {
             case "LanguageOverride":
               _value = ValueNotifier<T>(LanguageOverride.values[loadedInt] as T);
               break;
-            case "BarometerSrc":
-              _value = ValueNotifier<T>(BarometerSrc.values[loadedInt] as T);
-              break;
             default:
               throw "Unrecognized enum class ${T.toString()}";
           }
@@ -204,7 +200,6 @@ class SettingsMgr {
   late final SettingConfig<LanguageOverride> languageOverride;
   late final SettingConfig<bool> groundMode;
   late final SettingConfig<bool> autoRecordFlight;
-  late final SettingConfig<BarometerSrc> ambientPressureSource;
 
   // --- UI
   late final SettingConfig<AltimeterMode> primaryAltimeter;
@@ -228,8 +223,7 @@ class SettingsMgr {
   late final SettingAction adsbTestAudio;
   late final SettingConfig<bool> rumOptOut;
 
-  // --- ServoCarb
-  late final SettingConfig<double> barometerOffset;
+  // --- Experimental
   late final SettingConfig<bool> showServoCarbMenu;
   late final SettingConfig<bool> forceGpsAltitude;
   late final SettingConfig<int> gpsUpdateInterval;
@@ -272,11 +266,6 @@ class SettingsMgr {
         title: "auto_record_flight",
         icon: const Icon(Icons.play_arrow),
         description: "Flight recorder automatically starts and stops.");
-
-    ambientPressureSource = SettingConfig(this, prefs, "General", "ambientPressureSource", BarometerSrc.weatherkit,
-        title: "ambient_pressure_source",
-        icon: const Icon(Icons.thermostat_auto),
-        description: "Source of ambient pressure weather data.");
 
     // --- UI
     primaryAltimeter = SettingConfig(this, prefs, "UI", "primaryAltimeter", AltimeterMode.msl,
@@ -370,10 +359,6 @@ class SettingsMgr {
         ])));
 
     // --- Experimental
-    barometerOffset = SettingConfig(this, prefs, "Experimental", "barometerOffset", 0,
-        title: "barometer_offset",
-        icon: const Icon(Icons.height),
-        description: "Add offset to barometer reading for calibration.");
     showServoCarbMenu = SettingConfig(this, prefs, "Experimental", "showServoCarbMenu", false,
         title: "show_servocarb", icon: const Icon(Icons.settings_applications_sharp));
     forceGpsAltitude = SettingConfig(this, prefs, "Experimental", "forceGpsAltitude", false,

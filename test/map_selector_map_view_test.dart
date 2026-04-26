@@ -1,4 +1,3 @@
-import 'package:clock/clock.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -105,10 +104,6 @@ void main() {
       ))).thenAnswer((_) => Stream.value(mockPosition));
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
       SharedPreferences.setMockInitialValues({
-        "weatherKit.last.time": clock.now().millisecondsSinceEpoch - 10000,
-        "weatherKit.last.value": 1351.0,
-        "weatherKit.last.lat": 37.0,
-        "weatherKit.last.lng": -121.0,
         "profile.name": "Mr Test",
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
@@ -141,10 +136,6 @@ void main() {
       ))).thenAnswer((_) => Stream.value(mockPosition));
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
       SharedPreferences.setMockInitialValues({
-        "weatherKit.last.time": clock.now().millisecondsSinceEpoch - 10000,
-        "weatherKit.last.value": 1351.0,
-        "weatherKit.last.lat": 37.0,
-        "weatherKit.last.lng": -121.0,
         "profile.name": "Mr Test",
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
