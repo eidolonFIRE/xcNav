@@ -1067,17 +1067,26 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                     builder: (context, chat, child) {
                       // get valid bubbles
                       const numSeconds = 20;
-                      List<Message> bubbles = [];
+                      final bubbles = <Widget>[];
                       for (int i = chat.messages.length - 1; i >= 0; i--) {
                         if (chat.messages[i].timestamp >
                                 max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
                             chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
-                          bubbles.add(chat.messages[i]);
-
-                          Timer(const Duration(seconds: numSeconds), () {
-                            // "self destruct" the message after several seconds by triggering a refresh
-                            chat.refresh();
-                          });
+                          final message = chat.messages[i];
+                          bubbles.add(
+                            AutoClearChatBubble(
+                              false,
+                              !settingsMgr.mapControlsRightSide.value,
+                              message.text,
+                              AvatarRound(
+                                  Provider.of<Group>(context, listen: false).pilots[message.pilotId]?.avatar, 20),
+                              null,
+                              message.timestamp,
+                              maxWidth: MediaQuery.of(context).size.width - 150,
+                              duration: const Duration(seconds: numSeconds),
+                              onExpire: () => chat.refresh(),
+                            ),
+                          );
                         } else {
                           break;
                         }
@@ -1087,19 +1096,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment:
                             settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-                        children: bubbles
-                            .map(
-                              (e) => ChatBubble(
-                                false,
-                                !settingsMgr.mapControlsRightSide.value,
-                                e.text,
-                                AvatarRound(Provider.of<Group>(context, listen: false).pilots[e.pilotId]?.avatar, 20),
-                                null,
-                                e.timestamp,
-                                maxWidth: MediaQuery.of(context).size.width - 150,
-                              ),
-                            )
-                            .toList(),
+                        children: bubbles,
                       );
                     },
                   ),

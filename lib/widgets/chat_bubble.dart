@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:selectable_autolink_text/selectable_autolink_text.dart';
@@ -84,6 +86,64 @@ class ChatBubble extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A wrapper around [ChatBubble] that automatically clears itself after a duration.
+class AutoClearChatBubble extends StatefulWidget {
+  final bool isMe;
+  final bool rightSide;
+  final String? pilotName;
+  final String text;
+  final Widget user;
+  final int? timestamp;
+  final double? maxWidth;
+  final Duration duration;
+  final VoidCallback onExpire;
+
+  const AutoClearChatBubble(
+    this.isMe,
+    this.rightSide,
+    this.text,
+    this.user,
+    this.pilotName,
+    this.timestamp, {
+    super.key,
+    this.maxWidth,
+    required this.duration,
+    required this.onExpire,
+  });
+
+  @override
+  State<AutoClearChatBubble> createState() => _AutoClearChatBubbleState();
+}
+
+class _AutoClearChatBubbleState extends State<AutoClearChatBubble> {
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(widget.duration, widget.onExpire);
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChatBubble(
+      widget.isMe,
+      widget.rightSide,
+      widget.text,
+      widget.user,
+      widget.pilotName,
+      widget.timestamp,
+      maxWidth: widget.maxWidth,
     );
   }
 }
