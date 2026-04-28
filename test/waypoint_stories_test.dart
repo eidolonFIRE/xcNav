@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +14,7 @@ import 'package:flutter/material.dart';
 // ignore: depend_on_referenced_packages
 import 'package:permission_handler_platform_interface/permission_handler_platform_interface.dart' as perm_handler_plat;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/locale.dart';
 
 import 'package:xcnav/main.dart';
 import 'package:xcnav/models/waypoint.dart';
@@ -21,7 +23,6 @@ import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/wind.dart';
@@ -40,46 +41,50 @@ void main() {
   FlutterLocalNotificationsPlatform.instance = mock;
 
   Widget makeApp(ActivePlan activePlan, MockPlans plans) {
-    return MultiProvider(providers: [
-      ChangeNotifierProvider(
-        create: (_) => MyTelemetry(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => Wind(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => activePlan,
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        // ignore: unnecessary_cast
-        create: (_) => plans as Plans,
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => Profile(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => Group(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (_) => ChatMessages(),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        create: (context) => ADSB(context),
-        lazy: false,
-      ),
-      ChangeNotifierProvider(
-        // ignore: unnecessary_cast
-        create: (context) => MockClient(context) as Client,
-        lazy: false,
-      )
-    ], child: const XCNav());
+    return EasyLocalization(
+        supportedLocales: supportedLanguages.values.nonNulls.toList(),
+        path: "assets/translations",
+        fallbackLocale: const Locale("en"),
+        useFallbackTranslations: true,
+        useFallbackTranslationsForEmptyResources: true,
+        startLocale: const Locale("en"),
+        useOnlyLangCode: true,
+        child: MultiProvider(providers: [
+          ChangeNotifierProvider(
+            create: (_) => Wind(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => activePlan,
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            // ignore: unnecessary_cast
+            create: (_) => plans as Plans,
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Profile(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => Group(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (_) => ChatMessages(),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            create: (context) => ADSB(context),
+            lazy: false,
+          ),
+          ChangeNotifierProvider(
+            // ignore: unnecessary_cast
+            create: (context) => MockClient(context) as Client,
+            lazy: false,
+          )
+        ], child: const XCNav()));
   }
 
   setUp(() async {
@@ -96,10 +101,8 @@ void main() {
         "profile.id": "1234",
         "profile.secretID": "1234abcd",
       });
-      SharedPreferences.getInstance().then((prefs) {
-        settingsMgr = SettingsMgr(prefs);
-        // settingsMgr.showAirspaceOverlay.value = false;
-      });
+      settingsMgr = SettingsMgr(await SharedPreferences.getInstance());
+      settingsMgr.hideWeatherObservations.value = true;
 
       // --- Setup stubs and initial configs
       GeolocatorPlatform.instance = MockGeolocatorPlatform();
@@ -153,10 +156,8 @@ void main() {
       "profile.id": "1234",
       "profile.secretID": "1234abcd",
     });
-    SharedPreferences.getInstance().then((prefs) {
-      settingsMgr = SettingsMgr(prefs);
-      // settingsMgr.showAirspaceOverlay.value = false;
-    });
+    settingsMgr = SettingsMgr(await SharedPreferences.getInstance());
+    settingsMgr.hideWeatherObservations.value = true;
 
     // --- Setup stubs and initial configs
     GeolocatorPlatform.instance = MockGeolocatorPlatform();

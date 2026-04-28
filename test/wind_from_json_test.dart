@@ -1,4 +1,4 @@
-// This is a unit test to pump a flight log (*.json file) through
+// This is a MANUAL unit test to pump a flight log (*.json file) through
 // the wind estimator and print out the results onscreen
 
 // Just set the environment varable XCNAV_LOG to the location of the file and then run
@@ -74,5 +74,5 @@ void main() {
 
     // Pass criteria: require wind reports for > 50%% of samples
     expect(reportPct, greaterThan(50.0), reason: 'Insufficient wind reports; require > 50% coverage.');
-  });
+  }, skip: true);
 }
