@@ -1,11 +1,20 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/settings_service.dart';
 
 void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({
+      "profile.name": "Mr Test",
+      "profile.id": "1234",
+      "profile.secretID": "1234abcd",
+    });
+    settingsMgr = SettingsMgr(await SharedPreferences.getInstance());
+  });
   test('FuelReport - Basic', () {
-    WidgetsFlutterBinding.ensureInitialized();
     final myTelemetry = MyTelemetry();
 
     myTelemetry.recordGeo.addAll([
@@ -27,8 +36,7 @@ void main() {
     expect(myTelemetry.sumFuelStat?.mpl, 4619.239121840687);
   });
 
-  test('FuelReport - Overwrite first entry', () {
-    WidgetsFlutterBinding.ensureInitialized();
+  test('FuelReport - Overwrite first entry', () async {
     final myTelemetry = MyTelemetry();
 
     myTelemetry.recordGeo.addAll([
@@ -52,7 +60,6 @@ void main() {
   });
 
   test('FuelReport - Fuel Increases', () {
-    WidgetsFlutterBinding.ensureInitialized();
     final myTelemetry = MyTelemetry();
 
     myTelemetry.recordGeo.addAll([
@@ -77,7 +84,6 @@ void main() {
   });
 
   test('FuelReport - overwrite', () {
-    WidgetsFlutterBinding.ensureInitialized();
     final myTelemetry = MyTelemetry();
 
     myTelemetry.insertFuelReport(DateTime(2000, 0, 0, 0, 1, 0, 0), 12);
@@ -116,7 +122,6 @@ void main() {
   });
 
   test("FuelReport - findFuelReportIndex", () {
-    WidgetsFlutterBinding.ensureInitialized();
     final myTelemetry = MyTelemetry();
 
     const tol = Duration(minutes: 3);

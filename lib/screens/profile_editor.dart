@@ -252,127 +252,132 @@ class _ProfileEditorState extends State<ProfileEditor> {
         padding: const EdgeInsets.all(20),
         child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+            // mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // --- Text Input
               Form(
                 key: formKey,
-                child: TextFormField(
-                  controller: nameController,
-                  autofocus: isOptional,
-                  maxLength: 20,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ ]"))],
-                  validator: nameValidator,
-                  decoration: const InputDecoration(
-                    label: Text("Display Name *"),
-                    border: OutlineInputBorder(),
+                child: SizedBox(
+                  height: 80,
+                  child: TextFormField(
+                    controller: nameController,
+                    autofocus: isOptional,
+                    maxLength: 20,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp("[a-zA-Z0-9_ ]"))],
+                    validator: nameValidator,
+                    decoration: const InputDecoration(
+                      label: Text("Display Name *"),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) => setState(() {
+                      formKey.currentState?.validate();
+                    }),
                   ),
-                  onChanged: (value) => setState(() {
-                    formKey.currentState?.validate();
-                  }),
                 ),
               ),
 
               // --- Image Cropper Window
-              Focus(
-                focusNode: cropperFocus,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Listener(
-                    onPointerDown: (event) {
-                      cropperFocus.requestFocus();
-                    },
-                    child: InputDecorator(
-                      baseStyle: Theme.of(context).textTheme.headlineSmall,
-                      isFocused: cropperFocus.hasFocus,
-                      decoration: InputDecoration(
-                        errorText: avatarErrorText,
-                        label: const Text("Avatar *"),
-                        border: const OutlineInputBorder(),
-                      ),
-                      child: ClipRect(
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: Stack(fit: StackFit.expand, children: [
-                            // --- Image cropper
-                            if (inputImage != null)
-                              CustomImageCrop(
-                                  backgroundColor: Colors.grey.shade700,
-                                  shape: CustomCropShape.Circle,
-                                  cropPercentage: 0.7,
-                                  image: MemoryImage(inputImage!),
-                                  cropController: cropController),
+              Expanded(
+                child: Focus(
+                  focusNode: cropperFocus,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Listener(
+                      onPointerDown: (event) {
+                        cropperFocus.requestFocus();
+                      },
+                      child: InputDecorator(
+                        baseStyle: Theme.of(context).textTheme.headlineSmall,
+                        isFocused: cropperFocus.hasFocus,
+                        decoration: InputDecoration(
+                          errorText: avatarErrorText,
+                          label: const Text("Avatar *"),
+                          border: const OutlineInputBorder(),
+                        ),
+                        child: ClipRect(
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: Stack(fit: StackFit.expand, children: [
+                              // --- Image cropper
+                              if (inputImage != null)
+                                CustomImageCrop(
+                                    backgroundColor: Colors.grey.shade700,
+                                    shape: CustomCropShape.Circle,
+                                    cropPercentage: 0.7,
+                                    image: MemoryImage(inputImage!),
+                                    cropController: cropController),
 
-                            // --- Color preview
-                            if (inputColor != null)
-                              Center(
-                                  child: Screenshot(
-                                controller: colorAvatarSS,
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width / 2,
-                                  height: MediaQuery.of(context).size.width / 2,
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: inputColor!,
-                                          shape: BoxShape.circle,
+                              // --- Color preview
+                              if (inputColor != null)
+                                Center(
+                                    child: Screenshot(
+                                  controller: colorAvatarSS,
+                                  child: SizedBox(
+                                    width: MediaQuery.of(context).size.width / 2,
+                                    height: MediaQuery.of(context).size.width / 2,
+                                    child: Stack(
+                                      children: [
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: inputColor!,
+                                            shape: BoxShape.circle,
+                                          ),
                                         ),
-                                      ),
-                                      Center(
-                                        child: Text(
-                                          nameController.value.text.isNotEmpty ? nameController.value.text[0] : "",
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              color: Colors.black, fontSize: MediaQuery.of(context).size.width / 3),
+                                        Center(
+                                          child: Text(
+                                            nameController.value.text.isNotEmpty ? nameController.value.text[0] : "",
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                                color: Colors.black, fontSize: MediaQuery.of(context).size.width / 3),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              )),
+                                )),
 
-                            // --- buttons
-                            if (inputImage == null && inputColor == null)
-                              Column(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Container(),
-                                    ElevatedButton.icon(
-                                        label: const Text("Import"),
-                                        onPressed: pickGallery,
-                                        icon: const Icon(Icons.collections)),
-                                    ElevatedButton.icon(
-                                        label: const Text("Camera"),
-                                        onPressed: pickCamera,
-                                        icon: const Icon(Icons.photo_camera)),
-                                    ElevatedButton.icon(
-                                        label: const Text("Color"),
-                                        onPressed: () => pickColor(context),
-                                        icon: const Icon(Icons.palette)),
-                                    Container(),
-                                  ]),
+                              // --- buttons
+                              if (inputImage == null && inputColor == null)
+                                Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(),
+                                      ElevatedButton.icon(
+                                          label: const Text("Import"),
+                                          onPressed: pickGallery,
+                                          icon: const Icon(Icons.collections)),
+                                      ElevatedButton.icon(
+                                          label: const Text("Camera"),
+                                          onPressed: pickCamera,
+                                          icon: const Icon(Icons.photo_camera)),
+                                      ElevatedButton.icon(
+                                          label: const Text("Color"),
+                                          onPressed: () => pickColor(context),
+                                          icon: const Icon(Icons.palette)),
+                                      Container(),
+                                    ]),
 
-                            // --- Reset avatar button
-                            if (inputImage != null || inputColor != null)
-                              Align(
-                                alignment: Alignment.topRight,
-                                child: IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        inputImage = null;
-                                        inputColor = null;
-                                      });
-                                    },
-                                    icon: const Icon(
-                                      Icons.delete_forever,
-                                      size: 30,
-                                    )),
-                              )
-                          ]),
+                              // --- Reset avatar button
+                              if (inputImage != null || inputColor != null)
+                                Align(
+                                  alignment: Alignment.topRight,
+                                  child: IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          inputImage = null;
+                                          inputColor = null;
+                                        });
+                                      },
+                                      icon: const Icon(
+                                        Icons.delete_forever,
+                                        size: 30,
+                                      )),
+                                )
+                            ]),
+                          ),
                         ),
                       ),
                     ),
