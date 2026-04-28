@@ -1,23 +1,51 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:patrol_finders/patrol_finders.dart';
+import 'package:xcnav/locale.dart';
 import 'package:xcnav/widgets/latlng_editor.dart';
 
-void main() {
-  Future setup(PatrolTester $, void Function(List<LatLng>) callback) async {
-    await $.pumpWidget(
-      MaterialApp(
+import 'audio_cue_service_test.dart';
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key, required this.callback});
+
+  final void Function(List<LatLng>) callback;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      locale: EasyLocalization.of(context)!.locale,
+      supportedLocales: EasyLocalization.of(context)!.supportedLocales,
+      localizationsDelegates: EasyLocalization.of(context)!.delegates,
+      home: MaterialApp(
         home: Scaffold(
           body: LatLngEditor(onLatLngs: callback),
         ),
       ),
     );
   }
+}
+
+void main() {
+  Future makeApp(PatrolTester $, void Function(List<LatLng>) callback) async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    await $.pumpWidget(EasyLocalization(
+        supportedLocales: supportedLanguages.values.nonNulls.toList(),
+        path: "assets/translations",
+        fallbackLocale: const Locale("en"),
+        useFallbackTranslations: true,
+        useFallbackTranslationsForEmptyResources: true,
+        startLocale: const Locale("en"),
+        useOnlyLangCode: true,
+        assetLoader: ImmutableJsonAssetLoader(),
+        child: MyApp(callback: callback)));
+  }
 
   patrolWidgetTest('basic', ($) async {
     List<LatLng> results = [];
-    await setup($, (latlngs) {
+    await makeApp($, (latlngs) {
       results = latlngs;
     });
 
@@ -38,7 +66,7 @@ void main() {
 
   patrolWidgetTest('multiple', ($) async {
     List<LatLng> results = [];
-    await setup($, (latlngs) {
+    await makeApp($, (latlngs) {
       results = latlngs;
     });
 
@@ -55,7 +83,7 @@ void main() {
 
   patrolWidgetTest('bad_format', ($) async {
     List<LatLng> results = [];
-    await setup($, (latlngs) {
+    await makeApp($, (latlngs) {
       results = latlngs;
     });
 
