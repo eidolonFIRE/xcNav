@@ -461,9 +461,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (geo != null) {
         final elapsed = clock.now().difference(DateTime.fromMillisecondsSinceEpoch(geo!.time));
         _standbyTimer += elapsed;
-        if (_standbyTimer > Duration(minutes: 20)) {
-          debugPrint("/!\\ App in standby to save power.");
-
+        if (_standbyTimer > Duration(hours: 2)) {
           setStandby(true);
         }
       }
@@ -670,6 +668,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
     geo!.ground = sampleDem(geo!.latlng, true);
+
+    if (!appInFocus() && !inFlight) {
+      if (geo!.ground != null && (geo!.alt - geo!.ground! < 10) && geo!.spd > 23) {
+        debugPrint("Driving detected!");
+        setStandby(true);
+      }
+    }
 
     recordGeo.add(geo!);
 
