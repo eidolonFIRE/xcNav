@@ -239,82 +239,126 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                               );
                                               break;
                                             case "DisplayUnitsDist":
-                                              trailing = DropdownMenuFormField<DisplayUnitsDist>(
-                                                  onSelected: (value) =>
-                                                      {e.config!.value = value ?? e.config!.defaultValue},
-                                                  initialSelection: e.config!.value,
-                                                  dropdownMenuEntries: [
-                                                    DropdownMenuEntry(
-                                                        value: DisplayUnitsDist.imperial, label: "Imperial".tr()),
-                                                    DropdownMenuEntry(
-                                                        value: DisplayUnitsDist.metric, label: "Metric".tr()),
-                                                  ]);
+                                              trailing = SizedBox(
+                                                width: 150,
+                                                child: DropdownButtonFormField<DisplayUnitsDist>(
+                                                    initialValue: e.config!.value,
+                                                    onChanged: (value) {
+                                                      if (value != null) {
+                                                        e.config!.value = value;
+                                                      }
+                                                    },
+                                                    items: [
+                                                      DropdownMenuItem(
+                                                          value: DisplayUnitsDist.imperial,
+                                                          child: Text("Imperial".tr())),
+                                                      DropdownMenuItem(
+                                                          value: DisplayUnitsDist.metric, child: Text("Metric".tr())),
+                                                    ]),
+                                              );
                                               break;
                                             case "DisplayUnitsSpeed":
-                                              trailing = DropdownMenuFormField<DisplayUnitsSpeed>(
-                                                  onSelected: (value) =>
-                                                      {e.config!.value = value ?? e.config!.defaultValue},
-                                                  initialSelection: e.config!.value,
-                                                  dropdownMenuEntries: DisplayUnitsSpeed.values
-                                                      .map((e) => DropdownMenuEntry(
-                                                          value: e,
-                                                          label:
-                                                              getUnitStr(UnitType.speed, lexical: false, override: e)))
-                                                      .toList());
+                                              trailing = SizedBox(
+                                                width: 150,
+                                                child: DropdownButtonFormField<DisplayUnitsSpeed>(
+                                                    initialValue: e.config!.value,
+                                                    onChanged: (value) {
+                                                      if (value != null) {
+                                                        e.config!.value = value;
+                                                      }
+                                                    },
+                                                    items: DisplayUnitsSpeed.values
+                                                        .map((speed) => DropdownMenuItem(
+                                                            value: speed,
+                                                            child: Text(getUnitStr(UnitType.speed,
+                                                                lexical: false, override: speed))))
+                                                        .toList()),
+                                              );
                                               break;
                                             case "DisplayUnitsVario":
-                                              trailing = DropdownMenuFormField<DisplayUnitsVario>(
-                                                  onSelected: (value) =>
-                                                      {e.config!.value = value ?? e.config!.defaultValue},
-                                                  initialSelection: e.config!.value,
-                                                  dropdownMenuEntries: DisplayUnitsVario.values
-                                                      .map((e) => DropdownMenuEntry(
-                                                          value: e,
-                                                          label:
-                                                              getUnitStr(UnitType.vario, lexical: false, override: e)))
-                                                      .toList());
+                                              trailing = SizedBox(
+                                                width: 150,
+                                                child: DropdownButtonFormField<DisplayUnitsVario>(
+                                                    initialValue: e.config!.value,
+                                                    onChanged: (value) {
+                                                      if (value != null) {
+                                                        e.config!.value = value;
+                                                      }
+                                                    },
+                                                    items: DisplayUnitsVario.values
+                                                        .map((vario) => DropdownMenuItem(
+                                                            value: vario,
+                                                            child: Text(getUnitStr(UnitType.vario,
+                                                                lexical: false, override: vario))))
+                                                        .toList()),
+                                              );
                                               break;
                                             case "DisplayUnitsFuel":
-                                              trailing = DropdownMenuFormField<DisplayUnitsFuel>(
-                                                  onSelected: (value) =>
-                                                      {e.config!.value = value ?? e.config!.defaultValue},
-                                                  initialSelection: e.config!.value,
-                                                  dropdownMenuEntries: DisplayUnitsFuel.values
-                                                      .map((e) => DropdownMenuEntry(
-                                                          value: e,
-                                                          label:
-                                                              getUnitStr(UnitType.fuel, lexical: false, override: e)))
-                                                      .toList());
+                                              trailing = SizedBox(
+                                                width: 150,
+                                                child: DropdownButtonFormField<DisplayUnitsFuel>(
+                                                    initialValue: e.config!.value,
+                                                    onChanged: (value) {
+                                                      if (value != null) {
+                                                        e.config!.value = value;
+                                                      }
+                                                    },
+                                                    items: DisplayUnitsFuel.values
+                                                        .map((fuel) => DropdownMenuItem(
+                                                            value: fuel,
+                                                            child: Text(getUnitStr(UnitType.fuel,
+                                                                lexical: false, override: fuel))))
+                                                        .toList()),
+                                              );
                                               break;
                                             case "AltimeterMode":
-                                              trailing = DropdownMenuFormField<AltimeterMode>(
-                                                  onSelected: (value) =>
-                                                      {e.config!.value = value ?? e.config!.defaultValue},
-                                                  initialSelection: e.config!.value,
-                                                  dropdownMenuEntries: const [
-                                                    DropdownMenuEntry(value: AltimeterMode.agl, label: "AGL"),
-                                                    DropdownMenuEntry(value: AltimeterMode.msl, label: "MSL"),
-                                                  ]);
+                                              trailing = SizedBox(
+                                                width: 150,
+                                                child: DropdownButtonFormField<AltimeterMode>(
+                                                    initialValue: e.config!.value,
+                                                    onChanged: (value) {
+                                                      if (value != null) {
+                                                        e.config!.value = value;
+                                                      }
+                                                    },
+                                                    items: const [
+                                                      DropdownMenuItem(value: AltimeterMode.agl, child: Text("AGL")),
+                                                      DropdownMenuItem(value: AltimeterMode.msl, child: Text("MSL")),
+                                                    ]),
+                                              );
                                               break;
                                             case "ProximitySize":
-                                              trailing = DropdownMenuFormField<ProximitySize>(
-                                                  onSelected: (value) =>
-                                                      {e.config!.value = value ?? e.config!.defaultValue},
-                                                  initialSelection: e.config!.value,
-                                                  dropdownMenuEntries: ProximitySize.values
-                                                      .map((e) => DropdownMenuEntry(
-                                                          value: e, label: e.toString().split(".").last.tr()))
-                                                      .toList());
+                                              trailing = SizedBox(
+                                                width: 150,
+                                                child: DropdownButtonFormField<ProximitySize>(
+                                                    initialValue: e.config!.value,
+                                                    onChanged: (value) {
+                                                      if (value != null) {
+                                                        e.config!.value = value;
+                                                      }
+                                                    },
+                                                    items: ProximitySize.values
+                                                        .map((size) => DropdownMenuItem(
+                                                            value: size,
+                                                            child: Text(size.toString().split(".").last.tr())))
+                                                        .toList()),
+                                              );
                                               break;
                                             case "LanguageOverride":
-                                              trailing = DropdownMenuFormField<LanguageOverride>(
-                                                  onSelected: (value) =>
-                                                      {e.config!.value = value ?? e.config!.defaultValue},
-                                                  initialSelection: e.config!.value,
-                                                  dropdownMenuEntries: LanguageOverride.values
-                                                      .map((e) => DropdownMenuEntry(
-                                                          value: e, label: languageNames[e] ?? "None"))
-                                                      .toList());
+                                              trailing = SizedBox(
+                                                width: 150,
+                                                child: DropdownButtonFormField<LanguageOverride>(
+                                                    initialValue: e.config!.value,
+                                                    onChanged: (value) {
+                                                      if (value != null) {
+                                                        e.config!.value = value;
+                                                      }
+                                                    },
+                                                    items: LanguageOverride.values
+                                                        .map((lang) => DropdownMenuItem(
+                                                            value: lang, child: Text(languageNames[lang] ?? "None")))
+                                                        .toList()),
+                                              );
                                               break;
                                             default:
                                               trailing = Text(

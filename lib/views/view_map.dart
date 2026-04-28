@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
@@ -45,7 +44,6 @@ import 'package:xcnav/dialogs/edit_live_fuel_report.dart';
 
 // models
 import 'package:xcnav/models/geo.dart';
-import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/tfr.dart';
