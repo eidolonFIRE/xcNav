@@ -670,7 +670,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     geo!.ground = sampleDem(geo!.latlng, true);
 
     if (!appInFocus() && !inFlight) {
-      if (geo!.ground != null && (geo!.alt - geo!.ground! < 10) && geo!.spd > 23) {
+      if (geo!.ground != null && (geo!.alt - geo!.ground! < 10) && geo!.spd > 25) {
         debugPrint("Driving detected!");
         setStandby(true);
       }
@@ -697,8 +697,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         // Is moving slowly near the ground?
         // Only acount for AGL if ground data available.
         if (speedSmooth.value < 1.7 &&
-            varioSmooth.value.abs() < 0.2 &&
-            (geo!.ground != null ? (geo!.alt - geo!.ground!) < 100 : true)) {
+            varioSmooth.value.abs() < 0.3 &&
+            (geo!.ground != null ? ((geo!.alt - geo!.ground!) < 100) : true)) {
           if (geoPrev != null) {
             triggerHyst += geo!.time - geoPrev!.time;
           } else {
@@ -707,14 +707,16 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         } else {
           triggerHyst = 0;
         }
-        if (triggerHyst > 30000) {
+        if (triggerHyst > 20000) {
           // Landed!
           stopFlight(bypassRecording: bypassRecording);
         }
       } else {
         // Is moving a normal speed and above the ground?
         // Only acount for AGL if ground data available.
-        if (4.0 < geo!.spd && geo!.spd < 25 && (geo!.ground != null ? geo!.alt - geo!.ground! > 30 : true)) {
+        if (4.0 < geo!.spd &&
+            geo!.spd < 25 &&
+            ((geo!.ground != null ? (geo!.alt - geo!.ground! > 30) : true) || varioSmooth.value > 1.4)) {
           if (geoPrev != null) {
             triggerHyst += geo!.time - geoPrev!.time;
           } else {
