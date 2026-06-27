@@ -19,7 +19,7 @@ final Map<String, BleDeviceHandler> _deviceHandlersByName = {
   r'xc170': bleDeviceXc170,
   r'BigBattery': bleDeviceBigBattery,
   r'[aA]i[lL]ink_[0-9a-zA-Z]{4}': bleDeviceRunleader,
-  r'OpenPPG SP140': bleDeviceSp140,
+  r'OpenPPG SP140[.]*': bleDeviceSp140,
 };
 
 final Map<String, StreamSubscription<BluetoothConnectionState>> _deviceStateListener = {};
