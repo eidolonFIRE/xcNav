@@ -6,17 +6,20 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
 import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
 import 'package:xcnav/ble_devices/ble_device_runleader.dart';
+import 'package:xcnav/ble_devices/ble_device_sp140.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170.dart';
 import 'package:xcnav/settings_service.dart';
 
 final BleDeviceXc170 bleDeviceXc170 = BleDeviceXc170();
 final BleDeviceBigBattery bleDeviceBigBattery = BleDeviceBigBattery();
 final BleDeviceRunleader bleDeviceRunleader = BleDeviceRunleader();
+final BleDeviceSp140 bleDeviceSp140 = BleDeviceSp140();
 
 final Map<String, BleDeviceHandler> _deviceHandlersByName = {
   r'xc170': bleDeviceXc170,
   r'BigBattery': bleDeviceBigBattery,
-  r'[aA]i[lL]ink_[0-9a-zA-Z]{4}': bleDeviceRunleader
+  r'[aA]i[lL]ink_[0-9a-zA-Z]{4}': bleDeviceRunleader,
+  r'OpenPPG SP140': bleDeviceSp140,
 };
 
 final Map<String, StreamSubscription<BluetoothConnectionState>> _deviceStateListener = {};
