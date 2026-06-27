@@ -87,8 +87,8 @@ class FakeFlight {
 
     vario = min(6, max(-7, vario + randomCentered() / 2)) * 0.99;
     if (alt < 1) vario = randomCentered() + 1;
-    if (alt - (prevGeo.ground ?? 0) < 500) vario += 0.1;
-    if (alt - (prevGeo.ground ?? 0) > 4000) vario -= 0.1;
+    if (alt - (prevGeo.ground ?? 0) < 100) vario += 0.1;
+    if (alt - (prevGeo.ground ?? 0) > 500) vario -= 0.1;
     alt = max(prevGeo.ground ?? 0, alt * 0.99999 + vario) + randomCentered() * 2;
 
     return fakeGeoToLoc(FakeGeo(latlng.longitude, latlng.latitude, alt));

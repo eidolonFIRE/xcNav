@@ -151,6 +151,16 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     return _fuelStats!;
   }
 
+  double? get glideSlope {
+    if (geo != null) {
+      final slope = speedSmooth.value / varioSmooth.value.abs();
+      if (slope.isFinite && slope < 50 && slope > 1) {
+        return slope;
+      }
+    }
+    return null;
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached && inFlight) saveFlight();

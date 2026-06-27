@@ -11,6 +11,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
@@ -349,9 +350,14 @@ class ElevationPlotPainter extends CustomPainter {
 
     // --- Draw Vario
     if (showPilotIcon) {
+      final slope = myTelemetry.glideSlope;
       TextPainter tp = TextPainter(
-          text: richValue(UnitType.vario, liveVario,
-              valueStyle: const TextStyle(fontSize: 30), unitStyle: const TextStyle(fontSize: 14, color: Colors.grey)),
+          text: TextSpan(children: [
+            richValue(UnitType.vario, liveVario,
+                valueStyle: const TextStyle(fontSize: 30),
+                unitStyle: const TextStyle(fontSize: 14, color: Colors.grey)),
+            if (slope != null) TextSpan(text: "    ${slope.round()}:1")
+          ]),
           textAlign: TextAlign.right,
           textDirection: TextDirection.ltr);
       tp.layout(minWidth: 60);
