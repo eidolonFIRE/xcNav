@@ -101,7 +101,7 @@
     "G-Force": "G-Force",
     "Launch": "Launch",
     "Landing": "Landing",
-    "dialog_select_range_with_slider": "Use the range slider to select the duration of the log to keep.",
+    "dialog_select_range_with_slider": "Ping zoom in one of the charts to view a portion of the flight to keep.",
     "Invalid Selection": "Invalid Selection",
     "flight_duration_hist": "Flight Duration (histogram)",
     "Monthly Totals": "Monthly Totals",
