@@ -292,6 +292,8 @@ class BleDeviceSp140 extends BleDeviceHandler {
 
     debugPrint("Device Address: ${instance.remoteId.str}");
 
+    dd.error("BLE connected", attributes: characteristics.map((key, value) => MapEntry(key, value.keys.toList())));
+
     if (characteristics[SERVICE_UUID_SHORT]?[telemetry.uuid] != null) {
       debugPrint("Sp140 - setting up telemetry.");
       telemetry.setupRefreshTimer(characteristics[SERVICE_UUID_SHORT]![telemetry.uuid]!);

@@ -217,7 +217,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       if (center != null) {
         mapController.move(center, zoom);
       }
-      if (mapKey.currentContext?.mounted ?? false) {
+      if ((mapKey.currentContext?.mounted ?? false) && mapKey.currentContext?.size != null) {
         mapAspectRatio = mapKey.currentContext!.size!.aspectRatio;
       }
     }

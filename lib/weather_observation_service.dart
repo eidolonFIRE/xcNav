@@ -201,7 +201,7 @@ class WeatherObservationService {
   /// If no limit provided, it will be automatic based on the size of `bounds`.
   Iterable<WeatherStation> iterStations(LatLngBounds bounds,
       {int? tileLimit, bool Function(WeatherStation)? filter}) sync* {
-    final limit = tileLimit ?? max(1, (12 / pow(bounds.north - bounds.south, 2)).round());
+    final limit = tileLimit ?? max(1, (12 / pow(max(bounds.north - bounds.south, 0.2), 2)).round());
     for (final tile in iterTiles(bounds)) {
       // debugPrint("(WEATHER) Tile ${tile.x},${tile.y} : ${(_stationsByTile[tile.x]?[tile.y] ?? {}).length}");
       for (final WeatherStation station
