@@ -418,15 +418,19 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
                     // ADSB Proximity
                     if (Provider.of<ADSB>(context, listen: false).enabled && myTelemetry.geo != null)
-                      CircleLayer(circles: [
-                        CircleMarker(
-                            point: myTelemetry.geo!.latlng,
-                            color: Colors.transparent,
-                            borderStrokeWidth: 1,
-                            borderColor: Colors.black54,
-                            radius: proximityProfileOptions[settingsMgr.adsbProximitySize.value]!.horizontalDist,
-                            useRadiusInMeter: true)
-                      ]),
+                      ListenableBuilder(
+                          listenable: myTelemetry,
+                          builder: (context, _) {
+                            return CircleLayer(circles: [
+                              CircleMarker(
+                                  point: myTelemetry.geo!.latlng,
+                                  color: Colors.transparent,
+                                  borderStrokeWidth: 1,
+                                  borderColor: Colors.black54,
+                                  radius: proximityProfileOptions[settingsMgr.adsbProximitySize.value]!.horizontalDist,
+                                  useRadiusInMeter: true)
+                            ]);
+                          }),
 
                     // Next waypoint: path
                     if (myTelemetry.geo != null && plan.selectedWp != null)
@@ -694,7 +698,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       ]),
 
                     // GA planes (ADSB IN)
-                    if (Provider.of<ADSB>(context, listen: false).enabled)
+                    if (Provider.of<ADSB>(context, listen: true).enabled)
                       MarkerLayer(
                           markers: Provider.of<ADSB>(context, listen: false)
                               .planes
