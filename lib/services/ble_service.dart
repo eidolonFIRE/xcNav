@@ -96,7 +96,7 @@ void scan() async {
   });
 
   await FlutterBluePlus.startScan(
-      withKeywords: ["AiLink_", "xc170", "BigBattery"],
+      withKeywords: ["AiLink_", "xc170", "BigBattery", "OpenPPG SP140"],
       // withServices: _deviceHandlersByName.values.map((e) => Guid.fromString(e.SERVICE_UUID)).toList(),
       timeout: Duration(seconds: 10));
 }
