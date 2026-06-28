@@ -203,7 +203,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
     bool hasxc170 = (log.bleDevicesJson?["xc170"]?["datas"]["telemetry"]?["rpm"]?["data"]?.length ?? 0) > 0;
     bool hasRunLeader = (log.bleDevicesJson?["runleader"]?["datas"]?["telemetry"]?["rpm"]?["data"]?.length ?? 0) > 0;
-    bool showEngineTab = hasxc170 || hasRunLeader;
+    bool hasSp140 = (log.bleDevicesJson?["sp140"]?["datas"]?["telemetry"]?["escPower"]?["data"]?.length ?? 0) > 0;
+    bool showEngineTab = hasxc170 || hasRunLeader || hasSp140;
 
     return PopScope(
       onPopInvokedWithResult: (_, __) {
@@ -829,7 +830,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         child: EngineReplay(
                           logView: logView,
                           onSelectedTime: selectTime,
-                          rpmSource: hasRunLeader ? "runleader" : "xc170",
+                          rpmSource: hasSp140 ? "sp140" : (hasRunLeader ? "runleader" : "xc170"),
+                          hasSp140: hasSp140,
                           transformController: chartTransformController,
                         )),
                   ]),
@@ -845,9 +847,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
               Tab(icon: Icon(Icons.g_mobiledata), text: "G-Force".tr()),
               Tab(icon: Icon(Icons.local_gas_station), text: "Fuel".tr()),
               if (showEngineTab)
-                Tab(
-                    icon: SizedBox(height: 24, child: SvgPicture.asset("assets/images/engine.svg")),
-                    text: "gear.Engine".tr()),
+                hasSp140
+                    ? Tab(icon: Icon(Icons.electric_bolt), text: "Sp140")
+                    : Tab(
+                        icon: SizedBox(height: 24, child: SvgPicture.asset("assets/images/engine.svg")),
+                        text: "gear.Engine".tr()),
             ]),
           ],
         ),

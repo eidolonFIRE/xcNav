@@ -114,6 +114,10 @@ class TimestampDouble {
 
   @override
   int get hashCode => time.hashCode + value.hashCode;
+
+  dynamic toJson() {
+    return [time, value];
+  }
 }
 
 class TimestampValue<T extends num> {

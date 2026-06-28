@@ -983,76 +983,78 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 // crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // --- fuel button
-                  Align(
-                      alignment: Alignment.bottomRight,
-                      child: Column(mainAxisSize: MainAxisSize.min, verticalDirection: VerticalDirection.up, children: [
-                        MapButton(
-                          size: buttonSize,
-                          selected: false,
-                          child: const Icon(Icons.local_gas_station, color: Colors.black, size: 30),
-                          onPressed: () => {editLiveFuelReport(context)},
-                        ),
-                        SizedBox(
-                            width: 2,
-                            height: buttonSize / 6,
-                            child: Container(
-                              color: Colors.black,
-                            )),
-                        // --- Fuel remaining info
-                        ListenableBuilder(
-                            listenable: myTelemetry,
-                            builder: (context, _) {
-                              return Container(
-                                foregroundDecoration: BoxDecoration(
-                                    border: Border.all(width: 0.5, color: Colors.black),
-                                    borderRadius: const BorderRadius.all(Radius.circular(15))),
-                                child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(15),
-                                    child: BackdropFilter(
-                                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                        child: Container(
-                                            color: Colors.white38,
-                                            child: Builder(builder: (context) {
-                                              final fuelReport = myTelemetry.fuelReports.lastOrNull;
+                  if (ble_service.bleDeviceSp140.device == null)
+                    Align(
+                        alignment: Alignment.bottomRight,
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, verticalDirection: VerticalDirection.up, children: [
+                          MapButton(
+                            size: buttonSize,
+                            selected: false,
+                            child: const Icon(Icons.local_gas_station, color: Colors.black, size: 30),
+                            onPressed: () => {editLiveFuelReport(context)},
+                          ),
+                          SizedBox(
+                              width: 2,
+                              height: buttonSize / 6,
+                              child: Container(
+                                color: Colors.black,
+                              )),
+                          // --- Fuel remaining info
+                          ListenableBuilder(
+                              listenable: myTelemetry,
+                              builder: (context, _) {
+                                return Container(
+                                  foregroundDecoration: BoxDecoration(
+                                      border: Border.all(width: 0.5, color: Colors.black),
+                                      borderRadius: const BorderRadius.all(Radius.circular(15))),
+                                  child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(15),
+                                      child: BackdropFilter(
+                                          filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                          child: Container(
+                                              color: Colors.white38,
+                                              child: Builder(builder: (context) {
+                                                final fuelReport = myTelemetry.fuelReports.lastOrNull;
 
-                                              if (fuelReport != null) {
-                                                if (myTelemetry.sumFuelStat == null || !myTelemetry.inFlight) {
-                                                  final warn = fuelReport.amount <= 1;
-                                                  final style = TextStyle(
-                                                      color: warn ? Colors.red : Colors.black,
-                                                      fontSize: 20,
-                                                      fontWeight: warn ? FontWeight.bold : FontWeight.normal);
-                                                  return Padding(
-                                                      padding: const EdgeInsets.all(8.0),
-                                                      child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
-                                                          decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
+                                                if (fuelReport != null) {
+                                                  if (myTelemetry.sumFuelStat == null || !myTelemetry.inFlight) {
+                                                    final warn = fuelReport.amount <= 1;
+                                                    final style = TextStyle(
+                                                        color: warn ? Colors.red : Colors.black,
+                                                        fontSize: 20,
+                                                        fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                                    return Padding(
+                                                        padding: const EdgeInsets.all(8.0),
+                                                        child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
+                                                            decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
+                                                  } else {
+                                                    final etaEmpty = myTelemetry.sumFuelStat!
+                                                        .extrapolateEndurance(fuelReport, from: clock.now());
+
+                                                    final warn = etaEmpty < const Duration(minutes: 15);
+                                                    final style = TextStyle(
+                                                        color: warn ? Colors.red : Colors.black,
+                                                        fontSize: 20,
+                                                        fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                                    return Padding(
+                                                        padding: const EdgeInsets.all(8.0),
+                                                        child: Text.rich(
+                                                            richHrMin(duration: etaEmpty, valueStyle: style)));
+                                                  }
                                                 } else {
-                                                  final etaEmpty = myTelemetry.sumFuelStat!
-                                                      .extrapolateEndurance(fuelReport, from: clock.now());
-
-                                                  final warn = etaEmpty < const Duration(minutes: 15);
-                                                  final style = TextStyle(
-                                                      color: warn ? Colors.red : Colors.black,
-                                                      fontSize: 20,
-                                                      fontWeight: warn ? FontWeight.bold : FontWeight.normal);
-                                                  return Padding(
-                                                      padding: const EdgeInsets.all(8.0),
-                                                      child:
-                                                          Text.rich(richHrMin(duration: etaEmpty, valueStyle: style)));
+                                                  return const Padding(
+                                                    padding: EdgeInsets.all(8.0),
+                                                    child: Text(
+                                                      "?",
+                                                      style: TextStyle(color: Colors.black, fontSize: 20),
+                                                    ),
+                                                  );
                                                 }
-                                              } else {
-                                                return const Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Text(
-                                                    "?",
-                                                    style: TextStyle(color: Colors.black, fontSize: 20),
-                                                  ),
-                                                );
-                                              }
-                                            })))),
-                              );
-                            }),
-                      ])),
+                                              })))),
+                                );
+                              }),
+                        ])),
 
                   // --- BLE xc170
                   if (ble_service.bleDeviceXc170.device != null) Xc170StatusCard(xc170: ble_service.bleDeviceXc170),

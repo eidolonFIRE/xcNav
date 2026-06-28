@@ -14,6 +14,7 @@ class EngineReplay extends StatelessWidget {
   final LogView logView;
   final void Function(double? time)? onSelectedTime;
   final String rpmSource;
+  final bool hasSp140;
   final TransformationController transformController;
 
   const EngineReplay({
@@ -21,6 +22,7 @@ class EngineReplay extends StatelessWidget {
     required this.logView,
     this.onSelectedTime,
     required this.rpmSource,
+    this.hasSp140 = false,
     required this.transformController,
   });
 
@@ -29,10 +31,14 @@ class EngineReplay extends StatelessWidget {
     return ListenableBuilder(
         listenable: logView,
         builder: (context, _) {
-          final rpmDataFull = logView.log.getBleDeviceSeries(rpmSource, "rpm").where((e) => e.value > 2000).toList();
-          final rpmData = logView.getBleDeviceSeries(rpmSource, "rpm").where((e) => e.value > 2000).toList();
+          final rpmDataFull = hasSp140
+              ? logView.log.getBleDeviceSeries(rpmSource, "escPower")
+              : logView.log.getBleDeviceSeries(rpmSource, "rpm").where((e) => e.value > 2000).toList();
+          final rpmData = hasSp140
+              ? logView.getBleDeviceSeries(rpmSource, "escPower")
+              : logView.getBleDeviceSeries(rpmSource, "rpm").where((e) => e.value > 2000).toList();
           if (rpmData.isEmpty) {
-            return Center(child: Text("No valid RPM data found from $rpmSource."));
+            return Center(child: Text("No valid data found from $rpmSource."));
           }
           final rpmVario = logView.varioLogSmoothed
               .map((each) => TimestampDouble(
@@ -42,6 +48,7 @@ class EngineReplay extends StatelessWidget {
                   unitConverters[UnitType.vario]!(each.value)))
               .sorted((a, b) => a.time - b.time)
               .toList();
+          String yUnit = hasSp140 ? "kW" : "RPM".tr();
           debugPrint("RPM Vario points: ${rpmVario.length}");
           final rpmVarioTrend = getLinearTrendlineTuned(values: rpmVario, outlierThresh: 100, iterations: 2);
 
@@ -53,7 +60,7 @@ class EngineReplay extends StatelessWidget {
                   children: [
                     Align(
                         alignment: Alignment.topLeft,
-                        child: Text("${"gear.Engine".tr()} ${"RPM".tr()}", style: TextStyle(color: Colors.grey))),
+                        child: Text("${"gear.Engine".tr()} $yUnit", style: TextStyle(color: Colors.grey))),
                     LineChart(
                         transformationConfig: FlTransformationConfig(
                             scaleAxis: FlScaleAxis.horizontal,
@@ -149,7 +156,7 @@ class EngineReplay extends StatelessWidget {
                   children: [
                     Align(
                         alignment: Alignment.topLeft,
-                        child: Text("${"Vario".tr()} / ${"RPM".tr()}", style: TextStyle(color: Colors.grey))),
+                        child: Text("${"Vario".tr()} / $yUnit", style: TextStyle(color: Colors.grey))),
                     LineChart(LineChartData(
                         clipData: FlClipData.all(),
                         lineTouchData: LineTouchData(enabled: false),

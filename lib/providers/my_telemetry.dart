@@ -596,12 +596,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (log.timeRange != null) {
         bleDeviceXc170.trimToRange(log.timeRange!);
         bleDeviceRunleader.trimToRange(log.timeRange!);
+        bleDeviceSp140.trimToRange(log.timeRange!);
       }
 
       Map<String, dynamic> deviceLogs = {
         "ble_devices": {
           if (bleDeviceXc170.device != null) "xc170": bleDeviceXc170.toJson(),
           if (bleDeviceRunleader.device != null) "runleader": bleDeviceRunleader.toJson(),
+          if (bleDeviceSp140.device != null) "sp140": bleDeviceSp140.toJson(),
         },
       };
       log.save(additionalJson: deviceLogs);

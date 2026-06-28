@@ -4,6 +4,8 @@ import 'package:bisection/bisect.dart';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/douglas_peucker.dart';
+import 'package:xcnav/datadog.dart' as dd;
 
 class MapValue<T extends num> {
   /// map input -> output curve
@@ -55,6 +57,22 @@ class BleLoggedValue<T extends num> {
     T calibratedValue = calibration == null ? value : calibration!.mapValue(value);
     _valueRawStream.sink.add(calibratedValue);
     log.add(TimestampValue<T>((timestamp ?? clock.now()).millisecondsSinceEpoch, calibratedValue));
+  }
+
+  /// Simplifies all the log data
+  void compress({double epsilon = 0.01}) {
+    if (log is List<TimestampValue<double>>) {
+      final temp = douglasPeuckerTimestamped(log as List<TimestampDouble>, epsilon);
+      log.clear();
+      log.addAll(temp as List<TimestampValue<T>>);
+    } else if (log is List<TimestampValue<int>>) {
+      final temp =
+          douglasPeuckerTimestamped(log.map((e) => TimestampDouble(e.time, e.value.toDouble())).toList(), epsilon);
+      log.clear();
+      log.addAll(temp.map((e) => TimestampValue<T>(e.time, e.value.round() as T)).toList());
+    } else {
+      dd.warn("Tried to compress BleLoggedValue with unsupported type: ${T.runtimeType}");
+    }
   }
 
   Map<String, dynamic>? toJson() {
