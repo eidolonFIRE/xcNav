@@ -264,13 +264,13 @@ class Sp140CommandCharacteristic {
 class BleDeviceSp140 extends BleDeviceHandler {
   @override
   // ignore: overridden_fields, non_constant_identifier_names
-  final SERVICE_UUID = "45A17001-B73B-49E1-8B39-5E9ED5E1B930";
+  final SERVICE_UUID = "45a17001-b73b-49e1-8b39-5e9ed5e1b930";
 
   BleDeviceSp140() : super();
 
   final Sp140TelemetryCharacteristic telemetry =
-      Sp140TelemetryCharacteristic(uuid: "45A17002-B73B-49E1-8B39-5E9ED5E1B930");
-  final Sp140CommandCharacteristic config = Sp140CommandCharacteristic(uuid: "45A17003-B73B-49E1-8B39-5E9ED5E1B930");
+      Sp140TelemetryCharacteristic(uuid: "45a17002-b73b-49e1-8b39-5e9ed5e1b930");
+  final Sp140CommandCharacteristic config = Sp140CommandCharacteristic(uuid: "45a17003-b73b-49e1-8b39-5e9ed5e1b930");
 
   @override
   Map<String, dynamic>? toJson() {
