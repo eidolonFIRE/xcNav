@@ -189,6 +189,8 @@ class Sp140TelemetryCharacteristic {
   final rpm = BleLoggedValue<int>();
   final voltage = BleLoggedValue<double>();
   final amps = BleLoggedValue<double>();
+  final charge = BleLoggedValue<int>();
+  ValueNotifier<int> diffVolt = ValueNotifier<int>(0);
 
   Sp140TelemetryCharacteristic({required this.uuid});
 
@@ -208,6 +210,8 @@ class Sp140TelemetryCharacteristic {
       rpm.addValue(telemetry.escRpm, clock.now());
       voltage.addValue(telemetry.escVoltsDV / 10.0, clock.now());
       amps.addValue(telemetry.escAmpsDA / 10.0, clock.now());
+      diffVolt.value = telemetry.bmsVoltageDiffMV;
+      charge.addValue(telemetry.bmsSoc, clock.now());
     });
   }
 
@@ -261,8 +265,6 @@ class BleDeviceSp140 extends BleDeviceHandler {
   @override
   // ignore: overridden_fields, non_constant_identifier_names
   final SERVICE_UUID = "45A17001-B73B-49E1-8B39-5E9ED5E1B930";
-  // ignore: non_constant_identifier_names
-  final SERVICE_UUID_SHORT = "7001";
 
   BleDeviceSp140() : super();
 
@@ -294,9 +296,9 @@ class BleDeviceSp140 extends BleDeviceHandler {
 
     dd.error("BLE connected", attributes: characteristics.map((key, value) => MapEntry(key, value.keys.toList())));
 
-    if (characteristics[SERVICE_UUID_SHORT]?[telemetry.uuid] != null) {
+    if (characteristics[SERVICE_UUID]?[telemetry.uuid] != null) {
       debugPrint("Sp140 - setting up telemetry.");
-      telemetry.setupRefreshTimer(characteristics[SERVICE_UUID_SHORT]![telemetry.uuid]!);
+      telemetry.setupRefreshTimer(characteristics[SERVICE_UUID]![telemetry.uuid]!);
     }
   }
 
@@ -374,6 +376,32 @@ class Sp140StatusCard extends StatelessWidget {
                                           style: const TextStyle(color: Colors.black, fontSize: 24),
                                         ),
                                         WidgetSpan(child: Icon(Icons.speed, color: Colors.black, size: 24)),
+                                      ]));
+                                    }),
+                                StreamBuilder<int>(
+                                    stream: sp140.telemetry.charge.valueRawStream,
+                                    builder: (context, value) {
+                                      return Text.rich(TextSpan(children: [
+                                        TextSpan(
+                                          text: value.data != null ? "${value.data}%" : "?",
+                                          style: TextStyle(color: Colors.black, fontSize: 24),
+                                        ),
+                                        WidgetSpan(
+                                            child: Icon(Icons.speed,
+                                                color: (value.data ?? 100) > 10 ? Colors.black : Colors.red, size: 24)),
+                                      ]));
+                                    }),
+                                ValueListenableBuilder<int>(
+                                    valueListenable: sp140.telemetry.diffVolt,
+                                    builder: (context, value, _) {
+                                      return Text.rich(TextSpan(children: [
+                                        TextSpan(
+                                          text: "$value mv",
+                                          style: TextStyle(color: Colors.black, fontSize: 24),
+                                        ),
+                                        WidgetSpan(
+                                            child: Icon(Icons.speed,
+                                                color: value > 200 ? Colors.red : Colors.black, size: 24)),
                                       ]));
                                     }),
                               ],
