@@ -204,8 +204,6 @@ class XCNav extends StatelessWidget {
   Widget build(BuildContext context) {
     myTelemetry.globalContext = context;
 
-    DefaultAssetBundle.of(context).loadString("assets/airports.json").then((value) => loadAirports(value));
-
     WakelockPlus.enable();
 
     setSystemUI();

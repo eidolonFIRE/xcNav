@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/util.dart';
 
 class Airport {
   final String name;
@@ -15,15 +17,21 @@ class Airport {
 
 Map<String, Airport>? _airports;
 
-void loadAirports(String data) async {
+void loadAirports(String data) {
   final Map<String, dynamic> jsonResult = jsonDecode(data);
 
   _airports = {};
   for (final each in jsonResult.entries) {
-    _airports![each.key] = Airport(each.value[0], each.key, LatLng(each.value[1], each.value[2]), each.value[3]);
+    final alt = parseAsDouble(each.value[3]);
+    _airports![each.key] = Airport(each.value[0], each.key,
+        LatLng(parseAsDouble(each.value[1])!, parseAsDouble(each.value[2])!), alt != null ? alt * 0.3048 : null);
   }
 }
 
 Airport? getAirport(String code) {
   return _airports?[code];
+}
+
+bool airportsLoaded() {
+  return _airports != null;
 }

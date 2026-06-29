@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/airports.dart';
 import 'package:xcnav/dialogs/edit_plan_name.dart';
 
 // --- Dialogs
@@ -60,9 +61,16 @@ class _PlansViewerState extends State<PlansViewer> {
   void iFlightURL(BuildContext context, String? initialClipText) async {
     final formKey = GlobalKey<FormState>();
 
-    FlightPlan parsePlan(String name, String url) {
+    if (!airportsLoaded()) {
+      DefaultAssetBundle.of(context).loadString("assets/airports.json").then((value) => loadAirports(value));
+    }
+
+    dynamic parsePlan(String name, String url) {
       final uri = Uri.parse(url);
-      final route = uri.queryParameters["Route"] ?? "";
+      final route = uri.queryParameters["Route"];
+      if (route == null) {
+        return "URL missing &Route= parameter.";
+      }
       return FlightPlan.fromiFlightPlanner(name, route);
     }
 
@@ -94,27 +102,43 @@ class _PlansViewerState extends State<PlansViewer> {
                       },
                       onSaved: (newValue) => name = newValue,
                     ),
-                    TextFormField(
-                      key: const Key("iFlightPlannerURL"),
-                      // controller: urlController,
-                      initialValue: initialClipText,
-                      decoration: const InputDecoration(hintText: "URL"),
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      validator: (value) {
-                        if (value?.isEmpty ?? false) {
-                          return "warning_empty".tr();
-                        }
-                        final plan = parsePlan("-", value!);
-                        if (!plan.goodFile) {
-                          return "warning_err_parse".tr();
-                        }
-                        return null;
-                      },
-                      onChanged: (url) {
-                        formKey.currentState?.validate();
-                      },
-                      onSaved: (newValue) => url = newValue,
+                    Container(
+                      height: 8,
+                    ),
+                    Expanded(
+                      child: Scrollbar(
+                        child: TextFormField(
+                          key: const Key("iFlightPlannerURL"),
+                          // controller: urlController,
+                          initialValue: initialClipText,
+                          decoration: const InputDecoration(hintText: "URL"),
+                          keyboardType: TextInputType.multiline,
+                          textAlign: TextAlign.start,
+                          textAlignVertical: TextAlignVertical.top,
+                          expands: true,
+                          minLines: null,
+                          maxLines: null,
+                          enableSuggestions: false,
+                          autocorrect: false,
+                          validator: (value) {
+                            if (value?.isEmpty ?? false) {
+                              return "warning_empty".tr();
+                            }
+                            final plan = parsePlan("-", value!);
+                            if (plan is String) {
+                              return plan;
+                            }
+                            if (!plan.goodFile) {
+                              return "warning_err_parse".tr();
+                            }
+                            return null;
+                          },
+                          onChanged: (url) {
+                            formKey.currentState?.validate();
+                          },
+                          onSaved: (newValue) => url = newValue,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -133,7 +157,7 @@ class _PlansViewerState extends State<PlansViewer> {
                       Icons.check,
                       color: Colors.lightGreen,
                     ),
-                    label: Text("btn.Load"))
+                    label: Text("btn.import".tr()))
               ],
             ));
   }

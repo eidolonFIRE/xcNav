@@ -25,7 +25,7 @@ void main() {
     expect(plan.waypoints.values.toList()[0].latlng[0].longitude < -121, true);
 
     expect(plan.waypoints.values.toList()[1].latlng.length, 1);
-    expect(plan.waypoints.values.toList()[1].name, "3O1 - Gustine");
+    expect(plan.waypoints.values.toList()[1].name, "3O1 - Gustine Airport");
   });
 
   test('iFlightPlanner - first positive', () {
@@ -43,7 +43,7 @@ void main() {
     expect(plan.waypoints.values.toList()[0].latlng[0].longitude < -121, true);
 
     expect(plan.waypoints.values.toList()[1].latlng.length, 1);
-    expect(plan.waypoints.values.toList()[1].name, "3O1 - Gustine");
+    expect(plan.waypoints.values.toList()[1].name, "3O1 - Gustine Airport");
   });
 
   test('iFlightPlanner - first airport', () {
@@ -56,7 +56,7 @@ void main() {
 
     expect(plan.waypoints.length, 3);
     expect(plan.waypoints.values.toList()[0].latlng.length, 1);
-    expect(plan.waypoints.values.toList()[0].name, "1Q4 - New Jerusalem");
+    expect(plan.waypoints.values.toList()[0].name, "1Q4 - New Jerusalem Airport");
     expect(plan.waypoints.values.toList()[1].latlng.length, 9);
     expect(plan.waypoints.values.toList()[1].latlng[0].latitude > 36, true);
     expect(plan.waypoints.values.toList()[1].latlng[0].longitude < -121, true);
@@ -64,7 +64,7 @@ void main() {
     expect(plan.waypoints.values.toList()[1].latlng.last.longitude < -120, true);
 
     expect(plan.waypoints.values.toList()[2].latlng.length, 1);
-    expect(plan.waypoints.values.toList()[2].name, "3O1 - Gustine");
+    expect(plan.waypoints.values.toList()[2].name, "3O1 - Gustine Airport");
   });
 
   test('iFlightPlanner - no airports', () {

@@ -72,15 +72,27 @@ class FlightPlan {
     }
   }
 
-  FlightPlan.fromiFlightPlanner(this.name, String url) {
+  /// Attempt to parse a flight plan from an iFlightPlanner URL
+  /// If the URL is invalid, will return a String with an error message instead of a FlightPlan.
+  static dynamic fromiFlightPlanner(String name, String url) {
     final pattern = RegExp(r"((?<!^)[\-]?)?([\-]{0,2}[\d\.]+/[\-]?[\d\.]+)|([\w\d]{3,4})");
 
     List<LatLng> latlngs = [];
 
-    LatLng parseLatLng(String raw) {
-      final double lat = parseAsDouble(raw.split("/")[0]) ?? 0;
-      final double lng = parseAsDouble(raw.split("/")[1]) ?? 0;
-      return LatLng(lat, lng);
+    FlightPlan plan = FlightPlan(name);
+
+    dynamic parseLatLng(String raw) {
+      final lat = parseAsDouble(raw.split("/")[0]);
+      final lng = parseAsDouble(raw.split("/")[1]);
+      if (lat == null || lng == null) {
+        return "Invalid Lat/Long: $raw";
+      }
+      try {
+        final temp = LatLng(lat, lng);
+        return temp;
+      } catch (err) {
+        return "Invalid Lat/Long: $raw";
+      }
     }
 
     for (final each in pattern.allMatches(url)) {
@@ -105,38 +117,42 @@ class FlightPlan {
             // end a path
             latlngs.add(airport.latlng);
             final path = Waypoint(name: "To: ${airport.name}", latlngs: latlngs);
-            waypoints[path.id] = path;
+            plan.waypoints[path.id] = path;
             latlngs = [airport.latlng];
           } else {
             // empty unfinished path
             latlngs.clear();
             latlngs = [];
           }
-          waypoints[waypoint.id] = waypoint;
+          plan.waypoints[waypoint.id] = waypoint;
         } else {
-          final msg = "Couldn't find airport $airportCode.";
+          final msg = "Unrecognized airport $airportCode.";
           error(msg, attributes: {"url": url});
-          goodFile = false;
-          return;
+          return msg;
         }
       } else if (latlngRaw != null) {
         // Append to path
-        latlngs.add(parseLatLng(latlngRaw));
+        final latlng = parseLatLng(latlngRaw);
+        if (latlng is String) {
+          return latlng;
+        }
+        latlngs.add(latlng);
       }
     }
 
     if (latlngs.length > 1) {
       // end a path
       final path = Waypoint(name: "Path", latlngs: latlngs);
-      waypoints[path.id] = path;
+      plan.waypoints[path.id] = path;
       latlngs = [path.latlng.last];
     }
 
-    if (waypoints.isEmpty) {
-      goodFile = false;
+    if (plan.waypoints.isEmpty) {
+      return "No waypoints found.";
     } else {
-      goodFile = true;
+      plan.goodFile = true;
     }
+    return plan;
   }
 
   FlightPlan.fromKml(this.name, XmlElement document, List<XmlElement> folders) {
