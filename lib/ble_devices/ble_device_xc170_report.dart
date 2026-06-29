@@ -49,7 +49,7 @@ class _Xc170ReportScreenState extends State<Xc170ReportScreen> {
     }
 
     final rpmVario = log.varioLogSmoothed
-        .map((each) => TimestampDouble(
+        .map((each) => TimestampValue<double>(
             rpmData[nearestIndex(rpmData.map((e) => e.time.toDouble()).toList(), each.time.toDouble())].value.round(),
             unitConverters[UnitType.vario]!(each.value)))
         .sorted((a, b) => a.time - b.time)

@@ -4,12 +4,12 @@ import 'package:collection/collection.dart';
 import 'package:xcnav/util.dart';
 
 class PeakDetectorResult {
-  late final List<TimestampDouble> peaks;
-  late final List<TimestampDouble> valleys;
+  late final List<TimestampValue<double>> peaks;
+  late final List<TimestampValue<double>> valleys;
 
   // PeakDetectorResult(this.peaks, this.valleys);
 
-  PeakDetectorResult.fromValues(List<TimestampDouble> values,
+  PeakDetectorResult.fromValues(List<TimestampValue<double>> values,
       {int radius = 10, double thresh = 0.3, double? peakThreshold}) {
     peaks = [];
     valleys = [];

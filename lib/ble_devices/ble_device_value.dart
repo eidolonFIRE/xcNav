@@ -62,12 +62,12 @@ class BleLoggedValue<T extends num> {
   /// Simplifies all the log data
   void compress({double epsilon = 0.01}) {
     if (log is List<TimestampValue<double>>) {
-      final temp = douglasPeuckerTimestamped(log as List<TimestampDouble>, epsilon);
+      final temp = douglasPeuckerTimestamped(log as List<TimestampValue<double>>, epsilon);
       log.clear();
       log.addAll(temp as List<TimestampValue<T>>);
     } else if (log is List<TimestampValue<int>>) {
-      final temp =
-          douglasPeuckerTimestamped(log.map((e) => TimestampDouble(e.time, e.value.toDouble())).toList(), epsilon);
+      final temp = douglasPeuckerTimestamped(
+          log.map((e) => TimestampValue<double>(e.time, e.value.toDouble())).toList(), epsilon);
       log.clear();
       log.addAll(temp.map((e) => TimestampValue<T>(e.time, e.value.round() as T)).toList());
     } else {

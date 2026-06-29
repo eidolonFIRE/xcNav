@@ -54,7 +54,7 @@ List<double> douglasPeucker(List<double> points, double epsilon) {
 
 /// 0.5 agressive
 /// 0.1 mild
-List<TimestampDouble> douglasPeuckerTimestamped(List<TimestampDouble> points, double epsilon) {
+List<TimestampValue<double>> douglasPeuckerTimestamped(List<TimestampValue<double>> points, double epsilon) {
   if (points.isEmpty || points.length == 1) {
     return points;
   }
@@ -73,8 +73,8 @@ List<TimestampDouble> douglasPeuckerTimestamped(List<TimestampDouble> points, do
   }
 
   if (maxDistance > epsilon) {
-    List<TimestampDouble> left = douglasPeuckerTimestamped(points.sublist(0, maxIndex + 1), epsilon);
-    List<TimestampDouble> right = douglasPeuckerTimestamped(points.sublist(maxIndex), epsilon);
+    List<TimestampValue<double>> left = douglasPeuckerTimestamped(points.sublist(0, maxIndex + 1), epsilon);
+    List<TimestampValue<double>> right = douglasPeuckerTimestamped(points.sublist(maxIndex), epsilon);
 
     return left.sublist(0, left.length - 1) + right;
   } else {

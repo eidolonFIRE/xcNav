@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:xcnav/util.dart';
 
 class TrendlineResult {
-  final List<TimestampDouble> points;
+  final List<TimestampValue<double>> points;
   final double errorTotal;
   final double slope;
   final double offset;
@@ -10,7 +10,7 @@ class TrendlineResult {
   TrendlineResult(this.points, this.errorTotal, this.slope, this.offset);
 }
 
-TrendlineResult getLinearTrendline(List<TimestampDouble> values) {
+TrendlineResult getLinearTrendline(List<TimestampValue<double>> values) {
   // slope = (n(sum(x*y) - sum(x)sum(y)))/(n*sum(x2) - sum(x)2)
   double n = values.length.toDouble();
 
@@ -35,15 +35,15 @@ TrendlineResult getLinearTrendline(List<TimestampDouble> values) {
 
   // y = slope * x + offset
   return TrendlineResult([
-    TimestampDouble(values.first.time, slope * values.first.time.toDouble() + offset),
-    TimestampDouble(values.last.time, slope * values.last.time.toDouble() + offset)
+    TimestampValue<double>(values.first.time, slope * values.first.time.toDouble() + offset),
+    TimestampValue<double>(values.last.time, slope * values.last.time.toDouble() + offset)
   ], error, slope, offset);
 }
 
 TrendlineResult getLinearTrendlineTuned(
-    {required List<TimestampDouble> values, required double outlierThresh, int iterations = 3}) {
+    {required List<TimestampValue<double>> values, required double outlierThresh, int iterations = 3}) {
   TrendlineResult result = getLinearTrendline(values);
-  List<TimestampDouble> copy = values.toList();
+  List<TimestampValue<double>> copy = values.toList();
   for (int t = 0; t < iterations; t++) {
     copy = copy.where((e) => (e.value - (result.slope * e.time + result.offset)).abs() < outlierThresh).toList();
     result = getLinearTrendline(copy);

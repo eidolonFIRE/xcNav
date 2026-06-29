@@ -65,7 +65,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo? geo;
   Geo? geoPrev;
 
-  final List<TimestampDouble> gForceRecord = [];
+  final List<TimestampValue<double>> gForceRecord = [];
   List<Geo> recordGeo = [];
   List<LatLng> flightTrace = [];
   DateTime? takeOff;
@@ -355,7 +355,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         double magnitude =
             sqrt(pow(gForceX / gForceCounter, 2) + pow(gForceY / gForceCounter, 2) + pow(gForceZ / gForceCounter, 2)) /
                 9.8066;
-        gForceRecord.add(TimestampDouble(event.timestamp.millisecondsSinceEpoch, magnitude));
+        gForceRecord.add(TimestampValue<double>(event.timestamp.millisecondsSinceEpoch, magnitude));
 
         // mark timer and reset for next couple samples
         gForcePrevTimestamp = event.timestamp.millisecondsSinceEpoch;

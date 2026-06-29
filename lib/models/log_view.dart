@@ -63,7 +63,7 @@ class LogView with ChangeNotifier {
     return log.samples.sublist(sampleIndexRange.start, sampleIndexRange.end);
   }
 
-  List<TimestampDouble> get gForceSamples {
+  List<TimestampValue<double>> get gForceSamples {
     return log.gForceSamples.sublist(gForceIndexRange.start, gForceIndexRange.end);
   }
 
@@ -81,8 +81,8 @@ class LogView with ChangeNotifier {
     _timeRange = log.timeRange!;
   }
 
-  List<TimestampDouble>? _varioLogSmoothed;
-  List<TimestampDouble> get varioLogSmoothed {
+  List<TimestampValue<double>>? _varioLogSmoothed;
+  List<TimestampValue<double>> get varioLogSmoothed {
     _varioLogSmoothed ??= log.varioLogSmoothed
         .where((element) =>
             element.time >= _timeRange.start.millisecondsSinceEpoch &&
@@ -91,7 +91,7 @@ class LogView with ChangeNotifier {
     return _varioLogSmoothed!;
   }
 
-  List<TimestampDouble> getBleDeviceSeries(String device, String key) {
+  List<TimestampValue<double>> getBleDeviceSeries(String device, String key) {
     return log
         .getBleDeviceSeries(device, key)
         .where((element) =>

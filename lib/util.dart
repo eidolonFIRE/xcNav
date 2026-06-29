@@ -96,30 +96,6 @@ extension IterableConvolve<T> on Iterable<T> {
   }
 }
 
-class TimestampDouble {
-  /// Milliseconds since epoch
-  final int time;
-  final double value;
-
-  TimestampDouble(this.time, this.value);
-
-  @override
-  bool operator ==(Object other) {
-    if (other is TimestampDouble) {
-      return other.time == time && other.value == value;
-    } else {
-      return false;
-    }
-  }
-
-  @override
-  int get hashCode => time.hashCode + value.hashCode;
-
-  dynamic toJson() {
-    return [time, value];
-  }
-}
-
 class TimestampValue<T extends num> {
   /// Milliseconds since epoch
   final int time;

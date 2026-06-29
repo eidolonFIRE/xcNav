@@ -146,7 +146,7 @@ class SpeedHistogram extends StatelessWidget {
                 final hist = logView.log
                     .speedHistogram(logView.sampleIndexRange.start, logView.sampleIndexRange.end, width: maxX);
                 final peaks = PeakDetectorResult.fromValues(
-                    hist.values.mapIndexed((i, v) => TimestampDouble(i * 1000, v.toDouble())).toList(),
+                    hist.values.mapIndexed((i, v) => TimestampValue<double>(i * 1000, v.toDouble())).toList(),
                     radius: 4,
                     thresh: hist.values.sum / 30,
                     peakThreshold: hist.values.sum / 20);

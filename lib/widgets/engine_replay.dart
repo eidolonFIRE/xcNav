@@ -41,7 +41,7 @@ class EngineReplay extends StatelessWidget {
             return Center(child: Text("No valid data found from $rpmSource."));
           }
           final rpmVario = logView.varioLogSmoothed
-              .map((each) => TimestampDouble(
+              .map((each) => TimestampValue<double>(
                   rpmData[nearestIndex(rpmData.map((e) => e.time.toDouble()).toList(), each.time.toDouble())]
                       .value
                       .round(),

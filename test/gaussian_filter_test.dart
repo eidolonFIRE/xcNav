@@ -4,11 +4,11 @@ import 'package:xcnav/util.dart';
 
 void main() {
   test('gaussian filter - flat offset', () {
-    final List<TimestampDouble> data = [
-      TimestampDouble(0, 1),
-      TimestampDouble(0, 1),
-      TimestampDouble(0, 1),
-      TimestampDouble(0, 1)
+    final List<TimestampValue<double>> data = [
+      TimestampValue<double>(0, 1),
+      TimestampValue<double>(0, 1),
+      TimestampValue<double>(0, 1),
+      TimestampValue<double>(0, 1)
     ];
 
     expect(gaussianFilterTimestamped(data, 3, 3), data);

@@ -26,7 +26,8 @@ List<double> _gaussianKernel(double sigma, int size) {
   return kernel;
 }
 
-Iterable<TimestampDouble> gaussianFilterTimestamped(List<TimestampDouble> data, double sigma, int kernelSize) sync* {
+Iterable<TimestampValue<double>> gaussianFilterTimestamped(
+    List<TimestampValue<double>> data, double sigma, int kernelSize) sync* {
   if (kernelSize % 2 == 0) {
     throw ArgumentError("Kernel size must be odd.");
   }
@@ -45,6 +46,6 @@ Iterable<TimestampDouble> gaussianFilterTimestamped(List<TimestampDouble> data, 
         filteredY += data[i].value * kernel[j];
       }
     }
-    yield TimestampDouble(data[i].time, filteredY);
+    yield TimestampValue<double>(data[i].time, filteredY);
   }
 }

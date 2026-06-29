@@ -20,7 +20,7 @@ class GForceEvent {
   GForceEvent(this.gForceIndeces, this.timeRange, this.center);
 }
 
-List<GForceSlice> getGForceSlices({required List<TimestampDouble> samples, double high = 3, double low = 1.1}) {
+List<GForceSlice> getGForceSlices({required List<TimestampValue<double>> samples, double high = 3, double low = 1.1}) {
   final List<GForceSlice> events = [];
 
   final reTriggerHigh = max(1.3, (high - 1) * 0.8 + 1);

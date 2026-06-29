@@ -31,7 +31,7 @@ class FlightLog {
   late List<Geo> samples;
   late final List<Waypoint> waypoints;
 
-  late List<TimestampDouble> gForceSamples;
+  late List<TimestampValue<double>> gForceSamples;
 
   late final String? rawJson;
   late final Map<String, dynamic>? bleDevicesJson;
@@ -217,15 +217,15 @@ class FlightLog {
     return _speedHistMaxIndex!;
   }
 
-  final Map<String, List<TimestampDouble>> _bleDeviceSeriesCache = {};
-  List<TimestampDouble> getBleDeviceSeries(String device, String key) {
+  final Map<String, List<TimestampValue<double>>> _bleDeviceSeriesCache = {};
+  List<TimestampValue<double>> getBleDeviceSeries(String device, String key) {
     final name = "$device-$key";
     if (!_bleDeviceSeriesCache.containsKey(name)) {
       int startTime = parseAsInt(bleDevicesJson?[device]["datas"]["telemetry"][key]["start_time"]) ?? 0;
       List<dynamic> series = bleDevicesJson?[device]["datas"]["telemetry"][key]["data"] ?? [];
       _bleDeviceSeriesCache[name] = series
-          .map((e) =>
-              TimestampDouble((e[0] as int) + startTime, e[1] is double ? e[1] as double : (e[1] as int).toDouble()))
+          .map((e) => TimestampValue<double>(
+              (e[0] as int) + startTime, e[1] is double ? e[1] as double : (e[1] as int).toDouble()))
           .where((e) => e.time >= startTime && e.time <= endTime!.millisecondsSinceEpoch)
           .toList();
     }
@@ -294,16 +294,16 @@ class FlightLog {
   }
 
   // =========================================
-  List<TimestampDouble>? _varioLogSmoothed;
+  List<TimestampValue<double>>? _varioLogSmoothed;
 
   /// Smoothed, calculated vario log from recorded elevation
-  List<TimestampDouble> get varioLogSmoothed {
+  List<TimestampValue<double>> get varioLogSmoothed {
     if (_varioLogSmoothed == null) {
       final altLog =
-          gaussianFilterTimestamped(samples.map((e) => TimestampDouble(e.time, e.alt)).toList(), 3, 3).toList();
+          gaussianFilterTimestamped(samples.map((e) => TimestampValue<double>(e.time, e.alt)).toList(), 3, 3).toList();
       _varioLogSmoothed = altLog
           .convolve((a, b) => b.time > a.time + 10
-              ? TimestampDouble(((a.time + b.time) / 2).round(), (b.value - a.value) / (b.time - a.time) * 1000)
+              ? TimestampValue<double>(((a.time + b.time) / 2).round(), (b.value - a.value) / (b.time - a.time) * 1000)
               : null)
           .toList();
     }
@@ -673,8 +673,8 @@ class FlightLog {
       if (data.containsKey("gForceSamples")) {
         final List<dynamic> gSamples = data["gForceSamples"];
         for (int t = 0; t < gSamples.length; t += 2) {
-          gForceSamples.add(
-              TimestampDouble((gSamples[t] as int) + startTime!.millisecondsSinceEpoch, gSamples[t + 1] as double));
+          gForceSamples.add(TimestampValue<double>(
+              (gSamples[t] as int) + startTime!.millisecondsSinceEpoch, gSamples[t + 1] as double));
         }
       }
 
