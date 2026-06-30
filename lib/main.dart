@@ -53,7 +53,6 @@ import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/secrets.dart';
-import 'package:xcnav/airports.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/services/ble_service.dart' as ble_service;
 

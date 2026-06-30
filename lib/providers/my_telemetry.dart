@@ -72,7 +72,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   DateTime? landing;
   Geo? launchGeo;
   DateTime? lastSavedLog;
-  List<FuelReport> fuelReports = [];
+  final List<FuelReport> _fuelReports = [];
+  List<FuelReport> get fuelReports => UnmodifiableListView(_fuelReports);
 
   // in-flight hysterisis
   int triggerHyst = 0;
@@ -138,9 +139,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       debugPrint("Building fuelStats");
 
       // Rebuild the stats
-      for (int index = 0; index < fuelReports.length - 1; index++) {
-        final a = fuelReports[index];
-        final b = fuelReports[index + 1];
+      for (int index = 0; index < _fuelReports.length - 1; index++) {
+        final a = _fuelReports[index];
+        final b = _fuelReports[index + 1];
         final newStat =
             FuelStat.fromSamples(a, b, recordGeo.sublist(timeToSampleIndex(a.time), timeToSampleIndex(b.time) + 1));
         // this will even include stats that are invalid.
@@ -507,7 +508,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           audioCueService.cueMyTelemetry(geo!, speedSmoothed: speedSmooth.value);
           audioCueService.cueNextWaypoint(geo!, speedSmooth.value);
           audioCueService.cueGroupAwareness(geo!);
-          audioCueService.cueFuel(sumFuelStat, fuelReports.lastOrNull);
+          audioCueService.cueFuel(sumFuelStat, _fuelReports.lastOrNull);
         }
       }
     }
@@ -536,11 +537,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       flightEvent.add(FlightEvent(
           type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo!.time), latlng: geo!.latlng));
 
-      if (fuelReports.isNotEmpty) {
+      if (_fuelReports.isNotEmpty) {
         // Duplicate the latest fuel report so it's part of this log, and drop everything else.
         // We assume we weren't just in flight, so we don't account for burn since last report.
-        final latest = fuelReports.last;
-        fuelReports.clear();
+        final latest = _fuelReports.last;
+        _fuelReports.clear();
         insertFuelReport(takeOff!, latest.amount, tolerance: Duration.zero);
       }
 
@@ -561,8 +562,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       landing = DateTime.fromMillisecondsSinceEpoch(recordGeo.last.time);
 
       // Insert new fuel report extrapolated down (if stats were available)
-      if (sumFuelStat != null && fuelReports.isNotEmpty) {
-        insertFuelReport(landing!, sumFuelStat!.extrapolateToTime(fuelReports.last, landing!));
+      if (sumFuelStat != null && _fuelReports.isNotEmpty) {
+        insertFuelReport(landing!, sumFuelStat!.extrapolateToTime(_fuelReports.last, landing!));
       }
 
       flightEvent.add(FlightEvent(
@@ -590,7 +591,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                   .where((element) => (!element.ephemeral && element.validate()))
                   .toList()
               : [],
-          fuelReports: fuelReports,
+          fuelReports: _fuelReports,
           gear: Provider.of<Profile>(globalContext!, listen: false).gear);
 
       if (log.timeRange != null) {
@@ -621,10 +622,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Null is returned if no matches within tolerance are found.
   int? findFuelReportIndex(DateTime time, {Duration tolerance = const Duration(minutes: 5)}) {
     final index =
-        bisect_left<int>(fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
-    if (index > 0 && fuelReports[index - 1].time.difference(time).abs().compareTo(tolerance) < 1) {
+        bisect_left<int>(_fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
+    if (index > 0 && _fuelReports[index - 1].time.difference(time).abs().compareTo(tolerance) < 1) {
       return index - 1;
-    } else if (index < fuelReports.length && fuelReports[index].time.difference(time).abs().compareTo(tolerance) < 1) {
+    } else if (index < _fuelReports.length &&
+        _fuelReports[index].time.difference(time).abs().compareTo(tolerance) < 1) {
       return index;
     } else {
       return null;
@@ -639,17 +641,17 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (overwriteIndex != null) {
       if (amount != null) {
         // edit existing
-        fuelReports[overwriteIndex] = FuelReport(fuelReports[overwriteIndex].time, amount);
+        _fuelReports[overwriteIndex] = FuelReport(_fuelReports[overwriteIndex].time, amount);
       } else {
         // remove existing
-        fuelReports.removeAt(overwriteIndex);
+        _fuelReports.removeAt(overwriteIndex);
       }
     } else {
       if (amount != null) {
         // Insert new
         final insertIndex = bisect_left<int>(
-            fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
-        fuelReports.insert(insertIndex, FuelReport(time, amount));
+            _fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
+        _fuelReports.insert(insertIndex, FuelReport(time, amount));
       }
     }
 

@@ -7,8 +7,6 @@ import 'package:xcnav/ble_devices/ble_device_value.dart';
 import 'package:xcnav/datadog.dart' as dd;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
-import 'package:convert/convert.dart';
-import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/settings_service.dart';
@@ -259,20 +257,22 @@ class Sp140TelemetryCharacteristic {
 
     characteristic?.setNotifyValue(true);
     _listener = characteristic?.onValueReceived.listen((data) {
-      dd.info("Sp140 Telemetry Data Received: ${hex.encode(data)}", attributes: {"char_uuid": uuid});
-      final telemetry = BleFastLinkTelemetry.fromListInt(data);
-      escPower.addValue((telemetry.bmsAmpsDA / 10.0) * (telemetry.bmsVoltsDV / 10.0) / 1000.0, clock.now());
-      diffVolt.value = telemetry.bmsVoltageDiffMV;
-      charge.addValue(telemetry.bmsSoc, clock.now());
+      if (data.isNotEmpty) {
+        final telemetry = BleFastLinkTelemetry.fromListInt(data);
+        escPower.addValue((telemetry.bmsAmpsDA / 10.0) * (telemetry.bmsVoltsDV / 10.0) / 1000.0, clock.now());
+        diffVolt.value = telemetry.bmsVoltageDiffMV;
+        charge.addValue(telemetry.bmsSoc, clock.now());
 
-      // Update myTelemetry fuel reports
-      if (myTelemetry.inFlight) {
-        if (myTelemetry.fuelReports.isEmpty ||
-            myTelemetry.fuelReports.last.time.isBefore(clock.now().subtract(const Duration(minutes: 2)))) {
-          myTelemetry.fuelReports.add(FuelReport(
-            clock.now(),
-            telemetry.bmsSoc.toDouble(),
-          ));
+        // Update myTelemetry fuel reports
+        if (myTelemetry.inFlight) {
+          if (myTelemetry.fuelReports.isEmpty ||
+              myTelemetry.fuelReports.last.time.isBefore(clock.now().subtract(const Duration(minutes: 5)))) {
+            myTelemetry.insertFuelReport(
+              clock.now(),
+              telemetry.bmsSoc.toDouble(),
+              tolerance: const Duration(seconds: 30),
+            );
+          }
         }
       }
     });

@@ -1,6 +1,4 @@
 import 'dart:convert';
-
-import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/util.dart';
 

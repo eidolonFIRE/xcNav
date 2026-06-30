@@ -326,14 +326,11 @@ class FlightLog {
 
       if (goodFile) {
         for (int t = 0; t < _fuelReports.length - 1; t++) {
-          // NOTE: if fuel amount stays the same, segment is dropped
-          // if (_fuelReports[t].amount != _fuelReports[t + 1].amount) {
           _fuelStats!.add(FuelStat.fromSamples(
               _fuelReports[t],
               _fuelReports[t + 1],
               samples.sublist(
                   timeToSampleIndex(_fuelReports[t].time), timeToSampleIndex(_fuelReports[t + 1].time) + 1)));
-          // }
         }
       }
     }

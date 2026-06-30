@@ -91,6 +91,18 @@ void main() {
     expect(plan.waypoints.values.last.latlng.length, 6);
   });
 
+  test('iFlightPlanner - Custom', () {
+    const str =
+        "https://www.iFlightPlanner.com/AviationCharts/?Map=sectional&GS=26&Route=I44-39.4142/-84.9401-39.3162/-85.1067-39.1959/-85.1859-38.7429/-85.3668-38.3117/-85.5369";
+    final uri = Uri.parse(str);
+
+    final route = uri.queryParameters["Route"] ?? "";
+    final plan = FlightPlan.fromiFlightPlanner("my plan", route);
+
+    expect(plan.waypoints.length, 2);
+    expect(plan.waypoints.values.last.latlng.length, 6);
+  });
+
   test('kml - google-earth-desktop', () async {
     final file = File.fromUri(Uri.parse("test/fixtures/google_earth_desktop.kml"));
     final document = XmlDocument.parse(await file.readAsString()).getElement("kml")!.getElement("Document")!;

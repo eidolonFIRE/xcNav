@@ -38,7 +38,7 @@ class EngineReplay extends StatelessWidget {
               ? logView.getBleDeviceSeries(rpmSource, "escPower")
               : logView.getBleDeviceSeries(rpmSource, "rpm").where((e) => e.value > 2000).toList();
           if (rpmData.isEmpty) {
-            return Center(child: Text("No valid data found from $rpmSource."));
+            return Center(child: Text("No valid engine data found."));
           }
           final rpmVario = logView.varioLogSmoothed
               .map((each) => TimestampValue<double>(

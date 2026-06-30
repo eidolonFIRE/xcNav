@@ -846,12 +846,11 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
               Tab(icon: Icon(Icons.speed), text: "Speed".tr()),
               Tab(icon: Icon(Icons.g_mobiledata), text: "G-Force".tr()),
               Tab(icon: Icon(Icons.local_gas_station), text: "Fuel".tr()),
-              if (showEngineTab)
-                hasSp140
-                    ? Tab(icon: Icon(Icons.electric_bolt), text: "Sp140")
-                    : Tab(
-                        icon: SizedBox(height: 24, child: SvgPicture.asset("assets/images/engine.svg")),
-                        text: "gear.Engine".tr()),
+              hasSp140
+                  ? Tab(icon: Icon(Icons.electric_bolt), text: "Sp140")
+                  : Tab(
+                      icon: SizedBox(height: 24, child: SvgPicture.asset("assets/images/engine.svg")),
+                      text: "gear.Engine".tr()),
             ]),
           ],
         ),
