@@ -249,7 +249,7 @@ class Sp140TelemetryCharacteristic {
 
   Sp140TelemetryCharacteristic({required this.uuid});
 
-  bool _audioAlerted = false;
+  DateTime? _audioDiffAlerted;
 
   void stopRefresh() {
     _listener?.cancel();
@@ -272,11 +272,13 @@ class Sp140TelemetryCharacteristic {
         state.value = telemetry.deviceState;
 
         // Audio alert for battery voltage difference
-        if (_audioAlerted == false && diffVolt.value > 200) {
-          _audioAlerted = true;
-          ttsService.speak(AudioMessage("Check battery voltage difference!", priority: 2, volume: 1.0));
-        } else if (_audioAlerted == true && diffVolt.value < 100) {
-          _audioAlerted = false;
+        if ((_audioDiffAlerted?.isBefore(clock.now().subtract(Duration(minutes: 2))) ?? true) && diffVolt.value > 200) {
+          _audioDiffAlerted = now;
+          if (diffVolt.value > 400) {
+            ttsService.speak(AudioMessage("Critical battery balance!", priority: 1, volume: 1.0));
+          } else {
+            ttsService.speak(AudioMessage("Check battery balance!", priority: 2, volume: 1.0));
+          }
         }
 
         // Update myTelemetry fuel reports

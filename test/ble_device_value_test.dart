@@ -148,5 +148,14 @@ void main() {
     expect(bleValue.log[1].value, 10);
     expect(bleValue.log[2].value, 10);
     expect(bleValue.log[2].time, 4000);
+
+    bleValue.compress(epsilon: 5);
+
+    expect(bleValue.log.length, 3);
+    expect(bleValue.log[0].time, 0);
+    expect(bleValue.log[0].value, 00);
+    expect(bleValue.log[1].value, 10);
+    expect(bleValue.log[2].value, 10);
+    expect(bleValue.log[2].time, 4000);
   });
 }
