@@ -827,13 +827,15 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     // --- Engine Plot
                     Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: EngineReplay(
-                          logView: logView,
-                          onSelectedTime: selectTime,
-                          rpmSource: hasSp140 ? "sp140" : (hasRunLeader ? "runleader" : "xc170"),
-                          hasSp140: hasSp140,
-                          transformController: chartTransformController,
-                        )),
+                        child: showEngineTab
+                            ? EngineReplay(
+                                logView: logView,
+                                onSelectedTime: selectTime,
+                                rpmSource: hasSp140 ? "sp140" : (hasRunLeader ? "runleader" : "xc170"),
+                                hasSp140: hasSp140,
+                                transformController: chartTransformController,
+                              )
+                            : Center(child: Text("No Data".tr()))),
                   ]),
             ),
 

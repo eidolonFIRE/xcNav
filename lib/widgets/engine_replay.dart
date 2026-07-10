@@ -38,19 +38,23 @@ class EngineReplay extends StatelessWidget {
               ? logView.getBleDeviceSeries(rpmSource, "escPower")
               : logView.getBleDeviceSeries(rpmSource, "rpm").where((e) => e.value > 2000).toList();
           if (rpmData.isEmpty) {
-            return Center(child: Text("No valid engine data found."));
+            return Center(child: Text("No Data".tr()));
           }
           final rpmVario = logView.varioLogSmoothed
-              .map((each) => TimestampValue<double>(
-                  rpmData[nearestIndex(rpmData.map((e) => e.time.toDouble()).toList(), each.time.toDouble())]
-                      .value
-                      .round(),
+              .map((each) => Point<double>(
+                  rpmData[nearestIndex(rpmData.map((e) => e.time.toDouble()).toList(), each.time.toDouble())].value,
                   unitConverters[UnitType.vario]!(each.value)))
-              .sorted((a, b) => a.time - b.time)
+              .sorted((a, b) => (a.x - b.x).round())
               .toList();
+
+          if (rpmVario.isEmpty) {
+            return Center(child: Text("No Data".tr()));
+          }
+
           String yUnit = hasSp140 ? "kW" : "RPM".tr();
-          debugPrint("RPM Vario points: ${rpmVario.length}");
-          final rpmVarioTrend = getLinearTrendlineTuned(values: rpmVario, outlierThresh: 100, iterations: 2);
+
+          final rpmVarioTrend =
+              getLinearTrendlineTuned(values: rpmVario, outlierThresh: hasSp140 ? 200 : 100, iterations: 2);
 
           return Column(
             children: [
@@ -164,8 +168,8 @@ class EngineReplay extends StatelessWidget {
                           LineChartBarData(
                               spots: rpmVario
                                   .map((each) => ScatterSpot(
-                                        each.time.toDouble(),
-                                        each.value,
+                                        each.x,
+                                        each.y,
                                       ))
                                   .toList(),
                               barWidth: 0,
@@ -183,8 +187,8 @@ class EngineReplay extends StatelessWidget {
                           LineChartBarData(
                               spots: rpmVarioTrend.points
                                   .map((each) => ScatterSpot(
-                                        each.time.toDouble(),
-                                        each.value,
+                                        each.x,
+                                        each.y,
                                       ))
                                   .toList(),
                               barWidth: 2,

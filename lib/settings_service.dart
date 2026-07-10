@@ -245,6 +245,8 @@ class SettingsMgr {
   late final SettingConfig<AltimeterMode> audioCueAltimeter;
   late final SettingConfig<List<String>> bleAutoDevices;
 
+  late final SettingConfig<int> sp140FuelSaveIntervalMin;
+
   SettingsMgr(SharedPreferences prefs) {
     // --- General
     languageOverride = SettingConfig(
@@ -416,6 +418,9 @@ class SettingsMgr {
 
     bleAutoDevices =
         SettingConfig(this, prefs, "ble", "bleAutoConnectDevices", [], title: "Auto Connect Devices", hidden: true);
+
+    sp140FuelSaveIntervalMin = SettingConfig(this, prefs, "sp140", "sp140FuelSaveIntervalMin", 5,
+        title: "SP140 Fuel Save Interval (minutes)", icon: const Icon(Icons.timer), hidden: true);
   }
 }
 

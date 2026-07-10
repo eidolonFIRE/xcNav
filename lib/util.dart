@@ -31,6 +31,38 @@ double verticalLineInterval(Duration windowSize) {
       : (windowSize.inSeconds < 60 ? 10000 : (windowSize.inMinutes < 10 ? 60000 : 600000));
 }
 
+Icon batteryIcon(double percent, double size) {
+  if (percent < 50) {
+    if (percent < 25) {
+      if (percent < 12.5) {
+        return Icon(Icons.battery_0_bar, color: Colors.red, size: size);
+      } else {
+        return Icon(Icons.battery_1_bar, color: Colors.orange, size: size);
+      }
+    } else {
+      if (percent < 37.5) {
+        return Icon(Icons.battery_2_bar, color: Colors.black, size: size);
+      } else {
+        return Icon(Icons.battery_3_bar, color: Colors.black, size: size);
+      }
+    }
+  } else {
+    if (percent < 75) {
+      if (percent < 62.5) {
+        return Icon(Icons.battery_4_bar, color: Colors.black, size: size);
+      } else {
+        return Icon(Icons.battery_5_bar, color: Colors.black, size: size);
+      }
+    } else {
+      if (percent < 87.5) {
+        return Icon(Icons.battery_6_bar, color: Colors.green, size: size);
+      } else {
+        return Icon(Icons.battery_full, color: Colors.green, size: size);
+      }
+    }
+  }
+}
+
 String? nameValidator(String? name) {
   if (name != null) {
     if (name.trim().length < 2) return "warning_must_be_2_char".tr();

@@ -7,9 +7,11 @@ import 'package:xcnav/ble_devices/ble_device_value.dart';
 import 'package:xcnav/datadog.dart' as dd;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
+import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/settings_service.dart';
+import 'package:xcnav/util.dart';
 
 class BleFastLinkTelemetry {
   static const int bmsCellsNum = 24;
@@ -243,8 +245,11 @@ class Sp140TelemetryCharacteristic {
   final escPower = BleLoggedValue<double>();
   final charge = BleLoggedValue<int>();
   ValueNotifier<int> diffVolt = ValueNotifier<int>(0);
+  ValueNotifier<int> state = ValueNotifier<int>(0);
 
   Sp140TelemetryCharacteristic({required this.uuid});
+
+  bool _audioAlerted = false;
 
   void stopRefresh() {
     _listener?.cancel();
@@ -258,17 +263,29 @@ class Sp140TelemetryCharacteristic {
     characteristic?.setNotifyValue(true);
     _listener = characteristic?.onValueReceived.listen((data) {
       if (data.isNotEmpty) {
+        final now = clock.now();
         final telemetry = BleFastLinkTelemetry.fromListInt(data);
-        escPower.addValue((telemetry.bmsAmpsDA / 10.0) * (telemetry.bmsVoltsDV / 10.0) / 1000.0, clock.now());
+        escPower.addValue(
+            (telemetry.bmsAmpsDA.toDouble() / 10.0) * (telemetry.bmsVoltsDV.toDouble() / 10.0) / 1000.0, now);
         diffVolt.value = telemetry.bmsVoltageDiffMV;
-        charge.addValue(telemetry.bmsSoc, clock.now());
+        charge.addValue(telemetry.bmsSoc, now);
+        state.value = telemetry.deviceState;
+
+        // Audio alert for battery voltage difference
+        if (_audioAlerted == false && diffVolt.value > 200) {
+          _audioAlerted = true;
+          ttsService.speak(AudioMessage("Check battery voltage difference!", priority: 2, volume: 1.0));
+        } else if (_audioAlerted == true && diffVolt.value < 100) {
+          _audioAlerted = false;
+        }
 
         // Update myTelemetry fuel reports
         if (myTelemetry.inFlight) {
           if (myTelemetry.fuelReports.isEmpty ||
-              myTelemetry.fuelReports.last.time.isBefore(clock.now().subtract(const Duration(minutes: 5)))) {
+              myTelemetry.fuelReports.last.time
+                  .isBefore(now.subtract(Duration(minutes: settingsMgr.sp140FuelSaveIntervalMin.value)))) {
             myTelemetry.insertFuelReport(
-              clock.now(),
+              now,
               telemetry.bmsSoc.toDouble(),
               tolerance: const Duration(seconds: 30),
             );
@@ -286,10 +303,10 @@ class Sp140TelemetryCharacteristic {
   }
 
   void trimToRange(DateTimeRange range) {
-    charge.trimToRange(range);
     charge.compress(epsilon: 0.05);
-    escPower.trimToRange(range);
+    charge.trimToRange(range);
     escPower.compress();
+    escPower.trimToRange(range);
   }
 }
 
@@ -337,6 +354,15 @@ class BleDeviceSp140 extends BleDeviceHandler {
       Sp140TelemetryCharacteristic(uuid: "45a17002-b73b-49e1-8b39-5e9ed5e1b930");
   final Sp140CommandCharacteristic config = Sp140CommandCharacteristic(uuid: "45a17003-b73b-49e1-8b39-5e9ed5e1b930");
 
+  bool? isArmed() {
+    if (device?.isConnected ?? false) {
+      // Connected and armed
+      return telemetry.state.value == 2;
+    } else {
+      return null;
+    }
+  }
+
   @override
   Map<String, dynamic>? toJson() {
     return {
@@ -380,6 +406,40 @@ class BleDeviceSp140 extends BleDeviceHandler {
 
 //-------------------------------------------------
 
+class Sp140ConfigDialog extends StatelessWidget {
+  final BleDeviceSp140 sp140;
+
+  const Sp140ConfigDialog({super.key, required this.sp140});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text("SP140 Ble Device Config"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ValueListenableBuilder<int>(
+              valueListenable: settingsMgr.sp140FuelSaveIntervalMin.listenable,
+              builder: (context, value, child) {
+                return Slider(
+                  value: value.toDouble(),
+                  min: 1,
+                  max: 10,
+                  divisions: 10,
+                  label: "$value min",
+                  onChanged: (newValue) {
+                    settingsMgr.sp140FuelSaveIntervalMin.value = newValue.round();
+                  },
+                );
+              }),
+        ],
+      ),
+    );
+  }
+}
+
+//-------------------------------------------------
+
 class Sp140StatusCard extends StatelessWidget {
   final BleDeviceSp140 sp140;
 
@@ -387,88 +447,100 @@ class Sp140StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-        foregroundDecoration: BoxDecoration(
-            border: Border.all(width: 0.5, color: Colors.black),
-            borderRadius: const BorderRadius.all(Radius.circular(15))),
-        child: ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                child: Container(
-                    color: Colors.white38,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(8, 6, 8, 6),
-                      child: StreamBuilder(
-                          stream: sp140.device?.connectionState,
-                          builder: (context, state) {
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                StreamBuilder<double>(
-                                    stream: sp140.telemetry.escPower.valueRawStream,
-                                    builder: (context, value) {
-                                      return Text.rich(TextSpan(children: [
-                                        TextSpan(
-                                          text: value.data != null
-                                              ? "${printDouble(value: value.data!, digits: 2, decimals: 1)} kW"
-                                              : "?",
-                                          style: const TextStyle(color: Colors.black, fontSize: 24),
-                                        ),
-                                        WidgetSpan(child: Icon(Icons.electric_bolt, color: Colors.black, size: 24)),
-                                      ]));
-                                    }),
-                                StreamBuilder<int>(
-                                    stream: sp140.telemetry.charge.valueRawStream,
-                                    builder: (context, value) {
-                                      return Text.rich(TextSpan(children: [
-                                        TextSpan(
-                                          text: value.data != null ? "${value.data}%" : "?",
-                                          style: TextStyle(color: Colors.black, fontSize: 24),
-                                        ),
-                                        WidgetSpan(
-                                            child: Icon(Icons.battery_full,
-                                                color: (value.data ?? 100) > 10 ? Colors.black : Colors.red, size: 24)),
-                                      ]));
-                                    }),
-                                if (myTelemetry.inFlight && myTelemetry.sumFuelStat != null)
-                                  StreamBuilder<int>(
-                                      stream: sp140.telemetry.charge.valueRawStream,
-                                      builder: (context, value) {
-                                        final etaEmpty = myTelemetry.sumFuelStat!
-                                            .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now());
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+            context: context,
+            builder: (context) {
+              return Sp140ConfigDialog(sp140: sp140);
+            });
+      },
+      child: Container(
+          foregroundDecoration: BoxDecoration(
+              border: Border.all(width: 0.5, color: Colors.black),
+              borderRadius: const BorderRadius.all(Radius.circular(15))),
+          child: ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                  child: Container(
+                      color: Colors.white38,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(8, 6, 8, 6),
+                        child: StreamBuilder(
+                            stream: sp140.device?.connectionState,
+                            builder: (context, state) {
+                              return ColorFiltered(
+                                colorFilter: state.data == BluetoothConnectionState.disconnected
+                                    ? ColorFilter.mode(Colors.grey, BlendMode.lighten)
+                                    : ColorFilter.mode(Colors.black, BlendMode.src),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    StreamBuilder<double>(
+                                        stream: sp140.telemetry.escPower.valueRawStream,
+                                        builder: (context, value) {
+                                          return Text.rich(TextSpan(children: [
+                                            TextSpan(
+                                              text: value.data != null
+                                                  ? "${printDouble(value: value.data!, digits: 2, decimals: 1)} kW"
+                                                  : "?",
+                                              style: const TextStyle(color: Colors.black, fontSize: 24),
+                                            ),
+                                            WidgetSpan(child: Icon(Icons.electric_bolt, color: Colors.black, size: 24)),
+                                          ]));
+                                        }),
+                                    StreamBuilder<int>(
+                                        stream: sp140.telemetry.charge.valueRawStream,
+                                        builder: (context, value) {
+                                          return Text.rich(TextSpan(children: [
+                                            TextSpan(
+                                              text: value.data != null ? "${value.data}%" : "?",
+                                              style: TextStyle(color: Colors.black, fontSize: 24),
+                                            ),
+                                            WidgetSpan(child: batteryIcon(value.data?.toDouble() ?? 0, 24)),
+                                          ]));
+                                        }),
+                                    if (myTelemetry.inFlight && myTelemetry.sumFuelStat != null)
+                                      StreamBuilder<int>(
+                                          stream: sp140.telemetry.charge.valueRawStream,
+                                          builder: (context, value) {
+                                            final etaEmpty = myTelemetry.sumFuelStat!
+                                                .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now());
 
-                                        final warn = etaEmpty < const Duration(minutes: 15);
-                                        final style = TextStyle(
-                                            color: warn ? Colors.red : Colors.black,
-                                            fontSize: 24,
-                                            fontWeight: warn ? FontWeight.bold : FontWeight.normal);
-                                        return Text.rich(TextSpan(children: [
-                                          richHrMin(duration: etaEmpty, valueStyle: style),
-                                          WidgetSpan(child: Icon(Icons.timer, size: 24))
-                                        ]));
-                                      }),
-                                ValueListenableBuilder<int>(
-                                    valueListenable: sp140.telemetry.diffVolt,
-                                    builder: (context, value, _) {
-                                      if (value > 20) {
-                                        return Text.rich(TextSpan(children: [
-                                          TextSpan(
-                                            text: "$value mV",
-                                            style: TextStyle(color: Colors.black, fontSize: 24),
-                                          ),
-                                          WidgetSpan(
-                                              child: Icon(Icons.battery_alert,
-                                                  color: value > 200 ? Colors.red : Colors.black, size: 24)),
-                                        ]));
-                                      } else {
-                                        return Container();
-                                      }
-                                    }),
-                              ],
-                            );
-                          }),
-                    )))));
+                                            final warn = etaEmpty < const Duration(minutes: 15);
+                                            final style = TextStyle(
+                                                color: warn ? Colors.red : Colors.black,
+                                                fontSize: 24,
+                                                fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                            return Text.rich(TextSpan(children: [
+                                              richHrMin(duration: etaEmpty, valueStyle: style),
+                                              WidgetSpan(child: Icon(Icons.timer, size: 24, color: Colors.black))
+                                            ]));
+                                          }),
+                                    ValueListenableBuilder<int>(
+                                        valueListenable: sp140.telemetry.diffVolt,
+                                        builder: (context, value, _) {
+                                          if (value > 20) {
+                                            return Text.rich(TextSpan(children: [
+                                              TextSpan(
+                                                text: "$value mV",
+                                                style: TextStyle(color: Colors.black, fontSize: 24),
+                                              ),
+                                              WidgetSpan(
+                                                  child: Icon(Icons.battery_alert,
+                                                      color: value > 200 ? Colors.red : Colors.black, size: 24)),
+                                            ]));
+                                          } else {
+                                            return Container();
+                                          }
+                                        }),
+                                  ],
+                                ),
+                              );
+                            }),
+                      ))))),
+    );
   }
 }

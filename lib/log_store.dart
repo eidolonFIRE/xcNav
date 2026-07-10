@@ -21,7 +21,7 @@ class LogStore with ChangeNotifier {
   }
 
   Iterable<FlightLog> get logsSliceLogs {
-    return logsSlice.map((e) => _logs[e]!);
+    return logsSlice.map((e) => _logs[e]).nonNulls;
   }
 
   List<LogFilter>? _logFilters;

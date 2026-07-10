@@ -721,7 +721,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         } else {
           triggerHyst = 0;
         }
-        if (triggerHyst > 20000) {
+        if (triggerHyst > 20000 && bleDeviceSp140.isArmed() != true) {
           // Landed!
           stopFlight(bypassRecording: bypassRecording);
         }
@@ -739,7 +739,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         } else {
           triggerHyst = 0;
         }
-        if (triggerHyst > 15000) {
+        if (triggerHyst > 15000 || bleDeviceSp140.isArmed() == true) {
           // Launched!
           startFlight();
         }

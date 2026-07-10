@@ -1,8 +1,9 @@
+import 'dart:math';
+
 import 'package:collection/collection.dart';
-import 'package:xcnav/util.dart';
 
 class TrendlineResult {
-  final List<TimestampValue<double>> points;
+  final List<Point<double>> points;
   final double errorTotal;
   final double slope;
   final double offset;
@@ -10,7 +11,7 @@ class TrendlineResult {
   TrendlineResult(this.points, this.errorTotal, this.slope, this.offset);
 }
 
-TrendlineResult getLinearTrendline(List<TimestampValue<double>> values) {
+TrendlineResult getLinearTrendline(List<Point<double>> values) {
   // slope = (n(sum(x*y) - sum(x)sum(y)))/(n*sum(x2) - sum(x)2)
   double n = values.length.toDouble();
 
@@ -20,10 +21,10 @@ TrendlineResult getLinearTrendline(List<TimestampValue<double>> values) {
   double sumXY = 0;
 
   for (final e in values) {
-    final x = e.time.toDouble();
+    final x = e.x;
     sumX += x;
-    sumY += e.value;
-    sumXY += x * e.value;
+    sumY += e.y;
+    sumXY += x * e.y;
     sumX2 += x * x;
   }
 
@@ -31,21 +32,21 @@ TrendlineResult getLinearTrendline(List<TimestampValue<double>> values) {
   // offest = (sum(y) - slope*sum(x)) / n
   double offset = (sumY - slope * sumX) / n;
 
-  double error = values.map((e) => e.value - (slope * e.time + offset)).map((e) => e.abs()).sum;
+  double error = values.map((e) => e.y - (slope * e.x + offset)).map((e) => e.abs()).sum;
 
   // y = slope * x + offset
   return TrendlineResult([
-    TimestampValue<double>(values.first.time, slope * values.first.time.toDouble() + offset),
-    TimestampValue<double>(values.last.time, slope * values.last.time.toDouble() + offset)
+    Point<double>(values.first.x, slope * values.first.x + offset),
+    Point<double>(values.last.x, slope * values.last.x + offset)
   ], error, slope, offset);
 }
 
 TrendlineResult getLinearTrendlineTuned(
-    {required List<TimestampValue<double>> values, required double outlierThresh, int iterations = 3}) {
+    {required List<Point<double>> values, required double outlierThresh, int iterations = 3}) {
   TrendlineResult result = getLinearTrendline(values);
-  List<TimestampValue<double>> copy = values.toList();
+  List<Point<double>> copy = values.toList();
   for (int t = 0; t < iterations; t++) {
-    copy = copy.where((e) => (e.value - (result.slope * e.time + result.offset)).abs() < outlierThresh).toList();
+    copy = copy.where((e) => (e.y - (result.slope * e.x + result.offset)).abs() < outlierThresh).toList();
     result = getLinearTrendline(copy);
   }
 

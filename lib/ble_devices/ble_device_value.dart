@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bisection/bisect.dart';
 import 'package:clock/clock.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/douglas_peucker.dart';
@@ -33,8 +34,7 @@ class MapValue<T extends num> {
     final y2 = _sensorLUT[index][1];
 
     // Linear interpolation
-
-    if (T is int) {
+    if (T.toString() == "int") {
       return (y1 + (y2 - y1) * ((rawValue - x1) / (x2 - x1))).round() as T;
     } else {
       return y1 + (y2 - y1) * ((rawValue - x1) / (x2 - x1)) as T;
@@ -88,6 +88,36 @@ class BleLoggedValue<T extends num> {
   }
 
   void trimToRange(DateTimeRange range) {
+    // Add interpolated points at the start and end of the range
+    final startIndex = bisect_right(log.map((e) => e.time).toList(), range.start.millisecondsSinceEpoch);
+    if (log.firstOrNull != null &&
+        log.first.time < range.start.millisecondsSinceEpoch &&
+        startIndex > 0 &&
+        startIndex < log.length) {
+      final prev = log[startIndex - 1];
+      final next = log[startIndex];
+      num interpolatedValue = prev.value +
+          (next.value - prev.value) * ((range.start.millisecondsSinceEpoch - prev.time) / (next.time - prev.time));
+      if (T.toString() == "int") {
+        interpolatedValue = (interpolatedValue as double).round();
+      }
+      log.insert(startIndex, TimestampValue<T>(range.start.millisecondsSinceEpoch, interpolatedValue as T));
+    }
+    final endIndex = bisect_left(log.map((e) => e.time).toList(), range.end.millisecondsSinceEpoch);
+    if (log.lastOrNull != null &&
+        log.last.time > range.end.millisecondsSinceEpoch &&
+        endIndex > 0 &&
+        endIndex < log.length) {
+      final prev = log[endIndex - 1];
+      final next = log[endIndex];
+      num interpolatedValue = prev.value +
+          (next.value - prev.value) * ((range.end.millisecondsSinceEpoch - prev.time) / (next.time - prev.time));
+      if (T.toString() == "int") {
+        interpolatedValue = (interpolatedValue as double).round();
+      }
+      log.insert(endIndex, TimestampValue<T>(range.end.millisecondsSinceEpoch, interpolatedValue as T));
+    }
+    // Trim
     log.removeWhere((e) => e.time < range.start.millisecondsSinceEpoch || e.time > range.end.millisecondsSinceEpoch);
   }
 }

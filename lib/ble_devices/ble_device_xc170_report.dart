@@ -36,7 +36,10 @@ class _Xc170ReportScreenState extends State<Xc170ReportScreen> {
   @override
   Widget build(BuildContext context) {
     final fuelData = log.getBleDeviceSeries("xc170", "fuel");
-    final fuelTrend = getLinearTrendlineTuned(values: fuelData, outlierThresh: 0.5, iterations: 1);
+    final fuelTrend = getLinearTrendlineTuned(
+        values: fuelData.map((e) => Point<double>(e.time.toDouble(), e.value)).toList(),
+        outlierThresh: 0.5,
+        iterations: 1);
 
     final chtData = log.getBleDeviceSeries("xc170", "cht");
     final egtData = log.getBleDeviceSeries("xc170", "egt");
@@ -54,7 +57,10 @@ class _Xc170ReportScreenState extends State<Xc170ReportScreen> {
             unitConverters[UnitType.vario]!(each.value)))
         .sorted((a, b) => a.time - b.time)
         .toList();
-    final rpmVarioTrend = getLinearTrendlineTuned(values: rpmVario, outlierThresh: 100, iterations: 2);
+    final rpmVarioTrend = getLinearTrendlineTuned(
+        values: rpmVario.map((e) => Point<double>(e.time.toDouble(), e.value)).toList(),
+        outlierThresh: 100,
+        iterations: 2);
 
     return Scaffold(
         appBar: AppBar(
@@ -103,7 +109,7 @@ class _Xc170ReportScreenState extends State<Xc170ReportScreen> {
                           )),
                       if (fuelData.length > 2)
                         LineChartBarData(
-                            spots: fuelTrend.points.map((e) => FlSpot(e.time.toDouble(), e.value)).toList(),
+                            spots: fuelTrend.points.map((e) => FlSpot(e.x, e.y)).toList(),
                             barWidth: 2,
                             dashArray: [10, 4],
                             color: Colors.white)
@@ -278,8 +284,8 @@ class _Xc170ReportScreenState extends State<Xc170ReportScreen> {
                       LineChartBarData(
                           spots: rpmVarioTrend.points
                               .map((each) => ScatterSpot(
-                                    each.time.toDouble(),
-                                    each.value,
+                                    each.x,
+                                    each.y,
                                   ))
                               .toList(),
                           barWidth: 2,

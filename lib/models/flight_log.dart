@@ -221,13 +221,17 @@ class FlightLog {
   List<TimestampValue<double>> getBleDeviceSeries(String device, String key) {
     final name = "$device-$key";
     if (!_bleDeviceSeriesCache.containsKey(name)) {
-      int startTime = parseAsInt(bleDevicesJson?[device]["datas"]["telemetry"][key]["start_time"]) ?? 0;
-      List<dynamic> series = bleDevicesJson?[device]["datas"]["telemetry"][key]["data"] ?? [];
-      _bleDeviceSeriesCache[name] = series
-          .map((e) => TimestampValue<double>(
-              (e[0] as int) + startTime, e[1] is double ? e[1] as double : (e[1] as int).toDouble()))
-          .where((e) => e.time >= startTime && e.time <= endTime!.millisecondsSinceEpoch)
-          .toList();
+      final startTime = parseAsInt(bleDevicesJson?[device]?["datas"]?["telemetry"]?[key]?["start_time"]);
+      if (startTime != null) {
+        List<dynamic> series = bleDevicesJson?[device]?["datas"]?["telemetry"]?[key]?["data"] ?? [];
+        _bleDeviceSeriesCache[name] = series
+            .map((e) => TimestampValue<double>(
+                (e[0] as int) + startTime, e[1] is double ? e[1] as double : (e[1] as int).toDouble()))
+            .where((e) => e.time >= startTime && e.time <= endTime!.millisecondsSinceEpoch)
+            .toList();
+      } else {
+        _bleDeviceSeriesCache[name] = [];
+      }
     }
     return _bleDeviceSeriesCache[name]!;
   }
