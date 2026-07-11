@@ -590,6 +590,7 @@ class FlightLog {
         filename: filename,
         imported: _imported,
         timezone: _timezone);
+    newLog.bleDevicesJson = bleDevicesJson;
     return newLog;
   }
 

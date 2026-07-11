@@ -132,7 +132,6 @@ class BleFastLinkTelemetry {
     final bytes = Uint8List.fromList(data);
     final byteData = ByteData.sublistView(bytes);
     var offset = 0;
-
     version = byteData.getUint8(offset++);
     packetId = byteData.getUint32(offset, Endian.little);
     offset += 4;
@@ -242,7 +241,7 @@ class Sp140TelemetryCharacteristic {
   BluetoothCharacteristic? characteristic;
   StreamSubscription<List<int>>? _listener;
 
-  final escPower = BleLoggedValue<double>();
+  final power = BleLoggedValue<double>();
   final charge = BleLoggedValue<int>();
   ValueNotifier<int> diffVolt = ValueNotifier<int>(0);
   ValueNotifier<int> state = ValueNotifier<int>(0);
@@ -265,7 +264,7 @@ class Sp140TelemetryCharacteristic {
       if (data.isNotEmpty) {
         final now = clock.now();
         final telemetry = BleFastLinkTelemetry.fromListInt(data);
-        escPower.addValue(
+        power.addValue(
             (telemetry.bmsAmpsDA.toDouble() / 10.0) * (telemetry.bmsVoltsDV.toDouble() / 10.0) / 1000.0, now);
         diffVolt.value = telemetry.bmsVoltageDiffMV;
         charge.addValue(telemetry.bmsSoc, now);
@@ -300,48 +299,48 @@ class Sp140TelemetryCharacteristic {
   Map<String, dynamic>? toJson() {
     return {
       "charge": charge,
-      "escPower": escPower,
+      "power": power,
     };
   }
 
   void trimToRange(DateTimeRange range) {
     charge.compress(epsilon: 0.05);
     charge.trimToRange(range);
-    escPower.compress();
-    escPower.trimToRange(range);
+    power.compress();
+    power.trimToRange(range);
   }
 }
 
-class Sp140CommandCharacteristic {
-  final String uuid;
-  BluetoothCharacteristic? characteristic;
-  StreamSubscription<List<int>>? _listener;
+// class Sp140CommandCharacteristic {
+//   final String uuid;
+//   BluetoothCharacteristic? characteristic;
+//   StreamSubscription<List<int>>? _listener;
 
-  Sp140CommandCharacteristic({required this.uuid});
+//   Sp140CommandCharacteristic({required this.uuid});
 
-  void stopRefresh() {
-    _listener?.cancel();
-    _listener = null;
-  }
+//   void stopRefresh() {
+//     _listener?.cancel();
+//     _listener = null;
+//   }
 
-  void setupRefreshTimer(BluetoothCharacteristic bleChar) {
-    characteristic = bleChar;
-    stopRefresh();
-  }
+//   void setupRefreshTimer(BluetoothCharacteristic bleChar) {
+//     characteristic = bleChar;
+//     stopRefresh();
+//   }
 
-  Future<void> push(List<int> data) async {
-    debugPrint("RunLeader: Pushing Config ${data.map((e) => e.toRadixString(16)).toList()}");
-    await characteristic?.write(data).catchError((error) {
-      dd.error("Writing config characteristic",
-          errorMessage: error.toString(), errorKind: "BLE", attributes: {"char_uuid": uuid});
-    });
-  }
+//   Future<void> push(List<int> data) async {
+//     debugPrint("RunLeader: Pushing Config ${data.map((e) => e.toRadixString(16)).toList()}");
+//     await characteristic?.write(data).catchError((error) {
+//       dd.error("Writing config characteristic",
+//           errorMessage: error.toString(), errorKind: "BLE", attributes: {"char_uuid": uuid});
+//     });
+//   }
 
-  Map<String, dynamic>? toJson() {
-    // Config saves nothing
-    return null;
-  }
-}
+//   Map<String, dynamic>? toJson() {
+//     // Config saves nothing
+//     return null;
+//   }
+// }
 
 //---------------------------
 
@@ -354,12 +353,12 @@ class BleDeviceSp140 extends BleDeviceHandler {
 
   final Sp140TelemetryCharacteristic telemetry =
       Sp140TelemetryCharacteristic(uuid: "45a17002-b73b-49e1-8b39-5e9ed5e1b930");
-  final Sp140CommandCharacteristic config = Sp140CommandCharacteristic(uuid: "45a17003-b73b-49e1-8b39-5e9ed5e1b930");
+  // final Sp140CommandCharacteristic config = Sp140CommandCharacteristic(uuid: "45a17003-b73b-49e1-8b39-5e9ed5e1b930");
 
   bool? isArmed() {
     if (device?.isConnected ?? false) {
       // Connected and armed
-      return telemetry.state.value == 2;
+      return telemetry.state.value > 0;
     } else {
       return null;
     }
@@ -420,6 +419,7 @@ class Sp140ConfigDialog extends StatelessWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Text("Fuel Save Interval (minutes)"),
           ValueListenableBuilder<int>(
               valueListenable: settingsMgr.sp140FuelSaveIntervalMin.listenable,
               builder: (context, value, child) {
@@ -472,25 +472,27 @@ class Sp140StatusCard extends StatelessWidget {
                         child: StreamBuilder(
                             stream: sp140.device?.connectionState,
                             builder: (context, state) {
-                              return ColorFiltered(
-                                colorFilter: state.data == BluetoothConnectionState.disconnected
-                                    ? ColorFilter.mode(Colors.grey, BlendMode.lighten)
-                                    : ColorFilter.mode(Colors.black, BlendMode.src),
+                              final color =
+                                  state.data == BluetoothConnectionState.disconnected ? Colors.grey : Colors.black;
+                              return DefaultTextStyle(
+                                style: TextStyle(color: color),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     StreamBuilder<double>(
-                                        stream: sp140.telemetry.escPower.valueRawStream,
+                                        stream: sp140.telemetry.power.valueRawStream,
                                         builder: (context, value) {
                                           return Text.rich(TextSpan(children: [
                                             TextSpan(
-                                              text: value.data != null
-                                                  ? "${printDouble(value: value.data!, digits: 2, decimals: 1)} kW"
-                                                  : "?",
-                                              style: const TextStyle(color: Colors.black, fontSize: 24),
+                                              text: value.data != null ? value.data!.toStringAsFixed(1) : "?",
+                                              style: const TextStyle(fontSize: 24),
                                             ),
-                                            WidgetSpan(child: Icon(Icons.electric_bolt, color: Colors.black, size: 24)),
+                                            TextSpan(
+                                              text: "kW",
+                                              style: TextStyle(fontSize: 14),
+                                            ),
+                                            WidgetSpan(child: Icon(Icons.electric_bolt, color: color, size: 24)),
                                           ]));
                                         }),
                                     StreamBuilder<int>(
@@ -498,8 +500,12 @@ class Sp140StatusCard extends StatelessWidget {
                                         builder: (context, value) {
                                           return Text.rich(TextSpan(children: [
                                             TextSpan(
-                                              text: value.data != null ? "${value.data}%" : "?",
-                                              style: TextStyle(color: Colors.black, fontSize: 24),
+                                              text: value.data != null ? "${value.data}" : "?",
+                                              style: TextStyle(fontSize: 24),
+                                            ),
+                                            TextSpan(
+                                              text: "%",
+                                              style: TextStyle(fontSize: 14),
                                             ),
                                             WidgetSpan(child: batteryIcon(value.data?.toDouble() ?? 0, 24)),
                                           ]));
@@ -513,12 +519,15 @@ class Sp140StatusCard extends StatelessWidget {
 
                                             final warn = etaEmpty < const Duration(minutes: 15);
                                             final style = TextStyle(
-                                                color: warn ? Colors.red : Colors.black,
+                                                color: warn ? Colors.red : null,
                                                 fontSize: 24,
                                                 fontWeight: warn ? FontWeight.bold : FontWeight.normal);
                                             return Text.rich(TextSpan(children: [
-                                              richHrMin(duration: etaEmpty, valueStyle: style),
-                                              WidgetSpan(child: Icon(Icons.timer, size: 24, color: Colors.black))
+                                              richHrMin(
+                                                  duration: etaEmpty,
+                                                  valueStyle: style,
+                                                  unitStyle: style.copyWith(fontSize: 14)),
+                                              WidgetSpan(child: Icon(Icons.timer_outlined, size: 24, color: color))
                                             ]));
                                           }),
                                     ValueListenableBuilder<int>(
@@ -527,12 +536,16 @@ class Sp140StatusCard extends StatelessWidget {
                                           if (value > 20) {
                                             return Text.rich(TextSpan(children: [
                                               TextSpan(
-                                                text: "$value mV",
-                                                style: TextStyle(color: Colors.black, fontSize: 24),
+                                                text: "$value",
+                                                style: TextStyle(fontSize: 24),
+                                              ),
+                                              TextSpan(
+                                                text: "mV",
+                                                style: TextStyle(fontSize: 14),
                                               ),
                                               WidgetSpan(
                                                   child: Icon(Icons.battery_alert,
-                                                      color: value > 200 ? Colors.red : Colors.black, size: 24)),
+                                                      color: value > 200 ? Colors.red : color, size: 24)),
                                             ]));
                                           } else {
                                             return Container();

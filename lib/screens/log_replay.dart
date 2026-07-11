@@ -203,7 +203,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
     bool hasxc170 = (log.bleDevicesJson?["xc170"]?["datas"]["telemetry"]?["rpm"]?["data"]?.length ?? 0) > 0;
     bool hasRunLeader = (log.bleDevicesJson?["runleader"]?["datas"]?["telemetry"]?["rpm"]?["data"]?.length ?? 0) > 0;
-    bool hasSp140 = (log.bleDevicesJson?["sp140"]?["datas"]?["telemetry"]?["escPower"]?["data"]?.length ?? 0) > 0;
+    bool hasSp140 = (log.bleDevicesJson?["sp140"]?["datas"]?["telemetry"]?["power"]?["data"]?.length ?? 0) > 0;
     bool showEngineTab = hasxc170 || hasRunLeader || hasSp140;
 
     return PopScope(

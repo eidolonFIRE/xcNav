@@ -32,10 +32,10 @@ class EngineReplay extends StatelessWidget {
         listenable: logView,
         builder: (context, _) {
           final rpmDataFull = hasSp140
-              ? logView.log.getBleDeviceSeries(rpmSource, "escPower")
+              ? logView.log.getBleDeviceSeries(rpmSource, "power")
               : logView.log.getBleDeviceSeries(rpmSource, "rpm").where((e) => e.value > 2000).toList();
           final rpmData = hasSp140
-              ? logView.getBleDeviceSeries(rpmSource, "escPower")
+              ? logView.getBleDeviceSeries(rpmSource, "power")
               : logView.getBleDeviceSeries(rpmSource, "rpm").where((e) => e.value > 2000).toList();
           if (rpmData.isEmpty) {
             return Center(child: Text("No Data".tr()));
