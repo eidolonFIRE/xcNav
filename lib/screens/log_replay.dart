@@ -402,7 +402,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                     return PolylineLayer(polylines: [
                                       Polyline(
                                           points: log.samples
-                                              .sublist(logView.sampleIndexRange.start, logView.sampleIndexRange.end)
+                                              .sublist(logView.sampleIndexRange.start,
+                                                  min(log.samples.length, logView.sampleIndexRange.end + 1))
                                               .map((e) => e.latlng)
                                               .toList(),
                                           strokeWidth: 4,

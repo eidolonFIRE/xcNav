@@ -29,6 +29,9 @@ TrendlineResult getLinearTrendline(List<Point<double>> values) {
   }
 
   double slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  if (slope.isNaN || slope.isInfinite) {
+    slope = 0;
+  }
   // offest = (sum(y) - slope*sum(x)) / n
   double offset = (sumY - slope * sumX) / n;
 
@@ -47,6 +50,9 @@ TrendlineResult getLinearTrendlineTuned(
   List<Point<double>> copy = values.toList();
   for (int t = 0; t < iterations; t++) {
     copy = copy.where((e) => (e.y - (result.slope * e.x + result.offset)).abs() < outlierThresh).toList();
+    if (copy.length < 2) {
+      break;
+    }
     result = getLinearTrendline(copy);
   }
 

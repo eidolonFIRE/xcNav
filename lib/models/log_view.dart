@@ -11,7 +11,7 @@ class LogView with ChangeNotifier {
   Range<int> get sampleIndexRange {
     if (_sampleIndexRange == null) {
       int start = log.timeToSampleIndex(_timeRange.start);
-      int end = log.timeToSampleIndex(_timeRange.end) + 1;
+      int end = log.timeToSampleIndex(_timeRange.end);
 
       // validate
       if (start < 0) {

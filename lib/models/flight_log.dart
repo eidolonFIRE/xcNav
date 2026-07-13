@@ -542,7 +542,7 @@ class FlightLog {
   FlightLog cropLog(Range<int> index) {
     final newRange = DateTimeRange(
         start: DateTime.fromMillisecondsSinceEpoch(samples[index.start].time),
-        end: DateTime.fromMillisecondsSinceEpoch(samples[index.end - 1].time));
+        end: DateTime.fromMillisecondsSinceEpoch(samples[index.end].time));
 
     double interpTime(DateTime start, DateTime end, DateTime i) {
       final dur = end.millisecondsSinceEpoch - start.millisecondsSinceEpoch;
