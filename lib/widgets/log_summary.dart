@@ -18,7 +18,7 @@ class LogSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showFuelStats = log.sumFuelStat != null;
-    return DefaultTextStyle(
+    return DefaultTextStyle.merge(
       style: const TextStyle(fontSize: 16, height: 1.5),
       child: Scrollbar(
         thumbVisibility: true,

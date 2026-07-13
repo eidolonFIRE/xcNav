@@ -141,7 +141,12 @@ class EngineReplay extends StatelessWidget {
                                     Icons.vertical_align_top,
                                     size: 18,
                                   )),
-                                  TextSpan(text: rpmData.map((e) => e.value).toList().max.round().toString()),
+                                  TextSpan(
+                                      text: printDouble(
+                                          value: rpmData.map((e) => e.value).toList().max,
+                                          digits: 5,
+                                          decimals: 0,
+                                          autoDecimalThresh: 20.0)),
                                 ])),
                               ],
                             ),
@@ -228,7 +233,12 @@ class EngineReplay extends StatelessWidget {
                                           height: 18,
                                           width: 18,
                                           child: SvgPicture.asset("assets/images/zero_crossing.svg"))),
-                                  TextSpan(text: " ${(-rpmVarioTrend.offset / rpmVarioTrend.slope).round()}"),
+                                  TextSpan(
+                                      text: printDouble(
+                                          value: (-rpmVarioTrend.offset / rpmVarioTrend.slope),
+                                          digits: 5,
+                                          decimals: 1,
+                                          autoDecimalThresh: 10.0)),
                                 ])),
                               ],
                             ),

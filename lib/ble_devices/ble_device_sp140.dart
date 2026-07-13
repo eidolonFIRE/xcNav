@@ -474,7 +474,7 @@ class Sp140StatusCard extends StatelessWidget {
                             builder: (context, state) {
                               final color =
                                   state.data == BluetoothConnectionState.disconnected ? Colors.grey : Colors.black;
-                              return DefaultTextStyle(
+                              return DefaultTextStyle.merge(
                                 style: TextStyle(color: color),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,

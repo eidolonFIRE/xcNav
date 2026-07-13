@@ -48,7 +48,7 @@ class _ScanScreenState extends State<ScanScreen> {
               }),
         ],
       ),
-      body: DefaultTextStyle(
+      body: DefaultTextStyle.merge(
           style: const TextStyle(fontSize: 20),
           child: StreamBuilder(
               stream: FlutterBluePlus.scanResults,

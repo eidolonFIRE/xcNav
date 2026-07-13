@@ -472,7 +472,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         // --- Instrument data for currently selected time
                         Align(
                           alignment: Alignment.topLeft,
-                          child: DefaultTextStyle(
+                          child: DefaultTextStyle.merge(
                             style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                             child: ValueListenableBuilder<DateTime?>(
                                 valueListenable: selectedTime,
@@ -698,7 +698,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                           ),
 
                     // --- Fuel
-                    DefaultTextStyle(
+                    DefaultTextStyle.merge(
                       style: const TextStyle(fontSize: 18),
                       child: Container(
                         color: Colors.grey.shade800,
@@ -919,7 +919,7 @@ class TimeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.center,
-      child: DefaultTextStyle(
+      child: DefaultTextStyle.merge(
         style: TextStyle(color: Colors.grey, fontSize: 12),
         child: Row(
           mainAxisSize: MainAxisSize.min,

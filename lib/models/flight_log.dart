@@ -589,8 +589,8 @@ class FlightLog {
         gear: gear,
         filename: filename,
         imported: _imported,
-        timezone: _timezone);
-    newLog.bleDevicesJson = bleDevicesJson;
+        timezone: _timezone,
+        bleDevicesJson: bleDevicesJson);
     return newLog;
   }
 

@@ -14,7 +14,7 @@ class BasicLogAggregate extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalDist = logs.map((e) => e.durationDist).fold<double>(0, (a, b) => a + b);
     final totalDur = logs.map((e) => e.durationTime).fold<Duration>(const Duration(), (a, b) => a + b);
-    return DefaultTextStyle(
+    return DefaultTextStyle.merge(
       style: Theme.of(context).textTheme.bodyMedium!,
       textAlign: TextAlign.right,
       child: Table(columnWidths: const {
