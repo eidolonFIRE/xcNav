@@ -983,7 +983,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 // crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // --- fuel button
-                  if (ble_service.bleDeviceSp140.device == null)
+                  if (ble_service.bleDeviceSp140.device == null && ble_service.bleDeviceXc170.device == null)
                     Align(
                         alignment: Alignment.bottomRight,
                         child:

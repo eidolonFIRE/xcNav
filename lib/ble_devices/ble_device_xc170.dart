@@ -6,6 +6,7 @@ import 'package:xcnav/ble_devices/ble_device_value.dart';
 import 'package:xcnav/datadog.dart' as dd;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 
@@ -95,6 +96,19 @@ class Xc170TelemetryCharacteristic {
     rpm.addValue(bytes[6] + (bytes[7] << 8), time);
     fanAmps.addValue((bytes[8] + (bytes[9] << 8)).toDouble(), time);
     fanCtrl.addValue(bytes[10] + (bytes[11] << 8), time);
+
+    // Update myTelemetry fuel reports
+    if (myTelemetry.inFlight) {
+      if (fuel.log.isNotEmpty &&
+          (myTelemetry.fuelReports.isEmpty ||
+              myTelemetry.fuelReports.last.time.isBefore(time.subtract(Duration(minutes: 5))))) {
+        myTelemetry.insertFuelReport(
+          time,
+          fuel.log.last.value,
+          tolerance: const Duration(seconds: 30),
+        );
+      }
+    }
   }
 
   Map<String, dynamic>? toJson() {
@@ -108,6 +122,12 @@ class Xc170TelemetryCharacteristic {
   }
 
   void trimToRange(DateTimeRange range) {
+    fuel.compress();
+    cht.compress();
+    egt.compress();
+    rpm.compress();
+    fanAmps.compress();
+
     fuel.trimToRange(range);
     cht.trimToRange(range);
     egt.trimToRange(range);
@@ -485,6 +505,26 @@ class Xc170StatusCard extends StatelessWidget {
                                                   valueStyle: const TextStyle(color: Colors.black, fontSize: 30),
                                                   unitStyle: TextStyle(color: Colors.grey.shade700, fontSize: 20)),
                                             ]))),
+                                  if (myTelemetry.inFlight && myTelemetry.sumFuelStat != null)
+                                    StreamBuilder<double>(
+                                        stream: xc170.telemetry.fuel.valueRawStream,
+                                        builder: (context, value) {
+                                          final etaEmpty = myTelemetry.sumFuelStat!
+                                              .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now());
+
+                                          final warn = etaEmpty < const Duration(minutes: 15);
+                                          final style = TextStyle(
+                                              color: warn ? Colors.red : null,
+                                              fontSize: 24,
+                                              fontWeight: warn ? FontWeight.bold : FontWeight.normal);
+                                          return Text.rich(TextSpan(children: [
+                                            richHrMin(
+                                                duration: etaEmpty,
+                                                valueStyle: style,
+                                                unitStyle: style.copyWith(fontSize: 14)),
+                                            WidgetSpan(child: Icon(Icons.timer_outlined, size: 24, color: Colors.black))
+                                          ]));
+                                        }),
                                 ],
                               );
                             }),

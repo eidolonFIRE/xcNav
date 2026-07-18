@@ -4,7 +4,6 @@ import 'dart:ui';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/ble_devices/ble_device_value.dart';
-import 'package:xcnav/datadog.dart' as dd;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
 import 'package:xcnav/tts_service.dart';
