@@ -93,7 +93,10 @@ class Xc170TelemetryCharacteristic {
     fuel.addValue((bytes[0] + (bytes[1] << 8)).toDouble(), time);
     cht.addValue((bytes[2] + (bytes[3] << 8)) / 10.0, time);
     egt.addValue((bytes[4] + (bytes[5] << 8)) / 10.0, time);
-    rpm.addValue(bytes[6] + (bytes[7] << 8), time);
+    final rpmValue = bytes[6] + (bytes[7] << 8);
+    if (rpmValue > 0 && rpmValue < 10000) {
+      rpm.addValue(rpmValue, time);
+    }
     fanAmps.addValue((bytes[8] + (bytes[9] << 8)).toDouble(), time);
     fanCtrl.addValue(bytes[10] + (bytes[11] << 8), time);
 
