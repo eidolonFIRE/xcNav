@@ -23,6 +23,7 @@ import 'package:xcnav/datadog.dart' as dd;
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/gps_jump_filter.dart';
 import 'package:xcnav/models/vector.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/notifications.dart';
@@ -64,6 +65,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   Geo? geo;
   Geo? geoPrev;
+  final GpsJumpFilter gpsJumpFilter = GpsJumpFilter();
 
   final List<TimestampValue<double>> gForceRecord = [];
   List<Geo> recordGeo = [];
@@ -441,9 +443,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     if (position.latitude != 0.0 || position.longitude != 0.0) {
-      updateGeo(position, bypassRecording: settingsMgr.groundMode.value || bypassRecording);
+      final accepted = updateGeo(position, bypassRecording: settingsMgr.groundMode.value || bypassRecording);
 
-      if (geo != null) {
+      if (accepted && geo != null) {
         if (!settingsMgr.groundMode.value || settingsMgr.groundModeTelem.value) {
           // Telemetry enabled
           if ((group.activePilots.isEmpty && client.telemetrySkips < 10) ||
@@ -592,13 +594,26 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     return BarometerEvent(ambientFromAlt(altitude, baro?.pressure ?? 1013.25), clock.now());
   }
 
-  void updateGeo(Position position, {bool bypassRecording = false}) {
+  /// Returns false if the fix was rejected as a physically impossible jump.
+  bool updateGeo(Position position, {bool bypassRecording = false}) {
+    final verdict = gpsJumpFilter.check(geo, position);
+    if (verdict == GpsFixVerdict.reject) {
+      debugPrint("Rejected GPS jump: ${position.latitude}, ${position.longitude} @ ${position.timestamp}");
+      return false;
+    }
+    final reanchor = verdict == GpsFixVerdict.reanchor;
+    if (reanchor) {
+      debugPrint("Re-anchoring GPS after repeated rejected fixes.");
+    }
+
     geoPrev = geo;
-    geo = Geo.fromPosition(position, geoPrev, baro, baroAmbient, forceGpsAltitude: settingsMgr.forceGpsAltitude.value);
+    // When re-anchoring, don't derive speed/heading from the jump.
+    geo = Geo.fromPosition(position, reanchor ? null : geoPrev, baro, baroAmbient,
+        forceGpsAltitude: settingsMgr.forceGpsAltitude.value);
 
     if (baro == null || settingsMgr.forceGpsAltitude.value) {
       // Use GPS-based vario when barometer unavailable or GPS-only mode enabled
-      if (geoPrev != null) {
+      if (geoPrev != null && !reanchor) {
         final vario = (geo!.alt - geoPrev!.alt) / (geo!.time - geoPrev!.time) * 1000;
         if (vario.isFinite) {
           varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
@@ -608,7 +623,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       }
     }
 
-    speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
+    if (geo!.spd.isFinite) {
+      speedSmooth.value = speedSmooth.value * 0.8 + geo!.spd * 0.2;
+    }
     geo!.ground = sampleDem(geo!.latlng, true);
 
     if (!appInFocus() && !inFlight) {
@@ -692,6 +709,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     }
 
     notifyListeners();
+    return true;
   }
 
   Polyline buildFlightTrace() {
