@@ -28,8 +28,9 @@ Every change set an agent makes to the app must bump the app version in `pubspec
 The format is `version: MAJOR.MINOR.PATCH+BUILD` (e.g. `2.10.29+250`).
 
 - Increment **PATCH by 1** and **BUILD by 1**: `2.10.29+250` -> `2.10.30+251`.
-- Bump MINOR and BUILD **once per change set**, not once per edit. Before bumping, compare against the last commit
+- Bump only **once per change set**, not once per edit. Before bumping, compare against the last commit
   (`git diff HEAD -- pubspec.yaml`). If the version has already been bumped in the uncommitted work, leave it alone.
+- Bump MINOR if we add a large feature, do a heavy rework, update dependencie's major versions, or make a change to any communication protocol.
 - Do not bump MAJOR unless the user asks; when they do, reset PATCH to 0 and still increment BUILD.
 - BUILD must always increase; it is the Android `versionCode` / iOS `CFBundleVersion`.
 - Skip the bump only for changes that don't affect the shipped app (e.g. docs, agent instructions, CI config, scripts in `scripts/`).
