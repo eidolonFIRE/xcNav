@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:patrol_finders/patrol_finders.dart';
-import 'package:xcnav/locale.dart';
 import 'package:xcnav/widgets/latlng_editor.dart';
 
-import 'audio_cue_service_test.dart';
+import 'test_localization.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key, required this.callback});
@@ -19,28 +18,22 @@ class MyApp extends StatelessWidget {
       locale: EasyLocalization.of(context)!.locale,
       supportedLocales: EasyLocalization.of(context)!.supportedLocales,
       localizationsDelegates: EasyLocalization.of(context)!.delegates,
-      home: MaterialApp(
-        home: Scaffold(
-          body: LatLngEditor(onLatLngs: callback),
-        ),
+      home: Scaffold(
+        body: LatLngEditor(onLatLngs: callback),
       ),
     );
   }
 }
 
 void main() {
-  Future makeApp(PatrolTester $, void Function(List<LatLng>) callback) async {
+  setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
-    await $.pumpWidget(EasyLocalization(
-        supportedLocales: supportedLanguages.values.nonNulls.toList(),
-        path: "assets/translations",
-        fallbackLocale: const Locale("en"),
-        useFallbackTranslations: true,
-        useFallbackTranslationsForEmptyResources: true,
-        startLocale: const Locale("en"),
-        useOnlyLangCode: true,
-        assetLoader: ImmutableJsonAssetLoader(),
-        child: MyApp(callback: callback)));
+    await initTestLocalization();
+  });
+
+  Future makeApp(PatrolTester $, void Function(List<LatLng>) callback) async {
+    await $.pumpWidget(testLocalization(child: MyApp(callback: callback)));
+    await $.pumpAndSettle();
   }
 
   patrolWidgetTest('basic', ($) async {
