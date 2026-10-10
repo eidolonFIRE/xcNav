@@ -225,4 +225,51 @@ void main() {
     withClock(Clock.fixed(b.time.add(const Duration(hours: 1, minutes: 30))), () => cueService.cueFuel(stat, b));
     expect(ttsService.msgQueue.map((element) => element.text).toList(), ["Fuel level critical!"]);
   });
+  test("groupAwareness", () {
+    final group = Group();
+    group.pilots = {
+      // ~33m south, roughly same altitude
+      "close": Pilot("close", "Alice", null, Geo(lat: -37.0003, lng: 122, alt: 520)),
+      // ~33m north, well above
+      "above": Pilot("above", "Bob", null, Geo(lat: -36.9997, lng: 122, alt: 800)),
+      // ~2.2km north
+      "north": Pilot("north", "Carl", null, Geo(lat: -36.98, lng: 122, alt: 500)),
+      // ~2.7km east
+      "east": Pilot("east", "Dave", null, Geo(lat: -37, lng: 122.03, alt: 500)),
+      // stale pilot, should be ignored
+      "stale": Pilot(
+          "stale",
+          "Eve",
+          null,
+          Geo(
+              lat: -37,
+              lng: 122.03,
+              alt: 500,
+              timestamp: DateTime.now().subtract(const Duration(minutes: 5)).millisecondsSinceEpoch)),
+    };
+    cueService = AudioCueService(ttsService: ttsService, group: group, activePlan: ActivePlan());
+    cueService.mode = 2;
+
+    final myGeo = Geo(lat: -37, lng: 122, alt: 500, hdg: 0);
+    cueService.cueGroupAwareness(myGeo);
+
+    final expected = [
+      "Alice is  close proximity!",
+      "Bob is  above you.",
+      "Carl is 1 and a half miles out at 12 o'clock.",
+      "Dave is 1 and 3 quarters miles out at 3 o'clock.",
+    ];
+    expect(ttsService.msgQueue.map((element) => element.text).toList(), expected);
+
+    // Calling again immediately should not repeat any cues
+    cueService.cueGroupAwareness(myGeo);
+    expect(ttsService.msgQueue.map((element) => element.text).toList(), expected);
+
+    // Disabled cues should not speak
+    ttsService.msgQueue.clear();
+    cueService.lastPilotVector.clear();
+    cueService.mode = null;
+    cueService.cueGroupAwareness(myGeo);
+    expect(ttsService.msgQueue, isEmpty);
+  });
 }
