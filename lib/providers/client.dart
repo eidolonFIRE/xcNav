@@ -65,6 +65,23 @@ class Client with ChangeNotifier {
     }
   }
 
+  bool _watchingProfile = false;
+
+  /// Watch updates to Profile. Only registers once, even across reconnects.
+  void watchProfile() {
+    if (_watchingProfile) return;
+    _watchingProfile = true;
+    Provider.of<Profile>(globalContext, listen: false).addListener(() {
+      Profile profile = Provider.of<Profile>(globalContext, listen: false);
+      if (state == ClientState.connected) {
+        authenticate(profile);
+      } else if (state == ClientState.authenticated && profile.name != null) {
+        // Just need to update server with new profile
+        pushProfile(profile);
+      }
+    });
+  }
+
   ClientState get state => _state;
   set state(ClientState newState) {
     _state = newState;
@@ -110,16 +127,7 @@ class Client with ChangeNotifier {
             authenticate(profile);
           }
 
-          // Watch updates to Profile
-          Provider.of<Profile>(globalContext, listen: false).addListener(() {
-            Profile profile = Provider.of<Profile>(globalContext, listen: false);
-            if (state == ClientState.connected) {
-              authenticate(profile);
-            } else if (state == ClientState.authenticated && profile.name != null) {
-              // Just need to update server with new profile
-              pushProfile(profile);
-            }
-          });
+          watchProfile();
 
           // Register Callbacks to waypoints
           Provider.of<ActivePlan>(globalContext, listen: false).onWaypointAction = waypointsUpdate;
@@ -431,6 +439,9 @@ class Client with ChangeNotifier {
       final pilotId = parseAsString(msg["pilot_id"]);
       if (pilotId != null) {
         profile.updateID(pilotId, msg["secretToken"]);
+
+        // Covers avatars set before we had an id, and uploads that previously failed.
+        profile.ensureAvatarUploaded();
 
         // join the provided group
         Group group = Provider.of<Group>(globalContext, listen: false);

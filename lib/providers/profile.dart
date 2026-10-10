@@ -26,6 +26,9 @@ class Profile with ChangeNotifier {
 
   late SharedPreferences prefs;
 
+  /// Swappable for tests.
+  http.Client httpClient = http.Client();
+
   bool isLoaded = false;
   final _onLoad = Completer();
   Future<void> get onLoad => _onLoad.future;
@@ -79,6 +82,7 @@ class Profile with ChangeNotifier {
     prefs.remove("profile.id");
     prefs.remove("profile.secretID");
     prefs.remove("profile.avatar");
+    prefs.remove("profile.avatar_uploaded");
 
     // Delete cached avatar
     path_provider.getTemporaryDirectory().then((tempDir) {
@@ -104,8 +108,9 @@ class Profile with ChangeNotifier {
     _avatarRaw = newRawAvatar;
     avatar = Image.memory(newRawAvatar);
     updateAvatarHash();
+    hash = _hash();
 
-    pushAvatar();
+    ensureAvatarUploaded();
 
     prefs.setString("profile.name", newName.trim());
     prefs.setString("profile.avatar", base64Encode(newRawAvatar));
@@ -119,25 +124,49 @@ class Profile with ChangeNotifier {
     notifyListeners();
   }
 
-  Future pushAvatar() async {
+  /// Identifies which avatar was last uploaded, and for which pilot.
+  String? get _avatarUploadKey => id == null || avatarHash == null ? null : "${id!.toLowerCase()}:$avatarHash";
+
+  /// We have an avatar and an id, but the profile store hasn't received this avatar yet.
+  bool get avatarNeedsUpload {
+    final key = _avatarUploadKey;
+    return key != null && prefs.getString("profile.avatar_uploaded") != key;
+  }
+
+  /// Upload the avatar if the profile store doesn't already have it.
+  /// Returns true when the store is up to date.
+  Future<bool> ensureAvatarUploaded() async {
+    if (!avatarNeedsUpload) return true;
+    return pushAvatar();
+  }
+
+  /// Returns true on a successful upload.
+  Future<bool> pushAvatar() async {
+    final key = _avatarUploadKey;
+    if (key == null || _avatarRaw == null) {
+      debugPrint("Skipping avatar push: no pilot id or avatar yet.");
+      return false;
+    }
     if ("x$profileStoreUrl" == "xunset") {
       debugPrint("Error while pushing avatar: secrets.dart profileStoreUrl is unset, ignoring");
-      return;
+      return false;
     }
 
-    return http
-        .post(Uri.parse("https://$profileStoreUrl"),
-            headers: {"Content-Type": "application/json", "authorizationToken": profileStoreToken},
-            body: jsonEncode({"pilot_id": id?.toLowerCase(), "avatar": base64Encode(avatarRaw!)}))
-        .then((http.Response response) {
-      final int statusCode = response.statusCode;
+    try {
+      final response = await httpClient.post(Uri.parse("https://$profileStoreUrl"),
+          headers: {"Content-Type": "application/json", "authorizationToken": profileStoreToken},
+          body: jsonEncode({"pilot_id": id!.toLowerCase(), "avatar": base64Encode(_avatarRaw!)}));
 
-      if (statusCode < 200 || statusCode > 400) {
-        // throw Exception("Error while pushing avatar: $statusCode");
-        debugPrint("Error while pushing avatar: $statusCode");
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        debugPrint("Error while pushing avatar: ${response.statusCode} ${response.body}");
+        return false;
       }
-      return response.body;
-    });
+      await prefs.setString("profile.avatar_uploaded", key);
+      return true;
+    } catch (e) {
+      debugPrint("Error while pushing avatar: $e");
+      return false;
+    }
   }
 
   void updateID(String newID, String newSecretID) {

@@ -152,16 +152,7 @@ class MockClient extends Client {
       authenticate(profile);
     }
 
-    // Watch updates to Profile
-    Provider.of<Profile>(globalContext, listen: false).addListener(() {
-      Profile profile = Provider.of<Profile>(globalContext, listen: false);
-      if (state == ClientState.connected) {
-        authenticate(profile);
-      } else if (state == ClientState.authenticated && profile.name != null) {
-        // Just need to update server with new profile
-        pushProfile(profile);
-      }
-    });
+    watchProfile();
 
     // Register Callbacks to waypoints
     Provider.of<ActivePlan>(globalContext, listen: false).onWaypointAction = waypointsUpdate;

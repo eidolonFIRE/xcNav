@@ -139,7 +139,7 @@ class Pilot {
     return http.get(uri, headers: {"authorizationToken": profileStoreToken}).then((http.Response response) {
       final int statusCode = response.statusCode;
 
-      if (statusCode < 200 || statusCode > 400) {
+      if (statusCode < 200 || statusCode >= 300) {
         throw Exception("Error while fetching avatar: $statusCode");
       }
       return json.decode(response.body);
