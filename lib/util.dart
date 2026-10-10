@@ -298,6 +298,12 @@ Offset calcCollective(Offset windVector, double airspeed) {
   return collective;
 }
 
+/// return the interpolation factor of i between start and end. 0=start, 1=end
+double inverseInterpTime(DateTime start, DateTime end, DateTime i) {
+  final dur = end.millisecondsSinceEpoch - start.millisecondsSinceEpoch;
+  return (i.millisecondsSinceEpoch - start.millisecondsSinceEpoch) / dur.toDouble();
+}
+
 /// Travel down a path.
 /// Note there is no caching for this call. It is not recommended to call this too frequently.
 ///

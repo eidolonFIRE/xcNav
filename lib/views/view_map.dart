@@ -797,12 +797,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                         listenable: myTelemetry,
                         builder: (context, _) {
                           return Consumer<ActivePlan>(builder: (context, activePlan, _) {
-                            if (myTelemetry.sumFuelStat != null &&
+                            if (myTelemetry.fuelReportController.getSumFuelStat(myTelemetry.recordGeo) != null &&
                                 myTelemetry.geo != null &&
                                 activePlan.selectedWp != null) {
                               final waypointETA = activePlan.getSelectedWp()!.eta(myTelemetry.geo!, 1);
                               final enduranceDist = myTelemetry.speedSmooth.value *
-                                  myTelemetry.sumFuelStat!
+                                  myTelemetry.fuelReportController
+                                      .getSumFuelStat(myTelemetry.recordGeo)!
                                       .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now())
                                       .inSeconds;
 
@@ -1018,7 +1019,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                                 final fuelReport = myTelemetry.fuelReports.lastOrNull;
 
                                                 if (fuelReport != null) {
-                                                  if (myTelemetry.sumFuelStat == null || !myTelemetry.inFlight) {
+                                                  if (myTelemetry.fuelReportController
+                                                              .getSumFuelStat(myTelemetry.recordGeo) ==
+                                                          null ||
+                                                      !myTelemetry.inFlight) {
                                                     final warn = fuelReport.amount <= 1;
                                                     final style = TextStyle(
                                                         color: warn ? Colors.red : Colors.black,
@@ -1029,7 +1033,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                                         child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
                                                             decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
                                                   } else {
-                                                    final etaEmpty = myTelemetry.sumFuelStat!
+                                                    final etaEmpty = myTelemetry.fuelReportController
+                                                        .getSumFuelStat(myTelemetry.recordGeo)!
                                                         .extrapolateEndurance(fuelReport, from: clock.now());
 
                                                     final warn = etaEmpty < const Duration(minutes: 15);

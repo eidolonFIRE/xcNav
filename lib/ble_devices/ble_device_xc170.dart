@@ -105,7 +105,7 @@ class Xc170TelemetryCharacteristic {
       if (fuel.log.isNotEmpty &&
           (myTelemetry.fuelReports.isEmpty ||
               myTelemetry.fuelReports.last.time.isBefore(time.subtract(Duration(minutes: 10))))) {
-        myTelemetry.insertFuelReport(
+        myTelemetry.fuelReportController.insertFuelReport(
           time,
           fuel.log.last.value,
           tolerance: const Duration(seconds: 30),
@@ -508,11 +508,13 @@ class Xc170StatusCard extends StatelessWidget {
                                                   valueStyle: const TextStyle(color: Colors.black, fontSize: 30),
                                                   unitStyle: TextStyle(color: Colors.grey.shade700, fontSize: 20)),
                                             ]))),
-                                  if (myTelemetry.inFlight && myTelemetry.sumFuelStat != null)
+                                  if (myTelemetry.inFlight &&
+                                      myTelemetry.fuelReportController.getSumFuelStat(myTelemetry.recordGeo) != null)
                                     StreamBuilder<double>(
                                         stream: xc170.telemetry.fuel.valueRawStream,
                                         builder: (context, value) {
-                                          final etaEmpty = myTelemetry.sumFuelStat!
+                                          final etaEmpty = myTelemetry.fuelReportController
+                                              .getSumFuelStat(myTelemetry.recordGeo)!
                                               .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now());
 
                                           final warn = etaEmpty < const Duration(minutes: 15);

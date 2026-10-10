@@ -161,18 +161,18 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   void editFuelReport(BuildContext context, int reportIndex) {
     dialogEditFuelReport(
             context: context,
-            time: log.fuelReports[reportIndex].time,
-            amount: log.fuelReports[reportIndex].amount,
+            time: log.fuelReportController.fuelReports[reportIndex].time,
+            amount: log.fuelReportController.fuelReports[reportIndex].amount,
             validRange: log.timeRange!)
         .then((newReport) {
       setState(() {
         if (newReport != null) {
           if (newReport.amount == 0 && newReport.time.millisecondsSinceEpoch == 0) {
             // Report was deleted
-            log.removeFuelReport(reportIndex);
+            log.fuelReportController.removeFuelReport(reportIndex);
           } else {
             // Edit fuel report amount
-            log.updateFuelReport(reportIndex, newReport.amount, time: newReport.time);
+            log.fuelReportController.updateFuelReport(reportIndex, newReport.amount, time: newReport.time);
           }
         }
       });
@@ -417,7 +417,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
 
                               // --- Fuel reports
                               MarkerLayer(
-                                markers: log.fuelReports
+                                markers: log.fuelReportController.fuelReports
                                     .mapIndexed((index, e) => Marker(
                                         alignment: Alignment.topRight,
                                         height: 40,
@@ -715,7 +715,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                   <Widget>[TimeCard(time: log.startTime, text: "Launch".tr())] +
 
                                       // Fuel reports
-                                      log.fuelStats.expandIndexed<Widget>((index, e) sync* {
+                                      log.fuelReportController
+                                          .getFuelStats(log.samples)
+                                          .expandIndexed<Widget>((index, e) sync* {
                                         yield Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                           children: [
@@ -756,10 +758,14 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                                     onPressed: () => dialogEditFuelReport(
                                                                 context: context,
                                                                 time: DateTime.fromMillisecondsSinceEpoch(((log
+                                                                                .fuelReportController
                                                                                 .fuelReports[index]
                                                                                 .time
                                                                                 .millisecondsSinceEpoch +
-                                                                            log.fuelReports[index + 1].time
+                                                                            log
+                                                                                .fuelReportController
+                                                                                .fuelReports[index + 1]
+                                                                                .time
                                                                                 .millisecondsSinceEpoch) /
                                                                         2)
                                                                     .round()),
@@ -768,7 +774,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                                             .then((newReport) {
                                                           if (newReport != null) {
                                                             setState(() {
-                                                              log.insertFuelReport(newReport.time, newReport.amount,
+                                                              log.fuelReportController.insertFuelReport(
+                                                                  newReport.time, newReport.amount,
                                                                   tolerance: const Duration(minutes: 1));
                                                             });
                                                           }
@@ -788,29 +795,32 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                       }).toList() +
                                       [
                                         // Final report
-                                        if (log.fuelReports.isNotEmpty)
+                                        if (log.fuelReportController.fuelReports.isNotEmpty)
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                             children: [
                                               FuelEntryCard(
                                                   log: log,
-                                                  reportIndex: log.fuelReports.length - 1,
+                                                  reportIndex: log.fuelReportController.fuelReports.length - 1,
                                                   onEdit: (reportIndex) => editFuelReport(context, reportIndex)),
                                               Container(),
                                               Container(),
                                             ],
                                           ),
-                                        if (log.fuelReports.length < 2)
+                                        if (log.fuelReportController.fuelReports.length < 2)
                                           IconButton(
                                               onPressed: () => dialogEditFuelReport(
                                                           context: context,
-                                                          time: log.fuelReports.isEmpty ? log.startTime! : log.endTime!,
+                                                          time: log.fuelReportController.fuelReports.isEmpty
+                                                              ? log.startTime!
+                                                              : log.endTime!,
                                                           amount: null,
                                                           validRange: log.timeRange!)
                                                       .then((newReport) {
                                                     if (newReport != null) {
                                                       setState(() {
-                                                        log.insertFuelReport(newReport.time, newReport.amount,
+                                                        log.fuelReportController.insertFuelReport(
+                                                            newReport.time, newReport.amount,
                                                             tolerance: const Duration(minutes: 1));
                                                       });
                                                     }
@@ -850,7 +860,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
               Tab(icon: Icon(Icons.g_mobiledata), text: "G-Force".tr()),
               Tab(icon: Icon(Icons.local_gas_station), text: "Fuel".tr()),
               hasSp140
-                  ? Tab(icon: Icon(Icons.electric_bolt), text: "Sp140")
+                  ? Tab(icon: Icon(Icons.electric_bolt), text: "SP140")
                   : Tab(
                       icon: SizedBox(height: 24, child: SvgPicture.asset("assets/images/engine.svg")),
                       text: "gear.Engine".tr()),
@@ -958,12 +968,12 @@ class FuelEntryCard extends StatelessWidget {
           width: 200,
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Container(),
-            Text(intl.DateFormat("h:mm a").format(log.fuelReports[reportIndex].time)),
+            Text(intl.DateFormat("h:mm a").format(log.fuelReportController.fuelReports[reportIndex].time)),
             Text.rich(TextSpan(children: [
               // Icon
               WidgetSpan(child: Icon(Icons.local_gas_station, size: 18)),
               // Fuel amount
-              richValue(UnitType.fuel, log.fuelReports[reportIndex].amount, decimals: 1),
+              richValue(UnitType.fuel, log.fuelReportController.fuelReports[reportIndex].amount, decimals: 1),
             ])),
             IconButton(
                 iconSize: 18,

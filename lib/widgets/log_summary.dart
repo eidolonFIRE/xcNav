@@ -17,7 +17,7 @@ class LogSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showFuelStats = log.sumFuelStat != null;
+    final showFuelStats = log.fuelReportController.getSumFuelStat(log.samples) != null;
     return DefaultTextStyle.merge(
       style: const TextStyle(fontSize: 16, height: 1.5),
       child: Scrollbar(
@@ -116,7 +116,10 @@ class LogSummary extends StatelessWidget {
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text("log_summary.Fuel Burn Rate".tr()),
                 Text.rich(TextSpan(children: [
-                  TextSpan(text: printValue(UnitType.fuel, log.sumFuelStat?.rate ?? 0, decimals: 1) ?? "?"),
+                  TextSpan(
+                      text: printValue(UnitType.fuel, log.fuelReportController.getSumFuelStat(log.samples)?.rate ?? 0,
+                              decimals: 1) ??
+                          "?"),
                   TextSpan(text: fuelRateStr, style: unitStyle)
                 ])),
               ]),
@@ -126,7 +129,9 @@ class LogSummary extends StatelessWidget {
                 Text.rich(TextSpan(children: [
                   TextSpan(
                       text: printValue(
-                              UnitType.distCoarse, (log.sumFuelStat?.mpl ?? 0) / unitConverters[UnitType.fuel]!(1),
+                              UnitType.distCoarse,
+                              (log.fuelReportController.getSumFuelStat(log.samples)?.mpl ?? 0) /
+                                  unitConverters[UnitType.fuel]!(1),
                               decimals: 1) ??
                           "?"),
                   TextSpan(text: fuelEffStr, style: unitStyle)

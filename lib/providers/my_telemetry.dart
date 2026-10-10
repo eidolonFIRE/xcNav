@@ -114,43 +114,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   FakeFlight fakeFlight = FakeFlight();
   Timer? timer;
 
-  FuelStat? _sumFuelStat;
-  FuelStat? get sumFuelStat {
-    if (_sumFuelStat == null && fuelStats.isNotEmpty) {
-      debugPrint("Building sumFuelStats");
-      // Only use valid stats.
-      final temp = fuelStats.where((e) => e.isValid).toList();
-      if (temp.isNotEmpty) {
-        _sumFuelStat = temp.reduce((a, b) => a + b);
-      } else {
-        // No valid stats...
-        _sumFuelStat = null;
-        // FuelStat(0, Duration.zero, 0, 0, 0, 0, 0, 0);
-      }
-    }
-    return _sumFuelStat;
-  }
-
-  List<FuelStat>? _fuelStats = [];
-  List<FuelStat> get fuelStats {
-    if (_fuelStats == null) {
-      _fuelStats = [];
-
-      debugPrint("Building fuelStats");
-
-      // Rebuild the stats
-      for (int index = 0; index < _fuelReports.length - 1; index++) {
-        final a = _fuelReports[index];
-        final b = _fuelReports[index + 1];
-        final newStat =
-            FuelStat.fromSamples(a, b, recordGeo.sublist(timeToSampleIndex(a.time), timeToSampleIndex(b.time) + 1));
-        // this will even include stats that are invalid.
-        _fuelStats!.add(newStat);
-      }
-    }
-
-    return _fuelStats!;
-  }
+  FuelReportController fuelReportController = FuelReportController();
 
   double? get glideSlope {
     if (geo != null) {
@@ -508,7 +472,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
           audioCueService.cueMyTelemetry(geo!, speedSmoothed: speedSmooth.value);
           audioCueService.cueNextWaypoint(geo!, speedSmooth.value);
           audioCueService.cueGroupAwareness(geo!);
-          audioCueService.cueFuel(sumFuelStat, _fuelReports.lastOrNull);
+          audioCueService.cueFuel(
+              fuelReportController.getSumFuelStat(recordGeo), fuelReportController.fuelReports.lastOrNull);
         }
       }
     }
@@ -542,7 +507,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         // We assume we weren't just in flight, so we don't account for burn since last report.
         final latest = _fuelReports.last;
         _fuelReports.clear();
-        insertFuelReport(takeOff!, latest.amount, tolerance: Duration.zero);
+        fuelReportController.insertFuelReport(takeOff!, latest.amount, tolerance: Duration.zero);
       }
 
       // trim the log
@@ -560,16 +525,18 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       _inFlight = false;
       debugPrint("Flight Ended");
       landing = DateTime.fromMillisecondsSinceEpoch(recordGeo.last.time);
+      final sumFuelStat = fuelReportController.getSumFuelStat(recordGeo);
 
       // Insert new fuel report extrapolated down (if stats were available)
       if (bleDeviceSp140.device != null) {
         debugPrint("SP140 is armed, Logging real fuel report.");
         final soc = bleDeviceSp140.telemetry.charge.log.lastOrNull?.value.toDouble();
         if (soc != null) {
-          insertFuelReport(landing!, soc);
+          fuelReportController.insertFuelReport(landing!, soc);
         }
       } else if (sumFuelStat != null && _fuelReports.isNotEmpty) {
-        insertFuelReport(landing!, sumFuelStat!.extrapolateToTime(_fuelReports.last, landing!));
+        fuelReportController.insertFuelReport(
+            landing!, sumFuelStat.extrapolateToTime(fuelReportController.fuelReports.last, landing!));
       }
 
       flightEvent.add(FlightEvent(
@@ -621,50 +588,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   /// Find the nearest sample index
   int timeToSampleIndex(DateTime time) {
     return nearestIndex(recordGeo.map((e) => e.time).toList(), time.millisecondsSinceEpoch);
-  }
-
-  /// Find overlapping fuel report.
-  /// If the time is close to two reports, the earlier index will be returned.
-  /// Null is returned if no matches within tolerance are found.
-  int? findFuelReportIndex(DateTime time, {Duration tolerance = const Duration(minutes: 5)}) {
-    final index =
-        bisect_left<int>(_fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
-    if (index > 0 && _fuelReports[index - 1].time.difference(time).abs().compareTo(tolerance) < 1) {
-      return index - 1;
-    } else if (index < _fuelReports.length &&
-        _fuelReports[index].time.difference(time).abs().compareTo(tolerance) < 1) {
-      return index;
-    } else {
-      return null;
-    }
-  }
-
-  /// Insert a fuel report into the sorted list.
-  /// If the new report is within tolerance of another report, it will be replaced.
-  /// If the amount is null, the report will be removed.
-  void insertFuelReport(DateTime time, double? amount, {Duration tolerance = const Duration(minutes: 5)}) {
-    final overwriteIndex = findFuelReportIndex(time, tolerance: tolerance);
-
-    if (overwriteIndex != null) {
-      if (amount != null) {
-        // edit existing
-        _fuelReports[overwriteIndex] = FuelReport(_fuelReports[overwriteIndex].time, amount);
-      } else {
-        // remove existing
-        _fuelReports.removeAt(overwriteIndex);
-      }
-    } else {
-      if (amount != null) {
-        // Insert new
-        final insertIndex = bisect_left<int>(
-            _fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
-        _fuelReports.insert(insertIndex, FuelReport(time, amount));
-      }
-    }
-
-    // reset internal calculations
-    _fuelStats = null;
-    _sumFuelStat = null;
   }
 
   BarometerEvent snapBarometerToGpsAlt(double altitude) {

@@ -284,7 +284,7 @@ class Sp140TelemetryCharacteristic {
           if (myTelemetry.fuelReports.isEmpty ||
               myTelemetry.fuelReports.last.time
                   .isBefore(now.subtract(Duration(minutes: settingsMgr.sp140FuelSaveIntervalMin.value)))) {
-            myTelemetry.insertFuelReport(
+            myTelemetry.fuelReportController.insertFuelReport(
               now,
               telemetry.bmsSoc.toDouble(),
               tolerance: const Duration(seconds: 10),
@@ -509,11 +509,13 @@ class Sp140StatusCard extends StatelessWidget {
                                             WidgetSpan(child: batteryIcon(value.data?.toDouble() ?? 0, 24)),
                                           ]));
                                         }),
-                                    if (myTelemetry.inFlight && myTelemetry.sumFuelStat != null)
+                                    if (myTelemetry.inFlight &&
+                                        myTelemetry.fuelReportController.getSumFuelStat(myTelemetry.recordGeo) != null)
                                       StreamBuilder<int>(
                                           stream: sp140.telemetry.charge.valueRawStream,
                                           builder: (context, value) {
-                                            final etaEmpty = myTelemetry.sumFuelStat!
+                                            final etaEmpty = myTelemetry.fuelReportController
+                                                .getSumFuelStat(myTelemetry.recordGeo)!
                                                 .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now());
 
                                             final warn = etaEmpty < const Duration(minutes: 15);

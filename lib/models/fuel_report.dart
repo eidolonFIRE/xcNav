@@ -1,8 +1,11 @@
 import 'dart:math';
 
+import 'package:bisection/bisect.dart';
+import 'package:flutter/material.dart';
 import 'package:xcnav/douglas_peucker.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/datadog.dart' as dd;
 
 class FuelReport {
   late final DateTime time;
@@ -91,5 +94,146 @@ class FuelStat {
     final newMeanSpd = weight(meanSpd, other.meanSpd);
     final newAltGained = altGained + other.altGained;
     return FuelStat(newAmount, newDurationTime, newDurationDist, newRate, newMpL, newMeanAlt, newMeanSpd, newAltGained);
+  }
+}
+
+class FuelReportController with ChangeNotifier {
+  final List<FuelReport> _fuelReports = [];
+  List<FuelReport> get fuelReports => _fuelReports;
+
+  FuelReportController({Iterable<FuelReport> fuelReports = const []}) {
+    _fuelReports.addAll(fuelReports);
+  }
+
+  FuelStat? _sumFuelStat;
+  FuelStat? getSumFuelStat(List<Geo> recordGeo) {
+    if (_sumFuelStat == null && getFuelStats(recordGeo).isNotEmpty) {
+      debugPrint("Building sumFuelStats");
+      // Only use valid stats.
+      final temp = _fuelStats!.where((e) => e.isValid).toList();
+      if (temp.isNotEmpty) {
+        _sumFuelStat = temp.reduce((a, b) => a + b);
+      }
+    }
+    return _sumFuelStat;
+  }
+
+  List<FuelStat>? _fuelStats = [];
+  List<FuelStat> getFuelStats(List<Geo> recordGeo) {
+    if (_fuelStats == null) {
+      _fuelStats = [];
+
+      debugPrint("Building fuelStats");
+
+      // Rebuild the stats
+      for (int index = 0; index < _fuelReports.length - 1; index++) {
+        final a = _fuelReports[index];
+        final b = _fuelReports[index + 1];
+        final newStat = FuelStat.fromSamples(
+            a,
+            b,
+            recordGeo.sublist(nearestIndex(recordGeo.map((e) => e.time).toList(), a.time.millisecondsSinceEpoch),
+                nearestIndex(recordGeo.map((e) => e.time).toList(), b.time.millisecondsSinceEpoch) + 1));
+        // this will even include stats that are invalid.
+        _fuelStats!.add(newStat);
+      }
+    }
+
+    return _fuelStats!;
+  }
+
+  void resetFuelStatCache() {
+    _fuelStats = null;
+    _sumFuelStat = null;
+  }
+
+  void removeFuelReport(int index) {
+    _fuelReports.removeAt(index);
+    resetFuelStatCache();
+  }
+
+  /// Find overlapping fuel report.
+  /// If the time is close to two reports, the earlier index will be returned.
+  /// Null is returned if no matches within tolerance are found.
+  int? findFuelReportIndex(DateTime time, {Duration tolerance = const Duration(minutes: 5)}) {
+    final index =
+        bisect_left<int>(_fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
+    if (index > 0 && _fuelReports[index - 1].time.difference(time).abs().compareTo(tolerance) < 1) {
+      return index - 1;
+    } else if (index < _fuelReports.length &&
+        _fuelReports[index].time.difference(time).abs().compareTo(tolerance) < 1) {
+      return index;
+    } else {
+      return null;
+    }
+  }
+
+  /// Insert a fuel report into the sorted list.
+  /// If the new report is within tolerance of another report, it will be replaced.
+  /// If the amount is null, the report will be removed.
+  void insertFuelReport(DateTime time, double? amount, {Duration tolerance = const Duration(minutes: 2)}) {
+    final overwriteIndex = findFuelReportIndex(time, tolerance: tolerance);
+
+    if (overwriteIndex != null) {
+      removeFuelReport(overwriteIndex);
+      if (amount != null) {
+        insertFuelReport(time, amount);
+      }
+    } else {
+      if (amount != null) {
+        // Insert new
+        final insertIndex = bisect_left<int>(
+            _fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
+        _fuelReports.insert(insertIndex, FuelReport(time, amount));
+      }
+    }
+    resetFuelStatCache();
+  }
+
+  void updateFuelReport(int index, double amount, {DateTime? time}) {
+    if (index < 0 || index >= _fuelReports.length) {
+      dd.warn(
+        "FuelReportController.updateFuelReport: index out of range",
+        attributes: {"index": index, "length": _fuelReports.length},
+      );
+      return;
+    }
+    removeFuelReport(index);
+    insertFuelReport(time ?? _fuelReports[index].time, amount);
+    resetFuelStatCache();
+  }
+
+  void cropReportsToTimeRange(DateTimeRange timeRange) {
+    bool newContainsTime(DateTime time) {
+      final t = time.millisecondsSinceEpoch;
+      final s = timeRange.start.millisecondsSinceEpoch;
+      final e = timeRange.end.millisecondsSinceEpoch;
+      return t <= e && t >= s;
+    }
+
+    final newFuelReports = _fuelReports.where((each) => newContainsTime(each.time)).toList();
+    for (int t = 0; t < _fuelReports.length - 1; t++) {
+      final first = _fuelReports[t];
+      final second = _fuelReports[t + 1];
+
+      // first is not contained, but second is.
+      if (!newContainsTime(first.time) && newContainsTime(second.time) && second.time.isAfter(timeRange.start)) {
+        // insert new at beginning
+        final interpValue = inverseInterpTime(first.time, second.time, timeRange.start);
+        newFuelReports.insert(
+            0, FuelReport(timeRange.start, first.amount * (1 - interpValue) + second.amount * interpValue));
+      }
+
+      // first is contained, but second is not.
+      if (newContainsTime(first.time) && !newContainsTime(second.time) && first.time.isBefore(timeRange.end)) {
+        // insert new at end
+        final interpValue = inverseInterpTime(first.time, second.time, timeRange.end);
+        newFuelReports.add(FuelReport(timeRange.end, first.amount * (1 - interpValue) + second.amount * interpValue));
+      }
+    }
+    _fuelReports
+      ..clear()
+      ..addAll(newFuelReports);
+    resetFuelStatCache();
   }
 }

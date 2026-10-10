@@ -36,13 +36,13 @@ void main() {
     final newLog = FlightLog(
         samples: loadedLog.samples,
         waypoints: loadedLog.waypoints,
-        fuelReports: loadedLog.fuelReports,
+        fuelReports: loadedLog.fuelReportController.fuelReports,
         gear: loadedLog.gear,
         filename: loadedLog.filename);
     expect(jsonDecode(jsonEncode(loadedLog.toJson())), jsonDecode(jsonEncode(newLog.toJson())));
 
     expect(loadedLog.samples.length, 3);
-    expect(loadedLog.fuelReports.length, 2);
+    expect(loadedLog.fuelReportController.fuelReports.length, 2);
     expect(loadedLog.gear?.wingMakeModel, "1234ok");
     expect(loadedLog.gear?.tankSize, 12);
   });
@@ -59,7 +59,7 @@ void main() {
       FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 20).inMilliseconds), 0.0),
     ]);
 
-    expect(log.fuelReports.length, 3);
+    expect(log.fuelReportController.fuelReports.length, 3);
 
     final trimmed = log.cropLog(Range(1, 4));
 
@@ -67,9 +67,9 @@ void main() {
     expect(trimmed.samples.length, 3);
 
     // Check fuel
-    expect(trimmed.fuelReports.length, 2);
-    expect(trimmed.fuelReports.first.amount, 5.0);
-    expect(trimmed.fuelReports.first.time,
+    expect(trimmed.fuelReportController.fuelReports.length, 2);
+    expect(trimmed.fuelReportController.fuelReports.first.amount, 5.0);
+    expect(trimmed.fuelReportController.fuelReports.first.time,
         DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 10).inMilliseconds));
   });
 
@@ -85,7 +85,7 @@ void main() {
       FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 20).inMilliseconds), 0.0),
     ]);
 
-    expect(log.fuelReports.length, 3);
+    expect(log.fuelReportController.fuelReports.length, 3);
 
     final trimmed = log.cropLog(Range(1, 4));
 
@@ -93,9 +93,9 @@ void main() {
     expect(trimmed.samples.length, 3);
 
     // Check fuel
-    expect(trimmed.fuelReports.length, 3);
-    expect(trimmed.fuelReports.first.amount, 6.25);
-    expect(trimmed.fuelReports.first.time,
+    expect(trimmed.fuelReportController.fuelReports.length, 3);
+    expect(trimmed.fuelReportController.fuelReports.first.amount, 6.25);
+    expect(trimmed.fuelReportController.fuelReports.first.time,
         DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 10).inMilliseconds));
   });
 
@@ -111,7 +111,7 @@ void main() {
       FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 20).inMilliseconds), 0.0),
     ]);
 
-    expect(log.fuelReports.length, 3);
+    expect(log.fuelReportController.fuelReports.length, 3);
 
     final trimmed = log.cropLog(Range(0, 3));
 
@@ -119,10 +119,10 @@ void main() {
     expect(trimmed.samples.length, 4);
 
     // Check fuel
-    expect(trimmed.fuelReports.length, 3);
-    expect(trimmed.fuelReports.last.amount, 0.0);
-    expect(
-        trimmed.fuelReports.last.time, DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 20).inMilliseconds));
+    expect(trimmed.fuelReportController.fuelReports.length, 3);
+    expect(trimmed.fuelReportController.fuelReports.last.amount, 0.0);
+    expect(trimmed.fuelReportController.fuelReports.last.time,
+        DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 20).inMilliseconds));
   });
 
   test("trim - end clean cut mid", () {
@@ -137,7 +137,7 @@ void main() {
       FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 20).inMilliseconds), 0.0),
     ]);
 
-    expect(log.fuelReports.length, 3);
+    expect(log.fuelReportController.fuelReports.length, 3);
 
     final trimmed = log.cropLog(Range(0, 2));
 
@@ -145,10 +145,10 @@ void main() {
     expect(trimmed.samples.length, 3);
 
     // Check fuel
-    expect(trimmed.fuelReports.length, 2);
-    expect(trimmed.fuelReports.last.amount, 5.0);
-    expect(
-        trimmed.fuelReports.last.time, DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 15).inMilliseconds));
+    expect(trimmed.fuelReportController.fuelReports.length, 2);
+    expect(trimmed.fuelReportController.fuelReports.last.amount, 5.0);
+    expect(trimmed.fuelReportController.fuelReports.last.time,
+        DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 15).inMilliseconds));
   });
 
   test("trim - end interpolated", () {
@@ -163,7 +163,7 @@ void main() {
       FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 17).inMilliseconds), 0.0),
     ]);
 
-    expect(log.fuelReports.length, 3);
+    expect(log.fuelReportController.fuelReports.length, 3);
 
     final trimmed = log.cropLog(Range(0, 2));
 
@@ -171,10 +171,10 @@ void main() {
     expect(trimmed.samples.length, 3);
 
     // Check fuel
-    expect(trimmed.fuelReports.length, 3);
-    expect(trimmed.fuelReports.last.amount, 4.0);
-    expect(
-        trimmed.fuelReports.last.time, DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 15).inMilliseconds));
+    expect(trimmed.fuelReportController.fuelReports.length, 3);
+    expect(trimmed.fuelReportController.fuelReports.last.amount, 4.0);
+    expect(trimmed.fuelReportController.fuelReports.last.time,
+        DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 15).inMilliseconds));
   });
 
   test("FuelReport - insert", () {
@@ -187,16 +187,18 @@ void main() {
       Geo(lat: 34.4, lng: 120.2, alt: 0.3, spd: 24.0537096, timestamp: const Duration(minutes: 80).inMilliseconds),
     ]);
 
-    log.insertFuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 2).inMilliseconds), 12);
+    log.fuelReportController
+        .insertFuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 2).inMilliseconds), 12);
 
-    expect(log.sumFuelStat, null);
+    expect(log.fuelReportController.getSumFuelStat(log.samples), null);
 
-    log.insertFuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 12).inMilliseconds), 10);
+    log.fuelReportController
+        .insertFuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 12).inMilliseconds), 10);
 
-    expect(log.fuelStats.length, 1);
+    expect(log.fuelReportController.getFuelStats(log.samples).length, 1);
 
-    expect(log.sumFuelStat?.amount, 2);
-    expect(log.sumFuelStat?.mpl, 4619.239121840687);
+    expect(log.fuelReportController.getSumFuelStat(log.samples)?.amount, 2);
+    expect(log.fuelReportController.getSumFuelStat(log.samples)?.mpl, 4619.239121840687);
   });
 
   test("from IGC short", () {

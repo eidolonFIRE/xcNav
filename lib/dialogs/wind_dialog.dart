@@ -483,13 +483,16 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                   final fuelIntercept = (getAirspeed() != null &&
                                                           getWindHdg() != null &&
                                                           getWindspeed() != null &&
-                                                          myTelemetry.sumFuelStat != null &&
+                                                          myTelemetry.fuelReportController
+                                                                  .getSumFuelStat(myTelemetry.recordGeo) !=
+                                                              null &&
                                                           routePoints != null)
                                                       ? interpolateWithWind(
                                                           routePoints!, getAirspeed()!, getWindHdg()!, getWindspeed()!,
-                                                          duration: myTelemetry.sumFuelStat!.extrapolateEndurance(
-                                                              myTelemetry.fuelReports.last,
-                                                              from: clock.now()))
+                                                          duration: myTelemetry.fuelReportController
+                                                              .getSumFuelStat(myTelemetry.recordGeo)!
+                                                              .extrapolateEndurance(myTelemetry.fuelReports.last,
+                                                                  from: clock.now()))
                                                       : null;
 
                                                   return Stack(

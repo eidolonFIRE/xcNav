@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'package:bisection/bisect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:path_provider/path_provider.dart';
@@ -36,8 +35,7 @@ class FlightLog {
   late final String? rawJson;
   late final Map<String, dynamic>? bleDevicesJson;
 
-  late List<FuelReport> _fuelReports;
-  List<FuelReport> get fuelReports => _fuelReports;
+  late final FuelReportController fuelReportController;
 
   String get title {
     if (goodFile) {
@@ -315,34 +313,6 @@ class FlightLog {
   }
 
   // =========================================
-  FuelStat? _sumFuelStat;
-  FuelStat? get sumFuelStat {
-    if (fuelStats.isEmpty) return null;
-    _sumFuelStat ??= fuelStats.reduce((a, b) => a + b);
-    return _sumFuelStat;
-  }
-
-  // =========================================
-  List<FuelStat>? _fuelStats;
-  List<FuelStat> get fuelStats {
-    if (_fuelStats == null) {
-      _fuelStats = [];
-
-      if (goodFile) {
-        for (int t = 0; t < _fuelReports.length - 1; t++) {
-          _fuelStats!.add(FuelStat.fromSamples(
-              _fuelReports[t],
-              _fuelReports[t + 1],
-              samples.sublist(
-                  timeToSampleIndex(_fuelReports[t].time), timeToSampleIndex(_fuelReports[t + 1].time) + 1)));
-        }
-      }
-    }
-
-    return _fuelStats!;
-  }
-
-  // =========================================
   List<GForceEvent>? _gForceEvents;
   List<GForceEvent> get gForceEvents {
     if (_gForceEvents == null) {
@@ -413,10 +383,6 @@ class FlightLog {
   }
 
   // =========================================
-  void resetFuelStatCache() {
-    _fuelStats = null;
-    _sumFuelStat = null;
-  }
 
   /// Does this flight log contain this timestamp?
   bool containsTime(DateTime time) {
@@ -424,70 +390,6 @@ class FlightLog {
     final s = startTime?.millisecondsSinceEpoch ?? 0;
     final e = endTime?.millisecondsSinceEpoch ?? 0;
     return t >= s && t <= e;
-  }
-
-  /// Simple update of an existing fuel report
-  void updateFuelReport(int index, double amount, {DateTime? time}) {
-    if (index >= 0 && index < _fuelReports.length) {
-      _fuelReports[index] = FuelReport(time ?? _fuelReports[index].time, amount);
-      resetFuelStatCache();
-      unsaved = true;
-    }
-  }
-
-  /// Find overlapping fuel report.
-  /// If the time is close to two reports, the earlier index will be returned.
-  /// Null is returned if no matches within tolerance are found.
-  int? findFuelReportIndex(DateTime time, {Duration tolerance = const Duration(minutes: 5)}) {
-    final index =
-        bisect_left<int>(fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
-    if (index > 0 && fuelReports[index - 1].time.difference(time).abs().compareTo(tolerance) < 1) {
-      return index - 1;
-    } else if (index < fuelReports.length && fuelReports[index].time.difference(time).abs().compareTo(tolerance) < 1) {
-      return index;
-    } else {
-      return null;
-    }
-  }
-
-  /// Insert a fuel report into the sorted list.
-  /// If the new report is within tolerance of another report, it will be replaced.
-  void insertFuelReport(DateTime time, double? amount,
-      {Duration tolerance = const Duration(minutes: 2), useNewTime = true}) {
-    final overwriteIndex = findFuelReportIndex(time, tolerance: tolerance);
-
-    if (overwriteIndex != null) {
-      if (amount != null) {
-        // edit existing
-        if (useNewTime) {
-          // Remove this report and insert a new one so the ordering is correct
-          fuelReports.removeAt(overwriteIndex);
-          insertFuelReport(time, amount, useNewTime: false, tolerance: tolerance);
-        } else {
-          fuelReports[overwriteIndex] = FuelReport(fuelReports[overwriteIndex].time, amount);
-        }
-      } else {
-        // remove existing
-        fuelReports.removeAt(overwriteIndex);
-      }
-    } else {
-      if (amount != null) {
-        // Insert new
-        final insertIndex = bisect_left<int>(
-            fuelReports.map((e) => e.time.millisecondsSinceEpoch).toList(), time.millisecondsSinceEpoch);
-        fuelReports.insert(insertIndex, FuelReport(time, amount));
-      }
-    }
-
-    // reset internal calculations
-    resetFuelStatCache();
-    unsaved = true;
-  }
-
-  void removeFuelReport(int index) {
-    _fuelReports.removeAt(index);
-    resetFuelStatCache();
-    unsaved = true;
   }
 
   // =========================================
@@ -553,38 +455,8 @@ class FlightLog {
         start: DateTime.fromMillisecondsSinceEpoch(samples[max(0, index.start)].time),
         end: DateTime.fromMillisecondsSinceEpoch(samples[min(samples.length - 1, index.end)].time));
 
-    double interpTime(DateTime start, DateTime end, DateTime i) {
-      final dur = end.millisecondsSinceEpoch - start.millisecondsSinceEpoch;
-      return (i.millisecondsSinceEpoch - start.millisecondsSinceEpoch) / dur.toDouble();
-    }
-
-    bool newContainsTime(DateTime time) {
-      final t = time.millisecondsSinceEpoch;
-      final s = newRange.start.millisecondsSinceEpoch;
-      final e = newRange.end.millisecondsSinceEpoch;
-      return t <= e && t >= s;
-    }
-
-    final newFuelReports = fuelReports.where((each) => newContainsTime(each.time)).toList();
-    for (int t = 0; t < fuelReports.length - 1; t++) {
-      final first = fuelReports[t];
-      final second = fuelReports[t + 1];
-
-      // first is not contained, but second is.
-      if (!newContainsTime(first.time) && newContainsTime(second.time) && second.time.isAfter(newRange.start)) {
-        // insert new at beginning
-        final interpValue = interpTime(first.time, second.time, newRange.start);
-        newFuelReports.insert(
-            0, FuelReport(newRange.start, first.amount * (1 - interpValue) + second.amount * interpValue));
-      }
-
-      // first is contained, but second is not.
-      if (newContainsTime(first.time) && !newContainsTime(second.time) && first.time.isBefore(newRange.end)) {
-        // insert new at end
-        final interpValue = interpTime(first.time, second.time, newRange.end);
-        newFuelReports.add(FuelReport(newRange.end, first.amount * (1 - interpValue) + second.amount * interpValue));
-      }
-    }
+    final newFuelController = FuelReportController(fuelReports: fuelReportController.fuelReports);
+    newFuelController.cropReportsToTimeRange(newRange);
 
     final newSamples = samples.sublist(index.start, min(samples.length, index.end + 1)).toList();
 
@@ -595,7 +467,7 @@ class FlightLog {
         samples: newSamples,
         gForceSamples: newGForceSamples,
         waypoints: waypoints,
-        fuelReports: newFuelReports,
+        fuelReports: newFuelController.fuelReports,
         gear: gear,
         filename: filename,
         imported: _imported,
@@ -640,7 +512,7 @@ class FlightLog {
     _timezone = timezone;
     _imported = imported;
     _filename = filename;
-    _fuelReports = fuelReports.where((each) => containsTime(each.time)).toList();
+    fuelReportController = FuelReportController(fuelReports: fuelReports);
     _gear = gear;
     gForceSamples = gForceSamples.where((e) => containsTime(DateTime.fromMillisecondsSinceEpoch(e.time))).toList();
     goodFile = true;
@@ -673,10 +545,10 @@ class FlightLog {
       }
 
       // --- Parse Samples
-      List<dynamic> dataSamples = data["samples"];
-      samples = dataSamples.map((e) => Geo.fromJson(e)).toList();
-
-      if (samples.isEmpty) {
+      List<dynamic>? dataSamples = data["samples"];
+      if (dataSamples != null && dataSamples.isNotEmpty) {
+        samples = dataSamples.map((e) => Geo.fromJson(e)).toList();
+      } else {
         throw "No samples in log";
       }
 
@@ -703,17 +575,19 @@ class FlightLog {
       }
 
       // --- Try loading fuel reports
+      List<FuelReport> fuelReports = [];
       if (data.containsKey("fuelReports")) {
-        _fuelReports = (data["fuelReports"] as List<dynamic>).map((e) => FuelReport.fromJson(e)).toList();
+        fuelReports = (data["fuelReports"] as List<dynamic>).map((e) => FuelReport.fromJson(e)).toList();
         // Check ordering
-        for (int t = 0; t < _fuelReports.length - 1; t++) {
-          if (_fuelReports[t].time.isAfter(_fuelReports[t + 1].time)) {
+        for (int t = 0; t < fuelReports.length - 1; t++) {
+          if (fuelReports[t].time.isAfter(fuelReports[t + 1].time)) {
             error("Fuel reports out of order", attributes: {"filename": filename, "fuelReports": data["fuelReports"]});
           }
         }
       } else {
-        _fuelReports = [];
+        fuelReports = [];
       }
+      fuelReportController = FuelReportController(fuelReports: fuelReports);
 
       goodFile = true;
     } catch (e, trace) {
@@ -736,7 +610,7 @@ class FlightLog {
     DateTime? dateOffset;
 
     // These are not supported in IGC
-    _fuelReports = [];
+    fuelReportController = FuelReportController();
     gForceSamples = [];
     waypoints = [];
     bleDevicesJson = null;
@@ -835,7 +709,7 @@ class FlightLog {
       "samples": samples.map((e) => e.toJson()).toList(),
       "waypoints":
           waypoints.where((element) => (!element.ephemeral && element.validate())).map((e) => e.toJson()).toList(),
-      "fuelReports": fuelReports.map((e) => e.toJson()).toList(),
+      "fuelReports": fuelReportController.fuelReports.map((e) => e.toJson()).toList(),
       "gear": gear?.toJson(),
       "gForceSamples": gSamples
     };

@@ -75,7 +75,7 @@ class ChartLogFuelInsights extends StatelessWidget {
     if (logsSlice.isNotEmpty) {
       final int cardinalityStats = logsSlice
           .map(
-            (e) => e.fuelStats.length,
+            (e) => e.fuelReportController.getFuelStats(e.samples).length,
           )
           .reduce((a, b) => a + b);
       return ScatterChart(ScatterChartData(
@@ -88,10 +88,11 @@ class ChartLogFuelInsights extends StatelessWidget {
                 axisNameWidget: getXunit(), sideTitles: const SideTitles(showTitles: true, reservedSize: 25)),
           ),
           scatterSpots: logsSlice
-              .map((e) => e.fuelStats
+              .map((e) => e.fuelReportController
+                  .getFuelStats(e.samples)
                   .map((s) => ScatterSpot(getX(s), getY(s),
                       dotPainter: FlDotCirclePainter(
-                          radius: 3 + s.durationTime.inHours.toDouble() * 2,
+                          radius: 3.0 + s.durationTime.inHours.toDouble() * 2,
                           color: Colors.lightGreen.withAlpha(
                             max(
                                 max(30, 150 - cardinalityStats),

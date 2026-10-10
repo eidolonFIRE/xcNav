@@ -20,7 +20,8 @@ Future editLiveFuelReport(BuildContext context) {
           title: Text("Report Fuel in Tank".tr()),
           content: StatefulBuilder(builder: (context, setState) {
             String fuelHintLaunch = "  ";
-            if (myTelemetry.takeOff != null && myTelemetry.findFuelReportIndex(myTelemetry.takeOff!) == 0) {
+            if (myTelemetry.takeOff != null &&
+                myTelemetry.fuelReportController.findFuelReportIndex(myTelemetry.takeOff!) == 0) {
               // In flight and has report near take-off time
               fuelHintLaunch =
                   printValue(UnitType.fuel, myTelemetry.fuelReports.first.amount, decimals: 2) ?? fuelHintLaunch;
@@ -30,7 +31,7 @@ Future editLiveFuelReport(BuildContext context) {
             }
 
             String fuelHintNow = "  ";
-            final reportNow = myTelemetry.findFuelReportIndex(clock.now());
+            final reportNow = myTelemetry.fuelReportController.findFuelReportIndex(clock.now());
             final showNow =
                 myTelemetry.inFlight && myTelemetry.takeOff!.isBefore(clock.now().subtract(const Duration(minutes: 5)));
             if (reportNow != null && showNow) {
@@ -71,22 +72,26 @@ Future editLiveFuelReport(BuildContext context) {
                     ),
                   ),
 
-                  if (myTelemetry.sumFuelStat != null) const Divider(),
+                  if (myTelemetry.fuelReportController.getSumFuelStat(myTelemetry.recordGeo) != null) const Divider(),
 
                   // --- Fuel Stats: summary
-                  if (myTelemetry.sumFuelStat != null)
+                  if (myTelemetry.fuelReportController.getSumFuelStat(myTelemetry.recordGeo) != null)
                     Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                       const Text("Avg"),
                       Text.rich(TextSpan(children: [
                         TextSpan(
-                            text: printValue(UnitType.fuel, myTelemetry.sumFuelStat!.rate, decimals: 1),
+                            text: printValue(UnitType.fuel,
+                                myTelemetry.fuelReportController.getSumFuelStat(myTelemetry.recordGeo)!.rate,
+                                decimals: 1),
                             style: avgStyle),
                         TextSpan(text: fuelRateStr, style: unitStyleBig)
                       ])),
                       Text.rich(TextSpan(children: [
                         TextSpan(
                             text: printValue(
-                                UnitType.distCoarse, myTelemetry.sumFuelStat!.mpl / unitConverters[UnitType.fuel]!(1),
+                                UnitType.distCoarse,
+                                myTelemetry.fuelReportController.getSumFuelStat(myTelemetry.recordGeo)!.mpl /
+                                    unitConverters[UnitType.fuel]!(1),
                                 decimals: 1),
                             style: avgStyle),
                         TextSpan(text: fuelEffStr, style: unitStyleBig)
@@ -138,17 +143,17 @@ Future editLiveFuelReport(BuildContext context) {
     if (parsedLaunch != null) {
       if (myTelemetry.inFlight && myTelemetry.takeOff != null) {
         debugPrint("Updating launch fuel: $parsedLaunch");
-        myTelemetry.insertFuelReport(myTelemetry.takeOff!, parsedLaunch);
+        myTelemetry.fuelReportController.insertFuelReport(myTelemetry.takeOff!, parsedLaunch);
       } else {
         debugPrint("Pre-setting fuel level: $parsedLaunch");
-        myTelemetry.insertFuelReport(clock.now(), parsedLaunch);
+        myTelemetry.fuelReportController.insertFuelReport(clock.now(), parsedLaunch);
       }
     }
 
     final parsedNow = parseDoubleValue(UnitType.fuel, fuelAmountNow.text);
     if (parsedNow != null) {
       debugPrint("Updating fuel: $parsedNow");
-      myTelemetry.insertFuelReport(clock.now(), parsedNow);
+      myTelemetry.fuelReportController.insertFuelReport(clock.now(), parsedNow);
     }
   });
 }
