@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:bisection/bisect.dart';
@@ -99,7 +100,7 @@ class FuelStat {
 
 class FuelReportController with ChangeNotifier {
   final List<FuelReport> _fuelReports = [];
-  List<FuelReport> get fuelReports => _fuelReports;
+  List<FuelReport> get fuelReports => UnmodifiableListView(_fuelReports);
 
   FuelReportController({Iterable<FuelReport> fuelReports = const []}) {
     _fuelReports.addAll(fuelReports);
@@ -118,7 +119,7 @@ class FuelReportController with ChangeNotifier {
     return _sumFuelStat;
   }
 
-  List<FuelStat>? _fuelStats = [];
+  List<FuelStat>? _fuelStats;
   List<FuelStat> getFuelStats(List<Geo> recordGeo) {
     if (_fuelStats == null) {
       _fuelStats = [];
@@ -145,6 +146,11 @@ class FuelReportController with ChangeNotifier {
   void resetFuelStatCache() {
     _fuelStats = null;
     _sumFuelStat = null;
+  }
+
+  void clear() {
+    _fuelReports.clear();
+    resetFuelStatCache();
   }
 
   void removeFuelReport(int index) {
@@ -198,8 +204,9 @@ class FuelReportController with ChangeNotifier {
       );
       return;
     }
+    final newTime = time ?? _fuelReports[index].time;
     removeFuelReport(index);
-    insertFuelReport(time ?? _fuelReports[index].time, amount);
+    insertFuelReport(newTime, amount);
     resetFuelStatCache();
   }
 

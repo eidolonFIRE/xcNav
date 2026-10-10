@@ -491,7 +491,8 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                                                           routePoints!, getAirspeed()!, getWindHdg()!, getWindspeed()!,
                                                           duration: myTelemetry.fuelReportController
                                                               .getSumFuelStat(myTelemetry.recordGeo)!
-                                                              .extrapolateEndurance(myTelemetry.fuelReports.last,
+                                                              .extrapolateEndurance(
+                                                                  myTelemetry.fuelReportController.fuelReports.last,
                                                                   from: clock.now()))
                                                       : null;
 

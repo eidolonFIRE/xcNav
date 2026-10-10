@@ -103,8 +103,8 @@ class Xc170TelemetryCharacteristic {
     // Update myTelemetry fuel reports
     if (myTelemetry.inFlight) {
       if (fuel.log.isNotEmpty &&
-          (myTelemetry.fuelReports.isEmpty ||
-              myTelemetry.fuelReports.last.time.isBefore(time.subtract(Duration(minutes: 10))))) {
+          (myTelemetry.fuelReportController.fuelReports.isEmpty ||
+              myTelemetry.fuelReportController.fuelReports.last.time.isBefore(time.subtract(Duration(minutes: 10))))) {
         myTelemetry.fuelReportController.insertFuelReport(
           time,
           fuel.log.last.value,
@@ -515,7 +515,8 @@ class Xc170StatusCard extends StatelessWidget {
                                         builder: (context, value) {
                                           final etaEmpty = myTelemetry.fuelReportController
                                               .getSumFuelStat(myTelemetry.recordGeo)!
-                                              .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now());
+                                              .extrapolateEndurance(myTelemetry.fuelReportController.fuelReports.last,
+                                                  from: clock.now());
 
                                           final warn = etaEmpty < const Duration(minutes: 15);
                                           final style = TextStyle(

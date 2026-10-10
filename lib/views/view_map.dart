@@ -804,7 +804,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               final enduranceDist = myTelemetry.speedSmooth.value *
                                   myTelemetry.fuelReportController
                                       .getSumFuelStat(myTelemetry.recordGeo)!
-                                      .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now())
+                                      .extrapolateEndurance(myTelemetry.fuelReportController.fuelReports.last,
+                                          from: clock.now())
                                       .inSeconds;
 
                               if (waypointETA.distance >= enduranceDist && enduranceDist >= 0) {
@@ -1016,7 +1017,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                                           child: Container(
                                               color: Colors.white38,
                                               child: Builder(builder: (context) {
-                                                final fuelReport = myTelemetry.fuelReports.lastOrNull;
+                                                final fuelReport =
+                                                    myTelemetry.fuelReportController.fuelReports.lastOrNull;
 
                                                 if (fuelReport != null) {
                                                   if (myTelemetry.fuelReportController

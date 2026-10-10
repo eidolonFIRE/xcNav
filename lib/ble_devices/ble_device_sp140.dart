@@ -281,8 +281,8 @@ class Sp140TelemetryCharacteristic {
 
         // Update myTelemetry fuel reports
         if (myTelemetry.inFlight) {
-          if (myTelemetry.fuelReports.isEmpty ||
-              myTelemetry.fuelReports.last.time
+          if (myTelemetry.fuelReportController.fuelReports.isEmpty ||
+              myTelemetry.fuelReportController.fuelReports.last.time
                   .isBefore(now.subtract(Duration(minutes: settingsMgr.sp140FuelSaveIntervalMin.value)))) {
             myTelemetry.fuelReportController.insertFuelReport(
               now,
@@ -516,7 +516,8 @@ class Sp140StatusCard extends StatelessWidget {
                                           builder: (context, value) {
                                             final etaEmpty = myTelemetry.fuelReportController
                                                 .getSumFuelStat(myTelemetry.recordGeo)!
-                                                .extrapolateEndurance(myTelemetry.fuelReports.last, from: clock.now());
+                                                .extrapolateEndurance(myTelemetry.fuelReportController.fuelReports.last,
+                                                    from: clock.now());
 
                                             final warn = etaEmpty < const Duration(minutes: 15);
                                             final style = TextStyle(

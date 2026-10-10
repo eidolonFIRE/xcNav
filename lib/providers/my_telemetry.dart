@@ -72,8 +72,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   DateTime? landing;
   Geo? launchGeo;
   DateTime? lastSavedLog;
-  final List<FuelReport> _fuelReports = [];
-  List<FuelReport> get fuelReports => UnmodifiableListView(_fuelReports);
 
   // in-flight hysterisis
   int triggerHyst = 0;
@@ -502,11 +500,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       flightEvent.add(FlightEvent(
           type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo!.time), latlng: geo!.latlng));
 
-      if (_fuelReports.isNotEmpty) {
+      if (fuelReportController.fuelReports.isNotEmpty) {
         // Duplicate the latest fuel report so it's part of this log, and drop everything else.
         // We assume we weren't just in flight, so we don't account for burn since last report.
-        final latest = _fuelReports.last;
-        _fuelReports.clear();
+        final latest = fuelReportController.fuelReports.last;
+        fuelReportController.clear();
         fuelReportController.insertFuelReport(takeOff!, latest.amount, tolerance: Duration.zero);
       }
 
@@ -534,7 +532,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         if (soc != null) {
           fuelReportController.insertFuelReport(landing!, soc);
         }
-      } else if (sumFuelStat != null && _fuelReports.isNotEmpty) {
+      } else if (sumFuelStat != null && fuelReportController.fuelReports.isNotEmpty) {
         fuelReportController.insertFuelReport(
             landing!, sumFuelStat.extrapolateToTime(fuelReportController.fuelReports.last, landing!));
       }
@@ -564,7 +562,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                   .where((element) => (!element.ephemeral && element.validate()))
                   .toList()
               : [],
-          fuelReports: _fuelReports,
+          fuelReports: fuelReportController.fuelReports,
           gear: Provider.of<Profile>(globalContext!, listen: false).gear);
 
       if (log.timeRange != null) {

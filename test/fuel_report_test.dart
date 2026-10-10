@@ -105,7 +105,7 @@ void main() {
     controller.insertFuelReport(DateTime(2000, 0, 0, 0, 2, 0, 0), 12.2);
     expect(controller.fuelReports.length, 4);
     expect(controller.fuelReports[0].amount, 12.2);
-    expect(controller.fuelReports[0].time, DateTime(2000, 0, 0, 0, 1, 0, 0));
+    expect(controller.fuelReports[0].time, DateTime(2000, 0, 0, 0, 2, 0, 0));
 
     // overwrite middle
     controller.insertFuelReport(DateTime(2000, 0, 0, 0, 10, 0, 0), 12.1);
@@ -114,7 +114,7 @@ void main() {
     controller.insertFuelReport(DateTime(2000, 0, 0, 0, 12, 0, 0), 12.2);
     expect(controller.fuelReports.length, 4);
     expect(controller.fuelReports[1].amount, 12.2);
-    expect(controller.fuelReports[1].time, DateTime(2000, 0, 0, 0, 10, 0, 0));
+    expect(controller.fuelReports[1].time, DateTime(2000, 0, 0, 0, 12, 0, 0));
 
     // overwrite last
     controller.insertFuelReport(DateTime(2000, 0, 0, 2, 0, 0, 0), 12.1);
@@ -123,7 +123,7 @@ void main() {
     controller.insertFuelReport(DateTime(2000, 0, 0, 2, 2, 0, 0), 12.2);
     expect(controller.fuelReports.length, 4);
     expect(controller.fuelReports[3].amount, 12.2);
-    expect(controller.fuelReports[3].time, DateTime(2000, 0, 0, 2, 0, 0, 0));
+    expect(controller.fuelReports[3].time, DateTime(2000, 0, 0, 2, 2, 0, 0));
   });
 
   test("FuelReport - insert middle", () {

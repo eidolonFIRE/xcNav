@@ -24,10 +24,12 @@ Future editLiveFuelReport(BuildContext context) {
                 myTelemetry.fuelReportController.findFuelReportIndex(myTelemetry.takeOff!) == 0) {
               // In flight and has report near take-off time
               fuelHintLaunch =
-                  printValue(UnitType.fuel, myTelemetry.fuelReports.first.amount, decimals: 2) ?? fuelHintLaunch;
-            } else if (!myTelemetry.inFlight && myTelemetry.fuelReports.isNotEmpty) {
+                  printValue(UnitType.fuel, myTelemetry.fuelReportController.fuelReports.first.amount, decimals: 2) ??
+                      fuelHintLaunch;
+            } else if (!myTelemetry.inFlight && myTelemetry.fuelReportController.fuelReports.isNotEmpty) {
               // Not yet in flight,
-              fuelHintLaunch = printValue(UnitType.fuel, myTelemetry.fuelReports.last.amount) ?? fuelHintLaunch;
+              fuelHintLaunch =
+                  printValue(UnitType.fuel, myTelemetry.fuelReportController.fuelReports.last.amount) ?? fuelHintLaunch;
             }
 
             String fuelHintNow = "  ";
@@ -36,8 +38,9 @@ Future editLiveFuelReport(BuildContext context) {
                 myTelemetry.inFlight && myTelemetry.takeOff!.isBefore(clock.now().subtract(const Duration(minutes: 5)));
             if (reportNow != null && showNow) {
               // Still have recent enough report to just update it
-              fuelHintNow =
-                  printValue(UnitType.fuel, myTelemetry.fuelReports[reportNow].amount, decimals: 2) ?? fuelHintNow;
+              fuelHintNow = printValue(UnitType.fuel, myTelemetry.fuelReportController.fuelReports[reportNow].amount,
+                      decimals: 2) ??
+                  fuelHintNow;
             }
 
             return Container(
