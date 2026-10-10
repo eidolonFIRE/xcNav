@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:xcnav/locale.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/flight_detector.dart';
 
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/units.dart';
@@ -33,6 +34,8 @@ class SettingConfig<T> {
   T get value {
     return _value.value ?? defaultValue;
   }
+
+  void reset() => value = defaultValue;
 
   set value(T newValue) {
     if (setter != null) {
@@ -227,6 +230,22 @@ class SettingsMgr {
   late final SettingConfig<bool> showServoCarbMenu;
   late final SettingConfig<bool> forceGpsAltitude;
   late final SettingConfig<int> gpsUpdateInterval;
+  late final SettingAction flightDetection;
+  late final SettingConfig<double> launchMinSpeed;
+  late final SettingConfig<double> launchMaxSpeed;
+  late final SettingConfig<bool> launchUseAgl;
+  late final SettingConfig<double> launchMinAgl;
+  late final SettingConfig<bool> launchUseVario;
+  late final SettingConfig<double> launchMinVario;
+  late final SettingConfig<int> launchHoldTime;
+  late final SettingConfig<bool> launchUseSp140Armed;
+  late final SettingConfig<double> landingMaxSpeed;
+  late final SettingConfig<bool> landingUseVario;
+  late final SettingConfig<double> landingMaxVario;
+  late final SettingConfig<bool> landingUseAgl;
+  late final SettingConfig<double> landingMaxAgl;
+  late final SettingConfig<int> landingHoldTime;
+  late final SettingConfig<bool> landingUseSp140Armed;
 
   // --- Debug Tools
   late final SettingConfig<bool> spoofLocation;
@@ -374,6 +393,48 @@ class SettingsMgr {
         setter: (value) => value < 500 ? 500 : value,
         hidden: defaultTargetPlatform != TargetPlatform.android);
 
+    flightDetection = SettingAction(this, "Experimental", () => null,
+        title: "flight_detection", actionIcon: const Icon(Icons.flight_takeoff));
+
+    // --- Launch / Landing detection (edited in flight detection dialog)
+    const launchDefaults = LaunchDetectorConfig();
+    launchMinSpeed = SettingConfig(this, prefs, "Flight Detection", "launchMinSpeed", launchDefaults.minSpeed,
+        title: "Launch Min Speed", hidden: true, setter: (value) => value < 0 ? 0.0 : value);
+    launchMaxSpeed = SettingConfig(this, prefs, "Flight Detection", "launchMaxSpeed", launchDefaults.maxSpeed,
+        title: "Launch Max Speed", hidden: true, setter: (value) => value < 0 ? 0.0 : value);
+    launchUseAgl = SettingConfig(this, prefs, "Flight Detection", "launchUseAgl", launchDefaults.useAgl,
+        title: "Launch Use AGL", hidden: true);
+    launchMinAgl = SettingConfig(this, prefs, "Flight Detection", "launchMinAgl", launchDefaults.minAgl,
+        title: "Launch Min AGL", hidden: true, setter: (value) => value < 0 ? 0.0 : value);
+    launchUseVario = SettingConfig(this, prefs, "Flight Detection", "launchUseVario", launchDefaults.useVario,
+        title: "Launch Use Vario", hidden: true);
+    launchMinVario = SettingConfig(this, prefs, "Flight Detection", "launchMinVario", launchDefaults.minVario,
+        title: "Launch Min Vario", hidden: true, setter: (value) => value < 0 ? 0.0 : value);
+    launchHoldTime = SettingConfig(
+        this, prefs, "Flight Detection", "launchHoldTime", launchDefaults.holdTime.inSeconds,
+        title: "Launch Hold Time", hidden: true, setter: (value) => value < 1 ? 1 : value);
+    launchUseSp140Armed = SettingConfig(
+        this, prefs, "Flight Detection", "launchUseSp140Armed", launchDefaults.useSp140Armed,
+        title: "Launch Use SP140 Armed", hidden: true);
+
+    const landingDefaults = LandingDetectorConfig();
+    landingMaxSpeed = SettingConfig(this, prefs, "Flight Detection", "landingMaxSpeed", landingDefaults.maxSpeed,
+        title: "Landing Max Speed", hidden: true, setter: (value) => value < 0 ? 0.0 : value);
+    landingUseVario = SettingConfig(this, prefs, "Flight Detection", "landingUseVario", landingDefaults.useVario,
+        title: "Landing Use Vario", hidden: true);
+    landingMaxVario = SettingConfig(this, prefs, "Flight Detection", "landingMaxVario", landingDefaults.maxVario,
+        title: "Landing Max Vario", hidden: true, setter: (value) => value < 0 ? 0.0 : value);
+    landingUseAgl = SettingConfig(this, prefs, "Flight Detection", "landingUseAgl", landingDefaults.useAgl,
+        title: "Landing Use AGL", hidden: true);
+    landingMaxAgl = SettingConfig(this, prefs, "Flight Detection", "landingMaxAgl", landingDefaults.maxAgl,
+        title: "Landing Max AGL", hidden: true, setter: (value) => value < 0 ? 0.0 : value);
+    landingHoldTime = SettingConfig(
+        this, prefs, "Flight Detection", "landingHoldTime", landingDefaults.holdTime.inSeconds,
+        title: "Landing Hold Time", hidden: true, setter: (value) => value < 1 ? 1 : value);
+    landingUseSp140Armed = SettingConfig(
+        this, prefs, "Flight Detection", "landingUseSp140Armed", landingDefaults.useSp140Armed,
+        title: "Landing Use SP140 Armed", hidden: true);
+
     // --- Debug Tools
     spoofLocation = SettingConfig(this, prefs, "Debug Tools", "", false,
         title: "spoof_location",
@@ -421,6 +482,50 @@ class SettingsMgr {
 
     sp140FuelSaveIntervalMin = SettingConfig(this, prefs, "sp140", "sp140FuelSaveIntervalMin", 5,
         title: "SP140 Fuel Save Interval (minutes)", icon: const Icon(Icons.timer), hidden: true);
+  }
+
+  LaunchDetectorConfig get launchDetectorConfig => LaunchDetectorConfig(
+        minSpeed: launchMinSpeed.value,
+        maxSpeed: launchMaxSpeed.value,
+        useAgl: launchUseAgl.value,
+        minAgl: launchMinAgl.value,
+        useVario: launchUseVario.value,
+        minVario: launchMinVario.value,
+        holdTime: Duration(seconds: launchHoldTime.value),
+        useSp140Armed: launchUseSp140Armed.value,
+      );
+
+  LandingDetectorConfig get landingDetectorConfig => LandingDetectorConfig(
+        maxSpeed: landingMaxSpeed.value,
+        useVario: landingUseVario.value,
+        maxVario: landingMaxVario.value,
+        useAgl: landingUseAgl.value,
+        maxAgl: landingMaxAgl.value,
+        holdTime: Duration(seconds: landingHoldTime.value),
+        useSp140Armed: landingUseSp140Armed.value,
+      );
+
+  /// Restore all launch / landing detection settings to defaults.
+  void resetFlightDetection() {
+    for (final setting in <SettingConfig>[
+      launchMinSpeed,
+      launchMaxSpeed,
+      launchUseAgl,
+      launchMinAgl,
+      launchUseVario,
+      launchMinVario,
+      launchHoldTime,
+      launchUseSp140Armed,
+      landingMaxSpeed,
+      landingUseVario,
+      landingMaxVario,
+      landingUseAgl,
+      landingMaxAgl,
+      landingHoldTime,
+      landingUseSp140Armed,
+    ]) {
+      setting.reset();
+    }
   }
 }
 

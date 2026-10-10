@@ -655,9 +655,11 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       if (inFlight) {
         // Is moving slowly near the ground?
         // Only acount for AGL if ground data available.
-        if (speedSmooth.value < 1.7 &&
-            varioSmooth.value.abs() < 0.3 &&
-            (geo!.ground != null ? ((geo!.alt - geo!.ground!) < 100) : true)) {
+        final landingConfig = settingsMgr.landingDetectorConfig;
+        if (landingConfig.isLandingCandidate(
+            speed: speedSmooth.value,
+            agl: geo!.ground != null ? geo!.alt - geo!.ground! : null,
+            vario: varioSmooth.value)) {
           if (geoPrev != null) {
             triggerHyst += geo!.time - geoPrev!.time;
           } else {
@@ -666,16 +668,18 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         } else {
           triggerHyst = 0;
         }
-        if (triggerHyst > 20000 && bleDeviceSp140.isArmed() != true) {
+        if (landingConfig.shouldLand(triggerHystMs: triggerHyst, sp140Armed: bleDeviceSp140.isArmed())) {
           // Landed!
           stopFlight(bypassRecording: bypassRecording);
         }
       } else {
         // Is moving a normal speed and above the ground?
         // Only acount for AGL if ground data available.
-        if (4.0 < geo!.spd &&
-            geo!.spd < 25 &&
-            ((geo!.ground != null ? (geo!.alt - geo!.ground! > 30) : true) || varioSmooth.value > 1.4)) {
+        final launchConfig = settingsMgr.launchDetectorConfig;
+        if (launchConfig.isLaunchCandidate(
+            speed: geo!.spd,
+            agl: geo!.ground != null ? geo!.alt - geo!.ground! : null,
+            vario: varioSmooth.value)) {
           if (geoPrev != null) {
             triggerHyst += geo!.time - geoPrev!.time;
           } else {
@@ -684,7 +688,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         } else {
           triggerHyst = 0;
         }
-        if (triggerHyst > 15000 || bleDeviceSp140.isArmed() == true) {
+        if (launchConfig.shouldLaunch(triggerHystMs: triggerHyst, sp140Armed: bleDeviceSp140.isArmed())) {
           // Launched!
           startFlight();
         }

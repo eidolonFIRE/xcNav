@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:xcnav/dialogs/flight_detection_dialog.dart';
 import 'package:xcnav/locale.dart';
 
 // Providers
@@ -57,6 +58,10 @@ class _SettingsEditorState extends State<SettingsEditor> {
       setState(() {
         emptyMapTileCache();
       });
+    };
+
+    settingsMgr.flightDetection.callback = () {
+      showFlightDetectionDialog(context);
     };
 
     settingsMgr.adsbTestAudio.callback = () {
