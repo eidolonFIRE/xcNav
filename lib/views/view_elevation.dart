@@ -100,23 +100,20 @@ class ViewElevationState extends State<ViewElevation> {
                       child: SizedBox(
                           width: MediaQuery.of(context).size.width,
                           // constraints: const BoxConstraints(maxHeight: 400),
-                          child: ClipRect(
-                              child: CustomPaint(
-                            painter: ElevationPlotPainter(
-                                myTelemetry.getHistory(
-                                    lookBehind != null
-                                        ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.last.time)
-                                            .subtract(lookBehind!)
-                                        : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time),
-                                    interval: const Duration(seconds: 30)),
-                                doSamples(myTelemetry.recordGeo.last, activePlan.getSelectedWp(),
-                                    myTelemetry.speedSmooth.value),
-                                distScale,
-                                waypoint: activePlan.getSelectedWp(),
-                                waypointETA: waypointETA,
-                                liveSpeed: myTelemetry.speedSmooth.value,
-                                liveVario: myTelemetry.varioSmooth.value),
-                          )))),
+                          child: ElevationPlot(
+                              myTelemetry.getHistory(
+                                  lookBehind != null
+                                      ? DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.last.time)
+                                          .subtract(lookBehind!)
+                                      : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time),
+                                  interval: const Duration(seconds: 30)),
+                              doSamples(
+                                  myTelemetry.recordGeo.last, activePlan.getSelectedWp(), myTelemetry.speedSmooth.value),
+                              distScale,
+                              waypoint: activePlan.getSelectedWp(),
+                              waypointETA: waypointETA,
+                              liveSpeed: myTelemetry.speedSmooth.value,
+                              liveVario: myTelemetry.varioSmooth.value))),
 
                 // --- View Controls
                 if (myTelemetry.recordGeo.length > 1)

@@ -160,8 +160,13 @@ class Waypoint {
     _segsOriented = null;
   }
 
+  /// Ground elevation (meters) at each point. Entries are null until the DEM tile is loaded.
+  /// (this getter will cache, but retries missing samples)
   List<double?> get elevation {
-    _elevation ??= latlng.map((e) => sampleDem(e, true)).toList();
+    _elevation ??= List.filled(latlng.length, null);
+    for (int index = 0; index < latlng.length; index++) {
+      _elevation![index] ??= sampleDem(latlng[index], true);
+    }
     return _elevation!;
   }
 

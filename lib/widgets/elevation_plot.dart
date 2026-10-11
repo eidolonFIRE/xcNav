@@ -1,12 +1,7 @@
-import 'dart:async';
 import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:collection/collection.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_svg/svg.dart';
-// import 'package:intl/intl.dart' as intl;
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
@@ -25,25 +20,14 @@ class ElevSample {
   ElevSample(this.latlng, this.dist, this.elev);
 }
 
-ui.Image? _arrow;
-
-final Map<String, ui.Image> loadedSvgs = {};
-
-class ElevationPlotPainter extends CustomPainter {
-  late final Paint _paintGround;
-  late final Paint _paintGroundFuture;
-  late final Paint _paintElev;
-  late final Paint _paintGrid;
-  late final Paint _paintVarioTrend;
-  late final Paint _paintPath;
-  late final Paint _paintWaypoint;
-  late final Paint _paintFilterWhite;
-  // late final Paint _paintCard;
-
+/// Side profile of the pilot's recent altitude, the ground below, and the ground ahead.
+///
+/// X axis is time (ms since epoch). Samples ahead of the pilot are placed at `last.time + dist * distScale`.
+class ElevationPlot extends StatelessWidget {
   final double liveVario;
   final double liveSpeed;
   final List<Geo> geoData;
-  final List<ElevSample?> groundData;
+  final List<ElevSample> groundData;
 
   final double distScale;
 
@@ -52,321 +36,220 @@ class ElevationPlotPainter extends CustomPainter {
 
   final bool showPilotIcon;
 
-  /// Label the timestamp of a geoData sample
-  final int? labelIndex;
-
-  ElevationPlotPainter(this.geoData, this.groundData, this.distScale,
-      {this.waypoint,
+  const ElevationPlot(this.geoData, this.groundData, this.distScale,
+      {super.key,
+      this.waypoint,
       this.waypointETA,
       this.showPilotIcon = true,
-      this.labelIndex,
       required this.liveVario,
-      required this.liveSpeed}) {
-    _paintGround = Paint()
-      ..color = Colors.orange.shade800
-      ..style = PaintingStyle.fill;
-
-    _paintGroundFuture = Paint()
-      ..color = Colors.orange.shade600
-      ..style = PaintingStyle.fill;
-
-    _paintElev = Paint()
-      ..color = Colors.blue
-      ..style = PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 5;
-
-    _paintGrid = Paint()
-      ..color = Colors.white24
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    _paintVarioTrend = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 2;
-
-    _paintPath = Paint()
-      ..style = ui.PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 8;
-
-    // _paintCard = Paint()
-    //   ..color = Colors.grey.shade800
-    //   ..style = PaintingStyle.fill;
-
-    _paintFilterWhite = Paint()
-      ..colorFilter = const ui.ColorFilter.mode(Colors.white, BlendMode.srcIn)
-      ..filterQuality = FilterQuality.high;
-
-    if (waypoint != null) {
-      _paintWaypoint = Paint()
-        ..colorFilter = ui.ColorFilter.mode(waypoint!.getColor(), BlendMode.srcIn)
-        ..filterQuality = FilterQuality.high;
-    }
-
-    if (_arrow == null) {
-      loadUiImage("./assets/images/red_arrow.png").then((value) => _arrow = value);
-    }
-  }
-
-  ui.Image? getLoadedSvg(String assetName, int width, int height) {
-    if (loadedSvgs[assetName] == null) {
-      rootBundle.loadString(assetName).then((svgRaw) {
-        // debugPrint(svgRaw);
-
-        vg.loadPicture(SvgStringLoader(svgRaw), null).then((value) {
-          // debugPrint("${value.size}");
-          loadedSvgs[assetName] = value.picture.toImageSync(width, height);
-          debugPrint("Loaded asset: $assetName");
-        });
-      });
-    }
-    return loadedSvgs[assetName];
-  }
-
-  Future<ui.Image> loadUiImage(String imageAssetPath) async {
-    final ByteData data = await rootBundle.load(imageAssetPath);
-    final Completer<ui.Image> completer = Completer();
-    ui.decodeImageFromList(Uint8List.view(data.buffer), (ui.Image img) {
-      return completer.complete(img);
-    });
-    return completer.future;
-  }
+      required this.liveSpeed});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    // debugPrint("PAINT ELEVATION PLOT");
+  Widget build(BuildContext context) {
+    if (geoData.isEmpty) return Container();
 
-    if (geoData.isEmpty) return;
+    return LayoutBuilder(builder: (context, constraints) {
+      final width = constraints.maxWidth;
+      final height = constraints.maxHeight;
 
-    final futureGround = groundData.where((element) => element != null).map((e) => e!.elev).toList();
+      final futureGround = groundData.map((e) => e.elev).toList();
 
-    // --- Common misc.
-    final double maxElevUnsnapped =
-        max(geoData.map((e) => e.alt).reduce(max), (futureGround.isNotEmpty ? futureGround.reduce(max) : 0));
+      // --- Common misc.
+      final double maxElevUnsnapped = max(geoData.map((e) => e.alt).max, futureGround.maxOrNull ?? 0);
 
-    // --- Set vertical grid resolution
-    final double vertGridResScale = max(1, ((maxElevUnsnapped / size.height) / 5).floor() * 2).toDouble();
-    final double vertGridRes =
-        (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 100 : 152.4) * vertGridResScale;
+      // --- Set vertical grid resolution
+      final double vertGridResScale = max(1, ((maxElevUnsnapped / height) / 5).floor() * 2).toDouble();
+      final double vertGridRes =
+          (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 100 : 152.4) * vertGridResScale;
 
-    final double maxElev = ((maxElevUnsnapped + vertGridRes / 2) / vertGridRes).ceil() * vertGridRes;
+      final double maxElev = ((maxElevUnsnapped + vertGridRes / 2) / vertGridRes).ceil() * vertGridRes;
 
-    final Iterable<double> historyGroundData =
-        geoData.map((e) => e.ground).where((element) => element != null).cast<double>();
+      final historyGround = geoData.map((e) => e.ground).nonNulls;
+      final double minElev =
+          ((min(historyGround.minOrNull ?? 0, futureGround.minOrNull ?? 0) - vertGridRes / 2) / vertGridRes).floor() *
+              vertGridRes;
 
-    final double minElev = ((min(
-                        historyGroundData.length > 1
-                            ? historyGroundData.reduce(min)
-                            : (historyGroundData.length == 1 ? historyGroundData.first : 0),
-                        (futureGround.isNotEmpty ? futureGround.reduce(min) : 0)) -
-                    vertGridRes / 2) /
-                vertGridRes)
-            .floor() *
-        vertGridRes;
-    final double rangeElev = maxElev - minElev;
+      // --- Horizontal range
+      final first = geoData.first;
+      final last = geoData.last;
+      final double farthestDist = groundData.lastOrNull?.dist ?? 0;
+      final double rangeX = max(1, last.time - first.time + farthestDist);
 
-    double scaleY(double value) {
-      return size.height - size.height * (value - minElev) / rangeElev;
-    }
-
-    final double farthestDist = groundData.lastOrNull?.dist ?? 0;
-    final rangeX = geoData.last.time - geoData.first.time + farthestDist;
-
-    double scaleX(int value) {
+      double pxPerX = width / rangeX;
+      double minX = first.time.toDouble();
       if (showPilotIcon) {
         // limit stretch to keep things in view of the center
         final rightPad = futureGround.isEmpty ? 80 : 0;
-        final leftOffset = size.width * (geoData.last.time - geoData.first.time) / rangeX;
+        final leftOffset = width * (last.time - first.time) / rangeX;
         final correction = max(0, 30 - leftOffset);
-        return (size.width - rightPad - correction) * (value - geoData.first.time) / rangeX + correction;
-      } else {
-        // stretch everything normally
-        return size.width * (value - geoData.first.time) / rangeX;
+        pxPerX = (width - rightPad - correction) / rangeX;
+        minX -= correction / pxPerX;
       }
-    }
+      final double maxX = minX + width / pxPerX;
+      final double pxPerY = height / (maxElev - minElev);
 
-    Offset scaleOffset(Offset value) {
-      return Offset(scaleX(value.dx.round()), scaleY(value.dy));
-    }
+      Offset toPixel(double x, double y) => Offset((x - minX) * pxPerX, height - (y - minElev) * pxPerY);
 
-    // --- Draw Past Ground Level
-    {
-      final groundPath = ui.Path();
-      groundPath.addPolygon(
-          geoData
-                  .where((element) => element.ground != null)
-                  .map((e) => Offset(scaleX(e.time), scaleY(e.ground!.toDouble())))
-                  .toList() +
-              [Offset(scaleX(geoData.last.time), size.height), Offset(scaleX(geoData.first.time), size.height)],
-          true);
-      canvas.drawPath(groundPath, _paintGround);
-    }
+      // --- Vario Trendline
+      final pilot = toPixel(last.time.toDouble(), last.alt);
+      final double trendDx = liveSpeed * distScale;
+      final trendAngle = atan2(-liveVario * pxPerY, trendDx * pxPerX);
 
-    // --- Draw Future Ground Level
-    {
-      final groundPath = ui.Path();
-      groundPath.addPolygon(
-          groundData
-                  .where((element) => element != null)
-                  .map((e) => Offset(scaleX(e!.dist.toInt() + geoData.last.time), scaleY(e.elev.toDouble())))
-                  .toList() +
-              [Offset(size.width, size.height), Offset(scaleX(geoData.last.time), size.height)],
-          true);
+      // --- Waypoint
+      final wp = waypoint;
+      final eta = waypointETA;
+      List<FlSpot> pathSpots = [];
+      Offset? wpPixel;
 
-      canvas.drawPath(groundPath, _paintGroundFuture);
-    }
+      /// Fallback for when the waypoint's own elevation isn't loaded yet: nearest look-ahead ground sample.
+      double groundAt(double scaledDist) =>
+          minBy(groundData, (ElevSample e) => (e.dist - scaledDist).abs())?.elev ?? historyGround.lastOrNull ?? 0;
 
-    // --- Draw Pilot Elevation Track
-    canvas.drawPoints(
-        ui.PointMode.polygon, geoData.map((e) => Offset(scaleX(e.time), scaleY(e.alt))).toList(), _paintElev);
-
-    // --- Draw Elevation grid lines
-    for (double t = minElev; t <= maxElev; t += vertGridRes) {
-      canvas.drawLine(Offset(0, scaleY(t)), Offset(size.width, scaleY(t)), _paintGrid);
-      TextSpan span =
-          TextSpan(style: const TextStyle(color: Colors.white), text: printValue(UnitType.distFine, t, decimals: 0));
-      TextPainter tp = TextPainter(text: span, textAlign: TextAlign.left, textDirection: TextDirection.ltr);
-      tp.layout();
-      tp.paint(canvas, Offset(4, scaleY(t)));
-    }
-
-    // --- Draw Time grid lines
-    for (int t = geoData.first.time +
-            ((-geoData.first.time + geoData.last.time) % const Duration(minutes: 5).inMilliseconds);
-        t <= rangeX + geoData.last.time;
-        t += const Duration(minutes: 5).inMilliseconds) {
-      canvas.drawLine(Offset(scaleX(t), 0), Offset(scaleX(t), 20), _paintGrid);
-      canvas.drawLine(Offset(scaleX(t), size.height), Offset(scaleX(t), size.height - 20), _paintGrid);
-    }
-
-    // --- Draw Vario Trendline
-    final base = scaleOffset(Offset(geoData.last.time.toDouble(), geoData.last.alt));
-    Offset slope = const Offset(1, 0);
-
-    slope = Offset(
-        scaleX((liveSpeed * distScale).toInt() + geoData.first.time), -size.height + scaleY(liveVario + minElev));
-    if (slope.dx.abs() > 0) {
-      for (double t = 0; t < size.width - base.dx; t += 20) {
-        canvas.drawLine(base + slope * t / slope.dx, base + slope * (t + 10) / slope.dx, _paintVarioTrend);
-      }
-    }
-
-    // // --- Draw Sample Label
-    // if (labelIndex != null) {
-    //   final t = geoData[labelIndex!].time;
-    //   final x = scaleX(t);
-
-    //   // Line
-    //   canvas.drawLine(Offset(x, scaleY(geoData[labelIndex!].alt)), Offset(x, 0), _paintVarioTrend);
-
-    //   // Text
-    //   TextSpan span = TextSpan(
-    //       style: const TextStyle(color: Colors.white),
-    //       text: intl.DateFormat("h:mm a").format(DateTime.fromMillisecondsSinceEpoch(t)));
-    //   TextPainter tp = TextPainter(text: span, textAlign: TextAlign.center, textDirection: TextDirection.ltr);
-    //   tp.layout();
-
-    //   final xDynamic = x - (labelIndex! > geoData.length / 2 ? tp.width + 4 : -4);
-
-    //   // Background card
-    //   canvas.drawRRect(
-    //       RRect.fromRectAndRadius(
-    //           Rect.fromLTWH(xDynamic - 4, 0, tp.width + 8, tp.height + 8), const Radius.circular(10)),
-    //       _paintCard);
-
-    //   tp.paint(canvas, Offset(xDynamic, 4));
-    // }
-
-    // --- Draw Waypoint
-    final svgPin = getLoadedSvg("assets/images/pin.svg", 160, 240);
-    // debugPrint("Should print waypoint: ${waypoint != null}, ${svgPin != null}, ${waypointETA?.distance != null}");
-    if (waypoint != null && svgPin != null && waypointETA?.distance != null) {
-      if (waypoint!.isPath) {
-        // --- Waypoint: Path
-        final List<Offset> points = [];
-        // Start from the end and go backwards so we can subtract from the known full eta
-        for (int index = waypoint!.latlngOriented.length - 1;
-            index >= (waypointETA?.pathIntercept?.index ?? 0);
-            index--) {
-          final double pointEta =
-              (waypointETA!.distance - waypoint!.lengthBetweenIndexs(index, waypoint!.latlngOriented.length - 1)) *
-                  distScale;
-          points.add(Offset(scaleX(geoData.last.time + pointEta.toInt()), scaleY(waypoint!.elevation[index] ?? 0)));
+      if (wp != null && eta != null) {
+        if (wp.isPath) {
+          // groundData is sampled along the path (after the intercept), so trace the ground from the intercept to the
+          // end of the path rather than just connecting the path vertices.
+          final pathStart = (eta.pathIntercept?.dist ?? 0) * distScale;
+          final pathEnd = eta.distance * distScale;
+          pathSpots = [
+            FlSpot(last.time + pathStart, groundAt(pathStart)),
+            ...groundData
+                .where((e) => e.dist > pathStart && e.dist < pathEnd)
+                .map((e) => FlSpot(last.time + e.dist, e.elev)),
+            if (pathEnd <= farthestDist) FlSpot(last.time + pathEnd, groundAt(pathEnd)),
+          ];
+        } else {
+          final wpEta = eta.distance * distScale;
+          wpPixel = toPixel(last.time + wpEta, wp.elevation[0] ?? groundAt(wpEta));
         }
-        canvas.drawPoints(ui.PointMode.polygon, points, _paintPath..color = waypoint!.getColor());
-      } else {
+      }
+
+      final glideSlope = myTelemetry.glideSlope;
+      final arrowSize = width / 10;
+
+      return Stack(clipBehavior: Clip.hardEdge, children: [
+        LineChart(
+            duration: Duration.zero,
+            LineChartData(
+                minX: minX,
+                maxX: maxX,
+                minY: minElev,
+                maxY: maxElev,
+                baselineX: last.time.toDouble(),
+                clipData: const FlClipData.all(),
+                borderData: FlBorderData(show: false),
+                lineTouchData: const LineTouchData(enabled: false),
+                gridData: FlGridData(
+                    horizontalInterval: vertGridRes,
+                    verticalInterval: const Duration(minutes: 5).inMilliseconds.toDouble(),
+                    getDrawingHorizontalLine: (_) => const FlLine(color: Colors.white24, strokeWidth: 1),
+                    // Only draw short ticks along the top and bottom edges
+                    getDrawingVerticalLine: (_) => FlLine(
+                        color: Colors.white24,
+                        strokeWidth: 1,
+                        dashArray: height > 40 ? [20, (height - 40).toInt()] : null)),
+                titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                        sideTitleAlignment: SideTitleAlignment.inside,
+                        drawBelowEverything: false,
+                        sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: vertGridRes,
+                            reservedSize: 80,
+                            minIncluded: false,
+                            getTitlesWidget: (value, meta) => Transform.translate(
+                                offset: const Offset(4, 10),
+                                child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(printValue(UnitType.distFine, value, decimals: 0) ?? "",
+                                        style: const TextStyle(color: Colors.white)))))),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false))),
+                lineBarsData: [
+                  // --- Past Ground Level
+                  LineChartBarData(
+                      barWidth: 0,
+                      dotData: const FlDotData(show: false),
+                      spots: geoData
+                          .where((e) => e.ground != null)
+                          .map((e) => FlSpot(e.time.toDouble(), e.ground!.toDouble()))
+                          .toList(),
+                      belowBarData: BarAreaData(show: true, color: Colors.orange.shade800)),
+
+                  // --- Future Ground Level
+                  LineChartBarData(
+                      barWidth: 0,
+                      dotData: const FlDotData(show: false),
+                      spots: groundData.map((e) => FlSpot(e.dist + last.time, e.elev)).toList(),
+                      belowBarData: BarAreaData(show: true, color: Colors.orange.shade600)),
+
+                  // --- Pilot Elevation Track
+                  LineChartBarData(
+                      color: Colors.blue,
+                      barWidth: 5,
+                      isStrokeCapRound: true,
+                      isStrokeJoinRound: true,
+                      dotData: const FlDotData(show: false),
+                      spots: geoData.map((e) => FlSpot(e.time.toDouble(), e.alt)).toList()),
+
+                  // --- Vario Trendline
+                  if (trendDx > 0)
+                    LineChartBarData(
+                        color: Colors.white,
+                        barWidth: 2,
+                        dashArray: [10, 10],
+                        dotData: const FlDotData(show: false),
+                        spots: [
+                          FlSpot(last.time.toDouble(), last.alt),
+                          FlSpot(maxX, last.alt + liveVario * (maxX - last.time) / trendDx),
+                        ]),
+
+                  // --- Waypoint: Path
+                  if (pathSpots.isNotEmpty)
+                    LineChartBarData(
+                        color: wp!.getColor(),
+                        barWidth: 8,
+                        isStrokeCapRound: true,
+                        isStrokeJoinRound: true,
+                        dotData: const FlDotData(show: false),
+                        spots: pathSpots),
+                ])),
+
         // --- Waypoint: Point
-        final dx = scaleX((waypointETA!.distance * distScale + geoData.last.time).round()) - 20;
-        final dy = scaleY(waypoint!.elevation[0] ?? 0) - 60;
-        canvas.translate(dx, dy);
-        const scaleFactor = 0.266;
-        canvas.scale(scaleFactor, scaleFactor);
-        canvas.drawImage(svgPin, Offset.zero, _paintWaypoint);
-        canvas.scale(1 / scaleFactor, 1 / scaleFactor);
+        if (wpPixel != null)
+          Positioned(
+              left: wpPixel.dx - 21,
+              top: wpPixel.dy - 64,
+              child: SizedBox(width: 42, height: 64, child: WaypointMarker(wp!, 64))),
 
-        dynamic icon = waypoint != null ? iconOptions[waypoint!.icon] : null;
-        if (waypoint?.icon != null && icon != null) {
-          if (icon is IconData) {
-            // Render standard icon
-            TextPainter textPainter = TextPainter(textDirection: TextDirection.rtl);
-            textPainter.text = TextSpan(
-                text: String.fromCharCode(icon.codePoint),
-                style: TextStyle(fontSize: 30.0, fontFamily: icon.fontFamily));
-            textPainter.layout();
-            textPainter.paint(canvas, const Offset(6.0, 6.0));
-          } else if (icon is String) {
-            // Render svg
-            canvas.translate(6, 4);
-            const scaleFactor = 0.6;
-            canvas.scale(scaleFactor, scaleFactor);
-            final svg = getLoadedSvg(icon, 50, 50);
+        // --- Pilot Icon
+        if (showPilotIcon)
+          Positioned(
+              left: pilot.dx - arrowSize / 2,
+              top: pilot.dy - arrowSize / 2,
+              child: Transform.rotate(
+                  angle: trendAngle + pi / 2,
+                  child: Image.asset("assets/images/red_arrow.png",
+                      width: arrowSize, height: arrowSize, fit: BoxFit.fill))),
 
-            if (svg != null) {
-              canvas.drawImage(svg, Offset.zero, _paintFilterWhite);
-            }
-            canvas.scale(1 / scaleFactor, 1 / scaleFactor);
-            canvas.translate(-6, -4);
-          }
-        }
-        canvas.translate(-dx, -dy);
-      }
-    }
-
-    // --- Draw Pilot Icon
-    if (_arrow != null && showPilotIcon) {
-      canvas.translate(base.dx, base.dy);
-      canvas.rotate(slope.direction + pi / 2);
-      canvas.drawImageRect(_arrow!, const Rect.fromLTWH(0, 0, 113, 130),
-          Rect.fromCenter(center: const Offset(0, 0), width: size.width / 10, height: size.width / 10), Paint());
-      canvas.rotate(-slope.direction - pi / 2);
-      canvas.translate(-base.dx, -base.dy);
-    }
-
-    // --- Draw Vario
-    if (showPilotIcon) {
-      final slope = myTelemetry.glideSlope;
-      TextPainter tp = TextPainter(
-          text: TextSpan(children: [
-            richValue(UnitType.vario, liveVario,
-                valueStyle: const TextStyle(fontSize: 30),
-                unitStyle: const TextStyle(fontSize: 14, color: Colors.grey)),
-            if (slope != null) TextSpan(text: "    ${slope.round()}:1")
-          ]),
-          textAlign: TextAlign.right,
-          textDirection: TextDirection.ltr);
-      tp.layout(minWidth: 60);
-      tp.paint(canvas, Offset(scaleX(geoData.last.time) - 20, scaleY(geoData.last.alt) + 20));
-    }
-  }
-
-  @override
-  bool shouldRepaint(ElevationPlotPainter oldDelegate) {
-    return oldDelegate.geoData.last.time != geoData.last.time || oldDelegate.labelIndex != labelIndex;
+        // --- Vario
+        if (showPilotIcon)
+          Positioned(
+              left: pilot.dx - 20,
+              top: pilot.dy + 20,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 60),
+                child: Text.rich(
+                    TextSpan(children: [
+                      richValue(UnitType.vario, liveVario,
+                          valueStyle: const TextStyle(fontSize: 30),
+                          unitStyle: const TextStyle(fontSize: 14, color: Colors.grey)),
+                      if (glideSlope != null) TextSpan(text: "    ${glideSlope.round()}:1")
+                    ]),
+                    textAlign: TextAlign.right),
+              )),
+      ]);
+    });
   }
 }
