@@ -966,6 +966,52 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                           .toList()),
                 )),
 
+        // --- Current waypoint info
+        if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath && focusMode != FocusMode.editWaypoint)
+          Consumer<ActivePlan>(
+            builder: (context, activePlan, _) {
+              final curWaypoint = activePlan.getSelectedWp();
+              if (curWaypoint != null) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 60, right: 60, bottom: 10),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                                child: Container(
+                                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
+                                    color: Colors.white38,
+                                    child: WaypointNavBar(activePlan: activePlan)))),
+                        Positioned(
+                            top: -40,
+                            right: -40,
+                            child: InkWell(
+                              onTap: (() {
+                                activePlan.selectedWp = null;
+                              }),
+                              child: Padding(
+                                padding: const EdgeInsets.all(40),
+                                child: Icon(
+                                  Icons.cancel,
+                                  color: const Color.fromARGB(255, 255, 100, 100).withAlpha(200),
+                                  size: 20,
+                                ),
+                              ),
+                            ))
+                      ],
+                    ),
+                  ),
+                );
+              } else {
+                return Container();
+              }
+            },
+          ),
+
         ///////////////////////////////////////////////////////////////////////////////////////////
         // --- Secondary column (default to right side)
         Positioned(
@@ -1063,20 +1109,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                               }),
                         ])),
 
-                  // --- BLE xc170
-                  if (ble_service.bleDeviceXc170.device != null) Xc170StatusCard(xc170: ble_service.bleDeviceXc170),
-
-                  // --- Big Battery
-                  if (ble_service.bleDeviceBigBattery.device != null)
-                    BigBatteryStatusCard(bigBattery: ble_service.bleDeviceBigBattery),
-
-                  // --- Runleader
-                  if (ble_service.bleDeviceRunleader.device != null)
-                    RunleaderStatusCard(runleader: ble_service.bleDeviceRunleader),
-
-                  // --- Sp140
-                  if (ble_service.bleDeviceSp140.device != null) Sp140StatusCard(sp140: ble_service.bleDeviceSp140),
-
                   // --- Chat bubbles
                   Consumer<ChatMessages>(
                     builder: (context, chat, child) {
@@ -1115,6 +1147,20 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                       );
                     },
                   ),
+
+                  // --- BLE xc170
+                  if (ble_service.bleDeviceXc170.device != null) Xc170StatusCard(xc170: ble_service.bleDeviceXc170),
+
+                  // --- Big Battery
+                  if (ble_service.bleDeviceBigBattery.device != null)
+                    BigBatteryStatusCard(bigBattery: ble_service.bleDeviceBigBattery),
+
+                  // --- Runleader
+                  if (ble_service.bleDeviceRunleader.device != null)
+                    RunleaderStatusCard(runleader: ble_service.bleDeviceRunleader),
+
+                  // --- Sp140
+                  if (ble_service.bleDeviceSp140.device != null) Sp140StatusCard(sp140: ble_service.bleDeviceSp140),
                 ],
               ),
             );
@@ -1491,52 +1537,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 ],
               ),
             ),
-          ),
-
-        // --- Current waypoint info
-        if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath && focusMode != FocusMode.editWaypoint)
-          Consumer<ActivePlan>(
-            builder: (context, activePlan, _) {
-              final curWaypoint = activePlan.getSelectedWp();
-              if (curWaypoint != null) {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 60, right: 60, bottom: 10),
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                child: Container(
-                                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
-                                    color: Colors.white38,
-                                    child: WaypointNavBar(activePlan: activePlan)))),
-                        Positioned(
-                            top: -40,
-                            right: -40,
-                            child: InkWell(
-                              onTap: (() {
-                                activePlan.selectedWp = null;
-                              }),
-                              child: Padding(
-                                padding: const EdgeInsets.all(40),
-                                child: Icon(
-                                  Icons.cancel,
-                                  color: const Color.fromARGB(255, 255, 100, 100).withAlpha(200),
-                                  size: 20,
-                                ),
-                              ),
-                            ))
-                      ],
-                    ),
-                  ),
-                );
-              } else {
-                return Container();
-              }
-            },
           ),
 
         // --- Toggle map layer
