@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/views/view_map.dart';
+import 'package:xcnav/views/map/focus_mode.dart';
 import 'package:xcnav/widgets/latlng_editor.dart';
 
 void tapPointDialog(

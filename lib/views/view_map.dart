@@ -1,51 +1,44 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:ui';
 
-import 'package:clock/clock.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
 import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
-import 'package:xcnav/ble_devices/ble_device_runleader.dart';
-import 'package:xcnav/ble_devices/ble_device_sp140.dart';
-import 'package:xcnav/ble_devices/ble_device_xc170.dart';
 
 // providers
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/client.dart';
-import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/weather_observation_service.dart';
 
 // widgets
-import 'package:xcnav/widgets/avatar_round.dart';
-import 'package:xcnav/widgets/map_button.dart';
-import 'package:xcnav/widgets/chat_bubble.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xcnav/widgets/map_selector.dart';
 import 'package:xcnav/widgets/measurement_markers.dart';
-import 'package:xcnav/widgets/pilot_marker.dart';
-import 'package:xcnav/widgets/waypoint_nav_bar.dart';
+
+// map view parts
+import 'package:xcnav/views/map/focus_mode.dart';
+import 'package:xcnav/views/map/map_layers.dart';
+import 'package:xcnav/views/map/offscreen_pilot_indicators.dart';
+import 'package:xcnav/views/map/selected_waypoint_card.dart';
+import 'package:xcnav/views/map/map_status_column.dart';
+import 'package:xcnav/views/map/map_view_controls.dart';
+import 'package:xcnav/views/map/flight_timer.dart';
+import 'package:xcnav/views/map/edit_toolbar.dart';
 
 // dialogs
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
-import 'package:xcnav/dialogs/edit_live_fuel_report.dart';
 
 // models
 import 'package:xcnav/models/geo.dart';
-import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/tfr.dart';
 
@@ -57,18 +50,6 @@ import 'package:xcnav/datadog.dart';
 import 'package:xcnav/tfr_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
-import 'package:xcnav/services/ble_service.dart' as ble_service;
-
-enum FocusMode {
-  unlocked,
-  me,
-  group,
-  addWaypoint,
-  addPath,
-  editPath,
-  editWaypoint,
-  measurement,
-}
 
 class ViewMap extends StatefulWidget {
   const ViewMap({super.key});
@@ -251,6 +232,16 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     }
   }
 
+  /// WORKAROUND - calculate relative offset ourselves
+  LatLng? tapToLatLng(TapPosition tapPosition) {
+    final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
+    if (widgetBox != null) {
+      final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
+      return mapController.camera.offsetToCrs(relativeTapPos);
+    }
+    return null;
+  }
+
   void onMapTap(BuildContext context, LatLng latlng) {
     debugPrint("onMapTap: $latlng");
     isMapDialOpen.value = false;
@@ -289,6 +280,348 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     });
   }
 
+  void onMapPositionChanged(MapCamera mapPosition, bool hasGesture) {
+    if (lastSavedLastKnownLatLng == null ||
+        lastSavedLastKnownLatLng!.difference(DateTime.now()).abs() > const Duration(minutes: 2)) {
+      lastSavedLastKnownLatLng = DateTime.now();
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString(
+            "lastKnownLatLng", jsonEncode({"lat": mapPosition.center.latitude, "lng": mapPosition.center.longitude}));
+      });
+    }
+
+    if (hasGesture) {
+      isMapDialOpen.value = false;
+      if (focusMode == FocusMode.me || focusMode == FocusMode.group) {
+        // --- Unlock any focus lock
+        setFocusMode(FocusMode.unlocked);
+      }
+    }
+  }
+
+  void toggleNorthLock() {
+    setState(() {
+      settingsMgr.northlockMap.value = !settingsMgr.northlockMap.value;
+      if (settingsMgr.northlockMap.value) mapController.rotate(0);
+
+      addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
+    });
+  }
+
+  void toggleMeasurement() {
+    if (focusMode == FocusMode.measurement) {
+      measurementPoints.clear();
+      setFocusMode(prevFocusMode);
+    } else {
+      setFocusMode(FocusMode.measurement);
+    }
+  }
+
+  // --- Edit toolbar actions
+
+  void onEditDelete() {
+    if (editingWp != null) {
+      final plan = Provider.of<ActivePlan>(context, listen: false);
+      plan.removeWaypoint(editingWp!);
+      editingWp = null;
+    }
+    setFocusMode(prevFocusMode);
+  }
+
+  void onEditUndo() {
+    draggingLatLng = null;
+    setFocusMode(prevFocusMode);
+  }
+
+  void onEditDetails() {
+    if (editingWp != null) {
+      final plan = Provider.of<ActivePlan>(context, listen: false);
+      editWaypoint(context, plan.waypoints[editingWp]!, isNew: false, isPath: plan.waypoints[editingWp]!.isPath)
+          ?.then((newWaypoint) {
+        if (newWaypoint != null) {
+          plan.updateWaypoint(newWaypoint);
+        }
+      });
+      editingWp = null;
+    }
+    setFocusMode(prevFocusMode);
+  }
+
+  void onEditConfirm() {
+    final plan = Provider.of<ActivePlan>(context, listen: false);
+    // --- finish editing path
+    if (focusMode == FocusMode.editPath || focusMode == FocusMode.addPath) {
+      if (editingWp == null) {
+        final temp = Waypoint(name: "", latlngs: editablePoints.toList());
+        editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)?.then((newWaypoint) {
+          if (newWaypoint != null) {
+            plan.updateWaypoint(newWaypoint);
+          }
+        });
+      } else {
+        plan.moveWaypoint(editingWp!, editablePoints.toList());
+        editingWp = null;
+      }
+    }
+    // --- finish editing waypoint
+    if (focusMode == FocusMode.editWaypoint && draggingLatLng != null && editingWp != null) {
+      plan.moveWaypoint(editingWp!, [draggingLatLng!]);
+    }
+    setFocusMode(prevFocusMode);
+  }
+
+  // --- Waypoint layers
+
+  /// Waypoint paths. Tap to select (or flip direction), long press to edit.
+  Widget buildWaypointPathsLayer(ActivePlan plan, LayerHitNotifier<String> polylineHit) {
+    return GestureDetector(
+      onTapDown: (details) {
+        if (focusMode == FocusMode.measurement) {
+          measurementEditor.add(measurementPoints, mapController.camera.offsetToCrs(details.localPosition));
+        }
+      },
+      onTap: () {
+        if (focusMode != FocusMode.measurement) {
+          final p0 = polylineHit.value?.hitValues.first;
+          if (p0 != null) {
+            final wp = plan.waypoints[p0];
+            if (wp != null) {
+              // Select this path waypoint
+              if (focusMode != FocusMode.measurement) {
+                if (plan.selectedWp == p0) {
+                  wp.toggleDirection();
+                }
+                plan.selectedWp = p0;
+              }
+            }
+          }
+        }
+      },
+      onLongPress: (() {
+        // Start editing path waypoint
+        final p0 = polylineHit.value?.hitValues.first;
+        if (p0 != null && focusMode != FocusMode.measurement) {
+          if (plan.waypoints.containsKey(p0)) {
+            beginEditingLine(plan.waypoints[p0]!);
+          }
+        }
+      }),
+      child: PolylineLayer(
+        hitNotifier: polylineHit,
+        minimumHitbox: 30,
+        polylines: plan.waypoints.values
+            .where((value) => value.latlng.length > 1)
+            .whereNot(
+              (element) => element.id == editingWp,
+            )
+            .map((e) => Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), hitValue: e.id))
+            .toList(),
+      ),
+    );
+  }
+
+  /// Single point waypoints. Tap to select, long press to edit.
+  Widget buildWaypointMarkersLayer(ActivePlan plan) {
+    return MarkerLayer(
+      markers: plan.waypoints.values
+          .where((e) => e.latlng.length == 1 && e.id != editingWp)
+          .map((e) => Marker(
+              point: e.latlng[0],
+              height: 60 * 0.8,
+              width: 40 * 0.8,
+              rotate: true,
+              alignment: Alignment.topCenter,
+              child: GestureDetector(
+                onTap: () {
+                  if (focusMode == FocusMode.measurement) {
+                    measurementEditor.add(measurementPoints, e.latlng.first);
+                  } else {
+                    plan.selectedWp = e.id;
+                  }
+                },
+                onLongPress: () {
+                  if (!e.ephemeral) {
+                    editingWp = e.id;
+                    setFocusMode(FocusMode.editWaypoint);
+                  }
+                },
+                child: WaypointMarker(e, 60 * 0.8),
+              )))
+          .toList(),
+    );
+  }
+
+  /// The single point waypoint currently being edited.
+  Widget buildDraggableWaypointLayer(ActivePlan plan) {
+    return DragMarkers(markers: [
+      DragMarker(
+          point: draggingLatLng ?? plan.waypoints[editingWp]!.latlng.first,
+          size: const Size(60 * 0.8, 60 * 0.8),
+          onTap: (_) => plan.selectedWp = editingWp,
+          onDragEnd: (p0, p1) {
+            dragStart = null;
+          },
+          onDragUpdate: (_, p1) {
+            draggingLatLng = p1;
+          },
+          onDragStart: (p0, p1) {
+            setState(() {
+              draggingLatLng = p1;
+              dragStart = DateTime.now();
+            });
+          },
+          rotateMarker: true,
+          builder: (context, latlng, isDragging) {
+            if (editingWp != null &&
+                plan.waypoints.containsKey(editingWp) &&
+                plan.waypoints[editingWp]!.latlng.length == 1) {
+              return Stack(
+                children: [
+                  Container(
+                      transformAlignment: const Alignment(0, 0),
+                      transform: Matrix4.translationValues(0, -30 * 0.8, 0),
+                      child: WaypointMarker(plan.waypoints[editingWp]!, 60 * 0.8)),
+                  Container(
+                      transformAlignment: const Alignment(0, 0),
+                      transform: Matrix4.translationValues(12, 25, 0),
+                      child: const Icon(
+                        Icons.open_with,
+                        color: Colors.black,
+                      )),
+                ],
+              );
+            } else {
+              // editingWp must've been removed while being drug.
+              setState(() {
+                editingWp = null;
+              });
+              return Container();
+            }
+          })
+    ]);
+  }
+
+  Widget buildMap(BuildContext context, ActivePlan plan, LayerHitNotifier<String> polylineHit) {
+    final showWeatherObservations =
+        mapReady && !settingsMgr.hideWeatherObservations.value && mapController.camera.zoom > 7;
+
+    return FlutterMap(
+      key: mapKey,
+      mapController: mapController,
+      options: MapOptions(
+        onMapReady: () {
+          setState(() {
+            mapReady = true;
+          });
+        },
+        interactionOptions: InteractionOptions(
+            flags:
+                InteractiveFlag.all & (settingsMgr.northlockMap.value ? ~InteractiveFlag.rotate : InteractiveFlag.all)),
+        initialCenter: myTelemetry.geo?.latlng ?? lastKnownLatLng,
+        initialZoom: 12.0,
+        minZoom: 2,
+        onTap: (tapPosition, point) {
+          final latlng = tapToLatLng(tapPosition);
+          if (latlng != null) onMapTap(context, latlng);
+        },
+        onLongPress: (tapPosition, point) {
+          final latlng = tapToLatLng(tapPosition);
+          if (latlng != null) onMapLongPress(context, latlng);
+        },
+        onPositionChanged: onMapPositionChanged,
+      ),
+      children: [
+        Opacity(opacity: settingsMgr.mainMapOpacity.value, child: getMapTileLayer(settingsMgr.mainMapTileSrc.value)),
+
+        TfrLayer(center: myTelemetry.geo?.latlng ?? lastKnownLatLng),
+
+        // https://nowcoast.noaa.gov/help/#!section=map-service-list
+        // if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
+        //   Opacity(
+        //     opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.camera.zoom : 0)) / 10.0)),
+        //     child: TileLayer(
+        //         backgroundColor: Colors.transparent,
+        //         wmsOptions: WMSTileLayerOptions(
+        //           layers: ["1"],
+        //           baseUrl:
+        //               "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
+        //         )),
+        //   ),
+
+        // Other Pilot path trace
+        if (Provider.of<Group>(context).activePilots.isNotEmpty)
+          PolylineLayer(polylines: Provider.of<Group>(context).activePilots.map((e) => e.buildFlightTrace()).toList()),
+
+        // Flight Log
+        if (myTelemetry.flightTrace.isNotEmpty) PolylineLayer(polylines: [myTelemetry.buildFlightTrace()]),
+
+        // ADSB Proximity
+        if (Provider.of<ADSB>(context, listen: false).enabled && myTelemetry.geo != null) const AdsbProximityLayer(),
+
+        // Next waypoint: path
+        if (myTelemetry.geo != null && plan.selectedWp != null)
+          ListenableBuilder(
+            listenable: myTelemetry,
+            builder: (context, _) => PolylineLayer(
+                polylines: plan.buildNextWpIndicator(
+                    myTelemetry.geo!, (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
+                    baseTiles: settingsMgr.mainMapTileSrc.value)),
+          ),
+
+        // Waypoints: paths
+        if (!hideWaypoints) buildWaypointPathsLayer(plan, polylineHit),
+
+        // Next waypoint: barbs
+        if (myTelemetry.geo != null) NextWaypointBarbsLayer(plan: plan),
+
+        // Measurement: yellow line
+        if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
+          PolylineLayer(polylines: [Polyline(points: measurementPoints, color: Colors.orange, strokeWidth: 8)]),
+
+        // (DEBUG): check the tiles being loaded
+        // if (mapReady)
+        //   PolygonLayer(
+        //       polygons: WeatherObservationService.iterTiles(mapController.camera.visibleBounds)
+        //           .map((e) => Polygon(
+        //               points: tileToLatLngs(e),
+        //               color: Color.fromARGB(
+        //                   100, (e.x * 30) % 255, (e.y * 30) % 255, (e.x * 30 + e.y * 20) % 255)))
+        //           .toList()),
+
+        // WeatherObservations
+        if (showWeatherObservations) WeatherObservationLabelsLayer(bounds: mapController.camera.visibleBounds),
+        if (showWeatherObservations) WeatherObservationArrowsLayer(bounds: mapController.camera.visibleBounds),
+
+        // Waypoint markers
+        if (!hideWaypoints) buildWaypointMarkersLayer(plan),
+
+        // --- Draggable waypoints
+        if (editingWp != null && plan.waypoints.containsKey(editingWp) && plan.waypoints[editingWp]!.latlng.length == 1)
+          buildDraggableWaypointLayer(plan),
+
+        // GA planes (ADSB IN)
+        if (Provider.of<ADSB>(context, listen: true).enabled) AdsbPlanesLayer(mapController: mapController),
+
+        // Live locations other pilots
+        GroupPilotsLayer(mapController: mapController),
+
+        const FuelWarningLayer(),
+
+        const MyLocationLayer(),
+
+        // Measurement Polyline
+        if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
+          DragMarkers(markers: measurementEditor.edit()),
+        if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
+          MarkerLayer(markers: buildMeasurementMarkers(measurementPoints)),
+
+        // Draggable line editor
+        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) PolylineLayer(polylines: polyLines),
+        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) DragMarkers(markers: polyEditor.edit()),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -302,1239 +635,69 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
     settingsMgr.mapControlsRightSide.listenable.addListener(() => setState(() {}));
 
+    final controlsRightSide = settingsMgr.mapControlsRightSide.value;
+    final isEditing =
+        focusMode == FocusMode.addPath || focusMode == FocusMode.editPath || focusMode == FocusMode.editWaypoint;
+
     return Container(
       color: Colors.white,
       child: Stack(alignment: Alignment.center, children: [
         // NOTE: MyTelemetry is not part of this consumer because refreshMapView is already called elsewhere on MyTelemetry changes
-        Consumer<ActivePlan>(
-            builder: (context, plan, child) => FlutterMap(
-                  key: mapKey,
-                  mapController: mapController,
-                  options: MapOptions(
-                    onMapReady: () {
-                      setState(() {
-                        mapReady = true;
-                      });
-                    },
-                    interactionOptions: InteractionOptions(
-                        flags: InteractiveFlag.all &
-                            (settingsMgr.northlockMap.value ? ~InteractiveFlag.rotate : InteractiveFlag.all)),
-                    initialCenter: myTelemetry.geo?.latlng ?? lastKnownLatLng,
-                    initialZoom: 12.0,
-                    minZoom: 2,
-                    onTap: (tapPosition, point) {
-                      // WORKAROUND - calculate relative offset ourselves
-                      final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
-                      if (widgetBox != null) {
-                        final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
-                        final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
-                        // outgoing call...
-                        onMapTap(context, correctedLatLng);
-                      }
-                    },
-                    onLongPress: (tapPosition, point) {
-                      // WORKAROUND - calculate relative offset ourselves
-                      final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
-                      if (widgetBox != null) {
-                        final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
-                        final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
-                        // outgoing call...
-                        onMapLongPress(context, correctedLatLng);
-                      }
-                    },
-                    onPositionChanged: (mapPosition, hasGesture) {
-                      if (lastSavedLastKnownLatLng == null ||
-                          lastSavedLastKnownLatLng!.difference(DateTime.now()).abs() > const Duration(minutes: 2)) {
-                        lastSavedLastKnownLatLng = DateTime.now();
-                        SharedPreferences.getInstance().then((prefs) {
-                          prefs.setString("lastKnownLatLng",
-                              jsonEncode({"lat": mapPosition.center.latitude, "lng": mapPosition.center.longitude}));
-                        });
-                      }
-
-                      if (hasGesture) {
-                        isMapDialOpen.value = false;
-                        if (focusMode == FocusMode.me || focusMode == FocusMode.group) {
-                          // --- Unlock any focus lock
-                          setFocusMode(FocusMode.unlocked);
-                        }
-                      }
-                    },
-                  ),
-                  children: [
-                    Opacity(
-                        opacity: settingsMgr.mainMapOpacity.value,
-                        child: getMapTileLayer(settingsMgr.mainMapTileSrc.value)),
-
-                    // TFRs
-                    FutureBuilder<List<TFR>?>(
-                        future: getTFRs(myTelemetry.geo?.latlng ?? lastKnownLatLng),
-                        builder: (context, tfrsFuture) {
-                          if (tfrsFuture.hasData) {
-                            List<Polygon> polygons = [];
-
-                            for (final eachTfr in tfrsFuture.data!) {
-                              for (final shape in eachTfr.shapes) {
-                                final color = eachTfr.isActive(const Duration(hours: 3)) ? Colors.red : Colors.orange;
-                                polygons.add(Polygon(
-                                    points: shape,
-                                    color: color.withAlpha(50),
-                                    borderColor: color,
-                                    borderStrokeWidth: 4));
-                              }
-                            }
-
-                            return PolygonLayer(
-                              polygons: polygons,
-                            );
-                          } else {
-                            return Container();
-                          }
-                        }),
-
-                    // https://nowcoast.noaa.gov/help/#!section=map-service-list
-                    // if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
-                    //   Opacity(
-                    //     opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.camera.zoom : 0)) / 10.0)),
-                    //     child: TileLayer(
-                    //         backgroundColor: Colors.transparent,
-                    //         wmsOptions: WMSTileLayerOptions(
-                    //           layers: ["1"],
-                    //           baseUrl:
-                    //               "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
-                    //         )),
-                    //   ),
-
-                    // Other Pilot path trace
-                    if (Provider.of<Group>(context).activePilots.isNotEmpty)
-                      PolylineLayer(
-                          polylines: Provider.of<Group>(context)
-                              .activePilots
-                              // .toList()
-                              .map((e) => e.buildFlightTrace())
-                              .toList()),
-
-                    // Flight Log
-                    if (myTelemetry.flightTrace.isNotEmpty) PolylineLayer(polylines: [myTelemetry.buildFlightTrace()]),
-
-                    // ADSB Proximity
-                    if (Provider.of<ADSB>(context, listen: false).enabled && myTelemetry.geo != null)
-                      ListenableBuilder(
-                          listenable: myTelemetry,
-                          builder: (context, _) {
-                            return CircleLayer(circles: [
-                              CircleMarker(
-                                  point: myTelemetry.geo!.latlng,
-                                  color: Colors.transparent,
-                                  borderStrokeWidth: 1,
-                                  borderColor: Colors.black54,
-                                  radius: proximityProfileOptions[settingsMgr.adsbProximitySize.value]!.horizontalDist,
-                                  useRadiusInMeter: true)
-                            ]);
-                          }),
-
-                    // Next waypoint: path
-                    if (myTelemetry.geo != null && plan.selectedWp != null)
-                      ListenableBuilder(
-                        listenable: myTelemetry,
-                        builder: (context, _) => PolylineLayer(
-                            polylines: plan.buildNextWpIndicator(myTelemetry.geo!,
-                                (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
-                                baseTiles: settingsMgr.mainMapTileSrc.value)),
-                      ),
-
-                    // Waypoints: paths
-                    if (!hideWaypoints)
-                      GestureDetector(
-                        onTapDown: (details) {
-                          if (focusMode == FocusMode.measurement) {
-                            measurementEditor.add(
-                                measurementPoints, mapController.camera.offsetToCrs(details.localPosition));
-                          }
-                        },
-                        onTap: () {
-                          if (focusMode != FocusMode.measurement) {
-                            final p0 = polylineHit.value?.hitValues.first;
-                            if (p0 != null) {
-                              final wp = plan.waypoints[p0];
-                              if (wp != null) {
-                                // Select this path waypoint
-                                if (focusMode != FocusMode.measurement) {
-                                  if (plan.selectedWp == p0) {
-                                    wp.toggleDirection();
-                                  }
-                                  plan.selectedWp = p0;
-                                }
-                              }
-                            }
-                          }
-                        },
-                        onLongPress: (() {
-                          // Start editing path waypoint
-                          final p0 = polylineHit.value?.hitValues.first;
-                          if (p0 != null && focusMode != FocusMode.measurement) {
-                            if (plan.waypoints.containsKey(p0)) {
-                              beginEditingLine(plan.waypoints[p0]!);
-                            }
-                          }
-                        }),
-                        child: PolylineLayer(
-                          hitNotifier: polylineHit,
-                          minimumHitbox: 30,
-                          polylines: plan.waypoints.values
-                              .where((value) => value.latlng.length > 1)
-                              .whereNot(
-                                (element) => element.id == editingWp,
-                              )
-                              .map((e) =>
-                                  Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), hitValue: e.id))
-                              .toList(),
-                        ),
-                      ),
-
-                    // Next waypoint: barbs
-                    if (myTelemetry.geo != null)
-                      ListenableBuilder(
-                          listenable: myTelemetry,
-                          builder: (context, _) {
-                            return MarkerLayer(
-                                markers: plan
-                                    .buildNextWpBarbs(
-                                        myTelemetry.geo!,
-                                        (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric
-                                            ? 1000
-                                            : 1609.344))
-                                    .map((e) => Marker(
-                                        point: e.latlng,
-                                        width: 20,
-                                        height: 20,
-                                        child: IgnorePointer(
-                                          child: Container(
-                                              transformAlignment: const Alignment(0, 0),
-                                              transform: Matrix4.rotationZ(e.hdg),
-                                              child: SvgPicture.asset("assets/images/chevron.svg",
-                                                  colorFilter:
-                                                      const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
-                                        )))
-                                    .toList());
-                          }),
-
-                    // Measurement: yellow line
-                    if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
-                      PolylineLayer(
-                          polylines: [Polyline(points: measurementPoints, color: Colors.orange, strokeWidth: 8)]),
-
-                    // (DEBUG): check the tiles being loaded
-                    // if (mapReady)
-                    //   PolygonLayer(
-                    //       polygons: WeatherObservationService.iterTiles(mapController.camera.visibleBounds)
-                    //           .map((e) => Polygon(
-                    //               points: tileToLatLngs(e),
-                    //               color: Color.fromARGB(
-                    //                   100, (e.x * 30) % 255, (e.y * 30) % 255, (e.x * 30 + e.y * 20) % 255)))
-                    //           .toList()),
-
-                    // WeatherObservations
-                    if (mapReady && !settingsMgr.hideWeatherObservations.value && mapController.camera.zoom > 7)
-                      MarkerLayer(
-                          markers: getWeatherObservations(mapController.camera.visibleBounds)
-                              .map((e) => Marker(
-                                    height: 28,
-                                    width: 100,
-                                    point: e.latlng,
-                                    rotate: true,
-                                    alignment: Alignment.centerRight,
-                                    child: Container(
-                                      transform: Matrix4.translationValues(-14, 0, 0),
-                                      child: Row(
-                                        // mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IgnorePointer(
-                                            child: ClipRRect(
-                                              borderRadius: const BorderRadius.all(Radius.circular(10)),
-                                              child: Container(
-                                                color: e.color,
-                                                child:
-                                                    // space for arrow
-                                                    Padding(
-                                                  padding: const EdgeInsets.only(left: 28, right: 8),
-                                                  child: Text.rich(
-                                                    TextSpan(children: [
-                                                      TextSpan(
-                                                          text: printValue(UnitType.speed, e.windSpd!,
-                                                              digits: 2, decimals: 0)!),
-                                                      TextSpan(
-                                                          text: (e.windGust != null
-                                                              ? " g${printValue(UnitType.speed, e.windGust!, digits: 2, decimals: 0)}"
-                                                              : ''),
-                                                          style: const TextStyle(fontSize: 13))
-                                                    ]),
-                                                    maxLines: 1,
-                                                    softWrap: false,
-                                                    overflow: TextOverflow.visible,
-                                                    style: const TextStyle(
-                                                        color: Colors.black,
-                                                        fontSize: 18,
-                                                        overflow: TextOverflow.visible),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ))
-                              .toList()),
-
-                    if (mapReady && !settingsMgr.hideWeatherObservations.value && mapController.camera.zoom > 7)
-                      MarkerLayer(
-                          markers: getWeatherObservations(mapController.camera.visibleBounds)
-                              .map(
-                                (e) => Marker(
-                                  width: 14.0,
-                                  height: 14.0,
-                                  point: e.latlng,
-                                  rotate: false,
-                                  alignment: Alignment.center,
-                                  child: IgnorePointer(
-                                    child: (e.windDir == null || (e.windSpd ?? 0) < 0.01)
-                                        ? Padding(
-                                            padding: const EdgeInsets.all(2),
-                                            child: Container(
-                                                decoration: const BoxDecoration(
-                                              color: Colors.black,
-                                              shape: BoxShape.circle,
-                                            )),
-                                          )
-                                        : Container(
-                                            transformAlignment: const Alignment(0, 0),
-                                            transform: Matrix4.rotationZ((e.windDir ?? 0) * pi / 180 + pi),
-                                            child: SvgPicture.asset("assets/images/simple_arrow.svg",
-                                                colorFilter: const ColorFilter.mode(Colors.black87, BlendMode.srcIn))),
-                                  ),
-                                ),
-                              )
-                              .toList()),
-
-                    // Waypoint markers
-                    if (!hideWaypoints)
-                      MarkerLayer(
-                        markers: plan.waypoints.values
-                            .where((e) => e.latlng.length == 1 && e.id != editingWp)
-                            .map((e) => Marker(
-                                point: e.latlng[0],
-                                height: 60 * 0.8,
-                                width: 40 * 0.8,
-                                rotate: true,
-                                alignment: Alignment.topCenter,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    if (focusMode == FocusMode.measurement) {
-                                      measurementEditor.add(measurementPoints, e.latlng.first);
-                                    } else {
-                                      plan.selectedWp = e.id;
-                                    }
-                                  },
-                                  onLongPress: () {
-                                    if (!e.ephemeral) {
-                                      editingWp = e.id;
-                                      setFocusMode(FocusMode.editWaypoint);
-                                    }
-                                  },
-                                  child: WaypointMarker(e, 60 * 0.8),
-                                )))
-                            .toList(),
-                      ),
-
-                    // --- Draggable waypoints
-                    if (editingWp != null &&
-                        plan.waypoints.containsKey(editingWp) &&
-                        plan.waypoints[editingWp]!.latlng.length == 1)
-                      DragMarkers(markers: [
-                        DragMarker(
-                            point: draggingLatLng ?? plan.waypoints[editingWp]!.latlng.first,
-                            size: const Size(60 * 0.8, 60 * 0.8),
-                            onTap: (_) => plan.selectedWp = editingWp,
-                            onDragEnd: (p0, p1) {
-                              dragStart = null;
-                            },
-                            onDragUpdate: (_, p1) {
-                              draggingLatLng = p1;
-                            },
-                            onDragStart: (p0, p1) {
-                              setState(() {
-                                draggingLatLng = p1;
-                                dragStart = DateTime.now();
-                              });
-                            },
-                            rotateMarker: true,
-                            builder: (context, latlng, isDragging) {
-                              if (editingWp != null &&
-                                  plan.waypoints.containsKey(editingWp) &&
-                                  plan.waypoints[editingWp]!.latlng.length == 1) {
-                                return Stack(
-                                  children: [
-                                    Container(
-                                        transformAlignment: const Alignment(0, 0),
-                                        transform: Matrix4.translationValues(0, -30 * 0.8, 0),
-                                        child: WaypointMarker(plan.waypoints[editingWp]!, 60 * 0.8)),
-                                    Container(
-                                        transformAlignment: const Alignment(0, 0),
-                                        transform: Matrix4.translationValues(12, 25, 0),
-                                        child: const Icon(
-                                          Icons.open_with,
-                                          color: Colors.black,
-                                        )),
-                                  ],
-                                );
-                              } else {
-                                // editingWp must've been removed while being drug.
-                                setState(() {
-                                  editingWp = null;
-                                });
-                                return Container();
-                              }
-                            })
-                      ]),
-
-                    // GA planes (ADSB IN)
-                    if (Provider.of<ADSB>(context, listen: true).enabled)
-                      MarkerLayer(
-                          markers: Provider.of<ADSB>(context, listen: false)
-                              .planes
-                              .values
-                              .map(
-                                (e) => Marker(
-                                  width: 50.0,
-                                  height: 50.0,
-                                  point: e.latlng,
-                                  child: Container(
-                                    transformAlignment: const Alignment(0, 0),
-                                    transform: Matrix4.rotationZ(-mapController.camera.rotation * pi / 180),
-                                    child: Opacity(
-                                      opacity: getGAtransparency(e.alt - (myTelemetry.geo?.alt ?? 0)),
-                                      child: Stack(
-                                        clipBehavior: Clip.none,
-                                        children: [
-                                          /// --- GA icon
-                                          Container(
-                                            transformAlignment: const Alignment(0, 0),
-                                            transform:
-                                                Matrix4.rotationZ((mapController.camera.rotation + e.hdg) * pi / 180),
-                                            child: e.getIcon(),
-                                          ),
-
-                                          Container(
-                                            transform: Matrix4.translationValues(50, 20, 0),
-                                            transformAlignment: const Alignment(0, 0),
-                                            child: Text(
-                                              e.id,
-                                              maxLines: 1,
-                                              style: const TextStyle(
-                                                  color: Colors.black, fontSize: 11, overflow: TextOverflow.visible),
-                                            ),
-                                          ),
-
-                                          /// --- Relative Altitude
-                                          if (myTelemetry.geo != null)
-                                            Container(
-                                                transform: Matrix4.translationValues(40, 0, 0),
-                                                transformAlignment: const Alignment(0, 0),
-                                                child: Text.rich(
-                                                  TextSpan(children: [
-                                                    WidgetSpan(
-                                                      child: Icon(
-                                                        (e.alt - myTelemetry.geo!.alt) > 0
-                                                            ? Icons.keyboard_arrow_up
-                                                            : Icons.keyboard_arrow_down,
-                                                        color: Colors.black,
-                                                        size: 21,
-                                                      ),
-                                                    ),
-                                                    richValue(UnitType.distFine, (e.alt - myTelemetry.geo!.alt).abs(),
-                                                        digits: 5,
-                                                        valueStyle: const TextStyle(color: Colors.black),
-                                                        unitStyle:
-                                                            TextStyle(color: Colors.grey.shade700, fontSize: 12)),
-                                                  ]),
-                                                  overflow: TextOverflow.visible,
-                                                  softWrap: false,
-                                                  maxLines: 1,
-                                                  style: const TextStyle(fontSize: 16),
-                                                )),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList()),
-
-                    // Live locations other pilots
-                    MarkerLayer(
-                      markers: Provider.of<Group>(context)
-                          .activePilots
-                          // .toList()
-                          .map((pilot) => Marker(
-                              point: pilot.geo!.latlng,
-                              width: 40,
-                              height: 40,
-                              child: Container(
-                                  transformAlignment: const Alignment(0, 0),
-                                  transform: Matrix4.rotationZ(-mapController.camera.rotation * pi / 180),
-                                  child: PilotMarker(
-                                    pilot,
-                                    20,
-                                    hdg: pilot.geo!.hdg + mapController.camera.rotation * pi / 180,
-                                    relAlt: pilot.geo!.alt - myTelemetry.geo!.alt,
-                                  ))))
-                          .toList(),
-                    ),
-
-                    // Fuel Warning
-                    ListenableBuilder(
-                        listenable: myTelemetry,
-                        builder: (context, _) {
-                          return Consumer<ActivePlan>(builder: (context, activePlan, _) {
-                            if (myTelemetry.fuelReportController.getSumFuelStat(myTelemetry.recordGeo) != null &&
-                                myTelemetry.geo != null &&
-                                activePlan.selectedWp != null) {
-                              final waypointETA = activePlan.getSelectedWp()!.eta(myTelemetry.geo!, 1);
-                              final enduranceDist = myTelemetry.speedSmooth.value *
-                                  myTelemetry.fuelReportController
-                                      .getSumFuelStat(myTelemetry.recordGeo)!
-                                      .extrapolateEndurance(myTelemetry.fuelReportController.fuelReports.last,
-                                          from: clock.now())
-                                      .inSeconds;
-
-                              if (waypointETA.distance >= enduranceDist && enduranceDist >= 0) {
-                                final fuelIntercept = activePlan.getSelectedWp()!.interpolate(
-                                    enduranceDist, waypointETA.pathIntercept?.index ?? 0,
-                                    initialLatlng: myTelemetry.geo!.latlng);
-
-                                return MarkerLayer(
-                                  markers: [
-                                    Marker(
-                                      width: 50,
-                                      height: 50,
-                                      point: fuelIntercept.latlng,
-                                      child: const Stack(
-                                        children: [
-                                          Padding(
-                                            padding: EdgeInsets.only(top: 10),
-                                            child: Center(
-                                              child: Icon(
-                                                Icons.circle,
-                                                size: 30,
-                                                color: Colors.black,
-                                              ),
-                                            ),
-                                          ),
-                                          Icon(
-                                            Icons.warning_rounded,
-                                            size: 50,
-                                            color: Colors.black,
-                                          ),
-                                          Center(
-                                            child: Padding(
-                                              padding: EdgeInsets.only(top: 11, left: 3),
-                                              child: Icon(
-                                                Icons.local_gas_station,
-                                                size: 25,
-                                                color: Colors.red,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  ],
-                                );
-                              } else {
-                                return Container();
-                              }
-                            } else {
-                              return Container();
-                            }
-                          });
-                        }),
-
-                    // "ME" Live Location Marker
-                    ListenableBuilder(
-                        listenable: myTelemetry,
-                        builder: (context, _) {
-                          if (myTelemetry.geo != null) {
-                            return MarkerLayer(
-                              markers: [
-                                Marker(
-                                  width: 50.0,
-                                  height: 50.0,
-                                  point: myTelemetry.geo!.latlng,
-                                  child: Container(
-                                    transformAlignment: const Alignment(0, 0),
-                                    transform: Matrix4.rotationZ(myTelemetry.geo!.hdg),
-                                    child: Image.asset("assets/images/red_arrow.png"),
-                                  ),
-                                ),
-                              ],
-                            );
-                          } else {
-                            return Container();
-                          }
-                        }),
-
-                    // Measurement Polyline
-                    if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
-                      DragMarkers(markers: measurementEditor.edit()),
-                    if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
-                      MarkerLayer(markers: buildMeasurementMarkers(measurementPoints)),
-
-                    // Draggable line editor
-                    if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                      PolylineLayer(polylines: polyLines),
-                    if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                      DragMarkers(markers: polyEditor.edit()),
-                  ],
-                )),
+        Consumer<ActivePlan>(builder: (context, plan, child) => buildMap(context, plan, polylineHit)),
 
         // --- Pilot Direction Markers (for when pilots are out of view)
-        StreamBuilder(
-            stream: mapController.mapEventStream,
-            builder: (context, mapEvent) => SizedBox(
-                  width: min(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height),
-                  height: min(MediaQuery.of(context).size.width, MediaQuery.of(context).size.height),
-                  child: Stack(
-                      alignment: Alignment.center,
-                      children: Provider.of<Group>(context)
-                          .activePilots
-                          .where((e) => !markerIsInView(e.geo!.latlng))
-                          .map((e) => Builder(builder: (context) {
-                                final theta = (latlngCalc.bearing(mapController.camera.center, e.geo!.latlng) +
-                                        mapController.camera.rotation -
-                                        90) *
-                                    pi /
-                                    180;
-                                final hypo = MediaQuery.of(context).size.width * 0.8 - 40;
-                                final dist = latlngCalc.distance(mapController.camera.center, e.geo!.latlng);
-
-                                return Opacity(
-                                    opacity: 0.5,
-                                    child: Padding(
-                                      padding: EdgeInsets.fromLTRB(
-                                        max(0, cos(theta) * hypo),
-                                        max(0, sin(theta) * hypo),
-                                        max(0, cos(theta) * -hypo),
-                                        max(0, sin(theta) * -hypo),
-                                      ),
-                                      child: Stack(
-                                        children: [
-                                          Container(
-                                              transformAlignment: const Alignment(0, 0),
-                                              transform: Matrix4.translationValues(cos(theta) * 30, sin(theta) * 30, 0)
-                                                ..rotateZ(theta),
-                                              child: const Icon(
-                                                Icons.east,
-                                                color: Colors.black,
-                                                size: 40,
-                                              )),
-                                          Container(
-                                            transformAlignment: const Alignment(0, 0),
-                                            child: PilotMarker(
-                                              e,
-                                              20,
-                                            ),
-                                          ),
-                                          Container(
-                                              width: 40,
-                                              // transformAlignment: const Alignment(0, 0),
-                                              transform: Matrix4.translationValues(0, 40, 0),
-                                              child: Text.rich(
-                                                richValue(UnitType.distCoarse, dist,
-                                                    digits: 4,
-                                                    decimals: 1,
-                                                    valueStyle: const TextStyle(color: Colors.black, fontSize: 18),
-                                                    unitStyle: const TextStyle(color: Colors.black87, fontSize: 14)),
-                                                softWrap: false,
-                                                textAlign: TextAlign.center,
-                                                overflow: TextOverflow.visible,
-                                              ))
-                                        ],
-                                      ),
-                                    ));
-                              }))
-                          .toList()),
-                )),
+        OffscreenPilotIndicators(mapController: mapController, isInView: markerIsInView),
 
         // --- Current waypoint info
-        if (focusMode != FocusMode.addPath && focusMode != FocusMode.editPath && focusMode != FocusMode.editWaypoint)
-          Consumer<ActivePlan>(
-            builder: (context, activePlan, _) {
-              final curWaypoint = activePlan.getSelectedWp();
-              if (curWaypoint != null) {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 60, right: 60, bottom: 10),
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                child: Container(
-                                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 150),
-                                    color: Colors.white38,
-                                    child: WaypointNavBar(activePlan: activePlan)))),
-                        Positioned(
-                            top: -40,
-                            right: -40,
-                            child: InkWell(
-                              onTap: (() {
-                                activePlan.selectedWp = null;
-                              }),
-                              child: Padding(
-                                padding: const EdgeInsets.all(40),
-                                child: Icon(
-                                  Icons.cancel,
-                                  color: const Color.fromARGB(255, 255, 100, 100).withAlpha(200),
-                                  size: 20,
-                                ),
-                              ),
-                            ))
-                      ],
-                    ),
-                  ),
-                );
-              } else {
-                return Container();
-              }
-            },
-          ),
+        if (!isEditing) const SelectedWaypointCard(),
 
-        ///////////////////////////////////////////////////////////////////////////////////////////
         // --- Secondary column (default to right side)
         Positioned(
-          left: settingsMgr.mapControlsRightSide.value ? 10 : null,
-          right: settingsMgr.mapControlsRightSide.value ? null : 10,
+          left: controlsRightSide ? 10 : null,
+          right: controlsRightSide ? null : 10,
           top: 10,
           bottom: 10,
-          child: LayoutBuilder(builder: (context, constaints) {
-            final buttonSize = max(30, min(60, constaints.maxHeight / 8)).toDouble();
-            return Align(
-              alignment: Alignment.bottomRight,
-              child: Column(
-                verticalDirection: VerticalDirection.up,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment:
-                    settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-                // crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // --- fuel button
-                  if (ble_service.bleDeviceSp140.device == null && ble_service.bleDeviceXc170.device == null)
-                    Align(
-                        alignment: Alignment.bottomRight,
-                        child:
-                            Column(mainAxisSize: MainAxisSize.min, verticalDirection: VerticalDirection.up, children: [
-                          MapButton(
-                            size: buttonSize,
-                            selected: false,
-                            child: const Icon(Icons.local_gas_station, color: Colors.black, size: 30),
-                            onPressed: () => {editLiveFuelReport(context)},
-                          ),
-                          SizedBox(
-                              width: 2,
-                              height: buttonSize / 6,
-                              child: Container(
-                                color: Colors.black,
-                              )),
-                          // --- Fuel remaining info
-                          ListenableBuilder(
-                              listenable: myTelemetry,
-                              builder: (context, _) {
-                                return Container(
-                                  foregroundDecoration: BoxDecoration(
-                                      border: Border.all(width: 0.5, color: Colors.black),
-                                      borderRadius: const BorderRadius.all(Radius.circular(15))),
-                                  child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(15),
-                                      child: BackdropFilter(
-                                          filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                                          child: Container(
-                                              color: Colors.white38,
-                                              child: Builder(builder: (context) {
-                                                final fuelReport =
-                                                    myTelemetry.fuelReportController.fuelReports.lastOrNull;
-
-                                                if (fuelReport != null) {
-                                                  if (myTelemetry.fuelReportController
-                                                              .getSumFuelStat(myTelemetry.recordGeo) ==
-                                                          null ||
-                                                      !myTelemetry.inFlight) {
-                                                    final warn = fuelReport.amount <= 1;
-                                                    final style = TextStyle(
-                                                        color: warn ? Colors.red : Colors.black,
-                                                        fontSize: 20,
-                                                        fontWeight: warn ? FontWeight.bold : FontWeight.normal);
-                                                    return Padding(
-                                                        padding: const EdgeInsets.all(8.0),
-                                                        child: Text.rich(richValue(UnitType.fuel, fuelReport.amount,
-                                                            decimals: 1, autoDecimalThresh: 2, valueStyle: style)));
-                                                  } else {
-                                                    final etaEmpty = myTelemetry.fuelReportController
-                                                        .getSumFuelStat(myTelemetry.recordGeo)!
-                                                        .extrapolateEndurance(fuelReport, from: clock.now());
-
-                                                    final warn = etaEmpty < const Duration(minutes: 15);
-                                                    final style = TextStyle(
-                                                        color: warn ? Colors.red : Colors.black,
-                                                        fontSize: 20,
-                                                        fontWeight: warn ? FontWeight.bold : FontWeight.normal);
-                                                    return Padding(
-                                                        padding: const EdgeInsets.all(8.0),
-                                                        child: Text.rich(
-                                                            richHrMin(duration: etaEmpty, valueStyle: style)));
-                                                  }
-                                                } else {
-                                                  return const Padding(
-                                                    padding: EdgeInsets.all(8.0),
-                                                    child: Text(
-                                                      "?",
-                                                      style: TextStyle(color: Colors.black, fontSize: 20),
-                                                    ),
-                                                  );
-                                                }
-                                              })))),
-                                );
-                              }),
-                        ])),
-
-                  // --- Chat bubbles
-                  Consumer<ChatMessages>(
-                    builder: (context, chat, child) {
-                      // get valid bubbles
-                      const numSeconds = 20;
-                      final bubbles = <Widget>[];
-                      for (int i = chat.messages.length - 1; i >= 0; i--) {
-                        if (chat.messages[i].timestamp >
-                                max(DateTime.now().millisecondsSinceEpoch - 1000 * numSeconds, chat.chatLastOpened) &&
-                            chat.messages[i].pilotId != Provider.of<Profile>(context, listen: false).id) {
-                          final message = chat.messages[i];
-                          bubbles.add(
-                            AutoClearChatBubble(
-                              false,
-                              !settingsMgr.mapControlsRightSide.value,
-                              message.text,
-                              AvatarRound(
-                                  Provider.of<Group>(context, listen: false).pilots[message.pilotId]?.avatar, 20),
-                              null,
-                              message.timestamp,
-                              maxWidth: MediaQuery.of(context).size.width - 150,
-                              duration: const Duration(seconds: numSeconds),
-                              onExpire: () => chat.refresh(),
-                            ),
-                          );
-                        } else {
-                          break;
-                        }
-                      }
-                      return Column(
-                        verticalDirection: VerticalDirection.up,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment:
-                            settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-                        children: bubbles,
-                      );
-                    },
-                  ),
-
-                  // --- BLE xc170
-                  if (ble_service.bleDeviceXc170.device != null) Xc170StatusCard(xc170: ble_service.bleDeviceXc170),
-
-                  // --- Big Battery
-                  if (ble_service.bleDeviceBigBattery.device != null)
-                    BigBatteryStatusCard(bigBattery: ble_service.bleDeviceBigBattery),
-
-                  // --- Runleader
-                  if (ble_service.bleDeviceRunleader.device != null)
-                    RunleaderStatusCard(runleader: ble_service.bleDeviceRunleader),
-
-                  // --- Sp140
-                  if (ble_service.bleDeviceSp140.device != null) Sp140StatusCard(sp140: ble_service.bleDeviceSp140),
-                ],
-              ),
-            );
-          }),
+          child: const MapStatusColumn(),
         ),
 
-        ///////////////////////////////////////////////////////////////////////////////////////////
         // --- Map View Buttons (default left side)
         Positioned(
-          left: settingsMgr.mapControlsRightSide.value ? null : 10,
-          right: settingsMgr.mapControlsRightSide.value ? 10 : null,
+          left: controlsRightSide ? null : 10,
+          right: controlsRightSide ? 10 : null,
           top: 10,
           bottom: 10,
-          child: LayoutBuilder(builder: (context, constaints) {
-            final buttonSize = max(30, min(60, constaints.maxHeight / 8)).toDouble();
-            return Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment:
-                    settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                children: [
-                  // --- Compass
-                  MapButton(
-                      size: buttonSize,
-                      onPressed: () => {
-                            setState(
-                              () {
-                                settingsMgr.northlockMap.value = !settingsMgr.northlockMap.value;
-                                if (settingsMgr.northlockMap.value) mapController.rotate(0);
-
-                                addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
-                              },
-                            )
-                          },
-                      selected: false,
-                      child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
-                        StreamBuilder(
-                            stream: mapController.mapEventStream,
-                            builder: (context, event) => Container(
-                                  transformAlignment: const Alignment(0, 0),
-                                  transform: mapReady
-                                      ? Matrix4.rotationZ(mapController.camera.rotation * pi / 180)
-                                      : Matrix4.rotationZ(0),
-                                  child: settingsMgr.northlockMap.value
-                                      ? Padding(
-                                          padding: const EdgeInsets.all(4.0),
-                                          child: SvgPicture.asset("assets/images/compass_north.svg"),
-                                        )
-                                      : SvgPicture.asset("assets/images/compass.svg", fit: BoxFit.cover),
-                                )),
-                      ])),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // --- Focus on Me
-                      MapButton(
-                        size: buttonSize,
-                        selected: focusMode == FocusMode.me,
-                        child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: Padding(
-                            padding: const EdgeInsets.all(2.0),
-                            child: SvgPicture.asset("assets/images/icon_controls_centermap_me.svg"),
-                          ),
-                        ),
-                        onPressed: () => setFocusMode(FocusMode.me),
-                      ),
-
-                      //
-                      SizedBox(
-                          width: 2,
-                          height: buttonSize / 3,
-                          child: Container(
-                            color: Colors.black,
-                          )),
-                      // --- Focus on Group
-                      MapButton(
-                        size: buttonSize,
-                        selected: focusMode == FocusMode.group,
-                        onPressed: () => setFocusMode(FocusMode.group),
-                        child: Padding(
-                          padding: const EdgeInsets.all(3.0),
-                          child: SvgPicture.asset("assets/images/icon_controls_centermap_group.svg"),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(mainAxisSize: MainAxisSize.min, children: [
-                    // --- Zoom In (+)
-                    MapButton(
-                      size: buttonSize,
-                      selected: false,
-                      onPressed: () {
-                        mapController.move(mapController.camera.center, mapController.camera.zoom + 1);
-                        debugPrint("Map Zoom: ${mapController.camera.zoom}");
-                        lastMapChange = DateTime.now();
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: SvgPicture.asset("assets/images/icon_controls_zoom_in.svg"),
-                      ),
-                    ),
-                    //
-                    SizedBox(
-                        width: 2,
-                        height: buttonSize / 3,
-                        child: Container(
-                          color: Colors.black,
-                        )),
-                    // --- Zoom Out (-)
-                    MapButton(
-                      size: buttonSize,
-                      selected: false,
-                      onPressed: () {
-                        mapController.move(mapController.camera.center, mapController.camera.zoom - 1);
-                        debugPrint("Map Zoom: ${mapController.camera.zoom}");
-                        lastMapChange = DateTime.now();
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: SvgPicture.asset("assets/images/icon_controls_zoom_out.svg"),
-                      ),
-                    ),
-                  ]),
-
-                  // --- Measurement
-                  MapButton(
-                    size: buttonSize,
-                    onPressed: () {
-                      if (focusMode == FocusMode.measurement) {
-                        measurementPoints.clear();
-                        setFocusMode(prevFocusMode);
-                      } else {
-                        setFocusMode(FocusMode.measurement);
-                      }
-                    },
-                    selected: false,
-                    child: Icon(
-                      focusMode == FocusMode.measurement ? Icons.cancel : Icons.straighten,
-                      size: 30,
-                      color: focusMode == FocusMode.measurement ? Colors.red : Colors.black,
-                    ),
-                  )
-                ]);
-          }),
+          child: MapViewControls(
+            mapController: mapController,
+            mapReady: mapReady,
+            focusMode: focusMode,
+            onSetFocusMode: setFocusMode,
+            onToggleNorthLock: toggleNorthLock,
+            onToggleMeasurement: toggleMeasurement,
+            onZoom: () => lastMapChange = DateTime.now(),
+          ),
         ),
 
         // --- Connection status banner (along top of map)
         if (Provider.of<Client>(context).state == ClientState.disconnected)
-          const Positioned(
-              top: 5,
-              child: Card(
-                  color: Colors.amber,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
-                    child: Text.rich(
-                      TextSpan(children: [
-                        WidgetSpan(
-                            child: Icon(
-                          Icons.language,
-                          size: 20,
-                          color: Colors.black,
-                        )),
-                        TextSpan(text: "  connecting", style: TextStyle(color: Colors.black, fontSize: 20)),
-                      ]),
-                    ),
-                  ))),
+          const Positioned(top: 5, child: ConnectingBanner()),
 
         // --- Flight Timer
-        Align(
-          alignment: Alignment.topCenter,
-          child: ListenableBuilder(
-              listenable: myTelemetry,
-              builder: (context, _) => GestureDetector(
-                    onTap: () {
-                      if (myTelemetry.inFlight) {
-                        showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                                  content: Text("dialog.confirm.manual_stop".tr()),
-                                  actions: [
-                                    ElevatedButton.icon(
-                                        icon: const Icon(
-                                          Icons.stop_circle,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () {
-                                          myTelemetry.stopFlight();
-                                          Navigator.pop(context);
-                                        },
-                                        label: Text("btn.Stop".tr()))
-                                  ],
-                                ));
-                      } else {
-                        myTelemetry.startFlight();
-                      }
-                    },
-                    child: ClipRRect(
-                        borderRadius:
-                            const BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
-                        child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                            child: Container(
-                                color: Colors.white38,
-                                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  if (myTelemetry.takeOff != null)
-                                    Padding(
-                                      padding: const EdgeInsets.all(10.0),
-                                      child: myTelemetry.inFlight
-                                          ? const Icon(
-                                              Icons.circle,
-                                              color: Colors.red,
-                                              size: 18,
-                                            )
-                                          : const Icon(
-                                              Icons.check_circle,
-                                              color: Colors.green,
-                                              size: 18,
-                                            ),
-                                    ),
-                                  if (myTelemetry.takeOff != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 10),
-                                      child: Text.rich(
-                                        TextSpan(children: [
-                                          richHrMin(
-                                              duration: (myTelemetry.landing ?? DateTime.now())
-                                                  .difference(myTelemetry.takeOff!),
-                                              valueStyle:
-                                                  Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black),
-                                              unitStyle: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.copyWith(color: Colors.grey.shade700),
-                                              longUnits: true)
-                                        ]),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  if (!settingsMgr.autoRecordFlight.value && myTelemetry.takeOff == null)
-                                    TextButton.icon(
-                                        onPressed: () {
-                                          myTelemetry.startFlight();
-                                        },
-                                        icon: const Icon(
-                                          Icons.play_arrow,
-                                          color: Colors.red,
-                                        ),
-                                        label: Text(
-                                          "btn.Record".tr(),
-                                          style: TextStyle(color: Colors.black),
-                                        ))
-                                ])))),
-                  )),
-        ),
+        const Align(alignment: Alignment.topCenter, child: FlightTimer()),
 
         // --- Editing waypoint/path buttons
-        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath || focusMode == FocusMode.editWaypoint)
+        if (isEditing)
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
               padding: const EdgeInsets.only(left: 80, right: 80, bottom: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.white,
-                    maxRadius: 20,
-                    child: IconButton(
-                      iconSize: 40,
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(
-                        Icons.delete,
-                        size: 35,
-                        color: Colors.red,
-                      ),
-                      onPressed: () {
-                        if (editingWp != null) {
-                          final plan = Provider.of<ActivePlan>(context, listen: false);
-                          plan.removeWaypoint(editingWp!);
-                          editingWp == null;
-                        }
-                        setFocusMode(prevFocusMode);
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: 10,
-                    height: 1,
-                  ),
-                  CircleAvatar(
-                    backgroundColor: Colors.white,
-                    maxRadius: 20,
-                    child: IconButton(
-                      iconSize: 40,
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(
-                        Icons.undo,
-                        size: 35,
-                        color: Colors.black,
-                      ),
-                      onPressed: () {
-                        draggingLatLng = null;
-                        setFocusMode(prevFocusMode);
-                      },
-                    ),
-                  ),
-                  if (focusMode != FocusMode.addPath)
-                    CircleAvatar(
-                      backgroundColor: Colors.white,
-                      maxRadius: 20,
-                      child: IconButton(
-                        iconSize: 40,
-                        padding: EdgeInsets.zero,
-                        icon: const Icon(
-                          Icons.edit,
-                          size: 30,
-                          color: Colors.blue,
-                        ),
-                        onPressed: () {
-                          if (editingWp != null) {
-                            final plan = Provider.of<ActivePlan>(context, listen: false);
-                            editWaypoint(context, plan.waypoints[editingWp]!,
-                                    isNew: false, isPath: plan.waypoints[editingWp]!.isPath)
-                                ?.then((newWaypoint) {
-                              if (newWaypoint != null) {
-                                plan.updateWaypoint(newWaypoint);
-                              }
-                            });
-                            editingWp = null;
-                          }
-                          setFocusMode(prevFocusMode);
-                        },
-                      ),
-                    ),
-                  if ((editablePoints.length > 1 || focusMode == FocusMode.editWaypoint) &&
-                      focusMode != FocusMode.measurement)
-                    CircleAvatar(
-                      backgroundColor: Colors.white,
-                      maxRadius: 20,
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        iconSize: 40,
-                        icon: const Icon(
-                          Icons.check_circle,
-                          size: 40,
-                          color: Colors.green,
-                        ),
-                        onPressed: () {
-                          final plan = Provider.of<ActivePlan>(context, listen: false);
-                          // --- finish editing path
-                          if (focusMode == FocusMode.editPath || focusMode == FocusMode.addPath) {
-                            if (editingWp == null) {
-                              final temp = Waypoint(name: "", latlngs: editablePoints.toList());
-                              editWaypoint(context, temp, isNew: focusMode == FocusMode.addPath, isPath: true)
-                                  ?.then((newWaypoint) {
-                                if (newWaypoint != null) {
-                                  plan.updateWaypoint(newWaypoint);
-                                }
-                              });
-                            } else {
-                              plan.moveWaypoint(editingWp!, editablePoints.toList());
-                              editingWp = null;
-                            }
-                          }
-                          // --- finish editing waypoint
-                          if (focusMode == FocusMode.editWaypoint && draggingLatLng != null && editingWp != null) {
-                            plan.moveWaypoint(editingWp!, [draggingLatLng!]);
-                          }
-                          setFocusMode(prevFocusMode);
-                        },
-                      ),
-                    ),
-                ],
+              child: EditToolbar(
+                onDelete: onEditDelete,
+                onUndo: onEditUndo,
+                onEdit: focusMode != FocusMode.addPath ? onEditDetails : null,
+                onConfirm: (editablePoints.length > 1 || focusMode == FocusMode.editWaypoint) &&
+                        focusMode != FocusMode.measurement
+                    ? onEditConfirm
+                    : null,
               ),
             ),
           ),
@@ -1542,12 +705,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         // --- Toggle map layer
         Positioned(
             top: 10,
-            right: settingsMgr.mapControlsRightSide.value ? null : 10,
-            left: settingsMgr.mapControlsRightSide.value ? 10 : null,
+            right: controlsRightSide ? null : 10,
+            left: controlsRightSide ? 10 : null,
             child: MapSelector(
                 key: const Key("viewMap_mapSelector"),
                 showAdsb: true,
-                leftAlign: settingsMgr.mapControlsRightSide.value,
+                leftAlign: controlsRightSide,
                 isMapDialOpen: isMapDialOpen,
                 curLayer: settingsMgr.mainMapTileSrc.value,
                 curOpacity: settingsMgr.mainMapOpacity.value,

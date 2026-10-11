@@ -24,7 +24,7 @@ import 'package:xcnav/widgets/map_selector.dart';
 
 // --- Misc
 import 'package:xcnav/dialogs/edit_waypoint.dart';
-import 'package:xcnav/views/view_map.dart';
+import 'package:xcnav/views/map/focus_mode.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
 import 'package:xcnav/map_service.dart';
 
