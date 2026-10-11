@@ -155,6 +155,7 @@
             "please": "Please Confirm",
             "check_clear_identity": "Are you sure you want to clear your Identity?",
             "check_clear_avatars": "Are you sure you want to clear all cached avatars?",
+            "merge_logs": "Merge these two logs into one flight?",
             "delete_log": "Are you sure you want to delete this log?",
             "delete_plan": "Are you sure you want to delete this plan?"
         },
@@ -164,6 +165,8 @@
         }
     },
     "btn": {
+        "merge_prev_log": "Merge with Previous Flight",
+        "merge_next_log": "Merge with Next Flight",
         "crop_log": "Crop Log to Selection",
         "Edit Gear": "Edit Gear",
         "All": "All",

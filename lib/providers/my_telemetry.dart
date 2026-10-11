@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:bisection/bisect.dart';
@@ -17,6 +18,7 @@ import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/douglas_peucker.dart';
 import 'package:xcnav/fake_path.dart';
 import 'package:xcnav/gaussian_filter.dart';
+import 'package:xcnav/log_store.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/datadog.dart' as dd;
@@ -74,6 +76,15 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   DateTime? landing;
   Geo? launchGeo;
   DateTime? lastSavedLog;
+
+  /// Most recent log on disk when the app started. A flight launching shortly after it ended continues it.
+  FlightLog? resumeCandidate;
+
+  /// Log being continued by the current flight. (Recording was interrupted, likely by an app restart.)
+  FlightLog? resumedLog;
+
+  /// Start of the whole flight, including any resumed log.
+  DateTime? get flightStart => resumedLog?.startTime ?? takeOff;
 
   // in-flight hysterisis
   int triggerHyst = 0;
@@ -180,6 +191,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       flightEvent.close();
       flightEvent = StreamController<FlightEvent>();
     }
+    // In case we are restarting mid-flight
+    logStore.loadMostRecentLog().then((log) => resumeCandidate ??= log);
+
     // Initial value of the event stream
     flightEvent.add(FlightEvent(type: FlightEventType.init, time: DateTime.now()));
     _flightEventListener = flightEvent.stream.listen(
@@ -506,6 +520,13 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
       launchGeo = recordGeo[launchIndex];
 
+      // Only the first flight since app start can resume. Later ones follow a landing or manual stop.
+      resumedLog = takeOff == null && (resumeCandidate?.canResumeAt(launchGeo!) ?? false) ? resumeCandidate : null;
+      resumeCandidate = null;
+      if (resumedLog != null) {
+        debugPrint("Resuming flight log ${resumedLog!.filename}");
+      }
+
       takeOff = DateTime.fromMillisecondsSinceEpoch(launchGeo!.time);
       landing = null;
       debugPrint("In Flight!!!  Launchindex: $launchIndex / ${recordGeo.length}");
@@ -590,14 +611,21 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         bleDeviceSp140.trimToRange(log.timeRange!);
       }
 
-      Map<String, dynamic> deviceLogs = {
-        "ble_devices": {
-          if (bleDeviceXc170.device != null) "xc170": bleDeviceXc170.toJson(),
-          if (bleDeviceRunleader.device != null) "runleader": bleDeviceRunleader.toJson(),
-          if (bleDeviceSp140.device != null) "sp140": bleDeviceSp140.toJson(),
-        },
+      Map<String, dynamic> bleDevices = {
+        if (bleDeviceXc170.device != null) "xc170": bleDeviceXc170.toJson(),
+        if (bleDeviceRunleader.device != null) "runleader": bleDeviceRunleader.toJson(),
+        if (bleDeviceSp140.device != null) "sp140": bleDeviceSp140.toJson(),
       };
-      log.save(additionalJson: deviceLogs);
+
+      if (resumedLog != null) {
+        // Write this flight onto the end of the interrupted log
+        final merged = FlightLog.merge(resumedLog!, log);
+        bleDevices = FlightLog.mergeBleDevicesJson(resumedLog!.bleDevicesJson, jsonDecode(jsonEncode(bleDevices)),
+            cutoff: resumedLog!.samples.last.time)!;
+        merged.save(additionalJson: {"ble_devices": bleDevices});
+      } else {
+        log.save(additionalJson: {"ble_devices": bleDevices});
+      }
       lastSavedLog = clock.now();
     }
   }
@@ -694,9 +722,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         // Only acount for AGL if ground data available.
         final launchConfig = settingsMgr.launchDetectorConfig;
         if (launchConfig.isLaunchCandidate(
-            speed: geo!.spd,
-            agl: geo!.ground != null ? geo!.alt - geo!.ground! : null,
-            vario: varioSmooth.value)) {
+            speed: geo!.spd, agl: geo!.ground != null ? geo!.alt - geo!.ground! : null, vario: varioSmooth.value)) {
           if (geoPrev != null) {
             triggerHyst += geo!.time - geoPrev!.time;
           } else {

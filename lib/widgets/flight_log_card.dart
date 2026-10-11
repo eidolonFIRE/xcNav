@@ -136,6 +136,52 @@ class FlightLogCard extends StatelessWidget {
         });
   }
 
+  /// Merge with another log of the same flight. (Recording was interrupted and restarted.)
+  void mergeLog(BuildContext context, String otherKey) {
+    final log = logStore.logs[logKey]!;
+    final other = logStore.logs[otherKey]!;
+    final first = other.startTime!.isBefore(log.startTime!) ? other : log;
+    final second = identical(first, log) ? other : log;
+    final gap = second.startTime!.difference(first.endTime!);
+
+    showDialog(
+        context: context,
+        builder: (BuildContext ctx) {
+          return AlertDialog(
+            title: Text('dialog.confirm.please'.tr()),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('dialog.confirm.merge_logs'.tr()),
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text.rich(TextSpan(children: [
+                    TextSpan(text: DateFormat("h:mm a").format(first.endTimeOriginal!)),
+                    const WidgetSpan(child: Icon(Icons.arrow_forward, size: 18)),
+                    TextSpan(text: DateFormat("h:mm a").format(second.startTimeOriginal!)),
+                    const TextSpan(text: "  ( "),
+                    richHrMin(duration: gap),
+                    const TextSpan(text: " )"),
+                  ])),
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton.icon(
+                  onPressed: () {
+                    logStore.mergeLogs(logKey, otherKey);
+                    Navigator.pop(ctx);
+                  },
+                  icon: const Icon(
+                    Icons.merge,
+                    color: Colors.lightGreen,
+                  ),
+                  label: Text('btn.Yes'.tr())),
+            ],
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     MapController mapController = MapController();
@@ -146,6 +192,9 @@ class FlightLogCard extends StatelessWidget {
     if (log.goodFile) {
       mapBounds = log.getBounds(pad: 0.2);
     }
+
+    final prevLogKey = logStore.findAdjacentLog(logKey, next: false);
+    final nextLogKey = logStore.findAdjacentLog(logKey, next: true);
 
     return Padding(
       padding: const EdgeInsets.all(4.0),
@@ -274,6 +323,14 @@ class FlightLogCard extends StatelessWidget {
                               restoreWaypoints(context);
                               break;
 
+                            case "merge_prev":
+                              mergeLog(context, prevLogKey!);
+                              break;
+
+                            case "merge_next":
+                              mergeLog(context, nextLogKey!);
+                              break;
+
                             case "export_kml":
                               exportLog(context, "kml");
                               break;
@@ -306,6 +363,18 @@ class FlightLogCard extends StatelessWidget {
                                     value: "restore_waypoints",
                                     child: ListTile(
                                         leading: Icon(Icons.place, size: 28), title: Text("Recover Waypoints"))),
+                              if (prevLogKey != null)
+                                PopupMenuItem(
+                                    value: "merge_prev",
+                                    child: ListTile(
+                                        leading: const Icon(Icons.merge, size: 28),
+                                        title: Text("btn.merge_prev_log".tr()))),
+                              if (nextLogKey != null)
+                                PopupMenuItem(
+                                    value: "merge_next",
+                                    child: ListTile(
+                                        leading: const Icon(Icons.merge, size: 28),
+                                        title: Text("btn.merge_next_log".tr()))),
                               const PopupMenuItem(
                                   enabled: false,
                                   child: Padding(

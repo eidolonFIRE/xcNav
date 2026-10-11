@@ -55,6 +55,79 @@ class LogStore with ChangeNotifier {
     notifyListeners();
   }
 
+  /// The log recorded just before (or after, if [next]) this one, if the gap between them is within [maxGap].
+  ///
+  /// These are candidates for being the same flight split in two.
+  String? findAdjacentLog(String logKey, {bool next = true, Duration maxGap = const Duration(minutes: 10)}) {
+    final log = _logs[logKey];
+    if (log == null || !log.goodFile) return null;
+    String? bestKey;
+    int? bestGap;
+    for (final entry in _logs.entries) {
+      final other = entry.value;
+      if (entry.key == logKey || !other.goodFile) continue;
+      final gap = next
+          ? other.startTime!.difference(log.endTime!).inMilliseconds
+          : log.startTime!.difference(other.endTime!).inMilliseconds;
+      // Overlapping logs can't be the same flight
+      if (gap <= 0 || gap > maxGap.inMilliseconds) continue;
+      if (bestGap == null || gap < bestGap) {
+        bestGap = gap;
+        bestKey = entry.key;
+      }
+    }
+    return bestKey;
+  }
+
+  /// Merge two logs into one. The earlier log's file is kept and the later log's file is deleted.
+  ///
+  /// Returns the key of the merged log.
+  Future<String> mergeLogs(String keyA, String keyB) async {
+    final a = _logs[keyA]!;
+    final b = _logs[keyB]!;
+    final aFirst = !b.startTime!.isBefore(a.startTime!);
+    final keepKey = aFirst ? keyA : keyB;
+    final dropKey = aFirst ? keyB : keyA;
+
+    final merged = FlightLog.merge(a, b);
+    // Make sure the merged log is written before removing anything
+    await merged.save();
+    if (merged.filename != keepKey) {
+      _logs.remove(keepKey);
+    }
+    deleteLog(dropKey);
+    return merged.filename!;
+  }
+
+  /// Load only the most recently started log from disk. (Doesn't require the whole store to be loaded.)
+  Future<FlightLog?> loadMostRecentLog() async {
+    final Directory dir = Directory("${(await getApplicationDocumentsDirectory()).path}/flight_logs/");
+    if (!await dir.exists()) return null;
+
+    // Logs are named by their start time in ms
+    File? latest;
+    int latestTime = 0;
+    await for (final each in dir.list(recursive: false, followLinks: false)) {
+      if (each is! File) continue;
+      final time = int.tryParse(each.uri.pathSegments.last.split(".").first);
+      if (time != null && time > latestTime) {
+        latestTime = time;
+        latest = each;
+      }
+    }
+    if (latest == null) return null;
+
+    try {
+      final raw = await latest.readAsString();
+      final log = FlightLog.fromJson(latest.path, jsonDecode(raw), rawJson: raw);
+      return log.goodFile ? log : null;
+    } catch (err, trace) {
+      error("Failed to load most recent FlightLog",
+          errorMessage: err.toString(), errorStackTrace: trace, attributes: {"filename": latest.path});
+      return null;
+    }
+  }
+
   ///
   Future refreshLogsFromDirectory() async {
     _logs.clear();

@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
+import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/services/ble_service.dart';
 import 'package:xcnav/settings_service.dart';
@@ -248,6 +250,65 @@ void main() {
       sim.run(const Duration(minutes: 1));
       sim.startFlight();
       expect(sim.reports.single.amount, 10);
+    });
+  });
+
+  group("Resume interrupted flight", () {
+    /// Log that was being recorded before the app restarted.
+    FlightLog previousLog(FlightSim sim, {required Duration endedAgo, double latOffset = 0}) {
+      final end = sim.now.subtract(endedAgo);
+      return FlightLog(filename: "prev.json", samples: [
+        for (int i = 30; i >= 0; i--)
+          Geo(
+              lat: sim.lat + latOffset - i * 0.001,
+              lng: sim.lng,
+              alt: 100,
+              timestamp: end.subtract(Duration(minutes: i)).millisecondsSinceEpoch)
+      ]);
+    }
+
+    test("app restarted mid-flight continues the previous log", () {
+      final sim = FlightSim(DateTime(2026, 6, 1, 9));
+      sim.run(const Duration(seconds: 30));
+      final prev = previousLog(sim, endedAgo: const Duration(minutes: 1));
+      sim.telemetry.resumeCandidate = prev;
+
+      sim.startFlight();
+      expect(sim.telemetry.resumedLog, same(prev));
+      expect(sim.telemetry.flightStart, prev.startTime);
+      expect(sim.telemetry.resumeCandidate, isNull);
+    });
+
+    test("previous log ended too long ago", () {
+      final sim = FlightSim(DateTime(2026, 6, 1, 9));
+      sim.run(const Duration(seconds: 30));
+      sim.telemetry.resumeCandidate = previousLog(sim, endedAgo: const Duration(minutes: 30));
+
+      sim.startFlight();
+      expect(sim.telemetry.resumedLog, isNull);
+      expect(sim.telemetry.flightStart, sim.telemetry.takeOff);
+    });
+
+    test("previous log ended somewhere else", () {
+      final sim = FlightSim(DateTime(2026, 6, 1, 9));
+      sim.run(const Duration(seconds: 30));
+      sim.telemetry.resumeCandidate = previousLog(sim, endedAgo: const Duration(minutes: 1), latOffset: 1);
+
+      sim.startFlight();
+      expect(sim.telemetry.resumedLog, isNull);
+    });
+
+    test("second flight of the session never resumes", () {
+      final sim = FlightSim(DateTime(2026, 6, 1, 9));
+      sim.run(const Duration(seconds: 30));
+      sim.startFlight();
+      sim.run(const Duration(minutes: 10), speed: 15);
+      sim.stopFlight();
+      sim.run(const Duration(minutes: 1));
+
+      sim.telemetry.resumeCandidate = previousLog(sim, endedAgo: const Duration(minutes: 1));
+      sim.startFlight();
+      expect(sim.telemetry.resumedLog, isNull);
     });
   });
 }

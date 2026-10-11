@@ -479,7 +479,102 @@ class FlightLog {
         imported: _imported,
         utcOffset: _utcOffset,
         bleDevicesJson: bleDevicesJson);
+    newLog._customTitle = _customTitle;
     return newLog;
+  }
+
+  /// Can a new flight launching at [launch] be treated as a continuation of this log?
+  ///
+  /// True when this log ended shortly before [launch] and close enough that the pilot could have flown the gap.
+  bool canResumeAt(Geo launch, {Duration maxGap = const Duration(minutes: 5), double maxSpeed = 50}) {
+    if (!goodFile || imported != null) return false;
+    final gapMs = launch.time - samples.last.time;
+    if (gapMs <= 0 || gapMs > maxGap.inMilliseconds) return false;
+    return samples.last.distanceTo(launch) <= 500 + maxSpeed * gapMs / 1000;
+  }
+
+  /// Join two logs of the same flight that were split by a gap in recording.
+  ///
+  /// The result keeps the earlier log's filename so saving it overwrites the earlier file.
+  /// Logs that overlap in time can't be the same flight, so they are rejected.
+  static FlightLog merge(FlightLog a, FlightLog b) {
+    if (!a.goodFile || !b.goodFile) throw "Can't merge a broken log";
+    final first = b.startTime!.isBefore(a.startTime!) ? b : a;
+    final second = identical(first, a) ? b : a;
+    final cutoff = first.samples.last.time;
+    if (second.samples.first.time <= cutoff) throw "Can't merge logs that overlap";
+
+    final waypointIds = first.waypoints.map((e) => e.id).toSet();
+
+    final merged = FlightLog(
+        samples: [
+          ...first.samples,
+          ...second.samples
+        ],
+        gForceSamples: [
+          ...first.gForceSamples,
+          ...second.gForceSamples.where((e) => e.time > cutoff)
+        ],
+        waypoints: [
+          ...first.waypoints,
+          ...second.waypoints.where((e) => !waypointIds.contains(e.id))
+        ],
+        fuelReports: [
+          ...first.fuelReportController.fuelReports,
+          ...second.fuelReportController.fuelReports.where((e) => e.time.millisecondsSinceEpoch > cutoff)
+        ],
+        gear: first.gear ?? second.gear,
+        filename: first.filename,
+        imported: first.imported ?? second.imported,
+        utcOffset: first.utcOffset ?? second.utcOffset,
+        bleDevicesJson: mergeBleDevicesJson(first.bleDevicesJson, second.bleDevicesJson, cutoff: cutoff));
+    merged._customTitle = (first.customTitle?.isNotEmpty ?? false) ? first.customTitle : second.customTitle;
+    return merged;
+  }
+
+  /// Merge the "ble_devices" json of two logs. [a] is the earlier log.
+  ///
+  /// Each logged value is stored as `{"start_time": ms, "data": [[ms offset, value], ...]}`.
+  /// Series from [b] are re-based onto [a]'s start time and appended after [cutoff].
+  static Map<String, dynamic>? mergeBleDevicesJson(Map<String, dynamic>? a, Map<String, dynamic>? b, {int? cutoff}) {
+    if (a == null) return b;
+    if (b == null) return a;
+    final Map<String, dynamic> retval = Map.of(a);
+    for (final entry in b.entries) {
+      final aValue = retval[entry.key];
+      final bValue = entry.value;
+      if (aValue is Map<String, dynamic> && bValue is Map<String, dynamic>) {
+        if (aValue["data"] is List &&
+            bValue["data"] is List &&
+            aValue["start_time"] is int &&
+            bValue["start_time"] is int) {
+          retval[entry.key] = _mergeBleSeries(aValue, bValue, cutoff);
+        } else {
+          retval[entry.key] = mergeBleDevicesJson(aValue, bValue, cutoff: cutoff);
+        }
+      } else {
+        retval[entry.key] ??= bValue;
+      }
+    }
+    return retval;
+  }
+
+  static Map<String, dynamic> _mergeBleSeries(Map<String, dynamic> a, Map<String, dynamic> b, int? cutoff) {
+    final List aData = a["data"];
+    final List bData = b["data"];
+    if (aData.isEmpty) return b;
+    if (bData.isEmpty) return a;
+    final int aStart = a["start_time"];
+    final int bStart = b["start_time"];
+    final aEnd = aStart + (aData.last[0] as int);
+    final after = max(aEnd, cutoff ?? aEnd);
+    return {
+      ...a,
+      "data": [
+        ...aData,
+        ...bData.where((e) => (e[0] as int) + bStart > after).map((e) => [(e[0] as int) + bStart - aStart, e[1]]),
+      ]
+    };
   }
 
   void _calculateSpeeds() {
@@ -633,8 +728,8 @@ class FlightLog {
         final dateMatch = RegExp(r"^HFDTE(?:DATE:)?(\d{2})(\d{2})(\d{2})").firstMatch(line);
         if (dateMatch != null) {
           // (HFDTEDDMMYY or HFDTEDATE:DDMMYY,NN) UTC date this file was recorded
-          dateOffset ??= DateTime.utc(int.parse(dateMatch.group(3)!) + 2000, int.parse(dateMatch.group(2)!),
-              int.parse(dateMatch.group(1)!));
+          dateOffset ??= DateTime.utc(
+              int.parse(dateMatch.group(3)!) + 2000, int.parse(dateMatch.group(2)!), int.parse(dateMatch.group(1)!));
         } else if (line.startsWith("HFTZNTIMEZONE:")) {
           // Timezone offset in hours. May be fractional. (ex: "-7", "+5.5", "2.00")
           final hours = double.tryParse(line.substring(("HFTZNTIMEZONE:").length).trim());
@@ -685,11 +780,7 @@ class FlightLog {
           }
           lastTimeOfDay = timeOfDay;
 
-          final newGeo = Geo(
-              lat: lat,
-              lng: lng,
-              alt: alt,
-              timestamp: dateOffset!.millisecondsSinceEpoch + timeOfDay);
+          final newGeo = Geo(lat: lat, lng: lng, alt: alt, timestamp: dateOffset!.millisecondsSinceEpoch + timeOfDay);
           // debugPrint("Geo ${newGeo.lat}, ${newGeo.lng}, ${newGeo.alt}");
 
           if (samples.isEmpty || newGeo.time > samples.last.time) {
@@ -735,6 +826,9 @@ class FlightLog {
     };
     if (imported != null) {
       dict["imported"] = imported;
+    }
+    if (customTitle != null) {
+      dict["customTitle"] = customTitle;
     }
     if (utcOffset != null) {
       dict["utcOffsetMinutes"] = utcOffset!.inMinutes;
@@ -851,7 +945,8 @@ class FlightLog {
           for (final geo in samples) {
             builder.element("trkpt", attributes: {"lat": geo.lat.toString(), "lon": geo.lng.toString()}, nest: () {
               builder.element("ele", nest: geo.alt.toString());
-              builder.element("time", nest: DateTime.fromMillisecondsSinceEpoch(geo.time, isUtc: true).toIso8601String());
+              builder.element("time",
+                  nest: DateTime.fromMillisecondsSinceEpoch(geo.time, isUtc: true).toIso8601String());
             });
           }
         });

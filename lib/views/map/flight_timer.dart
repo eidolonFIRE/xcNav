@@ -71,7 +71,7 @@ class FlightTimer extends StatelessWidget {
                                   TextSpan(children: [
                                     richHrMin(
                                         duration:
-                                            (myTelemetry.landing ?? DateTime.now()).difference(myTelemetry.takeOff!),
+                                            (myTelemetry.landing ?? DateTime.now()).difference(myTelemetry.flightStart!),
                                         valueStyle:
                                             Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.black),
                                         unitStyle: Theme.of(context)
