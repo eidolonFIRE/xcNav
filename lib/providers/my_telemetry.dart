@@ -480,6 +480,17 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   }
 
   bool get inFlight => _inFlight;
+
+  /// Latest fuel level from a connected BLE fuel sensor, if it reported recently.
+  double? liveFuelReading({Duration maxAge = const Duration(minutes: 1)}) {
+    final cutoff = clock.now().subtract(maxAge).millisecondsSinceEpoch;
+    final soc = bleDeviceSp140.telemetry.charge.log.lastOrNull;
+    if (soc != null && soc.time >= cutoff) return soc.value.toDouble();
+    final fuel = bleDeviceXc170.telemetry.fuel.log.lastOrNull;
+    if (fuel != null && fuel.time >= cutoff) return fuel.value;
+    return null;
+  }
+
   void startFlight() {
     if (!_inFlight && geo != null) {
       debugPrint("Flight started");
@@ -489,7 +500,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       int launchIndex = recordGeo.length - 1;
       while (launchIndex > 0 &&
           recordGeo[launchIndex].time >
-              DateTime.now().millisecondsSinceEpoch - const Duration(seconds: 30).inMilliseconds) {
+              clock.now().millisecondsSinceEpoch - const Duration(seconds: 30).inMilliseconds) {
         launchIndex--;
       }
 
@@ -502,7 +513,12 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       flightEvent.add(FlightEvent(
           type: FlightEventType.takeoff, time: DateTime.fromMillisecondsSinceEpoch(geo!.time), latlng: geo!.latlng));
 
-      if (fuelReportController.fuelReports.isNotEmpty) {
+      final liveFuel = liveFuelReading();
+      if (liveFuel != null) {
+        // A connected fuel sensor knows better than the last report (tank may have been refilled since landing).
+        fuelReportController.clear();
+        fuelReportController.insertFuelReport(takeOff!, liveFuel, tolerance: Duration.zero);
+      } else if (fuelReportController.fuelReports.isNotEmpty) {
         // Duplicate the latest fuel report so it's part of this log, and drop everything else.
         // We assume we weren't just in flight, so we don't account for burn since last report.
         final latest = fuelReportController.fuelReports.last;

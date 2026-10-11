@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/geo.dart';
@@ -180,5 +181,37 @@ void main() {
         null);
     expect(controller.findFuelReportIndex(DateTime(2000, 0, 0, 0, 40, 0, 0), tolerance: tol), null);
     expect(controller.findFuelReportIndex(DateTime(2000, 0, 0, 3, 0, 0, 0), tolerance: tol), null);
+  });
+
+  group("FuelReport - cropReportsToTimeRange", () {
+    DateTime t(int minutes) => DateTime(2000, 1, 1).add(Duration(minutes: minutes));
+    FuelReportController make() => FuelReportController(fuelReports: [
+          FuelReport(t(0), 12),
+          FuelReport(t(60), 10),
+          FuelReport(t(120), 8),
+        ]);
+
+    test("range covers all reports", () {
+      final controller = make()..cropReportsToTimeRange(DateTimeRange(start: t(-10), end: t(130)));
+      expect(controller.fuelReports.map((e) => e.time), [t(0), t(60), t(120)]);
+      expect(controller.fuelReports.map((e) => e.amount), [12, 10, 8]);
+    });
+
+    test("crop both ends interpolates new ends", () {
+      final controller = make()..cropReportsToTimeRange(DateTimeRange(start: t(30), end: t(90)));
+      expect(controller.fuelReports.map((e) => e.time), [t(30), t(60), t(90)]);
+      expect(controller.fuelReports.map((e) => e.amount), [11, 10, 9]);
+    });
+
+    test("range falls entirely between two reports", () {
+      final controller = make()..cropReportsToTimeRange(DateTimeRange(start: t(75), end: t(105)));
+      expect(controller.fuelReports.map((e) => e.time), [t(75), t(105)]);
+      expect(controller.fuelReports.map((e) => e.amount), [9.5, 8.5]);
+    });
+
+    test("range outside all reports", () {
+      final controller = make()..cropReportsToTimeRange(DateTimeRange(start: t(150), end: t(200)));
+      expect(controller.fuelReports, isEmpty);
+    });
   });
 }

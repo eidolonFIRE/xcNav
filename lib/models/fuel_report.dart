@@ -237,6 +237,17 @@ class FuelReportController with ChangeNotifier {
         final interpValue = inverseInterpTime(first.time, second.time, timeRange.end);
         newFuelReports.add(FuelReport(timeRange.end, first.amount * (1 - interpValue) + second.amount * interpValue));
       }
+
+      // range falls entirely between first and second.
+      if (first.time.isBefore(timeRange.start) && second.time.isAfter(timeRange.end)) {
+        // insert new at both ends
+        final interpStart = inverseInterpTime(first.time, second.time, timeRange.start);
+        final interpEnd = inverseInterpTime(first.time, second.time, timeRange.end);
+        newFuelReports.addAll([
+          FuelReport(timeRange.start, first.amount * (1 - interpStart) + second.amount * interpStart),
+          FuelReport(timeRange.end, first.amount * (1 - interpEnd) + second.amount * interpEnd),
+        ]);
+      }
     }
     _fuelReports
       ..clear()

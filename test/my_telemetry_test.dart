@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +8,9 @@ import 'package:xcnav/settings_service.dart';
 void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
+    // MyTelemetry starts the IMU on construction; stub the sensors plugin.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel("dev.fluttercommunity.plus/sensors/method"), (_) async => null);
     SharedPreferences.setMockInitialValues({
       "profile.name": "Mr Test",
       "profile.id": "1234",
