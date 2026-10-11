@@ -131,3 +131,56 @@ GA? decodeMavlink(Uint8List data) {
   }
   return null;
 }
+
+/// Reassembles MAVLink v1 traffic report frames from a raw serial byte stream.
+///
+/// Frames start with `0xFE` followed by payload length 38 (Traffic Report).
+/// Each emitted frame is the full packet: 6 header bytes + payload + 2 checksum bytes.
+class MavlinkFramer {
+  static const int _stx = 0xFE;
+  static const int _payloadLen = 38;
+  static const int _frameLen = _payloadLen + 8;
+
+  /// Maximum bytes held while waiting for a complete frame.
+  final int maxLen;
+
+  final List<int> _partial = [];
+
+  MavlinkFramer({this.maxLen = 1024});
+
+  /// Feed new bytes and return any complete frames.
+  List<Uint8List> add(List<int> data) {
+    _partial.addAll(data);
+    if (_partial.length > maxLen) {
+      _partial.removeRange(0, _partial.length - maxLen);
+    }
+
+    final frames = <Uint8List>[];
+    while (true) {
+      int index = -1;
+      for (int i = 0; i < _partial.length - 1; i++) {
+        if (_partial[i] == _stx && _partial[i + 1] == _payloadLen) {
+          index = i;
+          break;
+        }
+      }
+      if (index < 0) {
+        // Keep a trailing STX in case the length byte hasn't arrived yet.
+        if (_partial.isNotEmpty && _partial.last == _stx) {
+          _partial.removeRange(0, _partial.length - 1);
+        } else {
+          _partial.clear();
+        }
+        break;
+      }
+      if (index > 0) _partial.removeRange(0, index);
+      if (_partial.length < _frameLen) break;
+
+      frames.add(Uint8List.fromList(_partial.sublist(0, _frameLen)));
+      _partial.removeRange(0, _frameLen);
+    }
+    return frames;
+  }
+
+  void clear() => _partial.clear();
+}

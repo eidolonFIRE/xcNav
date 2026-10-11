@@ -4,10 +4,10 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_serial_communication/flutter_serial_communication.dart';
+import 'package:flutter_serial_communication/models/device_info.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:network_info_plus/network_info_plus.dart';
-import 'package:usb_serial/transaction.dart';
-import 'package:usb_serial/usb_serial.dart';
 import 'package:xcnav/datadog.dart';
 
 import 'package:xcnav/models/ga.dart';
@@ -63,80 +63,95 @@ class ADSB with ChangeNotifier {
   bool portListening = false;
   bool _enabled = false;
 
-  UsbPort? _usbPort;
+  final FlutterSerialCommunication _serial = FlutterSerialCommunication();
+  final mavlink.MavlinkFramer _framer = mavlink.MavlinkFramer();
 
-  StreamSubscription<Uint8List>? _subscription;
-  Transaction<Uint8List>? _transaction;
-  UsbDevice? _device;
+  StreamSubscription? _serialSubscription;
+  StreamSubscription? _connectionSubscription;
+  Timer? _usbPollTimer;
+  DeviceInfo? _device;
+  bool _connecting = false;
 
-  Future<bool> _connectTo(UsbDevice? device) async {
-    if (_subscription != null) {
-      _subscription!.cancel();
-      _subscription = null;
+  /// Devices that failed to connect (or were denied permission). Not retried until unplugged.
+  final Set<String> _failedDevices = {};
+
+  void _onSerialData(dynamic data) {
+    if (data is! Uint8List) return;
+    for (final frame in _framer.add(data)) {
+      final ga = mavlink.decodeMavlink(frame);
+      if (ga != null) {
+        if (!settingsMgr.adsbFilters.value.contains(ga.id)) {
+          planes[ga.id] = ga;
+        }
+        heartbeat();
+      }
     }
+  }
 
-    if (_transaction != null) {
-      _transaction!.dispose();
-      _transaction = null;
-    }
-
-    if (_usbPort != null) {
-      _usbPort!.close();
-      _usbPort = null;
-    }
-
-    if (device == null) {
-      _device = null;
-      return true;
-    }
-
+  Future<bool> _connectTo(DeviceInfo device) async {
+    _connecting = true;
     try {
-      _usbPort = await device.create();
-      if (await (_usbPort!.open()) != true) {
+      _framer.clear();
+      if (!await _serial.connect(device, 57600)) {
         debugPrint("USB PORT FAILED TO OPEN");
         return false;
       }
       _device = device;
 
-      await _usbPort!.setDTR(true);
-      await _usbPort!.setRTS(true);
-      await _usbPort!.setPortParameters(57600, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
+      await _serial.setDTR(true);
+      await _serial.setRTS(true);
 
-      _transaction = Transaction.magicHeader(_usbPort!.inputStream as Stream<Uint8List>, [0xFE, 38]);
-      _subscription = _transaction!.stream.listen((data) {
-        final ga = mavlink.decodeMavlink(data);
-        if (ga != null) {
-          if (!settingsMgr.adsbFilters.value.contains(ga.id)) {
-            planes[ga.id] = ga;
-          }
-          heartbeat();
-        }
-      }, onError: (e) {
-        debugPrint("USB SERIAL ERROR: ${e.toString()}");
-      }, onDone: () {
-        debugPrint("USB SERIAL DONE");
-      }, cancelOnError: false);
       debugPrint("USB PORT CONNECTED");
       return true;
     } catch (err, trace) {
       error("USB error (adsb)", errorMessage: err.toString(), errorStackTrace: trace);
       return false;
+    } finally {
+      _connecting = false;
+    }
+  }
+
+  Future<void> _disconnect() async {
+    if (_device == null) return;
+    _device = null;
+    _framer.clear();
+    try {
+      await _serial.disconnect();
+    } catch (err, trace) {
+      error("USB error (adsb)", errorMessage: err.toString(), errorStackTrace: trace);
     }
   }
 
   void _getPorts() async {
-    List<UsbDevice> devices = await UsbSerial.listDevices();
-    if (!devices.contains(_device)) {
-      _connectTo(null);
+    if (_connecting) return;
+    final List<DeviceInfo> devices;
+    try {
+      devices = await _serial.getAvailableDevices();
+    } catch (err) {
+      debugPrint("USB list devices failed: $err");
+      return;
     }
+    final names = devices.map((e) => e.deviceName).toSet();
+
+    // Allow retry once a failed device is unplugged.
+    _failedDevices.retainWhere(names.contains);
+
+    if (_device != null && !names.contains(_device!.deviceName)) {
+      await _disconnect();
+    }
+    if (_device != null) return;
 
     for (final device in devices) {
-      debugPrint("${device.productName}, ${device.serial}, ${device.pid}, ${device.vid}");
-      if ((device.productName ?? "").contains("UART")) {
-        _connectTo(device);
-
-        // Go ahead and turn ADSB on.
-        enabled = true;
+      if (_failedDevices.contains(device.deviceName)) continue;
+      debugPrint("${device.productName}, ${device.serialNumber}, ${device.productId}, ${device.vendorId}");
+      if (device.productName.contains("UART")) {
+        if (await _connectTo(device)) {
+          // Go ahead and turn ADSB on.
+          enabled = true;
+        } else {
+          _failedDevices.add(device.deviceName);
+        }
+        break;
       }
     }
   }
@@ -145,10 +160,21 @@ class ADSB with ChangeNotifier {
     context = ctx;
 
     if (Platform.isAndroid) {
-      UsbSerial.usbEventStream!.listen((UsbEvent event) {
-        _getPorts();
+      _serialSubscription = _serial.getSerialMessageListener().receiveBroadcastStream().listen(_onSerialData,
+          onError: (e) {
+        debugPrint("USB SERIAL ERROR: ${e.toString()}");
+      }, cancelOnError: false);
+
+      _connectionSubscription = _serial.getDeviceConnectionListener().receiveBroadcastStream().listen((connected) {
+        if (connected == false && _device != null) {
+          debugPrint("USB SERIAL DISCONNECTED");
+          _device = null;
+          _framer.clear();
+        }
       });
 
+      // No USB attach/detach events in flutter_serial_communication, so poll.
+      _usbPollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _getPorts());
       _getPorts();
     }
   }
@@ -165,7 +191,10 @@ class ADSB with ChangeNotifier {
     if (sock != null) sock!.close();
     super.dispose();
     if (Platform.isAndroid) {
-      _connectTo(null);
+      _usbPollTimer?.cancel();
+      _serialSubscription?.cancel();
+      _connectionSubscription?.cancel();
+      _disconnect();
     }
   }
 

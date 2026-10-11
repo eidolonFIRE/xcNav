@@ -547,6 +547,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.33"
+  flutter_serial_communication:
+    dependency: "direct main"
+    description:
+      name: flutter_serial_communication
+      sha256: "5ef6696dac2a2b31737a65981b2042f77f470131570d87fafbbfb55dce9be2b1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.8"
   flutter_slidable:
     dependency: "direct main"
     description:
@@ -1530,15 +1538,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.5"
-  usb_serial:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: master
-      resolved-ref: a5c097992829386d8a869fb93062f76d545f19f6
-      url: "https://github.com/jymden/usbserial.git"
-    source: git
-    version: "0.5.1"
   uuid:
     dependency: transitive
     description:

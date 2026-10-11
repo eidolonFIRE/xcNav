@@ -15,7 +15,7 @@ publish_to: none # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.10.40+261
+version: 2.11.0+262
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -64,12 +64,7 @@ dependencies:
   network_info_plus: ^7.0.0
   url_launcher: ^6.1.2
   crypto: ^3.0.2
-  # usb_serial: ^0.5.1
-  # temporary fix
-  usb_serial:
-    git:
-      url: https://github.com/jymden/usbserial.git
-      ref: master
+  flutter_serial_communication: ^0.2.8
   latlong2: ^0.9.0
   collection: ^1.16.0
   open_file: any
