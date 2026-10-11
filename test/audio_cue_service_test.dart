@@ -15,6 +15,7 @@ import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/message.dart';
 import 'package:xcnav/models/pilot.dart';
+import 'package:xcnav/models/vector.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/settings_service.dart';
@@ -271,5 +272,47 @@ void main() {
     cueService.mode = null;
     cueService.cueGroupAwareness(myGeo);
     expect(ttsService.msgQueue, isEmpty);
+  });
+
+  test("groupAwareness - split same vector by distance", () {
+    final group = Group();
+    group.pilots = {
+      // ~2.2km north
+      "near": Pilot("near", "Carl", null, Geo(lat: -36.98, lng: 122, alt: 500)),
+      // ~2.4km north, close enough to group with Carl
+      "near2": Pilot("near2", "Dave", null, Geo(lat: -36.978, lng: 122, alt: 500)),
+      // ~6.7km north
+      "far": Pilot("far", "Frank", null, Geo(lat: -36.94, lng: 122, alt: 500)),
+    };
+    cueService = AudioCueService(ttsService: ttsService, group: group, activePlan: ActivePlan());
+    cueService.mode = 2;
+
+    cueService.cueGroupAwareness(Geo(lat: -37, lng: 122, alt: 500, hdg: 0));
+
+    final texts = ttsService.msgQueue.map((element) => element.text).toList();
+    expect(texts.length, 2);
+    expect(texts.where((e) => e.contains("Carl") && e.contains("Dave") && !e.contains("Frank")).length, 1);
+    expect(texts.where((e) => e.contains("Frank") && !e.contains("Carl")).length, 1);
+  });
+
+  test("splitClusterByDist", () {
+    final vectors = {
+      "a": Vector(0, 1000),
+      "b": Vector(0, 1200),
+      "c": Vector(0, 3000),
+      // big ratio but small gap: stays together
+      "d": Vector(0, 100),
+      "e": Vector(0, 300),
+    };
+    expect(AudioCueService.splitClusterByDist(["c", "a", "b"], vectors), [
+      ["a", "b"],
+      ["c"]
+    ]);
+    expect(AudioCueService.splitClusterByDist(["d", "e"], vectors), [
+      ["d", "e"]
+    ]);
+    expect(AudioCueService.splitClusterByDist(["a"], vectors), [
+      ["a"]
+    ]);
   });
 }

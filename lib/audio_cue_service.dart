@@ -121,6 +121,12 @@ class AudioCueService {
   static const groupProxmityV = 100;
   static const groupRadialSize = pi / 6.0;
 
+  /// Pilots on the same vector are split when the farther is this many times the nearer distance...
+  static const groupDistRatio = 2.0;
+
+  /// ...and the gap between them is at least this far (meters).
+  static const groupDistMinGap = 1000;
+
   // --- Hysterisis in reporting
   LastReport<double>? lastAlt;
   LastReport<double>? lastSpd;
@@ -442,6 +448,30 @@ class AudioCueService {
     }
   }
 
+  /// Split a cluster of pilots (on the same vector) into sub-clusters by distance.
+  /// Order within each sub-cluster is preserved.
+  static List<List<String>> splitClusterByDist(List<String> cluster, Map<String, Vector> pilotVectors) {
+    if (cluster.length < 2) return [cluster];
+
+    final byDist = cluster.toList();
+    byDist.sort((a, b) => pilotVectors[a]!.value.compareTo(pilotVectors[b]!.value));
+
+    final List<Set<String>> groups = [
+      {byDist.first}
+    ];
+    for (int i = 1; i < byDist.length; i++) {
+      final prev = pilotVectors[byDist[i - 1]]!.value;
+      final next = pilotVectors[byDist[i]]!.value;
+      if (next - prev >= groupDistMinGap && next >= prev * groupDistRatio) {
+        groups.add({byDist[i]});
+      } else {
+        groups.last.add(byDist[i]);
+      }
+    }
+
+    return groups.map((g) => cluster.where((e) => g.contains(e)).toList()).toList();
+  }
+
   void cueGroupAwareness(Geo myGeo) {
     if (mode != null && (config["Group Awareness"] ?? false)) {
       final activePilots = group.activePilots.toList();
@@ -534,6 +564,12 @@ class AudioCueService {
         // Don't let us do this too long;
         maxIter--;
       }
+
+      // Split radial clusters where pilots are at very different distances
+      final splitClusters = clusters.expand((e) => splitClusterByDist(e, pilotVectors)).toList();
+      clusters
+        ..clear()
+        ..addAll(splitClusters);
 
       // debugPrint("Clusters: ${clusters.toString()}");
 
