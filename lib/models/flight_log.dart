@@ -40,9 +40,9 @@ class FlightLog {
   String get title {
     if (goodFile) {
       if (_customTitle != null && _customTitle!.isNotEmpty) {
-        return "${DateFormat("MMM d").format(DateTime.fromMillisecondsSinceEpoch(samples.first.time))} - $_customTitle";
+        return "${DateFormat("MMM d").format(startTimeOriginal!)} - $_customTitle";
       } else {
-        return DateFormat("MMM d - yyyy").format(DateTime.fromMillisecondsSinceEpoch(samples.first.time));
+        return DateFormat("MMM d - yyyy").format(startTimeOriginal!);
       }
     } else {
       return "Broken Log! $filename";
@@ -64,10 +64,30 @@ class FlightLog {
   String? get imported => _imported;
 
   // =========================================
-  int? _timezone;
+  Duration? _utcOffset;
 
-  /// Timezone offset
-  int? get timezone => _timezone;
+  /// UTC offset of the timezone the log was recorded in. (null if unknown)
+  ///
+  /// This is the offset in effect at time of recording, so it already accounts for daylight savings.
+  Duration? get utcOffset => _utcOffset;
+
+  /// Convert an absolute time into the wall-clock time where the log was recorded.
+  ///
+  /// When the original timezone is known, the result is flagged as UTC so its fields (hour, day, ...) are not shifted
+  /// again into the viewer's timezone. Only use the result for display, not for comparing against other timestamps.
+  DateTime toOriginalTime(DateTime time) {
+    if (_utcOffset == null) return time.toLocal();
+    return time.toUtc().add(_utcOffset!);
+  }
+
+  /// Inverse of [toOriginalTime]. Takes the wall-clock fields of [originalTime] as being in the recorded timezone.
+  DateTime fromOriginalTime(DateTime originalTime) {
+    if (_utcOffset == null) return originalTime;
+    final t = originalTime;
+    return DateTime.utc(t.year, t.month, t.day, t.hour, t.minute, t.second, t.millisecond)
+        .subtract(_utcOffset!)
+        .toLocal();
+  }
 
   // =========================================
   Gear? _gear;
@@ -177,25 +197,11 @@ class FlightLog {
   DateTime? get startTime => samples.isEmpty ? null : DateTime.fromMillisecondsSinceEpoch(samples.first.time);
   DateTime? get endTime => samples.isEmpty ? null : DateTime.fromMillisecondsSinceEpoch(samples.last.time);
 
-  /// In original timezone
-  DateTime? get startTimeOriginal {
-    if (timezone != null) {
-      // timezone adjusted
-      return startTime?.add(DateTime.now().timeZoneOffset).subtract(Duration(hours: timezone!));
-    } else {
-      return startTime;
-    }
-  }
+  /// In original timezone. (see [toOriginalTime])
+  DateTime? get startTimeOriginal => startTime == null ? null : toOriginalTime(startTime!);
 
-  /// In original timezone
-  DateTime? get endTimeOriginal {
-    if (timezone != null) {
-      // timezone adjusted
-      return endTime?.add(DateTime.now().timeZoneOffset).subtract(Duration(hours: timezone!));
-    } else {
-      return endTime;
-    }
-  }
+  /// In original timezone. (see [toOriginalTime])
+  DateTime? get endTimeOriginal => endTime == null ? null : toOriginalTime(endTime!);
 
   // =========================================
   // int speedHistOffset = 0;
@@ -416,7 +422,7 @@ class FlightLog {
   Future<String> export({String fileType = "json"}) async {
     String outFilename = "";
     if (samples.isNotEmpty) {
-      outFilename = DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.fromMillisecondsSinceEpoch(samples[0].time));
+      outFilename = DateFormat("yyyy_MM_dd_hh_mm").format(startTimeOriginal!);
     } else {
       outFilename = p.basenameWithoutExtension(filename ?? DateFormat("yyyy_MM_dd_hh_mm").format(DateTime.now()));
     }
@@ -471,7 +477,7 @@ class FlightLog {
         gear: gear,
         filename: filename,
         imported: _imported,
-        timezone: _timezone,
+        utcOffset: _utcOffset,
         bleDevicesJson: bleDevicesJson);
     return newLog;
   }
@@ -500,7 +506,7 @@ class FlightLog {
       this.waypoints = const [],
       this.gForceSamples = const [],
       String? imported,
-      int? timezone,
+      Duration? utcOffset,
       List<FuelReport> fuelReports = const [],
       Gear? gear,
       String? filename,
@@ -509,7 +515,7 @@ class FlightLog {
       goodFile = false;
       throw "Creating FlightLog without samples";
     }
-    _timezone = timezone;
+    _utcOffset = utcOffset;
     _imported = imported;
     _filename = filename;
     fuelReportController = FuelReportController(fuelReports: fuelReports);
@@ -533,9 +539,13 @@ class FlightLog {
         _imported = data["imported"];
       }
 
+      // "utcOffsetMinutes" is preferred. "timezone" (whole hours) is legacy, still written for older app versions.
+      final maybeOffsetMinutes = data["utcOffsetMinutes"];
       final maybeTimezone = data["timezone"];
-      if (maybeTimezone != null) {
-        _timezone = data["timezone"];
+      if (maybeOffsetMinutes is num) {
+        _utcOffset = Duration(minutes: maybeOffsetMinutes.round());
+      } else if (maybeTimezone is num) {
+        _utcOffset = Duration(minutes: (maybeTimezone * 60).round());
       }
 
       // --- Parse Gear
@@ -607,7 +617,9 @@ class FlightLog {
     unsaved = false;
     samples = [];
 
+    // UTC midnight of the flight date. IGC "B" record times are UTC.
     DateTime? dateOffset;
+    int? lastTimeOfDay;
 
     // These are not supported in IGC
     fuelReportController = FuelReportController();
@@ -618,15 +630,17 @@ class FlightLog {
     try {
       for (final line in data.split("\n")) {
         // parse each line
-        if (RegExp(r"HFDTE[0-9]+").firstMatch(line) != null) {
-          // (HFDTEDDMMYY) UTC date this file was recorded
-          dateOffset = DateTime(int.parse(line.substring(9, 11)) + 2000, int.parse(line.substring(7, 9)),
-              int.parse(line.substring(5, 7)));
+        final dateMatch = RegExp(r"^HFDTE(?:DATE:)?(\d{2})(\d{2})(\d{2})").firstMatch(line);
+        if (dateMatch != null) {
+          // (HFDTEDDMMYY or HFDTEDATE:DDMMYY,NN) UTC date this file was recorded
+          dateOffset ??= DateTime.utc(int.parse(dateMatch.group(3)!) + 2000, int.parse(dateMatch.group(2)!),
+              int.parse(dateMatch.group(1)!));
         } else if (line.startsWith("HFTZNTIMEZONE:")) {
-          // Timezone offset
-          _timezone = int.parse(line.substring(("HFTZNTIMEZONE:").length));
-          assert(dateOffset != null);
-          dateOffset!.subtract(Duration(hours: timezone!));
+          // Timezone offset in hours. May be fractional. (ex: "-7", "+5.5", "2.00")
+          final hours = double.tryParse(line.substring(("HFTZNTIMEZONE:").length).trim());
+          if (hours != null) {
+            _utcOffset = Duration(minutes: (hours * 60).round());
+          }
         } else if (line.startsWith("HFGTYGLIDERTYPE:")) {
           // Glider type
           gear ??= Gear();
@@ -660,16 +674,22 @@ class FlightLog {
           final alt = double.parse(line.substring(30, 30 + 5));
 
           assert(dateOffset != null);
+          final timeOfDay = Duration(
+                  hours: int.parse(line.substring(1, 3)),
+                  minutes: int.parse(line.substring(3, 5)),
+                  seconds: int.parse(line.substring(5, 7)))
+              .inMilliseconds;
+          if (lastTimeOfDay != null && timeOfDay < lastTimeOfDay - const Duration(hours: 12).inMilliseconds) {
+            // Rolled past UTC midnight
+            dateOffset = dateOffset!.add(const Duration(days: 1));
+          }
+          lastTimeOfDay = timeOfDay;
+
           final newGeo = Geo(
               lat: lat,
               lng: lng,
               alt: alt,
-              timestamp: dateOffset!
-                  .add(Duration(
-                      hours: int.parse(line.substring(1, 3)),
-                      minutes: int.parse(line.substring(3, 5)),
-                      seconds: int.parse(line.substring(5, 7))))
-                  .millisecondsSinceEpoch);
+              timestamp: dateOffset!.millisecondsSinceEpoch + timeOfDay);
           // debugPrint("Geo ${newGeo.lat}, ${newGeo.lng}, ${newGeo.alt}");
 
           if (samples.isEmpty || newGeo.time > samples.last.time) {
@@ -716,8 +736,10 @@ class FlightLog {
     if (imported != null) {
       dict["imported"] = imported;
     }
-    if (timezone != null) {
-      dict["timezone"] = timezone;
+    if (utcOffset != null) {
+      dict["utcOffsetMinutes"] = utcOffset!.inMinutes;
+      // Legacy field for older app versions
+      dict["timezone"] = utcOffset!.inHours;
     }
     if (bleDevicesJson != null) {
       dict["ble_devices"] = bleDevicesJson;
@@ -829,7 +851,7 @@ class FlightLog {
           for (final geo in samples) {
             builder.element("trkpt", attributes: {"lat": geo.lat.toString(), "lon": geo.lng.toString()}, nest: () {
               builder.element("ele", nest: geo.alt.toString());
-              builder.element("time", nest: DateTime.fromMillisecondsSinceEpoch(geo.time).toIso8601String());
+              builder.element("time", nest: DateTime.fromMillisecondsSinceEpoch(geo.time, isUtc: true).toIso8601String());
             });
           }
         });

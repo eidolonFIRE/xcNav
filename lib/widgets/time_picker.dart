@@ -31,7 +31,9 @@ class _WheelPickerTimeState extends State<WheelPickerTime> {
   void _onTimeChanged() {
     final hour = _hoursWheel.selected + widget.validRange.start.hour;
     final minute = (_minutesWheel.selected + widget.validRange.start.minute) % 60;
-    final time = DateTime(widget.initialTime.year, widget.initialTime.month, widget.initialTime.day, hour, minute);
+    final time = widget.initialTime.isUtc
+        ? DateTime.utc(widget.initialTime.year, widget.initialTime.month, widget.initialTime.day, hour, minute)
+        : DateTime(widget.initialTime.year, widget.initialTime.month, widget.initialTime.day, hour, minute);
     _periodWheel.shiftTo(time.hour >= 12 ? 1 : 0);
     debugPrint("Time: $time, ${time.hour}");
     widget.onTimeChanged?.call(time);

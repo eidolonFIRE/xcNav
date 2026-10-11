@@ -7,8 +7,18 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/time_picker.dart';
 
+/// [toDisplayTime] and [fromDisplayTime] optionally map times to/from the timezone shown in the picker.
 Future<FuelReport?> dialogEditFuelReport(
-    {required BuildContext context, required DateTime time, required DateTimeRange validRange, double? amount}) async {
+    {required BuildContext context,
+    required DateTime time,
+    required DateTimeRange validRange,
+    double? amount,
+    DateTime Function(DateTime)? toDisplayTime,
+    DateTime Function(DateTime)? fromDisplayTime}) async {
+  if (toDisplayTime != null) {
+    time = toDisplayTime(time);
+    validRange = DateTimeRange(start: toDisplayTime(validRange.start), end: toDisplayTime(validRange.end));
+  }
   return showDialog<FuelReport?>(
       context: context,
       builder: (context) {
@@ -88,7 +98,8 @@ Future<FuelReport?> dialogEditFuelReport(
               ElevatedButton.icon(
                   onPressed: () {
                     if (amountFormKey.currentState?.validate() ?? false) {
-                      Navigator.pop(context, FuelReport(time, parseAsDouble(fuelAmountController.text) ?? 0));
+                      Navigator.pop(context,
+                          FuelReport(fromDisplayTime?.call(time) ?? time, parseAsDouble(fuelAmountController.text) ?? 0));
                     }
                   },
                   icon: const Icon(

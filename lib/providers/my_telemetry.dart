@@ -569,7 +569,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Future saveFlight() async {
     if (recordGeo.length > 10) {
       final log = FlightLog(
-          timezone: DateTime.now().timeZoneOffset.inHours,
+          // Offset in effect at launch (handles daylight savings and fractional-hour zones)
+          utcOffset: DateTime.fromMillisecondsSinceEpoch(recordGeo.first.time).timeZoneOffset,
           samples: recordGeo.toList(),
           // Note: gForce samples smoothed and simplified during time of save
           gForceSamples: douglasPeuckerTimestamped(gaussianFilterTimestamped(gForceRecord, 1, 3).toList(), 0.02),

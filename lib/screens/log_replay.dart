@@ -163,7 +163,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
             context: context,
             time: log.fuelReportController.fuelReports[reportIndex].time,
             amount: log.fuelReportController.fuelReports[reportIndex].amount,
-            validRange: log.timeRange!)
+            validRange: log.timeRange!,
+            toDisplayTime: log.toOriginalTime,
+            fromDisplayTime: log.fromOriginalTime)
         .then((newReport) {
       setState(() {
         if (newReport != null) {
@@ -712,7 +714,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                               shrinkWrap: true,
                               children:
                                   // Start of flight
-                                  <Widget>[TimeCard(time: log.startTime, text: "Launch".tr())] +
+                                  <Widget>[TimeCard(time: log.startTimeOriginal, text: "Launch".tr())] +
 
                                       // Fuel reports
                                       log.fuelReportController
@@ -770,7 +772,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                                                         2)
                                                                     .round()),
                                                                 amount: null,
-                                                                validRange: log.timeRange!)
+                                                                validRange: log.timeRange!,
+                                                                toDisplayTime: log.toOriginalTime,
+                                                                fromDisplayTime: log.fromOriginalTime)
                                                             .then((newReport) {
                                                           if (newReport != null) {
                                                             setState(() {
@@ -815,7 +819,9 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                                               ? log.startTime!
                                                               : log.endTime!,
                                                           amount: null,
-                                                          validRange: log.timeRange!)
+                                                          validRange: log.timeRange!,
+                                                          toDisplayTime: log.toOriginalTime,
+                                                          fromDisplayTime: log.fromOriginalTime)
                                                       .then((newReport) {
                                                     if (newReport != null) {
                                                       setState(() {
@@ -829,7 +835,7 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                               visualDensity: VisualDensity.compact,
                                               icon: const Icon(Icons.add, color: Colors.white, size: 26)),
                                         // End of flight
-                                        TimeCard(time: log.endTime, text: "Landing".tr()),
+                                        TimeCard(time: log.endTimeOriginal, text: "Landing".tr()),
                                       ]),
                         ),
                       ),
@@ -968,7 +974,8 @@ class FuelEntryCard extends StatelessWidget {
           width: 200,
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Container(),
-            Text(intl.DateFormat("h:mm a").format(log.fuelReportController.fuelReports[reportIndex].time)),
+            Text(intl.DateFormat("h:mm a")
+                .format(log.toOriginalTime(log.fuelReportController.fuelReports[reportIndex].time))),
             Text.rich(TextSpan(children: [
               // Icon
               WidgetSpan(child: Icon(Icons.local_gas_station, size: 18)),
