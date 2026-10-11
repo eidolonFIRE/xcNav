@@ -19,6 +19,7 @@ import 'package:xcnav/util.dart';
 
 final _notamIdExpr = RegExp(r"(\d/[\d]{4})");
 final dateFormat = DateFormat("mm/dd/yyyy");
+const _maxDistance = 600 * 1609.344;
 
 List<TFR>? _loadedTFRs;
 DateTime? _loadedTFRsTime;
@@ -128,7 +129,9 @@ Future<List<TFR?>?> _fetchTfrs(LatLng center) async {
       // Found tfr row
       final notamID = _notamIdExpr.firstMatch(row[1].text)!.group(1)!.replaceAll("/", "_");
       final stateCode = row[3].text;
-      if (stateCode != "USA" && latlngCalc.distance(center, stateCentroids[stateCode]!) < 600 * 1609.344) {
+      final stateCentroid = stateCentroids[stateCode];
+      // Nation-wide TFRs (ex: Washington DC SFRA) have no state, so they're filtered by shape after parsing.
+      if (stateCentroid == null || latlngCalc.distance(center, stateCentroid) < _maxDistance) {
         // https://tfr.faa.gov/save_pages/detail_3_3397.xml
         final tfrUri = Uri.tryParse("https://tfr.faa.gov/save_pages/detail_$notamID.xml");
         if (tfrUri != null) {
@@ -136,8 +139,11 @@ Future<List<TFR?>?> _fetchTfrs(LatLng center) async {
           final tfrDocument = XmlDocument.parse((await http.get(tfrUri)).body);
           try {
             final tfr = TFR.fromXML(tfrDocument);
-            completer.complete(tfr);
-            return;
+            if (stateCentroid != null ||
+                tfr.shapes.any((shape) => shape.any((p) => latlngCalc.distance(center, p) < _maxDistance))) {
+              completer.complete(tfr);
+              return;
+            }
           } catch (err, trace) {
             final msg = "Couldn't parse TFR: ${tfrUri.toString()}";
             error(msg,
