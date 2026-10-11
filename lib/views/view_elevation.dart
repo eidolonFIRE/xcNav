@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/spike_filter.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -70,7 +71,9 @@ class ViewElevationState extends State<ViewElevation> {
         values.add(ElevSample(sampleLatlng, dist * distScale, elev));
       }
     }
-    return values;
+    // Drop spurious DEM samples so they don't blow out the plot range.
+    // Allow up to a 1:1 slope between samples before calling it a spike (but never less than 300m).
+    return rejectSpikes(values, (ElevSample e) => e.elev, max(300, sampleInterval).toDouble());
   }
 
   @override
@@ -107,8 +110,8 @@ class ViewElevationState extends State<ViewElevation> {
                                           .subtract(lookBehind!)
                                       : DateTime.fromMillisecondsSinceEpoch(myTelemetry.recordGeo.first.time),
                                   interval: const Duration(seconds: 30)),
-                              doSamples(
-                                  myTelemetry.recordGeo.last, activePlan.getSelectedWp(), myTelemetry.speedSmooth.value),
+                              doSamples(myTelemetry.recordGeo.last, activePlan.getSelectedWp(),
+                                  myTelemetry.speedSmooth.value),
                               distScale,
                               waypoint: activePlan.getSelectedWp(),
                               waypointETA: waypointETA,

@@ -119,6 +119,9 @@ double _sampleByteData(ByteData data, int w, double x, double y) {
   return ((r * 256 + g + b.toDouble() / 256) - 32768);
 }
 
+/// Physically plausible ground elevation (meters). Lowest land is ~-430m (Dead Sea), highest ~8849m (Everest).
+bool isValidElevation(double elev) => elev > -500 && elev < 9000;
+
 /// Sample the DEM layer. (digital elevation map)
 /// Returns elevation in Meters
 double? sampleDem(LatLng latlng, bool highRes) {
@@ -128,7 +131,9 @@ double? sampleDem(LatLng latlng, bool highRes) {
 
   // Check cache first
   if (_tileCacheData.containsKey(pointAddress)) {
-    return _sampleByteData(_tileCacheData[pointAddress]!, _tileCacheWidth[pointAddress]!, point.x, point.y);
+    final elev = _sampleByteData(_tileCacheData[pointAddress]!, _tileCacheWidth[pointAddress]!, point.x, point.y);
+    // Reject no-data / corrupt pixels (e.g. rgb 0,0,0 decodes to -32768m) and deep bathymetry.
+    return isValidElevation(elev) ? elev : null;
   } else {
     if (!_fetchQueue.contains(pointAddress)) {
       // Schedule this tile to be pulled
