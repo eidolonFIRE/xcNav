@@ -43,9 +43,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final pageIndexNames = ["Menu", "Map", "Side", "Points", "Chat"];
 
   @override
-  _MyHomePageState();
-
-  @override
   void dispose() {
     super.dispose();
   }

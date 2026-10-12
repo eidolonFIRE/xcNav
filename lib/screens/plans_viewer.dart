@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -31,11 +30,10 @@ class PlansViewer extends StatefulWidget {
 
 class _PlansViewerState extends State<PlansViewer> {
   void selectKmlImport(BuildContext context, Plans plans) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ["kml"]);
+    PlatformFile? result = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ["kml"]);
 
     if (result != null) {
-      File file = File(result.files.single.path!);
-      file.readAsString().then((data) async {
+      result.xFile.readAsString().then((data) async {
         final document = XmlDocument.parse(data).getElement("kml")!.getElement("Document")!;
 
         // Select which folders to import
@@ -50,7 +48,7 @@ class _PlansViewerState extends State<PlansViewer> {
           }
         }
 
-        final newPlan = FlightPlan.fromKml(result.files.single.name, document, selectedFolders ?? []);
+        final newPlan = FlightPlan.fromKml(result.name, document, selectedFolders ?? []);
         plans.setPlan(newPlan);
       });
     } else {

@@ -107,13 +107,12 @@ class _FlightLogViewerState extends State<FlightLogViewer> with TickerProviderSt
                   case "import":
                     final defaultDir = await getDownloadsDirectory();
 
-                    final results = await FilePicker.platform.pickFiles(
+                    final results = await FilePicker.pickFiles(
                       initialDirectory: defaultDir?.path,
-                      allowMultiple: true,
                       type: FileType.any,
                     );
-                    if (results != null) {
-                      for (final file in results.files) {
+                    if (results.isNotEmpty) {
+                      for (final file in results) {
                         if (file.name.toLowerCase().endsWith("igc")) {
                           try {
                             final rawStr = await file.xFile.readAsString();

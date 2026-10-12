@@ -31,9 +31,6 @@ class _AboutState extends State<About> with SingleTickerProviderStateMixin {
   );
 
   @override
-  _AboutState();
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(

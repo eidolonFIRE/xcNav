@@ -20,12 +20,12 @@ void configLocalNotification() {
   const initializationSettingsIOS = DarwinInitializationSettings();
   const initializationSettings =
       InitializationSettings(android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
-  FlutterLocalNotificationsPlugin().initialize(initializationSettings);
+  FlutterLocalNotificationsPlugin().initialize(settings: initializationSettings);
 }
 
 void tryClearAll() {
   for (final id in _notifications) {
-    FlutterLocalNotificationsPlugin().cancel(id);
+    FlutterLocalNotificationsPlugin().cancel(id: id);
   }
   _notifications.clear();
 }
@@ -50,9 +50,9 @@ void showNotification(String fromPilot, String message) async {
   _notifications.add(id);
 
   await FlutterLocalNotificationsPlugin().show(
-    id,
-    "xcNav - $fromPilot",
-    message,
-    platformChannelSpecifics,
+    id: id,
+    title: "xcNav - $fromPilot",
+    body: message,
+    notificationDetails: platformChannelSpecifics,
   );
 }

@@ -10,6 +10,16 @@ subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 subprojects {
+    // objectbox_flutter_libs 4.x compiles against android-31, which fails AGP 9's AAR metadata check
+    if (project.name == "objectbox_flutter_libs") {
+        afterEvaluate {
+            android {
+                compileSdk 37
+            }
+        }
+    }
+}
+subprojects {
     project.evaluationDependsOn(':app')
 }
 

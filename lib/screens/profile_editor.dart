@@ -42,9 +42,6 @@ class _ProfileEditorState extends State<ProfileEditor> {
   bool isProcessing = false;
 
   @override
-  _ProfileEditorState();
-
-  @override
   void initState() {
     super.initState();
     formKey = GlobalKey<FormState>();

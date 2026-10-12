@@ -246,11 +246,11 @@ Future<bool> saveFileToAppDocs({required String filename, required String data})
     final file = File(filename);
     await file.create(recursive: true);
     await file.writeAsString(data);
-    return Future.value(true);
+    return true;
   } catch (err, trace) {
     error("Failed to save file $filename.",
         errorMessage: err.toString(), errorStackTrace: trace, attributes: {"dataLength": data.length});
-    return Future.value(false);
+    return false;
   }
 }
 

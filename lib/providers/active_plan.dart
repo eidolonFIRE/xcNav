@@ -24,7 +24,6 @@ class ActivePlan with ChangeNotifier {
   /// Points when measument on the map is being made.
   List<LatLng>? mapMeasurement;
 
-  @override
   ActivePlan() {
     load();
   }

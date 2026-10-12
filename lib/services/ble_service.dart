@@ -110,7 +110,7 @@ void scan() async {
 
 Future connect(BluetoothDevice device) async {
   debugPrint("Connecting to device: ${device.advName} ${device.remoteId.str}");
-  await device.connect(license: License.free);
+  await device.connect(license: License.nonprofit);
   // Arm autoScan so we auto-connect if disconnected
   // Timer(Duration(seconds: 30), () {
   //   debugPrint("BLE autoScan armed (was $autoScan)");

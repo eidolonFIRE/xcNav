@@ -47,7 +47,6 @@ class FakeFlight {
   late double windSpd;
   late double windHdg;
 
-  @override
   FakeFlight() {
     rand = Random(DateTime.now().millisecondsSinceEpoch);
 
