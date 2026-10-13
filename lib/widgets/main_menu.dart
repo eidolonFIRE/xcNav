@@ -8,6 +8,7 @@ import 'package:xcnav/audio_cue_service.dart';
 import 'package:xcnav/dialogs/audio_cue_config_dialog.dart';
 import 'package:xcnav/dialogs/edit_gear.dart';
 import 'package:xcnav/providers/profile.dart';
+import 'package:xcnav/services/offline_map_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/widgets/avatar_round.dart';
 
@@ -225,6 +226,22 @@ class _MainMenuState extends State<MainMenu> {
             title: Text("main_menu.log".tr(), style: Theme.of(context).textTheme.headlineSmall)),
 
         Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
+
+        ListTile(
+          minVerticalPadding: 10,
+          onTap: () => {Navigator.popAndPushNamed(context, "/offlineMaps")},
+          leading: const Icon(Icons.download_for_offline, size: 30),
+          title: Text("main_menu.offline_maps".tr(), style: Theme.of(context).textTheme.headlineSmall),
+          trailing: ValueListenableBuilder(
+              valueListenable: offlineMapService.progress,
+              builder: (context, progress, _) => progress == null
+                  ? const SizedBox()
+                  : SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(value: progress.fraction, strokeWidth: 3),
+                    )),
+        ),
 
         ListTile(
             minVerticalPadding: 10,

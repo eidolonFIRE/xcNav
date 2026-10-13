@@ -6,7 +6,44 @@
         "log": "Log",
         "settings": "Settings",
         "devices": "Devices",
-        "about": "About"
+        "about": "About",
+        "offline_maps": "Offline Maps"
+    },
+    "offline_maps": {
+        "title": "Offline Maps",
+        "new_area": "New Area",
+        "empty": "No offline areas yet.\nDownload map areas ahead of time to fly without cell coverage.",
+        "mode_visible": "Visible Area",
+        "mode_polygon": "Draw Polygon",
+        "draw_hint": "Tap the map to draw at least 3 points.",
+        "select_layer": "Select at least one map.",
+        "undo": "Undo",
+        "tiles": "tiles",
+        "size": "Size",
+        "download": "Download",
+        "confirm_title": "Download this area?",
+        "large_title": "Large download!",
+        "large_warning": "This is a large download and will take a long time and a lot of storage. Consider fewer maps or a smaller area.",
+        "throttle_note": "Downloads are throttled to avoid overloading the map servers. Keep the app open until it finishes.",
+        "too_large": "Too large. Reduce the area or select fewer maps.",
+        "pause": "Pause",
+        "resume": "Resume",
+        "update_sectional": "Update Sectional",
+        "sectional_outdated": "Sectional chart is out of date",
+        "confirm_delete": "Delete this offline area?",
+        "status": {
+            "queued": "Queued",
+            "downloading": "Downloading",
+            "paused": "Paused",
+            "complete": "Ready offline",
+            "failed": "Incomplete - tap resume to retry"
+        },
+        "layer": {
+            "topo": "Topo",
+            "sectional": "Sectional",
+            "satellite": "Satellite",
+            "dem": "Elevation"
+        }
     },
     "audio_cue": {
         "Off": "Off",

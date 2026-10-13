@@ -11,6 +11,14 @@ import 'package:xcnav/datadog.dart';
 
 TileLayer? _demTileLayer;
 
+const demUrlTemplate = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+
+/// Zoom levels sampled by [sampleDem]
+const demZoomLevels = [10, 12];
+
+/// Tile layer used as options for bulk downloading DEM tiles
+TileLayer demDownloadLayer() => TileLayer(urlTemplate: demUrlTemplate);
+
 /// Tile addresses to be fetched.
 final Queue<String> _fetchQueue = Queue();
 
@@ -23,16 +31,18 @@ Future initDemCache() async {
   // init elevation map (dem = digital elevation map)
   const demStore = FMTCStore("dem");
   await demStore.manage.create();
-  await demStore.metadata
-      .set(key: 'sourceURL', value: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png');
+  await demStore.metadata.set(key: 'sourceURL', value: demUrlTemplate);
 
   // set the layer
   demStore.manage.ready.then((ready) {
     if (ready) {
       _demTileLayer = TileLayer(
-          urlTemplate: 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+          urlTemplate: demUrlTemplate,
           tileProvider: FMTCTileProvider(
-              stores: {"dem": BrowseStoreStrategy.readUpdateCreate}, cachedValidDuration: const Duration(days: 90)));
+              stores: {"dem": BrowseStoreStrategy.readUpdateCreate},
+              // Offline map downloads
+              otherStoresStrategy: BrowseStoreStrategy.read,
+              cachedValidDuration: const Duration(days: 90)));
     } else {
       error("DEM store not ready!");
     }
@@ -125,7 +135,7 @@ bool isValidElevation(double elev) => elev > -500 && elev < 9000;
 /// Sample the DEM layer. (digital elevation map)
 /// Returns elevation in Meters
 double? sampleDem(LatLng latlng, bool highRes) {
-  final point = _unproject(latlng, highRes ? 12 : 10);
+  final point = _unproject(latlng, highRes ? demZoomLevels[1] : demZoomLevels[0]);
   final pointTile = TileCoordinates(point.x.toInt(), point.y.toInt(), point.z.toInt());
   final pointAddress = "${pointTile.x},${pointTile.y},${pointTile.z}";
 

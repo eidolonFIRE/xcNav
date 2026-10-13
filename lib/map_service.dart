@@ -25,7 +25,9 @@ TileProvider? _makeTileProvider(String instanceName) {
   debugPrint("------ make tile provider \"$instanceName\" ----");
   if (!mapServiceIsInit) return null;
   try {
-    return FMTCTileProvider(stores: {instanceName: BrowseStoreStrategy.readUpdateCreate});
+    // Other stores (offline map downloads) are read-only fallbacks. Tiles are matched by URL, so there's no cross-talk.
+    return FMTCTileProvider(
+        stores: {instanceName: BrowseStoreStrategy.readUpdateCreate}, otherStoresStrategy: BrowseStoreStrategy.read);
   } catch (e, trace) {
     error("FMTC: Error making tile provider",
         errorMessage: e.toString(), errorStackTrace: trace, attributes: {"layerName": instanceName});
@@ -37,6 +39,21 @@ final Map<MapTileSrc, TileLayer> _tileLayersCache = {};
 
 bool _fetchingVfrVersion = false;
 String? _vfrVersion;
+
+/// Current VFR sectional chart cycle (part of the sectional tile URL)
+String? get vfrVersion => _vfrVersion;
+
+/// Deepest zoom level each tile source actually serves
+int mapTileMaxNativeZoom(MapTileSrc src) {
+  switch (src) {
+    case MapTileSrc.sectional:
+      return 11;
+    case MapTileSrc.satellite:
+      return 19;
+    case MapTileSrc.topo:
+      return 16;
+  }
+}
 
 String _getUrlTemplate(MapTileSrc src) {
   switch (src) {
@@ -56,7 +73,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
       return TileLayer(
         urlTemplate: _getUrlTemplate(tileSrc),
         tileProvider: _makeTileProvider(tileName),
-        maxNativeZoom: 11,
+        maxNativeZoom: mapTileMaxNativeZoom(tileSrc),
         tms: true,
         panBuffer: 0,
         evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
@@ -69,7 +86,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
       return TileLayer(
         urlTemplate: _getUrlTemplate(tileSrc),
         tileProvider: _makeTileProvider(tileName),
-        maxNativeZoom: 19,
+        maxNativeZoom: mapTileMaxNativeZoom(tileSrc),
         minZoom: 2,
         panBuffer: 0,
         evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
@@ -113,7 +130,7 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
         // fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
         // urlTemplate: "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png", // Use this line to test seeing the elevation map
         tileProvider: _makeTileProvider(tileName),
-        maxNativeZoom: 16,
+        maxNativeZoom: mapTileMaxNativeZoom(tileSrc),
         panBuffer: 0,
         // minZoom: 2,
         // additionalOptions: const {"apiKey": "d9344714a8fbf28773ce4c955ea8adfb"},
@@ -124,6 +141,10 @@ TileLayer _buildMapTileLayer(MapTileSrc tileSrc) {
       );
   }
 }
+
+/// Bare tile layer for bulk downloading / counting tiles. Must match the URL scheme of [getMapTileLayer].
+TileLayer mapTileDownloadLayer(MapTileSrc tileSrc) =>
+    TileLayer(urlTemplate: _getUrlTemplate(tileSrc), tms: tileSrc == MapTileSrc.sectional);
 
 TileLayer getMapTileLayer(MapTileSrc tileSrc) {
   if (_tileLayersCache.containsKey(tileSrc)) {

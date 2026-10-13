@@ -44,6 +44,8 @@ import 'package:xcnav/screens/plans_viewer.dart';
 import 'package:xcnav/screens/group_details.dart';
 import 'package:xcnav/screens/about.dart';
 import 'package:xcnav/screens/weather_viewer.dart';
+import 'package:xcnav/screens/offline_maps.dart';
+import 'package:xcnav/screens/offline_area_editor.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
@@ -55,6 +57,7 @@ import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/secrets.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/services/ble_service.dart' as ble_service;
+import 'package:xcnav/services/offline_map_service.dart';
 
 LatLng lastKnownLatLng = const LatLng(37, -122);
 const darkishColor = Color.fromARGB(255, 50, 50, 50);
@@ -134,6 +137,7 @@ void main() async {
       }
     }
     await initMapCache();
+    await offlineMapService.init();
 
     if (settingsMgr.rumOptOut.value) {
       addAttribute(settingsMgr.languageOverride.id, settingsMgr.languageOverride.value.toString());
@@ -329,6 +333,8 @@ class XCNav extends StatelessWidget {
         "/servoCarb": (context) => const ServoCarb(),
         "/bleScan": (context) => const ScanScreen(),
         "/xc170Report": (context) => const Xc170ReportScreen(),
+        "/offlineMaps": (context) => const OfflineMaps(),
+        "/offlineAreaEditor": (context) => const OfflineAreaEditor(),
       },
     );
   }

@@ -6,7 +6,44 @@
         "log": "Napló",
         "settings": "Beállítások",
         "devices": "Eszközök",
-        "about": "Névjegy"
+        "about": "Névjegy",
+        "offline_maps": "Offline térképek"
+    },
+    "offline_maps": {
+        "title": "Offline térképek",
+        "new_area": "Új terület",
+        "empty": "Még nincs offline terület.\nTöltsd le előre a térképet, hogy térerő nélkül is repülhess.",
+        "mode_visible": "Látható terület",
+        "mode_polygon": "Sokszög rajzolása",
+        "draw_hint": "Koppints a térképre legalább 3 pont rajzolásához.",
+        "select_layer": "Válassz legalább egy térképet.",
+        "undo": "Visszavonás",
+        "tiles": "csempe",
+        "size": "Méret",
+        "download": "Letöltés",
+        "confirm_title": "Letöltöd ezt a területet?",
+        "large_title": "Nagy letöltés!",
+        "large_warning": "Ez egy nagy letöltés, sokáig tart és sok tárhelyet foglal. Válassz kevesebb térképet vagy kisebb területet.",
+        "throttle_note": "A letöltés lassítva történik, hogy ne terhelje túl a térképszervereket. Tartsd nyitva az alkalmazást, amíg befejeződik.",
+        "too_large": "Túl nagy. Csökkentsd a területet vagy válassz kevesebb térképet.",
+        "pause": "Szünet",
+        "resume": "Folytatás",
+        "update_sectional": "Légiforgalmi térkép frissítése",
+        "sectional_outdated": "A légiforgalmi térkép elavult",
+        "confirm_delete": "Törlöd ezt az offline területet?",
+        "status": {
+            "queued": "Sorban áll",
+            "downloading": "Letöltés",
+            "paused": "Szüneteltetve",
+            "complete": "Offline elérhető",
+            "failed": "Hiányos - koppints a folytatásra"
+        },
+        "layer": {
+            "topo": "Topo",
+            "sectional": "Légiforgalmi",
+            "satellite": "Műhold",
+            "dem": "Domborzat"
+        }
     },
     "audio_cue": {
         "Off": "Ki",
