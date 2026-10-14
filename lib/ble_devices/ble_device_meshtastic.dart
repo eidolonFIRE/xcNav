@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -42,6 +43,7 @@ class BleDeviceMeshtastic extends BleDeviceHandler {
   static const _toRadioUuid = "f75c76d2-129e-4dad-a1dd-7866124401e7";
   static const _fromRadioUuid = "2c55e69e-4993-11ed-b878-0242ac120002";
   static const _fromNumUuid = "ed9da18c-a800-4f66-a670-aa7547e34453";
+  static const _writeAttempts = 3;
 
   final ValueNotifier<MeshtasticStatus> status = ValueNotifier(MeshtasticStatus.disconnected);
 
@@ -140,6 +142,25 @@ class BleDeviceMeshtastic extends BleDeviceHandler {
       return;
     }
 
+    if (Platform.isAndroid) {
+      // Meshtastic needs an encrypted link. Without a bond, the first writes fail with GATT_ERROR (133)
+      // while Android pairs in the background, so pair up front.
+      try {
+        if (await instance.bondState.first != BluetoothBondState.bonded) {
+          debugPrint("Meshtastic: bonding with radio");
+          await instance.createBond();
+        }
+      } catch (error) {
+        dd.warn("Meshtastic bonding failed", attributes: {"error": error.toString()});
+      }
+      // onConnected can run before connect() finishes its MTU request. Make sure packets fit in one write.
+      try {
+        await instance.requestMtu(512);
+      } catch (error) {
+        debugPrint("Meshtastic: failed to request MTU: $error");
+      }
+    }
+
     _connectionSub?.cancel();
     _connectionSub = instance.connectionState.listen((state) {
       if (state == BluetoothConnectionState.disconnected) {
@@ -190,9 +211,19 @@ class BleDeviceMeshtastic extends BleDeviceHandler {
 
   void _write(Uint8List bytes) {
     _writeChain = _writeChain.then((_) async {
-      final toRadio = _toRadio;
-      if (toRadio == null) return;
-      await toRadio.write(bytes, allowLongWrite: bytes.length > (device?.mtuNow ?? 23) - 3);
+      for (int attempt = 1;; attempt++) {
+        final toRadio = _toRadio;
+        if (toRadio == null) return;
+        try {
+          await toRadio.write(bytes, allowLongWrite: bytes.length > (device?.mtuNow ?? 23) - 3);
+          return;
+        } catch (error) {
+          // Transient GATT errors happen while the link is still settling (pairing, MTU, radio rebooting).
+          if (attempt >= _writeAttempts || !(device?.isConnected ?? false)) rethrow;
+          debugPrint("Meshtastic: write failed (attempt $attempt), retrying: $error");
+          await Future.delayed(Duration(milliseconds: 500 * attempt));
+        }
+      }
     }).catchError((error) {
       dd.error("Writing Meshtastic ToRadio", errorMessage: error.toString(), errorKind: "BLE");
     });
