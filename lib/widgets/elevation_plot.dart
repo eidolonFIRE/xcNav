@@ -176,11 +176,9 @@ class ElevationPlot extends StatelessWidget {
                           .map((e) => FlSpot(e.time.toDouble(), e.ground!.toDouble()))
                           .toList(),
                       belowBarData: BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                              colors: [Colors.orange.shade600, Colors.orange.shade600.withAlpha(100)],
-                              begin: Alignment.center,
-                              end: Alignment.bottomCenter))),
+                        show: true,
+                        color: Colors.orange.shade600,
+                      )),
 
                   // --- Future Ground Level
                   LineChartBarData(
@@ -188,11 +186,9 @@ class ElevationPlot extends StatelessWidget {
                       dotData: const FlDotData(show: false),
                       spots: groundData.map((e) => FlSpot(e.dist + last.time, e.elev)).toList(),
                       belowBarData: BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                              colors: [Colors.orange.shade600, Colors.orange.shade600.withAlpha(100)],
-                              begin: Alignment.center,
-                              end: Alignment.bottomCenter))),
+                        show: true,
+                        color: Colors.orange.shade600,
+                      )),
 
                   // --- Pilot Elevation Track
                   LineChartBarData(
