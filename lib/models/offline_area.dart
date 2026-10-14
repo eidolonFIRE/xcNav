@@ -41,11 +41,11 @@ int offlineMaxZoom(MapTileSrc src) {
   final native = mapTileMaxNativeZoom(src);
   switch (src) {
     case MapTileSrc.satellite:
-      return native > 17 ? 17 : native;
+      return native > 15 ? 15 : native;
     case MapTileSrc.sectional:
       return native > 10 ? 10 : native;
     case MapTileSrc.topo:
-      return native;
+      return native > 14 ? 14 : native;
   }
 }
 
