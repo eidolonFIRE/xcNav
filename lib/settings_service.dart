@@ -264,6 +264,11 @@ class SettingsMgr {
   late final SettingConfig<AltimeterMode> audioCueAltimeter;
   late final SettingConfig<List<String>> bleAutoDevices;
 
+  // --- Meshtastic (edited in meshtastic dialog)
+  late final SettingConfig<bool> clientUseCellular;
+  late final SettingConfig<bool> clientUseMesh;
+  late final SettingConfig<int> meshtasticPreset;
+
   late final SettingConfig<int> sp140FuelSaveIntervalMin;
 
   SettingsMgr(SharedPreferences prefs) {
@@ -479,6 +484,14 @@ class SettingsMgr {
 
     bleAutoDevices =
         SettingConfig(this, prefs, "ble", "bleAutoConnectDevices", [], title: "Auto Connect Devices", hidden: true);
+
+    clientUseCellular = SettingConfig(this, prefs, "meshtastic", "clientUseCellular", true,
+        title: "Group over cellular", hidden: true);
+    clientUseMesh =
+        SettingConfig(this, prefs, "meshtastic", "clientUseMesh", true, title: "Group over Meshtastic", hidden: true);
+    // `Config.LoRaConfig.ModemPreset` value (default LONG_FAST)
+    meshtasticPreset =
+        SettingConfig(this, prefs, "meshtastic", "meshtasticPreset", 0, title: "Meshtastic preset", hidden: true);
 
     sp140FuelSaveIntervalMin = SettingConfig(this, prefs, "sp140", "sp140FuelSaveIntervalMin", 5,
         title: "SP140 Fuel Save Interval (minutes)", icon: const Icon(Icons.timer), hidden: true);

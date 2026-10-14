@@ -52,8 +52,18 @@ class _ScanScreenState extends State<ScanScreen> {
           style: const TextStyle(fontSize: 20),
           child: StreamBuilder(
               stream: FlutterBluePlus.scanResults,
-              builder: (context, results) {
-                if (results.hasData && results.data!.isEmpty) {
+              builder: (context, snapshot) {
+                final results = snapshot.data?.where(ble_service.isSupported).toList();
+                // These devices don't advertise once they have a connection, so they won't show back up in the list
+                final scanned = results?.map((e) => e.device).toList() ?? [];
+                final devices = scanned +
+                    [ble_service.getHandler(name: "AiLink_1234"), ble_service.bleDeviceMeshtastic]
+                        .map((e) => e?.device)
+                        .nonNulls
+                        .where((e) => !scanned.contains(e))
+                        .toList();
+
+                if (snapshot.hasData && devices.isEmpty) {
                   return Center(
                       child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -85,13 +95,10 @@ class _ScanScreenState extends State<ScanScreen> {
                             ),
                           ].map((e) => Padding(padding: EdgeInsets.all(8.0), child: e)).toList()));
                 }
-                // This device doesn't advertise once it has a single connection, so it won't show back up in the list
-                final runLeader = ble_service.getHandler(name: "AiLink_1234");
-
                 return ListView.builder(
-                    itemCount: (results.data?.length ?? 0) + (runLeader?.device != null ? 1 : 0),
+                    itemCount: devices.length,
                     itemBuilder: (context, index) {
-                      final device = index < results.data!.length ? results.data![index].device : runLeader!.device!;
+                      final device = devices[index];
 
                       return Card(
                           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),

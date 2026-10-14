@@ -1,4 +1,20 @@
 {
+    "meshtastic": {
+        "title": "Meshtastic",
+        "status_disconnected": "Radio disconnected",
+        "status_configuring": "Configuring radio...",
+        "status_no_region": "LoRa region not set. Set it in the Meshtastic app first.",
+        "status_no_group": "Join a group to set the mesh channel.",
+        "status_error": "Radio didn't accept xcNav settings.",
+        "status_ready": "Ready",
+        "node": "Node",
+        "pilots_heard": "Pilots heard",
+        "channel": "Channel",
+        "preset": "LoRa Preset",
+        "preset_hint": "Everyone in the group must use the same preset.",
+        "use_cellular": "Group over cellular",
+        "use_mesh": "Group over Meshtastic"
+    },
     "main_menu": {
         "group": "Group",
         "checklist": "Checklist",
