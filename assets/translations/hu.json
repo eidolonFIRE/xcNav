@@ -1,4 +1,20 @@
 {
+    "meshtastic": {
+        "title": "Meshtastic",
+        "status_disconnected": "Rádió leválasztva",
+        "status_configuring": "Rádió beállítása...",
+        "status_no_region": "Nincs beállítva LoRa régió. Előbb állítsd be a Meshtastic alkalmazásban.",
+        "status_no_group": "Csatlakozz egy csoporthoz a mesh csatorna beállításához.",
+        "status_error": "A rádió nem fogadta el az xcNav beállításokat.",
+        "status_ready": "Kész",
+        "node": "Csomópont",
+        "pilots_heard": "Hallott pilóták",
+        "channel": "Csatorna",
+        "preset": "LoRa profil",
+        "preset_hint": "A csoportban mindenkinek ugyanazt a profilt kell használnia.",
+        "use_cellular": "Csoport mobilhálózaton",
+        "use_mesh": "Csoport Meshtasticon"
+    },
     "main_menu": {
         "group": "Csoport",
         "checklist": "Ellenőrzőlista",

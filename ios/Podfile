@@ -107,4 +107,36 @@ post_install do |installer|
 
     end
   end
+
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    
+    # Fix objectbox module issue
+    if target.name == 'objectbox_flutter_libs'
+      target.build_configurations.each do |config|
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+        # Don't set MODULEMAP_FILE to empty - remove this line or set it properly
+        config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+      end
+    end
+  end
+end
+
+# Add after the existing post_install block
+post_integrate do |installer|
+  # Fix objectbox_flutter_libs in generated plugin registrant
+  registrant_path = File.join(File.dirname(__FILE__), 'Runner', 'GeneratedPluginRegistrant.m')
+  if File.exist?(registrant_path)
+    text = File.read(registrant_path)
+    
+    # Comment out objectbox import
+    text.gsub!(/^#if __has_include\(<objectbox_flutter_libs.*?\n#endif$/m) do |match|
+      "// ObjectBox Flutter Libs doesn't require plugin registration\n// It's a library dependency only, not a Flutter plugin\n" + match.lines.map { |line| "// #{line}" }.join
+    end
+    
+    # Comment out objectbox registration
+    text.gsub!(/^  \[ObjectboxFlutterLibsPlugin registerWithRegistrar.*?\];$/, '  // ObjectBox Flutter Libs doesn\'t need registration - it\'s a library dependency only\n  // \0')
+    
+    File.write(registrant_path, text)
+  end
 end

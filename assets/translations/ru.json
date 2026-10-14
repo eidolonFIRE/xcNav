@@ -1,4 +1,20 @@
 {
+  "meshtastic": {
+    "title": "Meshtastic",
+    "status_disconnected": "Радио отключено",
+    "status_configuring": "Настройка радио...",
+    "status_no_region": "Регион LoRa не задан. Сначала задайте его в приложении Meshtastic.",
+    "status_no_group": "Присоединитесь к группе, чтобы настроить канал mesh.",
+    "status_error": "Радио не приняло настройки xcNav.",
+    "status_ready": "Готово",
+    "node": "Узел",
+    "pilots_heard": "Слышно пилотов",
+    "channel": "Канал",
+    "preset": "Профиль LoRa",
+    "preset_hint": "Все в группе должны использовать один профиль.",
+    "use_cellular": "Группа через сотовую сеть",
+    "use_mesh": "Группа через Meshtastic"
+  },
   "main_menu": {
     "group": "Группа",
     "checklist": "Контрольный список",

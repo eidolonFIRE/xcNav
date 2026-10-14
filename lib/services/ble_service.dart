@@ -5,6 +5,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
 import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
+import 'package:xcnav/ble_devices/ble_device_meshtastic.dart';
 import 'package:xcnav/ble_devices/ble_device_runleader.dart';
 import 'package:xcnav/ble_devices/ble_device_sp140.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170.dart';
@@ -14,6 +15,7 @@ final BleDeviceXc170 bleDeviceXc170 = BleDeviceXc170();
 final BleDeviceBigBattery bleDeviceBigBattery = BleDeviceBigBattery();
 final BleDeviceRunleader bleDeviceRunleader = BleDeviceRunleader();
 final BleDeviceSp140 bleDeviceSp140 = BleDeviceSp140();
+final BleDeviceMeshtastic bleDeviceMeshtastic = BleDeviceMeshtastic();
 
 final Map<String, BleDeviceHandler> _deviceHandlersByName = {
   r'xc170': bleDeviceXc170,
@@ -22,6 +24,9 @@ final Map<String, BleDeviceHandler> _deviceHandlersByName = {
   r'OpenPPG SP140[.]*': bleDeviceSp140,
 };
 
+/// Devices whose advertised name varies, so they're matched by advertised service instead.
+final List<BleDeviceHandler> _deviceHandlersByService = [bleDeviceMeshtastic];
+
 final Map<String, StreamSubscription<BluetoothConnectionState>> _deviceStateListener = {};
 StreamSubscription<List<ScanResult>>? _devicesListener;
 
@@ -29,7 +34,18 @@ Timer? autoScan;
 bool scanning = false;
 bool alreadyRequestedPermission = false;
 
-BleDeviceHandler? getHandler({String? name, DeviceIdentifier? deviceId}) {
+/// Scan result is a device we know how to talk to.
+bool isSupported(ScanResult result) =>
+    getHandler(name: result.device.advName, serviceUuids: result.advertisementData.serviceUuids) != null;
+
+BleDeviceHandler? getHandler({String? name, List<Guid>? serviceUuids, DeviceIdentifier? deviceId}) {
+  if (serviceUuids != null) {
+    for (final each in _deviceHandlersByService) {
+      if (serviceUuids.contains(Guid(each.SERVICE_UUID))) {
+        return each;
+      }
+    }
+  }
   if (name != null) {
     for (final entry in _deviceHandlersByName.entries) {
       final regex = RegExp(entry.key);
@@ -38,7 +54,7 @@ BleDeviceHandler? getHandler({String? name, DeviceIdentifier? deviceId}) {
       }
     }
   } else if (deviceId != null) {
-    for (final each in _deviceHandlersByName.values) {
+    for (final each in [..._deviceHandlersByName.values, ..._deviceHandlersByService]) {
       if (each.device != null && each.device?.remoteId == deviceId) {
         return each;
       }
@@ -65,10 +81,10 @@ void scan() async {
   _devicesListener ??= FlutterBluePlus.scanResults.listen((results) {
     for (ScanResult result in results) {
       final device = result.device;
-      final handler = getHandler(name: device.advName);
+      final handler = getHandler(name: device.advName, serviceUuids: result.advertisementData.serviceUuids);
 
       if (handler == null) {
-        debugPrint("Unknown device found: ${device.advName} ${device.remoteId.str}");
+        // Scan is unfiltered, so most results are unrelated devices.
         continue;
       }
 
@@ -102,10 +118,9 @@ void scan() async {
     }
   });
 
-  await FlutterBluePlus.startScan(
-      withKeywords: ["AiLink_", "xc170", "BigBattery", "OpenPPG SP140"],
-      // withServices: _deviceHandlersByName.values.map((e) => Guid.fromString(e.SERVICE_UUID)).toList(),
-      timeout: Duration(seconds: 10));
+  // NOTE: No scan filter. On Android `withKeywords` can't be combined with `withServices`, and some
+  //       devices (e.g. Meshtastic) are only recognizable by service. Results are filtered with `isSupported`.
+  await FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
 }
 
 Future connect(BluetoothDevice device) async {

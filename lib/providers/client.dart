@@ -1,14 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:xcnav/ble_devices/ble_device_meshtastic.dart';
 
 // --- Models
 import 'package:xcnav/models/error_code.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/mesh_message.dart';
+import 'package:xcnav/models/meshtastic_proto.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
@@ -20,6 +26,8 @@ import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 
 import 'package:xcnav/endpoint.dart';
+import 'package:xcnav/services/ble_service.dart' show bleDeviceMeshtastic;
+import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
 
 enum ClientState {
@@ -44,19 +52,53 @@ class MyHttpOverrides extends HttpOverrides {
   }
 }
 
+/// Most waypoints shared over the mesh at once by [Client.pushWaypoints]
+const int maxMeshWaypointSync = 8;
+
+/// Group client. Talks to the group through the cellular server and/or a Meshtastic radio.
+///
+/// Outgoing messages go out on every enabled link. Incoming messages may arrive on both, so they are de-duped.
 class Client with ChangeNotifier {
   WebSocket? socket;
   ClientState _state = ClientState.disconnected;
+  bool _connecting = false;
+  Timer? _reconnectTimer;
 
   int telemetrySkips = 0;
   int reconnectionWait = 0;
 
   final BuildContext globalContext;
 
+  final ChatDeduper _chatDeduper = ChatDeduper();
+  final TelemetryDeduper _telemetryDeduper = TelemetryDeduper();
+
+  // --- Meshtastic
+  /// Meshtastic node number -> pilot id
+  final Map<int, String> _meshPilots = {};
+  final Map<int, DateTime> _meshInfoRequested = {};
+  String? _meshGroupId;
+  bool _wasMeshReady = false;
+  DateTime? _lastMeshTelemetry;
+  DateTime? _lastMeshAnnounce;
+  String? _lastMeshAnnounceKey;
+  Timer? _meshAnnounceTimer;
+  final Random _rand = Random();
+
   Client(this.globalContext) {
     debugPrint("Build Client");
+    _setupMesh();
     connect();
   }
+
+  /// Cellular can only be turned off while a Meshtastic radio is attached, so the group link can't silently vanish.
+  bool get cellularEnabled => !bleDeviceMeshtastic.isActive || settingsMgr.clientUseCellular.value;
+
+  bool get meshEnabled => settingsMgr.clientUseMesh.value;
+
+  bool get meshReady => meshEnabled && bleDeviceMeshtastic.isReady;
+
+  /// No link to the group is up.
+  bool get isOffline => state == ClientState.disconnected && !meshReady;
 
   void sendToAWS(String action, dynamic payload) {
     debugPrint("TX: ${jsonEncode({"action": action, "body": payload})}");
@@ -86,28 +128,39 @@ class Client with ChangeNotifier {
   set state(ClientState newState) {
     _state = newState;
     if (newState == ClientState.disconnected) {
-      debugPrint("Reconnecting in ${reconnectionWait}sec...");
-      if (socket != null) {
-        socket!.close().then((value) {
-          Timer(Duration(seconds: reconnectionWait), (() => connect()));
-        });
-      } else {
-        Timer(Duration(seconds: reconnectionWait), (() => connect()));
+      final oldSocket = socket;
+      socket = null;
+      oldSocket?.close();
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
+      if (cellularEnabled) {
+        debugPrint("Reconnecting in ${reconnectionWait}sec...");
+        _reconnectTimer = Timer(Duration(seconds: reconnectionWait), (() => connect()));
       }
     }
     notifyListeners();
   }
 
   void connect() async {
+    if (!cellularEnabled || _connecting || socket != null) return;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     reconnectionWait += 1;
 
     if (serverEndpoint == null) {
       debugPrint("Waiting for server to be selected.");
       state = ClientState.disconnected;
     } else {
+      _connecting = true;
       HttpOverrides.global = MyHttpOverrides(serverEndpoint!.cert);
       WebSocket.connect(serverEndpoint!.apiUrl, headers: {"authorizationToken": serverEndpoint!.token})
           .then((newSocket) {
+        _connecting = false;
+        if (!cellularEnabled) {
+          // Cellular was turned off while we were connecting.
+          newSocket.close();
+          return;
+        }
         reconnectionWait = 0;
 
         socket = newSocket;
@@ -116,10 +169,10 @@ class Client with ChangeNotifier {
 
         socket!.listen(handleResponse, onError: (errorRaw) {
           debugPrint("RX-error: $errorRaw");
-          state = ClientState.disconnected;
+          if (socket == newSocket) state = ClientState.disconnected;
         }, onDone: () {
           debugPrint("RX-done");
-          state = ClientState.disconnected;
+          if (socket == newSocket) state = ClientState.disconnected;
         });
         if (globalContext.mounted) {
           Profile profile = Provider.of<Profile>(globalContext, listen: false);
@@ -134,10 +187,33 @@ class Client with ChangeNotifier {
           Provider.of<ActivePlan>(globalContext, listen: false).onSelectWaypoint = selectWaypoint;
         }
       }).onError((error, stackTrace) {
+        _connecting = false;
         debugPrint("Failed to connect! $error");
         state = ClientState.disconnected;
       });
     }
+  }
+
+  /// Called when a link is enabled/disabled or the Meshtastic radio changes state.
+  void _onLinksChanged() {
+    if (cellularEnabled) {
+      if (socket == null && !_connecting && _reconnectTimer == null) {
+        reconnectionWait = 0;
+        connect();
+      }
+    } else if (socket != null || _reconnectTimer != null) {
+      debugPrint("Cellular client disabled.");
+      state = ClientState.disconnected;
+    }
+
+    if (bleDeviceMeshtastic.status.value == MeshtasticStatus.noGroup) {
+      _restoreSavedGroup();
+    }
+
+    if (meshReady && !_wasMeshReady) _meshHello();
+    _wasMeshReady = meshReady;
+
+    notifyListeners();
   }
 
   void handleResponse(dynamic response) {
@@ -231,13 +307,18 @@ class Client with ChangeNotifier {
 
   void sendchatMessage(String text, {bool? isEmergency}) {
     Group group = Provider.of<Group>(globalContext, listen: false);
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
     sendToAWS("chatMessage", {
-      "timestamp": DateTime.now().millisecondsSinceEpoch,
+      "timestamp": timestamp,
       "group_id": group.currentGroupID, // target group
       "pilot_id": "", // sender (filled in by backend)
       "text": text,
       "emergency": isEmergency ?? false,
     });
+    final tag = _meshTag;
+    if (tag != null) {
+      _meshSend(MeshChat(tag, timestamp: timestamp, emergency: isEmergency ?? false, text: text), wantAck: true);
+    }
   }
 
   // --- send our telemetry
@@ -255,6 +336,13 @@ class Client with ChangeNotifier {
         },
       });
     }
+
+    final tag = _meshTag;
+    final now = clock.now();
+    if (tag != null && (_lastMeshTelemetry == null || now.difference(_lastMeshTelemetry!) >= meshTelemetryInterval)) {
+      _lastMeshTelemetry = now;
+      _meshSend(MeshTelemetry(tag, lat: geo.lat, lng: geo.lng, alt: geo.alt, timestamp: geo.time));
+    }
   }
 
   void requestGroupInfo(String? reqGroupID) {
@@ -264,10 +352,17 @@ class Client with ChangeNotifier {
   }
 
   void _joinGroup(String reqGroupID) {
-    sendToAWS("joinGroupRequest", {
-      "group_id": reqGroupID.toLowerCase(),
-    });
-    debugPrint("Requesting Join Group $reqGroupID");
+    if (state == ClientState.authenticated) {
+      sendToAWS("joinGroupRequest", {
+        "group_id": reqGroupID.toLowerCase(),
+      });
+      debugPrint("Requesting Join Group $reqGroupID");
+    } else {
+      // No server to ask, so join locally. This still lets us fly together over the mesh,
+      // and the saved group is sent to the server when we authenticate.
+      debugPrint("Joining group $reqGroupID locally (no server)");
+      Provider.of<Group>(globalContext, listen: false).currentGroupID = reqGroupID.toLowerCase();
+    }
   }
 
   void joinGroup(BuildContext context, String reqGroupID) {
@@ -295,9 +390,32 @@ class Client with ChangeNotifier {
       "action": action.index,
       "waypoint": waypoint.toJson(),
     });
+    final tag = _meshTag;
+    if (tag != null) {
+      _meshSend(MeshWaypointUpdate(tag,
+          action: action.index,
+          waypoint: action == WaypointAction.delete ? {"id": waypoint.id} : waypoint.toJson()));
+    }
   }
 
+  /// Share all our waypoints with the group.
   void pushWaypoints() {
+    _pushWaypointsCellular();
+
+    // Mesh has no full sync, so send each waypoint as an update. (Ones with long paths won't fit in a packet.)
+    final tag = _meshTag;
+    if (tag != null) {
+      for (final each in Provider.of<ActivePlan>(globalContext, listen: false)
+          .waypoints
+          .values
+          .where((element) => !element.ephemeral)
+          .take(maxMeshWaypointSync)) {
+        _meshSend(MeshWaypointUpdate(tag, action: WaypointAction.update.index, waypoint: each.toJson()));
+      }
+    }
+  }
+
+  void _pushWaypointsCellular() {
     sendToAWS("waypointsSync", {
       "timestamp": DateTime.now().millisecondsSinceEpoch,
       "waypoints": Map.fromEntries(Provider.of<ActivePlan>(globalContext, listen: false)
@@ -311,6 +429,8 @@ class Client with ChangeNotifier {
   void selectWaypoint(WaypointID? waypointID) {
     sendToAWS("pilotSelectedWaypoint",
         {"pilot_id": Provider.of<Profile>(globalContext, listen: false).id, "waypoint_id": waypointID});
+    final tag = _meshTag;
+    if (tag != null) _meshSend(MeshSelectWaypoint(tag, waypointId: waypointID));
   }
 
   // ############################################################################
@@ -325,8 +445,7 @@ class Client with ChangeNotifier {
     String? currentGroupID = group.currentGroupID;
     final groupId = parseAsString(msg["group_id"]);
     if (groupId == currentGroupID) {
-      Provider.of<ChatMessages>(globalContext, listen: false)
-          .processMessageFromServer(group.pilots[parseAsString(msg["pilot_id"])]?.name ?? "", msg);
+      _deliverChat(parseAsString(msg["pilot_id"]) ?? "", msg);
     } else {
       // getting messages from the wrong group!
       debugPrint("Wrong group ID! $currentGroupID, $groupId");
@@ -339,7 +458,7 @@ class Client with ChangeNotifier {
     Group group = Provider.of<Group>(globalContext, listen: false);
     final pilotId = parseAsString(msg["pilot_id"]);
     if (pilotId != null && group.hasPilot(pilotId)) {
-      group.updatePilotTelemetry(pilotId, msg["telemetry"], msg["timestamp"]);
+      _applyPilotTelemetry(pilotId, msg["telemetry"], msg["timestamp"]);
     } else {
       debugPrint("Unrecognized local pilot $pilotId");
       requestGroupInfo(group.currentGroupID);
@@ -491,7 +610,7 @@ class Client with ChangeNotifier {
       } else if (plan.waypoints.isNotEmpty) {
         // Push our waypoints
         debugPrint("Pushing our plan!");
-        pushWaypoints();
+        _pushWaypointsCellular();
       }
     }
   }
@@ -516,6 +635,209 @@ class Client with ChangeNotifier {
       // NOTE: This helps iOS devices show up immediately. They don't
       //       send location updates while the device isn't moving.
       if (myTelemetry.geo != null) sendTelemetry(myTelemetry.geo!);
+    }
+  }
+
+  // ############################################################################
+  //
+  //     Shared between links (de-dupe)
+  //
+  // ############################################################################
+
+  void _deliverChat(String pilotId, Map<String, dynamic> msg) {
+    final now = clock.now().millisecondsSinceEpoch;
+    final senderTimestamp = msg["timestamp"] is int ? msg["timestamp"] as int : now;
+    if (_chatDeduper.isDuplicate(pilotId, msg["text"] ?? "", senderTimestamp, now: now)) {
+      debugPrint("Dropped duplicate chat message from $pilotId");
+      return;
+    }
+    final group = Provider.of<Group>(globalContext, listen: false);
+    Provider.of<ChatMessages>(globalContext, listen: false)
+        .processMessageFromServer(group.pilots[pilotId]?.name ?? "", msg);
+  }
+
+  void _applyPilotTelemetry(String pilotId, dynamic telemetry, int timestamp) {
+    if (_telemetryDeduper.accept(pilotId, timestamp)) {
+      Provider.of<Group>(globalContext, listen: false).updatePilotTelemetry(pilotId, telemetry, timestamp);
+    }
+  }
+
+  // ############################################################################
+  //
+  //     Meshtastic
+  //
+  // ############################################################################
+
+  void _setupMesh() {
+    bleDeviceMeshtastic.onReceive = handleMeshPacket;
+    bleDeviceMeshtastic.status.addListener(_onLinksChanged);
+    bleDeviceMeshtastic.attached.addListener(_onLinksChanged);
+    settingsMgr.clientUseCellular.listenable.addListener(_onLinksChanged);
+    settingsMgr.clientUseMesh.listenable.addListener(_onLinksChanged);
+
+    // Mesh channel follows the group.
+    final group = Provider.of<Group>(globalContext, listen: false);
+    group.addListener(() {
+      final groupId = (group.currentGroupID?.isEmpty ?? true) ? null : group.currentGroupID;
+      if (groupId != _meshGroupId) {
+        _meshGroupId = groupId;
+        _meshPilots.clear();
+        _telemetryDeduper.clear();
+        bleDeviceMeshtastic.setGroupId(groupId);
+        // Already on the mesh, so introduce ourselves on the new channel once the radio has switched.
+        // (Otherwise we say hello when the radio becomes ready.)
+        if (groupId != null && meshReady) Timer(const Duration(seconds: 3), _meshHello);
+      }
+    });
+
+    Provider.of<Profile>(globalContext, listen: false).addListener(_announceOnMesh);
+  }
+
+  /// Without the server we never get told our group, so fall back on the last one we were in.
+  void _restoreSavedGroup() {
+    final group = Provider.of<Group>(globalContext, listen: false);
+    if (group.currentGroupID == null && state != ClientState.authenticated) {
+      final saved = group.loadGroup();
+      if (saved != null && saved.isNotEmpty) {
+        debugPrint("Restoring saved group $saved for mesh.");
+        group.currentGroupID = saved;
+      }
+    }
+  }
+
+  /// [MeshGroupChannel.groupTag] if we can send on the mesh
+  int? get _meshTag => meshReady ? bleDeviceMeshtastic.groupChannel?.groupTag : null;
+
+  /// How often we send our telemetry over the mesh. Backs off as the group grows to keep the channel clear.
+  Duration get meshTelemetryInterval {
+    final pilots = bleDeviceMeshtastic.numNodesHeard + 1;
+    return bleDeviceMeshtastic.preset.telemetryInterval * max(1.0, pilots / 4);
+  }
+
+  void _meshSend(MeshMessage msg, {bool wantAck = false}) {
+    final payload = msg.encode();
+    if (payload.length > meshMaxPayload) {
+      debugPrint("Mesh: ${msg.type.name} too large (${payload.length} bytes), not sent.");
+      return;
+    }
+    bleDeviceMeshtastic.send(payload, wantAck: wantAck);
+  }
+
+  /// Introduce ourselves and ask who else is on the channel.
+  void _meshHello() {
+    final tag = _meshTag;
+    if (tag == null) return;
+    _announceOnMesh(force: true);
+    _meshSend(MeshPilotInfoRequest(tag, nodeNum: 0));
+    // Re-announce now and then for anyone who missed it.
+    _meshAnnounceTimer ??= Timer.periodic(const Duration(minutes: 5), (_) => _announceOnMesh());
+  }
+
+  /// Broadcast our pilot info so others can map our node to our pilot.
+  void _announceOnMesh({bool force = false}) {
+    final tag = _meshTag;
+    final profile = Provider.of<Profile>(globalContext, listen: false);
+    if (tag == null || profile.name == null) return;
+
+    final info = MeshPilotInfo(tag, id: _myPilotId(profile), name: profile.name!, avatarHash: profile.avatarHash);
+    final key = "${info.id}|${info.name}|${info.avatarHash}";
+    final now = clock.now();
+    final sinceLast = _lastMeshAnnounce == null ? null : now.difference(_lastMeshAnnounce!);
+    // Rate limit, but always let changes through.
+    if (key == _lastMeshAnnounceKey &&
+        sinceLast != null &&
+        sinceLast < (force ? const Duration(seconds: 3) : const Duration(seconds: 15))) {
+      return;
+    }
+    _lastMeshAnnounce = now;
+    _lastMeshAnnounceKey = key;
+    _meshSend(info);
+  }
+
+  /// Pilots who've never reached the server have no id, so fall back on the radio's node number.
+  String _myPilotId(Profile profile) =>
+      profile.id ?? "mesh-${bleDeviceMeshtastic.myNodeNum?.toRadixString(16) ?? ""}";
+
+  void _requestMeshPilotInfo(int nodeNum) {
+    final tag = _meshTag;
+    final now = clock.now();
+    final last = _meshInfoRequested[nodeNum];
+    if (tag == null || (last != null && now.difference(last) < const Duration(minutes: 1))) return;
+    _meshInfoRequested[nodeNum] = now;
+    _meshSend(MeshPilotInfoRequest(tag, nodeNum: nodeNum));
+  }
+
+  void handleMeshPacket(int fromNode, Uint8List payload) {
+    final channel = bleDeviceMeshtastic.groupChannel;
+    final msg = MeshMessage.decode(payload);
+    if (!meshEnabled || channel == null || msg == null) return;
+    if (msg.groupTag != channel.groupTag) {
+      debugPrint("Mesh: message from another group");
+      return;
+    }
+
+    final group = Provider.of<Group>(globalContext, listen: false);
+    final myId = Provider.of<Profile>(globalContext, listen: false).id;
+    final pilotId = _meshPilots[fromNode];
+
+    switch (msg) {
+      case MeshPilotInfo info:
+        if (info.id == myId) return;
+        _meshPilots[fromNode] = info.id;
+        final existing = group.pilots[info.id];
+        if (existing == null || existing.name != info.name || existing.avatarHash != info.avatarHash) {
+          group.processNewPilot(info.id, {"id": info.id, "name": info.name, "avatarHash": info.avatarHash});
+        }
+        break;
+      case MeshPilotInfoRequest request:
+        if (request.nodeNum == 0 || request.nodeNum == bleDeviceMeshtastic.myNodeNum) {
+          // Jitter so everyone doesn't answer at once.
+          Timer(Duration(milliseconds: _rand.nextInt(3000)), () => _announceOnMesh(force: request.nodeNum != 0));
+        }
+        break;
+      case MeshTelemetry telemetry:
+        if (pilotId == null || !group.hasPilot(pilotId)) {
+          _requestMeshPilotInfo(fromNode);
+          return;
+        }
+        _applyPilotTelemetry(
+            pilotId,
+            {
+              "gps": {"lat": telemetry.lat, "lng": telemetry.lng, "alt": telemetry.alt}
+            },
+            telemetry.timestamp);
+        break;
+      case MeshChat chat:
+        if (pilotId == null) _requestMeshPilotInfo(fromNode);
+        // Deliver even if we don't know who sent it yet. It could be an emergency.
+        final senderId = pilotId ?? "mesh-${fromNode.toRadixString(16)}";
+        _deliverChat(senderId,
+            {"timestamp": chat.timestamp, "pilot_id": senderId, "text": chat.text, "emergency": chat.emergency});
+        break;
+      case MeshSelectWaypoint select:
+        if (pilotId == null || !group.hasPilot(pilotId)) {
+          _requestMeshPilotInfo(fromNode);
+          return;
+        }
+        group.pilotSelectedWaypoint(pilotId, select.waypointId);
+        break;
+      case MeshWaypointUpdate update:
+        _applyMeshWaypointUpdate(update);
+        break;
+    }
+  }
+
+  void _applyMeshWaypointUpdate(MeshWaypointUpdate update) {
+    final plan = Provider.of<ActivePlan>(globalContext, listen: false);
+    try {
+      if (update.action == WaypointAction.delete.index) {
+        final waypointId = parseAsString(update.waypoint["id"]);
+        if (waypointId != null) plan.backendRemoveWaypoint(waypointId);
+      } else if (update.action == WaypointAction.update.index) {
+        plan.updateWaypoint(Waypoint.fromJson(update.waypoint), shouldCallback: false);
+      }
+    } catch (error) {
+      debugPrint("Mesh: bad waypoint update: $error");
     }
   }
 }

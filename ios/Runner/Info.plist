@@ -14,6 +14,12 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ru</string>
+		<string>hu</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>xcnav</string>
 	<key>CFBundlePackageType</key>
@@ -30,14 +36,35 @@
 	<string>This app needs Bluetooth to connect to servo carb.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs camera access to scan QR codes</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>xcNav needs access to location for navigation and sharing your location with the group</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>xcNav needs access to location even while the app is not in focus.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>xcNav needs access to location for navigation and sharing your location with the group</string>
 	<key>NSMotionUsageDescription</key>
 	<string>This app requires access to the barometer to provide altitude information.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs to be able to select an avatar picture.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
@@ -70,11 +97,5 @@
 	<true/>
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
-	<key>CFBundleLocalizations</key>
-	<array>
-		<string>en</string>
-		<string>ru</string>
-		<string>hu</string>
-	</array>
 </dict>
 </plist>

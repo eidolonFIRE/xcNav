@@ -31,6 +31,7 @@ import 'package:xcnav/views/map/selected_waypoint_card.dart';
 import 'package:xcnav/views/map/map_status_column.dart';
 import 'package:xcnav/views/map/map_view_controls.dart';
 import 'package:xcnav/views/map/flight_timer.dart';
+import 'package:xcnav/views/map/link_status_icon.dart';
 import 'package:xcnav/views/map/edit_toolbar.dart';
 
 // dialogs
@@ -678,8 +679,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         ),
 
         // --- Connection status banner (along top of map)
-        if (Provider.of<Client>(context).state == ClientState.disconnected)
-          const Positioned(top: 5, child: ConnectingBanner()),
+        if (Provider.of<Client>(context).isOffline) const Positioned(top: 5, child: ConnectingBanner()),
 
         // --- Flight Timer
         const Align(alignment: Alignment.topCenter, child: FlightTimer()),
@@ -702,39 +702,47 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
             ),
           ),
 
-        // --- Toggle map layer
+        // --- Toggle map layer, with link status below it
         Positioned(
-            top: 10,
-            right: controlsRightSide ? null : 10,
-            left: controlsRightSide ? 10 : null,
-            child: MapSelector(
-                key: const Key("viewMap_mapSelector"),
-                showAdsb: true,
-                leftAlign: controlsRightSide,
-                isMapDialOpen: isMapDialOpen,
-                curLayer: settingsMgr.mainMapTileSrc.value,
-                curOpacity: settingsMgr.mainMapOpacity.value,
-                hideWaypoints: hideWaypoints,
-                hideWeatherObservations: settingsMgr.hideWeatherObservations.value,
-                onChangedWaypoints: (hidden) {
-                  setState(() {
-                    hideWaypoints = hidden;
-                  });
-                },
-                onChangedWeatherObservations: (hidden) {
-                  setState(() {
-                    settingsMgr.hideWeatherObservations.value = hidden;
-                    if (!hidden) {
-                      weatherServiceResetSomeTimers();
-                    }
-                  });
-                },
-                onChanged: (layer, opacity) {
-                  setState(() {
-                    settingsMgr.mainMapTileSrc.value = layer;
-                    settingsMgr.mainMapOpacity.value = opacity;
-                  });
-                }))
+          top: 10,
+          right: controlsRightSide ? null : 10,
+          left: controlsRightSide ? 10 : null,
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: controlsRightSide ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+              children: [
+                MapSelector(
+                    key: const Key("viewMap_mapSelector"),
+                    showAdsb: true,
+                    leftAlign: controlsRightSide,
+                    isMapDialOpen: isMapDialOpen,
+                    curLayer: settingsMgr.mainMapTileSrc.value,
+                    curOpacity: settingsMgr.mainMapOpacity.value,
+                    hideWaypoints: hideWaypoints,
+                    hideWeatherObservations: settingsMgr.hideWeatherObservations.value,
+                    onChangedWaypoints: (hidden) {
+                      setState(() {
+                        hideWaypoints = hidden;
+                      });
+                    },
+                    onChangedWeatherObservations: (hidden) {
+                      setState(() {
+                        settingsMgr.hideWeatherObservations.value = hidden;
+                        if (!hidden) {
+                          weatherServiceResetSomeTimers();
+                        }
+                      });
+                    },
+                    onChanged: (layer, opacity) {
+                      setState(() {
+                        settingsMgr.mainMapTileSrc.value = layer;
+                        settingsMgr.mainMapOpacity.value = opacity;
+                      });
+                    }),
+                const SizedBox(height: 8),
+                const LinkStatusIcon(),
+              ]),
+        )
       ]),
     );
   }
