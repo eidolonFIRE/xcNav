@@ -90,14 +90,9 @@ class OfflineMapService with ChangeNotifier {
     return _avgTileBytesCache = retval;
   }
 
-  Future<List<({DownloadJob job, int tiles})>> _countJobs(OfflineArea area, List<DownloadJob> jobs) async {
-    final region = area.toRegion();
-    final List<({DownloadJob job, int tiles})> retval = [];
-    for (final job in jobs) {
-      retval.add((job: job, tiles: await FMTCStore(job.storeName).download.countTiles(job.toDownloadable(region))));
-    }
-    return retval;
-  }
+  /// Off the UI thread, since huge areas at deep zoom can still take a moment.
+  Future<List<({DownloadJob job, int tiles})>> _countJobs(OfflineArea area, List<DownloadJob> jobs) =>
+      compute((args) => args.area.countJobs(args.jobs), (area: area, jobs: jobs));
 
   Future<DownloadEstimate> estimate(OfflineArea area) async {
     return estimateDownload(await _countJobs(area, area.planJobs()), await _avgTileBytes());
