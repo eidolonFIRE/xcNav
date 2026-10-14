@@ -97,8 +97,13 @@ class Client with ChangeNotifier {
 
   bool get meshReady => meshEnabled && bleDeviceMeshtastic.isReady;
 
-  /// No link to the group is up.
-  bool get isOffline => state == ClientState.disconnected && !meshReady;
+  /// Failed connection attempts before cellular is shown as disconnected rather than connecting.
+  static const int connectingAttempts = 3;
+
+  /// Cellular link is coming up: socket open but not yet authenticated, or still within the first few attempts.
+  bool get cellularConnecting =>
+      cellularEnabled &&
+      (state == ClientState.connected || (state == ClientState.disconnected && reconnectionWait <= connectingAttempts));
 
   void sendToAWS(String action, dynamic payload) {
     debugPrint("TX: ${jsonEncode({"action": action, "body": payload})}");

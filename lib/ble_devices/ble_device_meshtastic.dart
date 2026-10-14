@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:clock/clock.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -477,50 +476,6 @@ class MeshtasticConfigDialog extends StatelessWidget {
               ),
             ]);
           }),
-    );
-  }
-}
-
-class MeshtasticStatusCard extends StatelessWidget {
-  final BleDeviceMeshtastic meshtastic;
-
-  const MeshtasticStatusCard({super.key, required this.meshtastic});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => showDialog(context: context, builder: (context) => MeshtasticConfigDialog(meshtastic: meshtastic)),
-      child: Container(
-          foregroundDecoration: BoxDecoration(
-              border: Border.all(width: 0.5, color: Colors.black),
-              borderRadius: const BorderRadius.all(Radius.circular(15))),
-          child: ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                  child: Container(
-                      color: Colors.white38,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ValueListenableBuilder(
-                            valueListenable: meshtastic.status,
-                            builder: (context, status, _) {
-                              return Text.rich(TextSpan(children: [
-                                if (status == MeshtasticStatus.ready)
-                                  TextSpan(
-                                    text: "${meshtastic.numNodesHeard} ",
-                                    style: const TextStyle(color: Colors.black, fontSize: 20),
-                                  ),
-                                WidgetSpan(
-                                    child: Icon(
-                                  Icons.cell_tower,
-                                  color: settingsMgr.clientUseMesh.value
-                                      ? meshtasticStatusColor(status)
-                                      : Colors.grey.shade700,
-                                )),
-                              ]));
-                            }),
-                      ))))),
     );
   }
 }

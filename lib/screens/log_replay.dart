@@ -45,7 +45,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   MapTileSrc mapTileSrc = MapTileSrc.topo;
   bool hideWaypoints = false;
   double mapOpacity = 1.0;
-  ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
   ValueNotifier<DateTime?> selectedTime = ValueNotifier(null);
 
   String? logKey;
@@ -336,11 +335,6 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                 },
                                 interactionOptions:
                                     const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
-                                onPositionChanged: (mapPosition, hasGesture) {
-                                  if (hasGesture) {
-                                    isMapDialOpen.value = false;
-                                  }
-                                },
                                 onLongPress: (pos, latlng) {
                                   // Copy latlng to clipboard
                                   Clipboard.setData(ClipboardData(
@@ -600,26 +594,24 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                         Align(
                             alignment: Alignment.topRight,
                             child: Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: SizedBox(
-                                  height: 40,
-                                  child: MapSelector(
-                                    isMapDialOpen: isMapDialOpen,
-                                    curLayer: mapTileSrc,
-                                    curOpacity: mapOpacity,
-                                    hideWaypoints: hideWaypoints,
-                                    onChangedWaypoints: (hidden) {
-                                      setState(() {
-                                        hideWaypoints = hidden;
-                                      });
-                                    },
-                                    onChanged: ((layerName, opacity) {
-                                      setState(() {
-                                        mapTileSrc = layerName;
-                                        mapOpacity = opacity;
-                                      });
-                                    }),
-                                  )),
+                              padding: const EdgeInsets.all(10.0),
+                              child: MapSelector(
+                                size: 50,
+                                curLayer: mapTileSrc,
+                                curOpacity: mapOpacity,
+                                hideWaypoints: hideWaypoints,
+                                onChangedWaypoints: (hidden) {
+                                  setState(() {
+                                    hideWaypoints = hidden;
+                                  });
+                                },
+                                onChanged: ((layerName, opacity) {
+                                  setState(() {
+                                    mapTileSrc = layerName;
+                                    mapOpacity = opacity;
+                                  });
+                                }),
+                              ),
                             )),
                       ]),
               ),

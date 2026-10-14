@@ -14,7 +14,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/group.dart';
-import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/weather_observation_service.dart';
 
@@ -86,7 +85,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   late PolyEditor measurementEditor;
   final List<LatLng> measurementPoints = [];
 
-  ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
   bool hideWaypoints = false;
 
   DateTime? lastSavedLastKnownLatLng;
@@ -245,7 +243,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   void onMapTap(BuildContext context, LatLng latlng) {
     debugPrint("onMapTap: $latlng");
-    isMapDialOpen.value = false;
     final plan = Provider.of<ActivePlan>(context, listen: false);
     if (editingWp != null && plan.waypoints.containsKey(editingWp) && plan.waypoints[editingWp]!.latlng.length == 1) {
       setState(() {
@@ -292,7 +289,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     }
 
     if (hasGesture) {
-      isMapDialOpen.value = false;
       if (focusMode == FocusMode.me || focusMode == FocusMode.group) {
         // --- Unlock any focus lock
         setFocusMode(FocusMode.unlocked);
@@ -675,11 +671,35 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
             onToggleNorthLock: toggleNorthLock,
             onToggleMeasurement: toggleMeasurement,
             onZoom: () => lastMapChange = DateTime.now(),
+            layerSelectorBuilder: (buttonSize) => MapSelector(
+                key: const Key("viewMap_mapSelector"),
+                size: buttonSize,
+                showAdsb: true,
+                curLayer: settingsMgr.mainMapTileSrc.value,
+                curOpacity: settingsMgr.mainMapOpacity.value,
+                hideWaypoints: hideWaypoints,
+                hideWeatherObservations: settingsMgr.hideWeatherObservations.value,
+                onChangedWaypoints: (hidden) {
+                  setState(() {
+                    hideWaypoints = hidden;
+                  });
+                },
+                onChangedWeatherObservations: (hidden) {
+                  setState(() {
+                    settingsMgr.hideWeatherObservations.value = hidden;
+                    if (!hidden) {
+                      weatherServiceResetSomeTimers();
+                    }
+                  });
+                },
+                onChanged: (layer, opacity) {
+                  setState(() {
+                    settingsMgr.mainMapTileSrc.value = layer;
+                    settingsMgr.mainMapOpacity.value = opacity;
+                  });
+                }),
           ),
         ),
-
-        // --- Connection status banner (along top of map)
-        if (Provider.of<Client>(context).isOffline) const Positioned(top: 5, child: ConnectingBanner()),
 
         // --- Flight Timer
         const Align(alignment: Alignment.topCenter, child: FlightTimer()),
@@ -702,46 +722,12 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
             ),
           ),
 
-        // --- Toggle map layer, with link status below it
+        // --- Link status (cellular / mesh)
         Positioned(
           top: 10,
           right: controlsRightSide ? null : 10,
           left: controlsRightSide ? 10 : null,
-          child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: controlsRightSide ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-              children: [
-                MapSelector(
-                    key: const Key("viewMap_mapSelector"),
-                    showAdsb: true,
-                    leftAlign: controlsRightSide,
-                    isMapDialOpen: isMapDialOpen,
-                    curLayer: settingsMgr.mainMapTileSrc.value,
-                    curOpacity: settingsMgr.mainMapOpacity.value,
-                    hideWaypoints: hideWaypoints,
-                    hideWeatherObservations: settingsMgr.hideWeatherObservations.value,
-                    onChangedWaypoints: (hidden) {
-                      setState(() {
-                        hideWaypoints = hidden;
-                      });
-                    },
-                    onChangedWeatherObservations: (hidden) {
-                      setState(() {
-                        settingsMgr.hideWeatherObservations.value = hidden;
-                        if (!hidden) {
-                          weatherServiceResetSomeTimers();
-                        }
-                      });
-                    },
-                    onChanged: (layer, opacity) {
-                      setState(() {
-                        settingsMgr.mainMapTileSrc.value = layer;
-                        settingsMgr.mainMapOpacity.value = opacity;
-                      });
-                    }),
-                const SizedBox(height: 8),
-                const LinkStatusIcon(),
-              ]),
+          child: const LinkStatusIcon(),
         )
       ]),
     );

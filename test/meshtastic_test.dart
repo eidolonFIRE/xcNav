@@ -19,6 +19,7 @@ import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/views/map/link_status_icon.dart';
 import 'package:xcnav/views/view_chat.dart';
 
 import 'mock_providers.dart';
@@ -445,6 +446,45 @@ void main() {
       expect(client.state, isNot(ClientState.authenticated));
       client.joinGroup(ctx, "XYZ789");
       expect(group.currentGroupID, "xyz789");
+    });
+
+    testWidgets("cellular icon shows connecting, then disconnected", (tester) async {
+      SharedPreferences.setMockInitialValues({});
+
+      late Client client;
+      await tester.pumpWidget(MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ActivePlan(), lazy: false),
+          // ignore: unnecessary_cast
+          ChangeNotifierProvider(create: (_) => MockPlans() as Plans, lazy: false),
+          ChangeNotifierProvider(create: (_) => Profile(), lazy: false),
+          ChangeNotifierProvider(create: (_) => Group(), lazy: false),
+          ChangeNotifierProvider(create: (_) => ChatMessages(), lazy: false),
+          // ignore: unnecessary_cast
+          ChangeNotifierProvider(create: (context) => MockClient(context) as Client, lazy: false),
+        ],
+        child: Builder(builder: (context) {
+          client = Provider.of<Client>(context, listen: false);
+          return Container();
+        }),
+      ));
+
+      // Socket open, not yet authenticated
+      expect(client.state, ClientState.connected);
+      expect(cellularStatusIcon(client), Icons.signal_cellular_alt_1_bar);
+
+      // First few failed attempts still count as connecting
+      client.reconnectionWait = 1;
+      client.state = ClientState.disconnected;
+      expect(cellularStatusIcon(client), Icons.signal_cellular_alt_1_bar);
+      await tester.pump(const Duration(seconds: 2));
+
+      // Repeated failures show disconnected
+      client.reconnectionWait = Client.connectingAttempts + 1;
+      client.state = ClientState.disconnected;
+      expect(cellularStatusIcon(client), Icons.signal_cellular_nodata);
+      expect(cellularStatusColor(client), Colors.red);
+      await tester.pump(const Duration(seconds: Client.connectingAttempts + 2));
     });
   });
 }

@@ -51,6 +51,28 @@ double densityAlt(BarometerEvent ambientPressure, double ambientTemp) {
 
 Geo defaultGeo = Geo(lat: 37, lng: -122);
 
+enum GpsStrength { none, poor, fair, good }
+
+class GpsFixQuality {
+  /// Horizontal accuracy (meters)
+  final double accuracy;
+
+  /// Local time the fix was received
+  final DateTime time;
+
+  GpsFixQuality({required this.accuracy, required this.time});
+
+  /// No fix for this long counts as lost
+  static const staleAfter = Duration(seconds: 10);
+
+  GpsStrength get strength {
+    if (clock.now().difference(time) > staleAfter) return GpsStrength.none;
+    if (accuracy <= 10) return GpsStrength.good;
+    if (accuracy <= 30) return GpsStrength.fair;
+    return GpsStrength.poor;
+  }
+}
+
 class FlightEvent {
   final FlightEventType type;
   final DateTime time;
@@ -68,6 +90,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   Geo? geo;
   Geo? geoPrev;
   final GpsJumpFilter gpsJumpFilter = GpsJumpFilter();
+
+  /// Latest raw GPS fix quality (includes fixes rejected by the jump filter)
+  final ValueNotifier<GpsFixQuality?> gpsFix = ValueNotifier(null);
 
   final List<TimestampValue<double>> gForceRecord = [];
   List<Geo> recordGeo = [];
@@ -641,6 +666,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
   /// Returns false if the fix was rejected as a physically impossible jump.
   bool updateGeo(Position position, {bool bypassRecording = false}) {
+    gpsFix.value = GpsFixQuality(accuracy: position.accuracy, time: clock.now());
     final verdict = gpsJumpFilter.check(geo, position);
     if (verdict == GpsFixVerdict.reject) {
       debugPrint("Rejected GPS jump: ${position.latitude}, ${position.longitude} @ ${position.timestamp}");

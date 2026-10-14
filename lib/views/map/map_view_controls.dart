@@ -20,6 +20,9 @@ class MapViewControls extends StatelessWidget {
   /// Called after the user zooms with the buttons.
   final VoidCallback onZoom;
 
+  /// Builds the map layer button (at the given button size), shown under the compass.
+  final Widget Function(double buttonSize) layerSelectorBuilder;
+
   const MapViewControls({
     super.key,
     required this.mapController,
@@ -29,6 +32,7 @@ class MapViewControls extends StatelessWidget {
     required this.onToggleNorthLock,
     required this.onToggleMeasurement,
     required this.onZoom,
+    required this.layerSelectorBuilder,
   });
 
   void zoomBy(double delta) {
@@ -43,7 +47,7 @@ class MapViewControls extends StatelessWidget {
       final buttonSize = max(30, min(60, constaints.maxHeight / 8)).toDouble();
       final connector = SizedBox(
           width: 2,
-          height: buttonSize / 3,
+          height: buttonSize / 4,
           child: Container(
             color: Colors.black,
           ));
@@ -54,27 +58,32 @@ class MapViewControls extends StatelessWidget {
           crossAxisAlignment:
               settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            // --- Compass
-            MapButton(
-                size: buttonSize,
-                onPressed: onToggleNorthLock,
-                selected: false,
-                child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
-                  StreamBuilder(
-                      stream: mapController.mapEventStream,
-                      builder: (context, event) => Container(
-                            transformAlignment: const Alignment(0, 0),
-                            transform: mapReady
-                                ? Matrix4.rotationZ(mapController.camera.rotation * pi / 180)
-                                : Matrix4.rotationZ(0),
-                            child: settingsMgr.northlockMap.value
-                                ? Padding(
-                                    padding: const EdgeInsets.all(4.0),
-                                    child: SvgPicture.asset("assets/images/compass_north.svg"),
-                                  )
-                                : SvgPicture.asset("assets/images/compass.svg", fit: BoxFit.cover),
-                          )),
-                ])),
+            Column(mainAxisSize: MainAxisSize.min, children: [
+              // --- Compass
+              MapButton(
+                  size: buttonSize,
+                  onPressed: onToggleNorthLock,
+                  selected: false,
+                  child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
+                    StreamBuilder(
+                        stream: mapController.mapEventStream,
+                        builder: (context, event) => Container(
+                              transformAlignment: const Alignment(0, 0),
+                              transform: mapReady
+                                  ? Matrix4.rotationZ(mapController.camera.rotation * pi / 180)
+                                  : Matrix4.rotationZ(0),
+                              child: settingsMgr.northlockMap.value
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: SvgPicture.asset("assets/images/compass_north.svg"),
+                                    )
+                                  : SvgPicture.asset("assets/images/compass.svg", fit: BoxFit.cover),
+                            )),
+                  ])),
+              connector,
+              // --- Map layers
+              layerSelectorBuilder(buttonSize),
+            ]),
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [

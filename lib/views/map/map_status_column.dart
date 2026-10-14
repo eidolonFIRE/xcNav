@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 
 import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
-import 'package:xcnav/ble_devices/ble_device_meshtastic.dart';
 import 'package:xcnav/ble_devices/ble_device_runleader.dart';
 import 'package:xcnav/ble_devices/ble_device_sp140.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170.dart';
@@ -76,10 +75,6 @@ class MapStatusColumn extends StatelessWidget {
 
             // --- Sp140
             if (ble_service.bleDeviceSp140.device != null) Sp140StatusCard(sp140: ble_service.bleDeviceSp140),
-
-            // --- Meshtastic
-            if (ble_service.bleDeviceMeshtastic.device != null)
-              MeshtasticStatusCard(meshtastic: ble_service.bleDeviceMeshtastic),
           ],
         ),
       );

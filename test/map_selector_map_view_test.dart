@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mockito/mockito.dart';
@@ -158,10 +157,10 @@ void main() {
 
       // --- Select a different map
       await $(#viewMap_mapSelector).tap(settlePolicy: SettlePolicy.noSettle);
-      await $.waitUntilVisible($(SpeedDial));
+      await $.waitUntilVisible($(AlertDialog));
       await $(#mapSelector_satellite_60).tap(settlePolicy: SettlePolicy.noSettle);
 
-      // (let the speeddial finish the animation)
+      // (let the dialog finish closing)
       await $.pump(const Duration(seconds: 2));
 
       // --- New map layer

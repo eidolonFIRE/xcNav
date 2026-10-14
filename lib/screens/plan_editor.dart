@@ -59,8 +59,6 @@ class _PlanEditorState extends State<PlanEditor> {
   bool mapReady = false;
   MapController mapController = MapController();
 
-  ValueNotifier<bool> isMapDialOpen = ValueNotifier(false);
-
   final mapKey = GlobalKey(debugLabel: "planEditorMap");
 
   @override
@@ -97,7 +95,6 @@ class _PlanEditorState extends State<PlanEditor> {
   }
 
   void onMapTap(BuildContext context, LatLng latlng) {
-    isMapDialOpen.value = false;
     if (editingWp != null && plan!.waypoints.containsKey(editingWp) && plan!.waypoints[editingWp]!.latlng.length == 1) {
       setState(() {
         editingWp = null;
@@ -299,20 +296,18 @@ class _PlanEditorState extends State<PlanEditor> {
             Align(
                 alignment: Alignment.topRight,
                 child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: SizedBox(
-                      height: 40,
-                      child: MapSelector(
-                        isMapDialOpen: isMapDialOpen,
-                        curLayer: mapTileSrc,
-                        curOpacity: mapOpacity,
-                        onChanged: ((layerName, opacity) {
-                          setState(() {
-                            mapTileSrc = layerName;
-                            mapOpacity = opacity;
-                          });
-                        }),
-                      )),
+                  padding: const EdgeInsets.all(10.0),
+                  child: MapSelector(
+                    size: 50,
+                    curLayer: mapTileSrc,
+                    curOpacity: mapOpacity,
+                    onChanged: ((layerName, opacity) {
+                      setState(() {
+                        mapTileSrc = layerName;
+                        mapOpacity = opacity;
+                      });
+                    }),
+                  ),
                 )),
 
             // --- Editing waypoint/path buttons

@@ -100,28 +100,3 @@ class FlightTimer extends StatelessWidget {
             ));
   }
 }
-
-/// Shown along the top of the map while the client is disconnected from the server.
-class ConnectingBanner extends StatelessWidget {
-  const ConnectingBanner({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Card(
-        color: Colors.amber,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(10, 4, 10, 4),
-          child: Text.rich(
-            TextSpan(children: [
-              WidgetSpan(
-                  child: Icon(
-                Icons.language,
-                size: 20,
-                color: Colors.black,
-              )),
-              TextSpan(text: "  connecting", style: TextStyle(color: Colors.black, fontSize: 20)),
-            ]),
-          ),
-        ));
-  }
-}
