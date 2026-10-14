@@ -38,6 +38,9 @@ bool alreadyRequestedPermission = false;
 bool isSupported(ScanResult result) =>
     getHandler(name: result.device.advName, serviceUuids: result.advertisementData.serviceUuids) != null;
 
+/// Handler is currently associated with this device.
+bool isHandlerDevice(BleDeviceHandler handler, DeviceIdentifier deviceId) => handler.device?.remoteId == deviceId;
+
 BleDeviceHandler? getHandler({String? name, List<Guid>? serviceUuids, DeviceIdentifier? deviceId}) {
   if (serviceUuids != null) {
     for (final each in _deviceHandlersByService) {
@@ -88,27 +91,26 @@ void scan() async {
         continue;
       }
 
-      if (handler.device?.hashCode == device.hashCode) {
+      if (isHandlerDevice(handler, device.remoteId)) {
         // Already associated
         debugPrint("Already associated: ${device.advName} ${device.remoteId.str}");
       } else {
-        debugPrint("Found device: ${device.advName} ${device.remoteId.str}");
-
-        // Cancel any existing listener for this device
-        if (_deviceStateListener[device.remoteId.str] != null) {
-          _deviceStateListener[device.remoteId.str]?.cancel();
-        }
-        // Start new listener for this device
-        _deviceStateListener[device.remoteId.str] = device.connectionState.listen((state) {
-          if (state == BluetoothConnectionState.disconnected) {
-            if (handler.device?.isConnected ?? false) {
-              debugPrint("Deveice disconnected: ${device.advName} ${device.remoteId.str}");
-              handler.onDisconnected();
+        // NOTE: scanResults re-emits the whole list on every advertisement, so only subscribe once per device.
+        //       Several devices can share one handler (e.g. multiple Meshtastic nodes in range).
+        if (_deviceStateListener[device.remoteId.str] == null) {
+          debugPrint("Found device: ${device.advName} ${device.remoteId.str}");
+          _deviceStateListener[device.remoteId.str] = device.connectionState.listen((state) {
+            if (state == BluetoothConnectionState.disconnected) {
+              // Only react if this is the device the handler is using, not another one it could match.
+              if (isHandlerDevice(handler, device.remoteId)) {
+                debugPrint("Device disconnected: ${device.advName} ${device.remoteId.str}");
+                handler.onDisconnected();
+              }
+            } else if (state == BluetoothConnectionState.connected) {
+              handler.onConnected(device);
             }
-          } else if (state == BluetoothConnectionState.connected) {
-            handler.onConnected(device);
-          }
-        });
+          });
+        }
 
         if (settingsMgr.bleAutoDevices.value.contains(device.remoteId.str) && !device.isConnected) {
           debugPrint("Auto connecting to ${device.advName}:${device.remoteId.str}");

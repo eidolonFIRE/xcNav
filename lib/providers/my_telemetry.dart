@@ -717,7 +717,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       baroAmbient = BarometerEvent(mixed, target.timestamp);
     } else {
       // snap to GPS altitude
-      debugPrint("Snapping ambient pressure to gps altitude. ${unitConverters[UnitType.distFine]!(geo!.altGps)}");
+      //debugPrint("Snapping ambient pressure to gps altitude. ${unitConverters[UnitType.distFine]!(geo!.altGps)}");
       baroAmbient = snapBarometerToGpsAlt(geo!.altGps);
     }
 

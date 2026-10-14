@@ -189,13 +189,6 @@ class _MainMenuState extends State<MainMenu> {
             "main_menu.group".tr(),
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          trailing: IconButton(
-              iconSize: 30,
-              onPressed: () => {Navigator.popAndPushNamed(context, "/qrScanner")},
-              icon: const Icon(
-                Icons.person_add,
-                color: Colors.lightGreen,
-              )),
         ),
 
         // Checklist

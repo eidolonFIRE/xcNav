@@ -36,7 +36,6 @@ import 'package:xcnav/screens/checklist_viewer.dart';
 import 'package:xcnav/screens/home.dart';
 import 'package:xcnav/screens/plan_editor.dart';
 import 'package:xcnav/screens/profile_editor.dart';
-import 'package:xcnav/screens/qr_scanner.dart';
 import 'package:xcnav/screens/servo_carb.dart';
 import 'package:xcnav/screens/settings_editor.dart';
 import 'package:xcnav/screens/flight_log_viewer.dart';
@@ -319,7 +318,6 @@ class XCNav extends StatelessWidget {
       routes: {
         "/home": (context) => const MyHomePage(),
         "/profileEditor": (context) => const ProfileEditor(),
-        "/qrScanner": (context) => const QRScanner(),
         "/settings": (context) => const SettingsEditor(),
         "/flightLogs": (context) => const FlightLogViewer(),
         "/plans": (context) => const PlansViewer(),
