@@ -48,7 +48,7 @@ class BigBatteryTelemetryCharacteristic {
 
   void stopRefresh() {
     _refreshTimer?.cancel();
-    _refreshTimer == null;
+    _refreshTimer = null;
   }
 
   void setupRefreshTimer(BluetoothCharacteristic bleChar) {

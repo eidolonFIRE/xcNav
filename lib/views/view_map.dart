@@ -128,12 +128,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
     addAttribute("view_map_focusMode", focusMode.name);
     addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
+
+    settingsMgr.mapControlsRightSide.listenable.addListener(_onControlsSideChanged);
   }
 
   @override
   void dispose() {
+    settingsMgr.mapControlsRightSide.listenable.removeListener(_onControlsSideChanged);
     super.dispose();
   }
+
+  void _onControlsSideChanged() => setState(() {});
 
   void beginEditingLine(Waypoint waypoint) {
     polyLines.clear();
@@ -546,8 +551,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         //   ),
 
         // Other Pilot path trace
-        if (Provider.of<Group>(context).activePilots.isNotEmpty)
-          PolylineLayer(polylines: Provider.of<Group>(context).activePilots.map((e) => e.buildFlightTrace()).toList()),
+        const GroupPilotTracesLayer(),
 
         // Flight Log
         if (myTelemetry.flightTrace.isNotEmpty) PolylineLayer(polylines: [myTelemetry.buildFlightTrace()]),
@@ -597,7 +601,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           buildDraggableWaypointLayer(plan),
 
         // GA planes (ADSB IN)
-        if (Provider.of<ADSB>(context, listen: true).enabled) AdsbPlanesLayer(mapController: mapController),
+        if (context.select((ADSB adsb) => adsb.enabled)) AdsbPlanesLayer(mapController: mapController),
 
         // Live locations other pilots
         GroupPilotsLayer(mapController: mapController),
@@ -629,8 +633,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     Provider.of<ActivePlan>(context, listen: false).mapMeasurement = measurementPoints;
 
     final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
-
-    settingsMgr.mapControlsRightSide.listenable.addListener(() => setState(() {}));
 
     final controlsRightSide = settingsMgr.mapControlsRightSide.value;
     final isEditing =

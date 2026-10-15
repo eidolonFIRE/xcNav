@@ -178,7 +178,6 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   MyTelemetry() {
     WidgetsBinding.instance.addObserver(this);
     _startBaroService();
-    _startIMUService();
   }
 
   void setStandby(bool inStandby) {
@@ -188,14 +187,14 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       _inStandby = inStandby;
       if (_inStandby) {
         listenBaro?.cancel();
-        listenIMU?.cancel();
+        _stopIMUService();
         if (positionStreamStarted) {
           positionStreamStarted = !positionStreamStarted;
           _stopGpsService();
         }
       } else {
         _startBaroService();
-        _startIMUService();
+        if (_inFlight) _startIMUService();
         if (!positionStreamStarted) {
           positionStreamStarted = !positionStreamStarted;
           _startGpsService(globalContext!);
@@ -337,11 +336,10 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     });
   }
 
+  /// G-force is only recorded in flight, so the IMU only runs in flight to save battery.
   void _startIMUService() {
-    if (listenIMU != null) {
-      listenIMU?.cancel();
-      listenIMU = null;
-    }
+    _stopIMUService();
+    gForcePrevTimestamp = clock.now().millisecondsSinceEpoch;
     listenIMU = accelerometerEventStream(samplingPeriod: const Duration(milliseconds: 10)).listen((event) {
       // Microsecond interval since last sample
       // On android (Samsung S21) this was measured at 9602us. Configuring API to slow it down had no effect.
@@ -369,6 +367,15 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         gForceZ = 0;
       }
     });
+  }
+
+  void _stopIMUService() {
+    listenIMU?.cancel();
+    listenIMU = null;
+    gForceCounter = 0;
+    gForceX = 0;
+    gForceY = 0;
+    gForceZ = 0;
   }
 
   void _setupServiceStatusStream(BuildContext context) {
@@ -577,6 +584,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
       // trim g-force log
       gForceRecord.removeWhere((a) => a.time < launchGeo!.time);
+      _startIMUService();
 
       notifyListeners();
     }
@@ -586,6 +594,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     if (_inFlight && geo != null) {
       _inFlight = false;
       debugPrint("Flight Ended");
+      _stopIMUService();
       landing = DateTime.fromMillisecondsSinceEpoch(recordGeo.last.time);
       final sumFuelStat = fuelReportController.getSumFuelStat(recordGeo);
 

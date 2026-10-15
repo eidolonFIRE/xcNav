@@ -9,9 +9,14 @@ import 'package:xcnav/settings_service.dart';
 void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
-    // MyTelemetry starts the IMU on construction; stub the sensors plugin.
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel("dev.fluttercommunity.plus/sensors/method"), (_) async => null);
+    // MyTelemetry starts the IMU on takeoff; stub the sensors plugin.
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    for (final channel in [
+      "dev.fluttercommunity.plus/sensors/method",
+      "dev.fluttercommunity.plus/sensors/accelerometer",
+    ]) {
+      messenger.setMockMethodCallHandler(MethodChannel(channel), (_) async => null);
+    }
     SharedPreferences.setMockInitialValues({
       "profile.name": "Mr Test",
       "profile.id": "1234",
@@ -65,5 +70,29 @@ void main() {
     ));
     expect(telemetry.gpsFix.value?.accuracy, 7);
     expect(telemetry.gpsFix.value?.strength, GpsStrength.good);
+  });
+
+  test("IMU only runs in flight", () {
+    final telemetry = MyTelemetry();
+    expect(telemetry.listenIMU, isNull);
+    telemetry.updateGeo(Position(
+      longitude: 0,
+      latitude: 0,
+      timestamp: DateTime.now(),
+      accuracy: 1,
+      altitude: 1000,
+      altitudeAccuracy: 1,
+      headingAccuracy: 1,
+      heading: 0,
+      speed: 0,
+      speedAccuracy: 0,
+    ));
+    expect(telemetry.listenIMU, isNull);
+
+    telemetry.startFlight();
+    expect(telemetry.listenIMU, isNotNull);
+
+    telemetry.stopFlight(bypassRecording: true);
+    expect(telemetry.listenIMU, isNull);
   });
 }

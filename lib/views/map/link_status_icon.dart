@@ -20,18 +20,39 @@ class LinkStatusIcon extends StatefulWidget {
 
 class _LinkStatusIconState extends State<LinkStatusIcon> {
   /// Rebuilds periodically so a GPS fix that stops updating shows as lost.
+  /// Only runs while the app is in the foreground, so it doesn't wake the app in the background or standby.
   Timer? _staleTimer;
+  late final AppLifecycleListener _lifecycleListener;
 
   @override
   void initState() {
     super.initState();
-    _staleTimer = Timer.periodic(const Duration(seconds: 2), (_) => setState(() {}));
+    _lifecycleListener = AppLifecycleListener(onStateChange: (state) {
+      if (state == AppLifecycleState.resumed) {
+        _startStaleTimer();
+        setState(() {});
+      } else {
+        _stopStaleTimer();
+      }
+    });
+    final state = WidgetsBinding.instance.lifecycleState;
+    if (state == null || state == AppLifecycleState.resumed) _startStaleTimer();
   }
 
   @override
   void dispose() {
-    _staleTimer?.cancel();
+    _lifecycleListener.dispose();
+    _stopStaleTimer();
     super.dispose();
+  }
+
+  void _startStaleTimer() {
+    _staleTimer ??= Timer.periodic(const Duration(seconds: 10), (_) => setState(() {}));
+  }
+
+  void _stopStaleTimer() {
+    _staleTimer?.cancel();
+    _staleTimer = null;
   }
 
   @override

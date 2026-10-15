@@ -74,7 +74,7 @@ class FlightSim {
 void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
-    // MyTelemetry starts the IMU on construction; stub the sensors plugin.
+    // MyTelemetry starts the IMU on takeoff; stub the sensors plugin.
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     for (final channel in [
       "dev.fluttercommunity.plus/sensors/method",

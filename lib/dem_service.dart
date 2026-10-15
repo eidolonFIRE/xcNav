@@ -22,6 +22,9 @@ TileLayer demDownloadLayer() => TileLayer(urlTemplate: demUrlTemplate);
 /// Tile addresses to be fetched.
 final Queue<String> _fetchQueue = Queue();
 
+/// Only runs while [_fetchQueue] has work, so it doesn't keep the app awake.
+Timer? _fetchTimer;
+
 final Queue<String> _tileCacheQueue = Queue();
 final Map<String, ByteData> _tileCacheData = {};
 final Map<String, int> _tileCacheWidth = {};
@@ -43,26 +46,28 @@ Future initDemCache() async {
               // Offline map downloads
               otherStoresStrategy: BrowseStoreStrategy.read,
               cachedValidDuration: const Duration(days: 90)));
+      _startFetchTimer();
     } else {
       error("DEM store not ready!");
     }
   });
+}
 
-  // Fetch timer
-  Timer.periodic(Duration(milliseconds: 100), (timer) {
+void _startFetchTimer() {
+  // Nothing to fetch with until the store is ready. It starts the timer once it is.
+  if (_demTileLayer == null || _fetchQueue.isEmpty) return;
+
+  _fetchTimer ??= Timer.periodic(Duration(milliseconds: 100), (timer) {
     // Pop one off queue and fetch it
 
     final pointAddress = _fetchQueue.firstOrNull;
     if (pointAddress == null) {
+      timer.cancel();
+      _fetchTimer = null;
       return;
     }
 
     if (!_tileCacheQueue.contains(pointAddress)) {
-      if (_demTileLayer == null) {
-        // (DEBUG) debugPrint("Broken _demTileLayer");
-        return;
-      }
-
       final point = pointAddress.split(",").map((e) => int.parse(e)).toList();
       final pointTile = TileCoordinates(point[0], point[1], point[2]);
       // Query the image
@@ -93,13 +98,17 @@ Future initDemCache() async {
               }
 
               // Good fetch!
-              if (_fetchQueue.isNotEmpty) {
-                _fetchQueue.removeFirst();
-              }
+              _fetchQueue.remove(pointAddress);
             }
           });
         }
+      }, onError: (exception, stackTrace) {
+        // Failed fetch (e.g. offline). Drop it so the timer can stop. sampleDem queues it again on a later fix.
+        _fetchQueue.remove(pointAddress);
       }));
+    } else {
+      // Already cached. Drop it so the queue can drain and the timer can stop.
+      _fetchQueue.removeFirst();
     }
   });
 }
@@ -149,6 +158,7 @@ double? sampleDem(LatLng latlng, bool highRes) {
       // Schedule this tile to be pulled
       // (DEBUG) debugPrint("Queue fetch tile: $pointAddress");
       _fetchQueue.add(pointAddress);
+      _startFetchTimer();
     } else {
       // (DEBUG) debugPrint("Already queued for fetch: $pointAddress");
     }

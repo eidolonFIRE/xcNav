@@ -206,7 +206,7 @@ class AdsbPlanesLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MarkerLayer(
-        markers: Provider.of<ADSB>(context, listen: false)
+        markers: Provider.of<ADSB>(context)
             .planes
             .values
             .map(
@@ -301,6 +301,18 @@ class GroupPilotsLayer extends StatelessWidget {
                   ))))
           .toList(),
     );
+  }
+}
+
+/// Flight traces of other pilots in the group.
+class GroupPilotTracesLayer extends StatelessWidget {
+  const GroupPilotTracesLayer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final pilots = Provider.of<Group>(context).activePilots;
+    if (pilots.isEmpty) return Container();
+    return PolylineLayer(polylines: pilots.map((e) => e.buildFlightTrace()).toList());
   }
 }
 
