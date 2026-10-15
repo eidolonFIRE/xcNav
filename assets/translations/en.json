@@ -134,6 +134,7 @@
             "adsb_proximity_profile": "ADSB Proximity Profile",
             "filter_tail_numbers": "Filter Tail Number(s)",
             "test_audio_cues": "Test Audio Cues",
+            "pause_music_for_speech": "Pause Music for Audio Cues",
             "opt_out_usage_stats": "Opt-out of anonymous usage data",
             "show_servocarb": "Show ServoCarb Menu",
             "spoof_location": "Spoof Location",

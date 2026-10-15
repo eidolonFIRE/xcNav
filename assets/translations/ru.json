@@ -134,6 +134,7 @@
       "adsb_proximity_profile": "Профиль близости ADS-B",
       "filter_tail_numbers": "Фильтр бортовых номеров",
       "test_audio_cues": "Тест аудио-подсказок",
+      "pause_music_for_speech": "Пауза музыки при подсказках",
       "opt_out_usage_stats": "Отключить анонимную статистику",
       "show_servocarb": "Показать меню ServoCarb",
       "spoof_location": "Подменить местоположение",

@@ -254,7 +254,7 @@ class AudioCueService {
 
         final text = "Altitude: ${lastAlt!.value.round()}";
         ttsService.speak(AudioMessage(text,
-            volume: 0.75, expires: DateTime.fromMillisecondsSinceEpoch(myGeo.time).add(const Duration(seconds: 4))));
+            volume: 1.0, expires: DateTime.fromMillisecondsSinceEpoch(myGeo.time).add(const Duration(seconds: 4))));
       }
 
       // --- Speed
@@ -268,7 +268,7 @@ class AudioCueService {
 
         final text = "Speed: ${lastSpd!.value.round()}";
         ttsService.speak(AudioMessage(text,
-            volume: 0.75, expires: DateTime.fromMillisecondsSinceEpoch(myGeo.time).add(const Duration(seconds: 4))));
+            volume: 1.0, expires: DateTime.fromMillisecondsSinceEpoch(myGeo.time).add(const Duration(seconds: 4))));
       }
     }
   }
@@ -306,7 +306,7 @@ class AudioCueService {
           final text =
               "Waypoint: $dist ${getUnitStr(UnitType.distCoarse, lexical: true)} out, ${deltaDegrees.abs() <= 45 ? degreesVerbal : oclockVerbal}. ETA $etaTime.";
           ttsService.speak(
-              AudioMessage(text, volume: 0.75, priority: 4, expires: clock.now().add(const Duration(seconds: 4))));
+              AudioMessage(text, volume: 1.0, priority: 4, expires: clock.now().add(const Duration(seconds: 4))));
         }
       }
     }
@@ -330,7 +330,7 @@ class AudioCueService {
         lastFuelReport = LastReport.now(0);
         const text = "Report fuel level.";
         ttsService
-            .speak(AudioMessage(text, volume: 0.8, priority: 3, expires: clock.now().add(const Duration(seconds: 10))));
+            .speak(AudioMessage(text, volume: 1.0, priority: 3, expires: clock.now().add(const Duration(seconds: 10))));
       }
 
       // Advise fuel level
@@ -370,7 +370,7 @@ class AudioCueService {
         final text = "${pilotName != null ? "$pilotName says" : ""} ${msg.text}.";
 
         ttsService
-            .speak(AudioMessage(text, volume: msg.text.toLowerCase().contains("emergency") ? 1.0 : 0.75, priority: 7));
+            .speak(AudioMessage(text, volume: 1.0, priority: 7));
       }
     }
     lastChat = LastReport.now(msg.pilotId + msg.text);
@@ -436,7 +436,7 @@ class AudioCueService {
           "$nameVerbal $distVerbal ${getUnitStr(UnitType.distCoarse, lexical: true)} out at $oclock o'clock$verbalAlt.";
 
       ttsService
-          .speak(AudioMessage(text, volume: 0.75, priority: 6, expires: clock.now().add(const Duration(seconds: 6))));
+          .speak(AudioMessage(text, volume: 1.0, priority: 6, expires: clock.now().add(const Duration(seconds: 6))));
     }
   }
 
@@ -444,7 +444,7 @@ class AudioCueService {
     if (_checkLastPilotVector(pilots.first.id, Vector(0, 0))) {
       final text = "${_assembleNames(pilots.toList())} $customMsg";
       ttsService
-          .speak(AudioMessage(text, volume: 0.8, priority: 4, expires: clock.now().add(const Duration(seconds: 6))));
+          .speak(AudioMessage(text, volume: 1.0, priority: 4, expires: clock.now().add(const Duration(seconds: 6))));
     }
   }
 
@@ -604,7 +604,7 @@ class AudioCueService {
         if (_checkLastPilotVector("scattered", Vector(0, 0))) {
           final text = "${activePilots.length} pilots are scattered around you.";
           ttsService.speak(
-              AudioMessage(text, volume: 0.75, priority: 8, expires: clock.now().add(const Duration(seconds: 4))));
+              AudioMessage(text, volume: 1.0, priority: 8, expires: clock.now().add(const Duration(seconds: 4))));
         }
       }
     }

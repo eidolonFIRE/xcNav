@@ -224,6 +224,7 @@ class SettingsMgr {
   late final SettingConfig<ProximitySize> adsbProximitySize;
   late final SettingConfig<List<String>> adsbFilters;
   late final SettingAction adsbTestAudio;
+  late final SettingConfig<bool> pauseMusicForSpeech;
   late final SettingConfig<bool> rumOptOut;
 
   // --- Experimental
@@ -365,6 +366,11 @@ class SettingsMgr {
         setter: (value) => value.map((e) => e.toUpperCase()).toList());
     adsbTestAudio =
         SettingAction(this, "Misc", () => null, title: "test_audio_cues", actionIcon: const Icon(Icons.volume_up));
+    pauseMusicForSpeech = SettingConfig(this, prefs, "Misc", "pauseMusicForSpeech", false,
+        title: "pause_music_for_speech",
+        icon: const Icon(Icons.music_off),
+        description: "Pause music while audio cues play, instead of lowering it.",
+        hidden: true);
     rumOptOut = SettingConfig(this, prefs, "Misc", "rumOptOut", false,
         title: "opt_out_usage_stats",
         icon: const Icon(Icons.cancel),

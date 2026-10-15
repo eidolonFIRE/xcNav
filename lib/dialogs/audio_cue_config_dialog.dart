@@ -17,7 +17,13 @@ void showAudioCueConfigDialog(BuildContext context) {
                           secondary: settingsMgr.chatTTS.icon,
                           title: Text(settingsMgr.chatTTS.title),
                           value: settingsMgr.chatTTS.value,
-                          onChanged: (newValue) => setState(() => settingsMgr.chatTTS.value = newValue))
+                          onChanged: (newValue) => setState(() => settingsMgr.chatTTS.value = newValue)),
+                      SwitchListTile(
+                          secondary: settingsMgr.pauseMusicForSpeech.icon,
+                          title: Text("settings.title.${settingsMgr.pauseMusicForSpeech.title}".tr()),
+                          subtitle: Text(settingsMgr.pauseMusicForSpeech.description!),
+                          value: settingsMgr.pauseMusicForSpeech.value,
+                          onChanged: (newValue) => setState(() => settingsMgr.pauseMusicForSpeech.value = newValue)),
                     ] +
                     // --- Each Entry
                     audioCueService.config.entries
@@ -30,7 +36,7 @@ void showAudioCueConfigDialog(BuildContext context) {
                                 )))
                         .toList()
                   ..insert(
-                      1,
+                      2,
                       ValueListenableBuilder(
                           valueListenable: settingsMgr.audioCueAltimeter.listenable,
                           builder: (context, value, _) {

@@ -134,6 +134,7 @@
             "adsb_proximity_profile": "ADSB közelségprofil",
             "filter_tail_numbers": "Lajstromszám(ok) szűrése",
             "test_audio_cues": "Hangjelzések tesztelése",
+            "pause_music_for_speech": "Zene szüneteltetése hangjelzéskor",
             "opt_out_usage_stats": "Névtelen használati statisztikák elutasítása",
             "show_servocarb": "ServoCarb menü megjelenítése",
             "spoof_location": "Helyzet hamisítása",
