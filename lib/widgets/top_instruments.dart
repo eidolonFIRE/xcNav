@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:provider/provider.dart';
 
-import 'package:xcnav/dialogs/wind_dialog.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/settings_service.dart';
-import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
+import 'package:xcnav/widgets/windicator.dart';
 
 const topInstrumentsHeight = 90.0;
 
@@ -31,96 +29,34 @@ class TopInstruments extends StatelessWidget {
           builder: (context, child) => Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             // const SizedBox(height: 100, child: VerticalDivider(thickness: 2, color: Colors.black)),
 
-            // --- Speedometer
-            Container(
-              constraints: const BoxConstraints(minWidth: topInstrumentsHeight),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+            // --- Speedometer (tap for big instruments)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.pushNamed(context, "/bigInstruments"),
+              child: Stack(
                 children: [
-                  myTelemetry.geo != null
-                      ? Text.rich(richValue(UnitType.speed, myTelemetry.speedSmooth.value,
-                          digits: 3,
-                          autoDecimalThresh: -1,
-                          valueStyle: const TextStyle(fontSize: 55),
-                          unitStyle: unitStyle))
-                      : const Text("--"),
+                  Container(
+                    constraints: const BoxConstraints(minWidth: topInstrumentsHeight),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        myTelemetry.geo != null
+                            ? Text.rich(richValue(UnitType.speed, myTelemetry.speedSmooth.value,
+                                digits: 3,
+                                autoDecimalThresh: -1,
+                                valueStyle: const TextStyle(fontSize: 55),
+                                unitStyle: unitStyle))
+                            : const Text("--"),
+                      ],
+                    ),
+                  ),
+                  const Positioned(left: 0, top: 0, child: Icon(Icons.open_in_full, size: 14, color: Colors.white54)),
                 ],
               ),
             ),
 
             // --- Windicator
-            Consumer<Wind>(
-                builder: (context, wind, _) => ValueListenableBuilder<bool>(
-                    valueListenable: settingsMgr.northlockWind.listenable,
-                    builder: (context, northlockWind, _) {
-                      return GestureDetector(
-                          onTap: () {
-                            showDialog(context: context, builder: (context) => const WindDialog());
-                          },
-                          child: SizedBox(
-                            width: 90,
-                            height: 90,
-                            child: Card(
-                              child: Stack(
-                                children: [
-                                  Positioned(
-                                    left: 4,
-                                    top: 4,
-                                    child: Container(
-                                      width: 15,
-                                      height: 15,
-                                      transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.rotationZ(
-                                          northlockWind ? 0 : (wind.samples.isEmpty ? 0 : -wind.samples.last.hdg)),
-                                      child: northlockWind
-                                          ? SvgPicture.asset(
-                                              "assets/images/compass_north.svg",
-                                              // fit: BoxFit.none,
-                                              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                                            )
-                                          : Transform.scale(
-                                              scale: 1.4,
-                                              child: SvgPicture.asset(
-                                                "assets/images/compass.svg",
-                                                // fit: BoxFit.none,
-                                              ),
-                                            ),
-                                    ),
-                                  ),
-                                  // Wind direction indicator
-                                  if (wind.result != null)
-                                    Align(
-                                        alignment: Alignment.topCenter,
-                                        child: Container(
-                                          transformAlignment: const Alignment(0, 0),
-                                          transform: Matrix4.rotationZ(wind.result!.windHdg +
-                                              (northlockWind && myTelemetry.geo != null ? 0 : -myTelemetry.geo!.hdg)),
-                                          child: SvgPicture.asset(
-                                            "assets/images/wind_sock.svg",
-                                            width: 80,
-                                            height: 80,
-                                          ),
-                                        )),
-                                  if (wind.result != null)
-                                    Align(
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          printValue(UnitType.speed, wind.result?.windSpd, digits: 2, decimals: 0) ??
-                                              "",
-                                          style: const TextStyle(
-                                              color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
-                                        )),
-                                  if (wind.result == null)
-                                    const Center(
-                                        child: Text(
-                                      "?",
-                                      style: TextStyle(color: Colors.grey, fontSize: 20),
-                                    ))
-                                ],
-                              ),
-                            ),
-                          ));
-                    })),
+            Windicator(myTelemetry: myTelemetry),
 
             // --- Altimeter stack
             ValueListenableBuilder<AltimeterMode>(

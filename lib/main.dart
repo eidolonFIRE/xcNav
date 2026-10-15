@@ -45,6 +45,7 @@ import 'package:xcnav/screens/about.dart';
 import 'package:xcnav/screens/weather_viewer.dart';
 import 'package:xcnav/screens/offline_maps.dart';
 import 'package:xcnav/screens/offline_area_editor.dart';
+import 'package:xcnav/screens/big_instruments.dart';
 
 // Misc
 import 'package:xcnav/notifications.dart';
@@ -333,6 +334,7 @@ class XCNav extends StatelessWidget {
         "/xc170Report": (context) => const Xc170ReportScreen(),
         "/offlineMaps": (context) => const OfflineMaps(),
         "/offlineAreaEditor": (context) => const OfflineAreaEditor(),
+        "/bigInstruments": (context) => const BigInstruments(),
       },
     );
   }
