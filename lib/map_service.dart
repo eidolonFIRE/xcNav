@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/dem_service.dart';
+import 'package:xcnav/services/openaip_service.dart';
 
 enum MapTileSrc {
   topo,
@@ -259,4 +260,8 @@ void emptyMapTileCache() {
     debugPrint("Clear Map Cache: $tileName");
     store.manage.reset();
   }
+
+  // Empty airspace / airports
+  debugPrint("Clear Map Cache: OpenAIP");
+  openAipService.clear();
 }

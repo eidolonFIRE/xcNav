@@ -2,7 +2,8 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' show LatLng;
+import 'package:xcnav/models/airspace.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
@@ -20,6 +21,12 @@ class ElevSample {
   ElevSample(this.latlng, this.dist, this.elev);
 }
 
+/// Show airspace floors this far (meters) above the top of the plot
+const _airspaceFloorLookUp = 600.0;
+
+/// Head room above a stretched-to airspace floor
+const _airspaceFloorMargin = 150.0;
+
 /// Side profile of the pilot's recent altitude, the ground below, and the ground ahead.
 ///
 /// X axis is time (ms since epoch). Samples ahead of the pilot are placed at `last.time + dist * distScale`.
@@ -36,11 +43,15 @@ class ElevationPlot extends StatelessWidget {
 
   final bool showPilotIcon;
 
+  /// Airspaces to draw a cross section of, along the track and the look-ahead.
+  final List<Airspace> airspaces;
+
   const ElevationPlot(this.geoData, this.groundData, this.distScale,
       {super.key,
       this.waypoint,
       this.waypointETA,
       this.showPilotIcon = true,
+      this.airspaces = const [],
       required this.liveVario,
       required this.liveSpeed});
 
@@ -54,8 +65,25 @@ class ElevationPlot extends StatelessWidget {
 
       final futureGround = groundData.map((e) => e.elev).toList();
 
+      // --- Airspace cross section (past track, then look-ahead)
+      final airspaceSections = airspaces.isEmpty
+          ? <AirspaceSection>[]
+          : airspaceCrossSection([
+              ...geoData
+                  .where((e) => e.ground != null)
+                  .map((e) => AirspaceProbe(e.time.toDouble(), e.latlng, e.ground!)),
+              ...groundData.map((e) => AirspaceProbe(geoData.last.time + e.dist, e.latlng, e.elev)),
+            ], airspaces);
+
       // --- Common misc.
-      final double maxElevUnsnapped = max(geoData.map((e) => e.alt).max, futureGround.maxOrNull ?? 0);
+      double maxElevUnsnapped = max(geoData.map((e) => e.alt).max, futureGround.maxOrNull ?? 0);
+      // Stretch up to show airspace floors that are close above us
+      for (final section in airspaceSections) {
+        final floor = section.points.map((e) => e.bottom).min;
+        if (floor > maxElevUnsnapped && floor < maxElevUnsnapped + _airspaceFloorLookUp) {
+          maxElevUnsnapped = floor + _airspaceFloorMargin;
+        }
+      }
 
       // --- Set vertical grid resolution
       final double vertGridResScale = max(1, ((maxElevUnsnapped / height) / 5).floor() * 2).toDouble();
@@ -128,6 +156,10 @@ class ElevationPlot extends StatelessWidget {
       final arrowSize = width / 10;
 
       return Stack(clipBehavior: Clip.hardEdge, children: [
+        // --- Airspace (behind ground)
+        if (airspaceSections.isNotEmpty)
+          Positioned.fill(child: CustomPaint(painter: _AirspacePainter(airspaceSections, toPixel))),
+
         LineChart(
             duration: Duration.zero,
             LineChartData(
@@ -258,4 +290,60 @@ class ElevationPlot extends StatelessWidget {
       ]);
     });
   }
+}
+
+/// Filled vertical slices of airspace, with the name along the floor.
+class _AirspacePainter extends CustomPainter {
+  final List<AirspaceSection> sections;
+  final Offset Function(double x, double y) toPixel;
+
+  _AirspacePainter(this.sections, this.toPixel);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.clipRect(Offset.zero & size);
+    for (final section in sections) {
+      final color = section.airspace.color;
+      final top = section.points.map((e) => toPixel(e.x, e.top)).toList();
+      final bottom = section.points.map((e) => toPixel(e.x, e.bottom)).toList();
+
+      final path = Path()..moveTo(top.first.dx, top.first.dy);
+      for (final p in top.skip(1)) {
+        path.lineTo(p.dx, p.dy);
+      }
+      // A single sample still gets a sliver so it's visible
+      if (top.length == 1) path.lineTo(top.first.dx + 2, top.first.dy);
+      if (bottom.length == 1) path.lineTo(bottom.first.dx + 2, bottom.first.dy);
+      for (final p in bottom.reversed) {
+        path.lineTo(p.dx, p.dy);
+      }
+      path.close();
+
+      canvas.drawPath(path, Paint()..color = color.withAlpha(70));
+      canvas.drawPath(
+          path,
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2);
+
+      // --- Label just above the floor, centered on the visible part
+      final left = max(0.0, bottom.first.dx);
+      final right = min(size.width, bottom.last.dx);
+      if (right - left < 40) continue;
+      final floorY = bottom.map((e) => e.dy).reduce(min).clamp(20.0, size.height);
+      final label = TextPainter(
+          text: TextSpan(
+              text: section.airspace.name.isNotEmpty ? section.airspace.name : section.airspace.label,
+              style: const TextStyle(color: Colors.white, fontSize: 12, shadows: [Shadow(blurRadius: 3)])),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+          ellipsis: "…")
+        ..layout(maxWidth: right - left);
+      label.paint(canvas, Offset((left + right - label.width) / 2, floorY - label.height - 2));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _AirspacePainter oldDelegate) => true;
 }

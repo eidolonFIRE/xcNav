@@ -36,10 +36,13 @@ import 'package:xcnav/views/map/edit_toolbar.dart';
 // dialogs
 import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
+import 'package:xcnav/dialogs/airport_info.dart';
+import 'package:xcnav/dialogs/airspace_info.dart';
 
 // models
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
+import 'package:xcnav/models/airport_info.dart';
 import 'package:xcnav/models/tfr.dart';
 
 // misc
@@ -48,6 +51,7 @@ import 'package:xcnav/main.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/tfr_service.dart';
+import 'package:xcnav/services/openaip_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
 
@@ -86,6 +90,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   final List<LatLng> measurementPoints = [];
 
   bool hideWaypoints = false;
+
+  bool get showAirspace =>
+      settingsMgr.showAirspaceOverlay.value && settingsMgr.mainMapTileSrc.value != MapTileSrc.sectional;
 
   DateTime? lastSavedLastKnownLatLng;
 
@@ -266,8 +273,13 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         if (tfr.containsPoint(latlng)) {
           // Tap on TFR
           tfr.showInfoDialog(context);
-          break;
+          return;
         }
+      }
+      // check tap on airspace
+      if (showAirspace) {
+        final hits = openAipService.airspacesAt(latlng);
+        if (hits.isNotEmpty) showAirspaceInfoDialog(context, hits);
       }
     }
   }
@@ -422,6 +434,21 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     );
   }
 
+  void onAirportTap(AirportInfo airport) {
+    if (focusMode == FocusMode.measurement) {
+      measurementEditor.add(measurementPoints, airport.latlng);
+      return;
+    }
+    showAirportInfoDialog(context, airport, onAddWaypoint: () {
+      editWaypoint(context, Waypoint(name: airport.shortName, latlngs: [airport.latlng], icon: "airport"), isNew: true)
+          ?.then((newWaypoint) {
+        if (newWaypoint != null && mounted) {
+          Provider.of<ActivePlan>(context, listen: false).updateWaypoint(newWaypoint);
+        }
+      });
+    });
+  }
+
   /// Single point waypoints. Tap to select, long press to edit.
   Widget buildWaypointMarkersLayer(ActivePlan plan) {
     return MarkerLayer(
@@ -535,6 +562,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       children: [
         Opacity(opacity: settingsMgr.mainMapOpacity.value, child: getMapTileLayer(settingsMgr.mainMapTileSrc.value)),
 
+        // Sectional already shows airspace
+        if (showAirspace) AirspaceLayer(center: myTelemetry.geo?.latlng ?? lastKnownLatLng),
+
         TfrLayer(center: myTelemetry.geo?.latlng ?? lastKnownLatLng),
 
         // https://nowcoast.noaa.gov/help/#!section=map-service-list
@@ -592,6 +622,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         // WeatherObservations
         if (showWeatherObservations) WeatherObservationLabelsLayer(bounds: mapController.camera.visibleBounds),
         if (showWeatherObservations) WeatherObservationArrowsLayer(bounds: mapController.camera.visibleBounds),
+
+        // Airports (below waypoints)
+        if (settingsMgr.showAirports.value)
+          AirportsLayer(center: myTelemetry.geo?.latlng ?? lastKnownLatLng, onTap: onAirportTap),
 
         // Waypoint markers
         if (!hideWaypoints) buildWaypointMarkersLayer(plan),
@@ -681,6 +715,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 curOpacity: settingsMgr.mainMapOpacity.value,
                 hideWaypoints: hideWaypoints,
                 hideWeatherObservations: settingsMgr.hideWeatherObservations.value,
+                showAirspace: settingsMgr.showAirspaceOverlay.value,
+                onChangedAirspace: (show) => setState(() => settingsMgr.showAirspaceOverlay.value = show),
+                showAirports: settingsMgr.showAirports.value,
+                onChangedAirports: (show) => setState(() => settingsMgr.showAirports.value = show),
                 onChangedWaypoints: (hidden) {
                   setState(() {
                     hideWaypoints = hidden;

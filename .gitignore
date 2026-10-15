@@ -48,3 +48,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ObjectBox native library for running `flutter test` on desktop (see test/openaip_store_test.dart)
+/lib/objectbox.dll
+/lib/libobjectbox.so
+/lib/libobjectbox.dylib

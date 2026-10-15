@@ -1,0 +1,214 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:4291233124440867214",
+      "lastPropertyId": "11:7374456275529870953",
+      "name": "AirportRecord",
+      "properties": [
+        {
+          "id": "1:7399586273586324128",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3146871583637668381",
+          "name": "aipId",
+          "indexId": "1:1290398035451173329",
+          "type": 9,
+          "flags": 34848
+        },
+        {
+          "id": "3:6410893390697977419",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "4:6474129711969204764",
+          "name": "code",
+          "type": 9
+        },
+        {
+          "id": "5:8725230172318430667",
+          "name": "type",
+          "type": 6
+        },
+        {
+          "id": "6:4325295025391239498",
+          "name": "lat",
+          "type": 8
+        },
+        {
+          "id": "7:6972511959743009518",
+          "name": "lng",
+          "type": 8
+        },
+        {
+          "id": "8:5362695313566135670",
+          "name": "elevation",
+          "type": 8
+        },
+        {
+          "id": "9:3067348276966147484",
+          "name": "private",
+          "type": 1
+        },
+        {
+          "id": "10:2671654699296858638",
+          "name": "frequencies",
+          "type": 9
+        },
+        {
+          "id": "11:7374456275529870953",
+          "name": "downloadedAt",
+          "type": 6
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "2:3971664378181951551",
+      "lastPropertyId": "17:4087082461422711906",
+      "name": "AirspaceRecord",
+      "properties": [
+        {
+          "id": "1:3538198396442090277",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:1678493341788515156",
+          "name": "aipId",
+          "indexId": "2:953311308059082560",
+          "type": 9,
+          "flags": 34848
+        },
+        {
+          "id": "3:1890638335153264630",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "4:3082975098519091252",
+          "name": "type",
+          "type": 6
+        },
+        {
+          "id": "5:6689504669307367757",
+          "name": "icaoClass",
+          "type": 6
+        },
+        {
+          "id": "6:979067301042729652",
+          "name": "lowerValue",
+          "type": 6
+        },
+        {
+          "id": "7:195253353962013877",
+          "name": "lowerUnit",
+          "type": 6
+        },
+        {
+          "id": "8:2404395573198739748",
+          "name": "lowerDatum",
+          "type": 6
+        },
+        {
+          "id": "9:2575077895079187710",
+          "name": "upperValue",
+          "type": 6
+        },
+        {
+          "id": "10:5325796974802276455",
+          "name": "upperUnit",
+          "type": 6
+        },
+        {
+          "id": "11:3601511003573192067",
+          "name": "upperDatum",
+          "type": 6
+        },
+        {
+          "id": "12:8507889650918852707",
+          "name": "points",
+          "type": 29
+        },
+        {
+          "id": "13:679867529136610077",
+          "name": "north",
+          "type": 8
+        },
+        {
+          "id": "14:8509965751737614910",
+          "name": "south",
+          "type": 8
+        },
+        {
+          "id": "15:6832868471058148863",
+          "name": "east",
+          "type": 8
+        },
+        {
+          "id": "16:1678198684010468017",
+          "name": "west",
+          "type": 8
+        },
+        {
+          "id": "17:4087082461422711906",
+          "name": "downloadedAt",
+          "type": 6
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:3617141677469130273",
+      "lastPropertyId": "5:498900888612230234",
+      "name": "OpenAipAreaRecord",
+      "properties": [
+        {
+          "id": "1:6082038719471541899",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:7528623219884465312",
+          "name": "lat",
+          "type": 8
+        },
+        {
+          "id": "3:2352348095967199503",
+          "name": "lng",
+          "type": 8
+        },
+        {
+          "id": "4:8258162063545699460",
+          "name": "radius",
+          "type": 8
+        },
+        {
+          "id": "5:498900888612230234",
+          "name": "downloadedAt",
+          "type": 6
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "3:3617141677469130273",
+  "lastIndexId": "2:953311308059082560",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}

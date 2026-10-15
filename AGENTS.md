@@ -13,6 +13,10 @@ xcNav is a Flutter app (Android + iOS) for cross-country paramotor navigation an
 - `assets/translations/` – localization strings
 - `test/` – unit and widget tests (`test/mock_providers.dart` has shared mocks)
 - `lib/secrets.dart` is required to build; copy from `lib/secrets.dart.example`. Never commit real secrets.
+- `lib/objectbox.g.dart` / `lib/objectbox-model.json` are generated from the ObjectBox entities in
+  `lib/models/openaip_records.dart`. After changing those, run `dart run build_runner build` and commit both files.
+- ObjectBox tests (`test/openaip_store_test.dart`) need the objectbox-c 4.3.1 native library in `lib/`
+  (e.g. `lib/objectbox.dll`, gitignored); they're skipped without it.
 
 ## Workflow
 

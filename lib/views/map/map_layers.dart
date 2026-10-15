@@ -5,12 +5,15 @@ import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import 'package:xcnav/models/airport_info.dart';
+import 'package:xcnav/models/airspace.dart';
 import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/tfr.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/services/openaip_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/tfr_service.dart';
 import 'package:xcnav/units.dart';
@@ -46,6 +49,101 @@ class TfrLayer extends StatelessWidget {
             return Container();
           }
         });
+  }
+}
+
+/// OpenAIP airspace outlines near [center].
+class AirspaceLayer extends StatelessWidget {
+  final LatLng center;
+
+  const AirspaceLayer({super.key, required this.center});
+
+  static List<Airspace>? _cachedFor;
+  static List<Polygon> _cachedPolygons = [];
+
+  static List<Polygon> _buildPolygons(List<Airspace> airspaces) {
+    if (!identical(airspaces, _cachedFor)) {
+      _cachedFor = airspaces;
+      _cachedPolygons = airspaces
+          .map((e) => Polygon(
+              points: e.points,
+              color: e.color.withAlpha(25),
+              borderColor: e.color.withAlpha(200),
+              borderStrokeWidth: 2.5,
+              pattern: e.dashed ? StrokePattern.dashed(segments: const [12, 8]) : const StrokePattern.solid()))
+          .toList();
+    }
+    return _cachedPolygons;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    openAipService.refresh(center);
+    return ListenableBuilder(
+        listenable: openAipService,
+        builder: (context, _) => PolygonLayer(polygons: _buildPolygons(openAipService.airspaces)));
+  }
+}
+
+/// OpenAIP airports near [center] as tappable icons. Hidden when zoomed out.
+class AirportsLayer extends StatelessWidget {
+  final LatLng center;
+  final void Function(AirportInfo airport) onTap;
+
+  /// Hide below this zoom level, there are too many
+  static const minZoom = 8.0;
+
+  /// Show the airport code below this zoom level
+  static const labelZoom = 10.0;
+
+  const AirportsLayer({super.key, required this.center, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    openAipService.refresh(center);
+    final zoom = MapCamera.of(context).zoom;
+    if (zoom < minZoom) return Container();
+    final showLabel = zoom >= labelZoom;
+    return ListenableBuilder(
+        listenable: openAipService,
+        builder: (context, _) => MarkerLayer(
+            markers: openAipService.airports
+                .map((e) => Marker(
+                    key: ValueKey("airport_${e.id}"),
+                    point: e.latlng,
+                    width: 60,
+                    // label space mirrored above, so the icon stays centered on the point
+                    height: 26 + 2 * 16,
+                    rotate: true,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: () => onTap(e),
+                          // Sectional style: blue towered, magenta non-towered
+                          child: Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                                color: e.hasTower ? Colors.blue.shade800 : Colors.pink.shade700,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2)),
+                            child: Transform.rotate(
+                                angle: pi / 4, child: const Icon(Icons.local_airport, size: 16, color: Colors.white)),
+                          ),
+                        ),
+                        if (showLabel && e.code != null)
+                          IgnorePointer(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 3),
+                              color: Colors.white70,
+                              child: Text(e.code!,
+                                  maxLines: 1, style: const TextStyle(color: Colors.black, fontSize: 11, height: 1.4)),
+                            ),
+                          ),
+                      ],
+                    )))
+                .toList()));
   }
 }
 

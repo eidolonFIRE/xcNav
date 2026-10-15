@@ -13,6 +13,7 @@ import 'package:xcnav/models/spike_filter.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/services/openaip_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
@@ -94,6 +95,7 @@ class ViewElevationState extends State<ViewElevation> {
       return ListenableBuilder(
           listenable: myTelemetry,
           builder: (context, _) {
+            if (myTelemetry.recordGeo.isNotEmpty) openAipService.refresh(myTelemetry.recordGeo.last.latlng);
             return Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -115,6 +117,7 @@ class ViewElevationState extends State<ViewElevation> {
                               distScale,
                               waypoint: activePlan.getSelectedWp(),
                               waypointETA: waypointETA,
+                              airspaces: openAipService.airspaces,
                               liveSpeed: myTelemetry.speedSmooth.value,
                               liveVario: myTelemetry.varioSmooth.value))),
 

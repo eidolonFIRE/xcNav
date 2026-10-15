@@ -58,6 +58,7 @@ import 'package:xcnav/secrets.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/services/ble_service.dart' as ble_service;
 import 'package:xcnav/services/offline_map_service.dart';
+import 'package:xcnav/services/openaip_service.dart';
 
 LatLng lastKnownLatLng = const LatLng(37, -122);
 const darkishColor = Color.fromARGB(255, 50, 50, 50);
@@ -138,6 +139,7 @@ void main() async {
     }
     await initMapCache();
     await offlineMapService.init();
+    await openAipService.init();
 
     if (settingsMgr.rumOptOut.value) {
       addAttribute(settingsMgr.languageOverride.id, settingsMgr.languageOverride.value.toString());

@@ -211,7 +211,8 @@ class SettingsMgr {
   late final SettingConfig<bool> showPilotNames;
   late final SettingConfig<bool> hideWeatherObservations;
   // late final SettingConfig<bool> showWeatherOverlay;
-  // late final SettingConfig<bool> showAirspaceOverlay;
+  late final SettingConfig<bool> showAirspaceOverlay;
+  late final SettingConfig<bool> showAirports;
   late final SettingConfig<bool> groupViewWaypoint;
 
   // --- Display Units
@@ -319,12 +320,9 @@ class SettingsMgr {
 
     // showWeatherOverlay = SettingConfig(this, prefs, "UI", "showWeatherOverlay", false,
     //     title: "Show weather overlay", description: "", icon: const Icon(Icons.cloud));
-    // showAirspaceOverlay = SettingConfig(this, prefs, "UI", "showAirspaceOverlay", true,
-    //     title: "Show airspace overlay",
-    //     icon: SvgPicture.asset(
-    //       "assets/images/airspace.svg",
-    //       color: Colors.grey.shade400,
-    //     ));
+    showAirspaceOverlay =
+        SettingConfig(this, prefs, "UI", "showAirspaceOverlay", true, title: "Show airspace overlay", hidden: true);
+    showAirports = SettingConfig(this, prefs, "UI", "showAirports", true, title: "Show airports", hidden: true);
     groupViewWaypoint = SettingConfig(this, prefs, "UI", "groupViewWaypoint", false,
         title: "group_view_includes_waypoints", icon: const Icon(Icons.pin_drop));
 

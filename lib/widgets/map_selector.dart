@@ -15,6 +15,10 @@ class MapSelector extends StatelessWidget {
   final bool hideWeatherObservations;
   final Function(bool hidden)? onChangedWaypoints;
   final Function(bool hidden)? onChangedWeatherObservations;
+  final bool showAirspace;
+  final Function(bool show)? onChangedAirspace;
+  final bool showAirports;
+  final Function(bool show)? onChangedAirports;
   final bool showAdsb;
   final double size;
 
@@ -27,6 +31,10 @@ class MapSelector extends StatelessWidget {
       this.hideWeatherObservations = false,
       this.onChangedWaypoints,
       this.onChangedWeatherObservations,
+      this.showAirspace = false,
+      this.onChangedAirspace,
+      this.showAirports = false,
+      this.onChangedAirports,
       this.showAdsb = false,
       this.size = 40});
 
@@ -53,6 +61,8 @@ class _MapSelectorDialog extends StatefulWidget {
 class _MapSelectorDialogState extends State<_MapSelectorDialog> {
   late bool hideWaypoints = widget.selector.hideWaypoints;
   late bool hideWeatherObservations = widget.selector.hideWeatherObservations;
+  late bool showAirspace = widget.selector.showAirspace;
+  late bool showAirports = widget.selector.showAirports;
 
   Widget buildTileRow(MapTileSrc tileSrc) {
     final s = widget.selector;
@@ -88,17 +98,19 @@ class _MapSelectorDialogState extends State<_MapSelectorDialog> {
   Widget buildAdsbTile() {
     final adsb = Provider.of<ADSB>(context);
     final hasData = adsb.lastHeartbeat > DateTime.now().millisecondsSinceEpoch - 1000 * 60;
-    return CheckboxListTile.adaptive(
+    return SwitchListTile.adaptive(
       contentPadding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
       value: adsb.enabled,
-      onChanged: (value) => adsb.enabled = value ?? false,
+      onChanged: (value) => adsb.enabled = value,
+      secondary: const Icon(Icons.radar),
       title: const Text("ADSB-in"),
       subtitle: Text.rich(TextSpan(children: [
         WidgetSpan(
             alignment: PlaceholderAlignment.middle,
             child: hasData
-                ? const Icon(Icons.check, color: Colors.green)
-                : const Icon(Icons.link_off, color: Colors.amber)),
+                ? const Icon(Icons.check, color: Colors.green, size: 20)
+                : const Icon(Icons.link_off, color: Colors.amber, size: 20)),
         TextSpan(text: "  ${hasData ? "Connected".tr() : "No Data".tr()}"),
         if (!hasData)
           WidgetSpan(
@@ -123,27 +135,54 @@ class _MapSelectorDialogState extends State<_MapSelectorDialog> {
           // - Sectional / Satellite / Topo
           ...[MapTileSrc.sectional, MapTileSrc.satellite, MapTileSrc.topo].map(buildTileRow),
 
-          if (s.onChangedWaypoints != null)
-            CheckboxListTile.adaptive(
+          // Sectional already shows airspace
+          if (s.onChangedAirspace != null && s.curLayer != MapTileSrc.sectional)
+            SwitchListTile.adaptive(
+                key: const Key("mapSelector_airspace"),
                 contentPadding: EdgeInsets.zero,
-                title: Text("Hide Waypoints".tr()),
-                value: hideWaypoints,
+                visualDensity: VisualDensity.compact,
+                secondary: const Icon(Icons.pentagon_outlined),
+                title: Text("Airspace".tr()),
+                value: showAirspace,
                 onChanged: (value) {
-                  if (value != null) {
-                    setState(() => hideWaypoints = value);
-                    s.onChangedWaypoints?.call(value);
-                  }
+                  setState(() => showAirspace = value);
+                  s.onChangedAirspace?.call(value);
+                }),
+          if (s.onChangedAirports != null)
+            SwitchListTile.adaptive(
+                key: const Key("mapSelector_airports"),
+                visualDensity: VisualDensity.compact,
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.local_airport),
+                title: Text("Airports".tr()),
+                value: showAirports,
+                onChanged: (value) {
+                  setState(() => showAirports = value);
+                  s.onChangedAirports?.call(value);
+                }),
+          if (s.onChangedWaypoints != null)
+            SwitchListTile.adaptive(
+                key: const Key("mapSelector_waypoints"),
+                visualDensity: VisualDensity.compact,
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.place),
+                title: Text("Waypoints".tr()),
+                value: !hideWaypoints,
+                onChanged: (value) {
+                  setState(() => hideWaypoints = !value);
+                  s.onChangedWaypoints?.call(!value);
                 }),
           if (s.onChangedWeatherObservations != null)
-            CheckboxListTile.adaptive(
+            SwitchListTile.adaptive(
+                visualDensity: VisualDensity.compact,
+                key: const Key("mapSelector_wind"),
                 contentPadding: EdgeInsets.zero,
-                title: Text("Hide Wind".tr()),
-                value: hideWeatherObservations,
+                secondary: const Icon(Icons.air),
+                title: Text("Wind Readings".tr()),
+                value: !hideWeatherObservations,
                 onChanged: (value) {
-                  if (value != null) {
-                    setState(() => hideWeatherObservations = value);
-                    s.onChangedWeatherObservations?.call(value);
-                  }
+                  setState(() => hideWeatherObservations = !value);
+                  s.onChangedWeatherObservations?.call(!value);
                 }),
           if (s.showAdsb) buildAdsbTile(),
         ]),

@@ -15,7 +15,7 @@ publish_to: none # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.14.7+272
+version: 2.15.0+273
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -87,6 +87,8 @@ dependencies:
   selectable_autolink_text: ^2.6.0
   convert: ^3.1.2
   audio_session: ^0.2.4
+  objectbox: ^4.3.1
+  objectbox_flutter_libs: ^4.3.1
 
 dependency_overrides:
   flutter_tts:
@@ -104,6 +106,10 @@ dev_dependencies:
   plugin_platform_interface: any
   flutter_lints: ^6.0.0
   patrol_finders: any
+  build_runner: ^2.7.1
+  objectbox_generator: ^4.3.1
+  # source_gen 3.1 (used by objectbox_generator 4.x) breaks with analyzer >= 8.2
+  analyzer: '>=7.4.0 <8.2.0'
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
