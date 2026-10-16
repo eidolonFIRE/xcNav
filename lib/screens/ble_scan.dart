@@ -57,7 +57,11 @@ class _ScanScreenState extends State<ScanScreen> {
                 // These devices don't advertise once they have a connection, so they won't show back up in the list
                 final scanned = results?.map((e) => e.device).toList() ?? [];
                 final devices = scanned +
-                    [ble_service.getHandler(name: "AiLink_1234"), ble_service.bleDeviceMeshtastic]
+                    [
+                      ble_service.getHandler(name: "AiLink_1234"),
+                      ble_service.bleDeviceMeshtastic,
+                      ble_service.bleDeviceStodeus
+                    ]
                         .map((e) => e?.device)
                         .nonNulls
                         .where((e) => !scanned.contains(e))

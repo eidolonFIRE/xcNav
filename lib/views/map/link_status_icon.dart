@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:xcnav/ble_devices/ble_device_meshtastic.dart';
+import 'package:xcnav/ble_devices/ble_device_stodeus.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/services/ble_service.dart' as ble_service;
 
 /// Compact status of GPS fix and the links to the group (cellular, and Meshtastic when a radio is attached).
+/// Also shows a BLE vario when one is attached.
 /// Tapping it opens the Meshtastic settings, where the links can be toggled.
 class LinkStatusIcon extends StatefulWidget {
   const LinkStatusIcon({super.key});
@@ -59,8 +61,23 @@ class _LinkStatusIconState extends State<LinkStatusIcon> {
   Widget build(BuildContext context) {
     final client = Provider.of<Client>(context);
     final meshtastic = ble_service.bleDeviceMeshtastic;
+    final vario = ble_service.bleDeviceStodeus;
 
     final icons = <Widget>[
+      ValueListenableBuilder<bool>(
+        valueListenable: vario.attached,
+        builder: (context, attached, _) => attached
+            ? ValueListenableBuilder<VarioStatus>(
+                valueListenable: vario.status,
+                builder: (context, status, _) => Icon(
+                  Icons.swap_vert,
+                  key: const Key("linkStatus_vario"),
+                  size: 24,
+                  color: varioStatusColor(status),
+                ),
+              )
+            : const SizedBox.shrink(),
+      ),
       if (meshtastic.isActive)
         Icon(
           Icons.cell_tower,
@@ -133,6 +150,17 @@ Color gpsStrengthColor(GpsStrength strength) {
     case GpsStrength.fair:
       return Colors.amber.shade800;
     case GpsStrength.good:
+      return Colors.green;
+  }
+}
+
+Color varioStatusColor(VarioStatus status) {
+  switch (status) {
+    case VarioStatus.disconnected:
+      return Colors.red;
+    case VarioStatus.connected:
+      return Colors.amber.shade800;
+    case VarioStatus.receiving:
       return Colors.green;
   }
 }

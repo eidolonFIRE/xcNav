@@ -8,6 +8,7 @@ import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
 import 'package:xcnav/ble_devices/ble_device_meshtastic.dart';
 import 'package:xcnav/ble_devices/ble_device_runleader.dart';
 import 'package:xcnav/ble_devices/ble_device_sp140.dart';
+import 'package:xcnav/ble_devices/ble_device_stodeus.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170.dart';
 import 'package:xcnav/settings_service.dart';
 
@@ -16,12 +17,14 @@ final BleDeviceBigBattery bleDeviceBigBattery = BleDeviceBigBattery();
 final BleDeviceRunleader bleDeviceRunleader = BleDeviceRunleader();
 final BleDeviceSp140 bleDeviceSp140 = BleDeviceSp140();
 final BleDeviceMeshtastic bleDeviceMeshtastic = BleDeviceMeshtastic();
+final BleDeviceStodeus bleDeviceStodeus = BleDeviceStodeus();
 
 final Map<String, BleDeviceHandler> _deviceHandlersByName = {
   r'xc170': bleDeviceXc170,
   r'BigBattery': bleDeviceBigBattery,
   r'[aA]i[lL]ink_[0-9a-zA-Z]{4}': bleDeviceRunleader,
   r'OpenPPG SP140[.]*': bleDeviceSp140,
+  r'([Uu]ltra|ULTRA|[Bb]lue|BLUE)[ _-]?([Bb]ip|BIP)|[Ss]todeus|STODEUS': bleDeviceStodeus,
 };
 
 /// Devices whose advertised name varies, so they're matched by advertised service instead.

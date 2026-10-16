@@ -95,4 +95,16 @@ void main() {
     telemetry.stopFlight(bypassRecording: true);
     expect(telemetry.listenIMU, isNull);
   });
+
+  test("external vario is used without smoothing", () {
+    final telemetry = MyTelemetry();
+    settingsMgr.forceGpsAltitude.value = false;
+    addTearDown(() => settingsMgr.forceGpsAltitude.value = true);
+
+    telemetry.handleExternalBaro(1013.25, vario: 1.5);
+    expect(telemetry.varioSmooth.value, 1.5);
+    expect(telemetry.externalBaroActive, true);
+    telemetry.handleExternalBaro(1013.20, vario: -0.4);
+    expect(telemetry.varioSmooth.value, -0.4);
+  });
 }

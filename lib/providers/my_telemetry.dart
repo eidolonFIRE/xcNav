@@ -141,6 +141,16 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
   StreamSubscription<BarometerEvent>? listenBaro;
   StreamSubscription<AccelerometerEvent>? listenIMU;
 
+  /// Phone sensors are ignored while an external (BLE) sensor has reported within this window.
+  static const externalSensorTimeout = Duration(seconds: 5);
+  DateTime? _externalBaroTime;
+  DateTime? _externalGpsTime;
+
+  bool get externalBaroActive =>
+      _externalBaroTime != null && clock.now().difference(_externalBaroTime!) < externalSensorTimeout;
+  bool get externalGpsActive =>
+      _externalGpsTime != null && clock.now().difference(_externalGpsTime!) < externalSensorTimeout;
+
   final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
   Stream<Position>? positionStream;
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -237,6 +247,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     final activePlan = Provider.of<ActivePlan>(globalContext!, listen: false);
     _setupServiceStatusStream(globalContext!);
 
+    bleDeviceStodeus.onBaro = (pressure, vario) => handleExternalBaro(pressure, vario: vario);
+    bleDeviceStodeus.onPosition = handleExternalPosition;
+
     // Listen for GPS-only altitude setting changes
     settingsMgr.forceGpsAltitude.listenable.addListener(() {
       _startBaroService(); // This will stop or start the service based on the setting
@@ -313,27 +326,69 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
     debugPrint("Starting Barometer Service Stream");
     listenBaro = barometerEventStream(samplingPeriod: SensorInterval.normalInterval).listen((event) {
-      // Handle barometer changes (run the vario)
-      final baroPrev = baro;
-      baro = BarometerEvent(event.pressure, event.timestamp);
-      double vario = 0;
-      if (baroPrev != null && baroPrev.timestamp.isBefore(baro!.timestamp)) {
-        vario = (altFromBaro(baro!.pressure, baroAmbient?.pressure) -
-                altFromBaro(baroPrev.pressure, baroAmbient?.pressure)) /
-            (baro!.timestamp.difference(baroPrev.timestamp)).inMilliseconds *
-            1000;
-        if (vario.isFinite) {
-          varioSmooth.value = varioSmooth.value * 0.8 + vario * 0.2;
-        } else {
-          varioSmooth.value = 0;
-        }
-      }
+      if (externalBaroActive) return;
+      _handleBaro(BarometerEvent(event.pressure, event.timestamp));
     }, onError: (error) {
       // Handle barometer errors
       listenBaro?.cancel();
       listenBaro = null;
       dd.error("Barometer Service Stream Error", errorMessage: error.toString());
     });
+  }
+
+  /// Handle barometer changes (run the vario).
+  /// [vario] (m/s) is used as-is, without our smoothing, when the sensor provides its own (already smoothed).
+  void _handleBaro(BarometerEvent event, {double? vario}) {
+    final baroPrev = baro;
+    baro = event;
+    if (vario != null) {
+      varioSmooth.value = vario.isFinite ? vario : 0;
+      return;
+    }
+    if (baroPrev != null && baroPrev.timestamp.isBefore(baro!.timestamp)) {
+      final rawVario =
+          (altFromBaro(baro!.pressure, baroAmbient?.pressure) - altFromBaro(baroPrev.pressure, baroAmbient?.pressure)) /
+              (baro!.timestamp.difference(baroPrev.timestamp)).inMilliseconds *
+              1000;
+      if (rawVario.isFinite) {
+        varioSmooth.value = varioSmooth.value * 0.8 + rawVario * 0.2;
+      } else {
+        varioSmooth.value = 0;
+      }
+    }
+  }
+
+  /// Pressure (hPa) from an external sensor. Takes priority over the phone barometer.
+  void handleExternalBaro(double pressure, {double? vario}) {
+    if (_inStandby || settingsMgr.forceGpsAltitude.value) {
+      _logExternalIgnored("barometer");
+      return;
+    }
+    if (!externalBaroActive) debugPrint("Using external barometer ($pressure hPa)");
+    _externalBaroTime = clock.now();
+    _handleBaro(BarometerEvent(pressure, clock.now()), vario: vario);
+  }
+
+  DateTime _externalIgnoredLogged = DateTime(0);
+
+  /// Rate limited, since external sensors report up to 10hz.
+  void _logExternalIgnored(String sensor) {
+    if (clock.now().difference(_externalIgnoredLogged) < externalSensorTimeout) return;
+    _externalIgnoredLogged = clock.now();
+    debugPrint(
+        "Ignoring external $sensor (standby: $_inStandby, forceGpsAltitude: ${settingsMgr.forceGpsAltitude.value}, "
+        "has context: ${globalContext?.mounted ?? false})");
+  }
+
+  /// Fix from an external GPS. Takes priority over the phone GPS.
+  void handleExternalPosition(Position position) {
+    if (_inStandby || globalContext == null || !globalContext!.mounted) {
+      _logExternalIgnored("GPS");
+      return;
+    }
+    if (!externalGpsActive) debugPrint("Using external GPS (${position.latitude}, ${position.longitude})");
+    _externalGpsTime = clock.now();
+    handleGeoUpdate(globalContext!, position);
   }
 
   /// G-force is only recorded in flight, so the IMU only runs in flight to save battery.
@@ -452,7 +507,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         _positionStreamSubscription?.cancel();
         _positionStreamSubscription = null;
       }).listen((position) {
-        if (context.mounted) {
+        if (context.mounted && !externalGpsActive) {
           handleGeoUpdate(context, position);
         }
       });
