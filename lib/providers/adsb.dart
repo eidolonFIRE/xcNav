@@ -61,7 +61,7 @@ class ADSB with ChangeNotifier {
   int lastHeartbeat = 0;
 
   bool portListening = false;
-  bool _enabled = false;
+  bool _enabled = true;
 
   final FlutterSerialCommunication _serial = FlutterSerialCommunication();
   final mavlink.MavlinkFramer _framer = mavlink.MavlinkFramer();
@@ -115,9 +115,8 @@ class ADSB with ChangeNotifier {
   /// Take our receiver's reports that still need to be sent to the server.
   /// With [near], only reports within [range] meters of it are returned. (Others are still cleared.)
   List<GA> takeObserved({LatLng? near, double range = double.infinity}) {
-    final list = _pendingObserved.values
-        .where((e) => near == null || latlngCalc.distance(e.latlng, near) <= range)
-        .toList();
+    final list =
+        _pendingObserved.values.where((e) => near == null || latlngCalc.distance(e.latlng, near) <= range).toList();
     _pendingObserved.clear();
     return list;
   }
@@ -205,8 +204,8 @@ class ADSB with ChangeNotifier {
     context = ctx;
 
     if (Platform.isAndroid) {
-      _serialSubscription = _serial.getSerialMessageListener().receiveBroadcastStream().listen(_onSerialData,
-          onError: (e) {
+      _serialSubscription =
+          _serial.getSerialMessageListener().receiveBroadcastStream().listen(_onSerialData, onError: (e) {
         debugPrint("USB SERIAL ERROR: ${e.toString()}");
       }, cancelOnError: false);
 
