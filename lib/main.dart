@@ -16,6 +16,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:xcnav/ble_devices/ble_device_xc170_report.dart';
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/locale.dart';
+import 'package:xcnav/models/geoid.dart';
 
 // providers
 import 'package:xcnav/providers/adsb.dart';
@@ -136,6 +137,11 @@ void main() async {
         final msg = 'Parsing last known LatLng from "$raw"';
         error(msg, errorMessage: err.toString(), errorStackTrace: trace);
       }
+    }
+    try {
+      await initGeoid();
+    } catch (err, trace) {
+      error("Loading geoid grid", errorMessage: err.toString(), errorStackTrace: trace);
     }
     await initMapCache();
     await offlineMapService.init();

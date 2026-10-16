@@ -25,6 +25,7 @@ import 'package:xcnav/datadog.dart' as dd;
 
 // --- Models
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/geoid.dart';
 import 'package:xcnav/models/gps_jump_filter.dart';
 import 'package:xcnav/models/vector.dart';
 import 'package:xcnav/models/waypoint.dart';
@@ -508,7 +509,8 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
         _positionStreamSubscription = null;
       }).listen((position) {
         if (context.mounted && !externalGpsActive) {
-          handleGeoUpdate(context, position);
+          handleGeoUpdate(
+              context, defaultTargetPlatform == TargetPlatform.android ? ellipsoidToMsl(position) : position);
         }
       });
 
