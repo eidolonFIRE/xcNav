@@ -12,12 +12,14 @@ import 'package:xcnav/ble_devices/ble_device_meshtastic.dart';
 // --- Models
 import 'package:xcnav/models/error_code.dart';
 import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/models/ga.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/mesh_message.dart';
 import 'package:xcnav/models/meshtastic_proto.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
+import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/group.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -36,7 +38,7 @@ enum ClientState {
   authenticated,
 }
 
-const double apiVersion = 7.0;
+const double apiVersion = 7.1;
 
 class MyHttpOverrides extends HttpOverrides {
   String goodCert;
@@ -65,6 +67,13 @@ class Client with ChangeNotifier {
   Timer? _reconnectTimer;
 
   int telemetrySkips = 0;
+  DateTime? _lastAirplanesSent;
+
+  /// Min time between sending our ADSB reports to the server
+  static const Duration airplanesObservedInterval = Duration(seconds: 3);
+
+  /// Only send ADSB reports within this range of us (meters), so the server isn't flooded with distant planes.
+  static const double airplanesObservedRange = 8000;
   int reconnectionWait = 0;
 
   final BuildContext globalContext;
@@ -266,6 +275,9 @@ class Client with ChangeNotifier {
         case "pilotSelectedWaypoint":
           handlePilotSelectedWaypoint(payload);
           break;
+        case "airplanesObserved":
+          handleAirplanesObserved(payload);
+          break;
         default:
           debugPrint("RX-unknown action: ${jsonMsg["action"]}");
       }
@@ -350,6 +362,19 @@ class Client with ChangeNotifier {
     }
   }
 
+  /// Echo GA reports from our own ADSB receiver to the server. (Not sent over the mesh.)
+  /// Throttled; only the latest report per plane, within [airplanesObservedRange] of [observer], is sent.
+  void sendAirplanesObserved(ADSB adsb, Geo observer) {
+    final now = clock.now();
+    if (_lastAirplanesSent != null && now.difference(_lastAirplanesSent!) < airplanesObservedInterval) return;
+    _lastAirplanesSent = now;
+    final airplanes = adsb.takeObserved(near: observer.latlng, range: airplanesObservedRange);
+    if (airplanes.isEmpty || state != ClientState.authenticated) return;
+    sendToAWS("airplanesObserved", {
+      "airplanes": airplanes.map((e) => e.toJson()).toList(),
+    });
+  }
+
   void requestGroupInfo(String? reqGroupID) {
     if (reqGroupID != null && reqGroupID != "") {
       sendToAWS("groupInfoRequest", {"group_id": reqGroupID});
@@ -398,8 +423,7 @@ class Client with ChangeNotifier {
     final tag = _meshTag;
     if (tag != null) {
       _meshSend(MeshWaypointUpdate(tag,
-          action: action.index,
-          waypoint: action == WaypointAction.delete ? {"id": waypoint.id} : waypoint.toJson()));
+          action: action.index, waypoint: action == WaypointAction.delete ? {"id": waypoint.id} : waypoint.toJson()));
     }
   }
 
@@ -542,6 +566,13 @@ class Client with ChangeNotifier {
         requestGroupInfo(group.currentGroupID);
       }
     }
+  }
+
+  // --- GA reports from other pilots' ADSB receivers
+  void handleAirplanesObserved(Map<String, dynamic> msg) {
+    final airplanes = msg["airplanes"];
+    if (airplanes is! List) return;
+    Provider.of<ADSB>(globalContext, listen: false).addServerPlanes(airplanes.map(GA.fromJson).nonNulls);
   }
 
   void handleAuthResponse(Map<String, dynamic> msg) {
@@ -760,8 +791,7 @@ class Client with ChangeNotifier {
   }
 
   /// Pilots who've never reached the server have no id, so fall back on the radio's node number.
-  String _myPilotId(Profile profile) =>
-      profile.id ?? "mesh-${bleDeviceMeshtastic.myNodeNum?.toRadixString(16) ?? ""}";
+  String _myPilotId(Profile profile) => profile.id ?? "mesh-${bleDeviceMeshtastic.myNodeNum?.toRadixString(16) ?? ""}";
 
   void _requestMeshPilotInfo(int nodeNum) {
     final tag = _meshTag;

@@ -75,15 +75,60 @@ class ADSB with ChangeNotifier {
   /// Devices that failed to connect (or were denied permission). Not retried until unplugged.
   final Set<String> _failedDevices = {};
 
+  /// Planes in [planes] that came from the server rather than our own receiver.
+  final Set<String> _serverPlaneIds = {};
+
+  /// Our own receiver's reports not yet echoed to the server. (Latest per plane)
+  final Map<String, GA> _pendingObserved = {};
+
+  /// Our own receiver has been heard from recently. When true, server reports are ignored.
+  bool get hasLocalSource =>
+      _device != null || lastHeartbeat > DateTime.now().millisecondsSinceEpoch - localSourceTimeout.inMilliseconds;
+
+  static const Duration localSourceTimeout = Duration(seconds: 15);
+
+  /// Report from our own receiver (USB or wifi).
+  @visibleForTesting
+  void addLocalPlane(GA ga) {
+    if (settingsMgr.adsbFilters.value.contains(ga.id)) return;
+    // Our receiver takes over from the server.
+    if (_serverPlaneIds.isNotEmpty) {
+      planes.removeWhere((id, _) => _serverPlaneIds.contains(id));
+      _serverPlaneIds.clear();
+    }
+    planes[ga.id] = ga;
+    _pendingObserved[ga.id] = ga;
+  }
+
+  /// Reports relayed by the server from other pilots' receivers.
+  void addServerPlanes(Iterable<GA> reports) {
+    if (hasLocalSource) return;
+    for (final ga in reports) {
+      if (settingsMgr.adsbFilters.value.contains(ga.id)) continue;
+      final existing = planes[ga.id];
+      if (existing != null && existing.timestamp > ga.timestamp) continue;
+      planes[ga.id] = ga;
+      _serverPlaneIds.add(ga.id);
+    }
+  }
+
+  /// Take our receiver's reports that still need to be sent to the server.
+  /// With [near], only reports within [range] meters of it are returned. (Others are still cleared.)
+  List<GA> takeObserved({LatLng? near, double range = double.infinity}) {
+    final list = _pendingObserved.values
+        .where((e) => near == null || latlngCalc.distance(e.latlng, near) <= range)
+        .toList();
+    _pendingObserved.clear();
+    return list;
+  }
+
   void _onSerialData(dynamic data) {
     if (data is! Uint8List) return;
     for (final frame in _framer.add(data)) {
       final ga = mavlink.decodeMavlink(frame);
       if (ga != null) {
-        if (!settingsMgr.adsbFilters.value.contains(ga.id)) {
-          planes[ga.id] = ga;
-        }
         heartbeat();
+        addLocalPlane(ga);
       }
     }
   }
@@ -225,11 +270,7 @@ class ADSB with ChangeNotifier {
             // debugPrint("${dg.data.toString()}");
             heartbeat();
             final ga = gdl90.decodeGDL90(dg.data);
-            if (ga != null) {
-              if (!settingsMgr.adsbFilters.value.contains(ga.id)) {
-                planes[ga.id] = ga;
-              }
-            }
+            if (ga != null) addLocalPlane(ga);
           }
         }, onError: (error) {
           debugPrint("ADSB socket error: ${error.toString()}");
@@ -254,7 +295,10 @@ class ADSB with ChangeNotifier {
   void cleanupOldEntries() {
     final thresh = DateTime.now().millisecondsSinceEpoch - 1000 * 12;
     for (GA each in planes.values.toList()) {
-      if (each.timestamp < thresh) planes.remove(each.id);
+      if (each.timestamp < thresh) {
+        planes.remove(each.id);
+        _serverPlaneIds.remove(each.id);
+      }
     }
   }
 

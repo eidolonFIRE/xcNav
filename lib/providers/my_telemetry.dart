@@ -569,6 +569,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
 
         // Update ADSB
         adsb.refresh(geo!, inFlight);
+        client.sendAirplanesObserved(adsb, geo!);
 
         if (inFlight) {
           audioCueService.cueElevationTriggers(geo!);
