@@ -65,9 +65,9 @@ void main() {
         expect(job.minZoom, offlineMinZoom);
         expect(job.maxZoom, offlineMaxZoom(job.src!));
       }
-      expect(jobs.firstWhere((e) => e.src == MapTileSrc.topo).maxZoom, 16);
+      expect(jobs.firstWhere((e) => e.src == MapTileSrc.topo).maxZoom, 14);
       expect(jobs.firstWhere((e) => e.src == MapTileSrc.sectional).maxZoom, 10);
-      expect(jobs.firstWhere((e) => e.src == MapTileSrc.satellite).maxZoom, 17);
+      expect(jobs.firstWhere((e) => e.src == MapTileSrc.satellite).maxZoom, 15);
     });
 
     test("always includes elevation at z10 and z12", () {

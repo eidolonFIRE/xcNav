@@ -471,12 +471,12 @@ void main() {
 
       // Socket open, not yet authenticated
       expect(client.state, ClientState.connected);
-      expect(cellularStatusIcon(client), Icons.signal_cellular_alt_1_bar);
+      expect(cellularStatusIcon(client), Icons.signal_cellular_connected_no_internet_4_bar);
 
       // First few failed attempts still count as connecting
       client.reconnectionWait = 1;
       client.state = ClientState.disconnected;
-      expect(cellularStatusIcon(client), Icons.signal_cellular_alt_1_bar);
+      expect(cellularStatusIcon(client), Icons.signal_cellular_connected_no_internet_4_bar);
       await tester.pump(const Duration(seconds: 2));
 
       // Repeated failures show disconnected
