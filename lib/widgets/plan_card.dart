@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -17,7 +17,10 @@ import 'package:xcnav/providers/plans.dart';
 // --- Misc
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/flight_plan.dart';
-import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/map_shapes.dart';
+import 'package:xcnav/main.dart';
+import 'package:xcnav/views/map/map_markers.dart';
+import 'package:xcnav/views/map/xc_map.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
 
@@ -36,8 +39,7 @@ class _PlanCardState extends State<PlanCard> {
   Set<WaypointID> checkedElements = {};
 
   final scrollController = ScrollController();
-  final mapController = MapController();
-  bool mapReady = false;
+  final mapController = XcMapController();
 
   @override
   void initState() {
@@ -103,6 +105,17 @@ class _PlanCardState extends State<PlanCard> {
     }
   }
 
+  /// Plan paths, thicker when checked
+  ShapeLayer buildPaths() => ShapeLayer("paths",
+      lines: widget.plan.waypoints.values
+          .where((element) => element.isPath)
+          .map((e) => MapPolyline(
+              points: e.latlng,
+              hitValue: e.id,
+              width: checkedElements.contains(e.id) ? 6.0 : 3.0,
+              color: e.getColor()))
+          .toList());
+
   Future<bool?> replacePlanDialog(BuildContext context) {
     return showDialog<bool?>(
         context: context,
@@ -133,7 +146,6 @@ class _PlanCardState extends State<PlanCard> {
 
   @override
   Widget build(BuildContext context) {
-    final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -307,71 +319,43 @@ class _PlanCardState extends State<PlanCard> {
               aspectRatio: 1.5,
               child: Stack(
                 children: [
-                  FlutterMap(
-                      mapController: mapController,
-                      options: MapOptions(
-                        onMapReady: () => setState(
-                          () {
-                            debugPrint("Map Ready");
-                            mapReady = true;
-                          },
-                        ),
-                        initialCameraFit:
-                            widget.plan.getBounds() != null ? CameraFit.bounds(bounds: widget.plan.getBounds()!) : null,
-                        interactionOptions:
-                            const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
-                      ),
+                  XcMap(
+                      controller: mapController,
+                      initialBounds: widget.plan.getBounds(),
+                      initialCenter: lastKnownLatLng,
+                      rotateGestures: false,
+                      tiltGestures: false,
+                      onTap: (latlng, screenPoint) {
+                        final camera = mapController.camera.value;
+                        final p0 = camera == null ? null : buildPaths().hitTestLines(camera, screenPoint).firstOrNull;
+                        if (p0 != null) {
+                          setState(
+                            () {
+                              toggleItem(p0);
+                            },
+                          );
+                        }
+                      },
+                      shapes: [
+                        // Flight plan paths
+                        buildPaths(),
+                      ],
                       children: [
-                        getMapTileLayer(MapTileSrc.topo),
-
-                        // Flight plan paths - Polyline
-                        GestureDetector(
-                          onTap: () {
-                            final p0 = polylineHit.value?.hitValues.first;
-
-                            if (p0 != null) {
-                              setState(
-                                () {
-                                  toggleItem(p0);
-                                },
-                              );
-                            }
-                          },
-                          child: PolylineLayer(
-                            hitNotifier: polylineHit,
-                            polylines: widget.plan.waypoints.values
-                                .where(
-                                  (element) => element.isPath,
-                                )
-                                .map((e) => Polyline(
-                                    points: e.latlng,
-                                    hitValue: e.id,
-                                    strokeWidth: checkedElements.contains(e.id) ? 6.0 : 3.0,
-                                    color: e.getColor()))
-                                .toList(),
-                          ),
-                        ),
-
                         // Waypoint Markers
                         MarkerLayer(
                           markers: widget.plan.waypoints.values
+                              .where((e) => e.latlng.length == 1)
                               .map((e) {
-                                if (e.latlng.length == 1) {
-                                  final bool isChecked = checkedElements.contains(e.id);
-                                  return Marker(
-                                      point: e.latlng[0],
-                                      height: isChecked ? 40 : 30,
-                                      width: (isChecked ? 40 : 30) * 2 / 3,
-                                      child: Container(
-                                          transform: Matrix4.translationValues(0, isChecked ? (-15 * 4 / 3) : -15, 0),
-                                          child: GestureDetector(
-                                              onTap: () => setState(() => toggleItem(e.id)),
-                                              child: WaypointMarker(e, isChecked ? 40 : 30))));
-                                } else {
-                                  return null;
-                                }
+                                final bool isChecked = checkedElements.contains(e.id);
+                                return MapMarker(
+                                    point: e.latlng[0],
+                                    height: isChecked ? 40 : 30,
+                                    width: (isChecked ? 40 : 30) * 2 / 3,
+                                    alignment: Alignment.topCenter,
+                                    child: GestureDetector(
+                                        onTap: () => setState(() => toggleItem(e.id)),
+                                        child: WaypointMarker(e, isChecked ? 40 : 30)));
                               })
-                              .nonNulls
                               .toList(),
                         ),
                       ]),
@@ -422,7 +406,7 @@ class _PlanCardState extends State<PlanCard> {
                             setState(
                               () {
                                 final wp = widget.plan.waypoints.values.toList()[index];
-                                mapController.move(wp.latlng.first, mapController.camera.zoom);
+                                mapController.moveTo(center: wp.latlng.first);
                                 toggleItem(wp.id);
                               },
                             );

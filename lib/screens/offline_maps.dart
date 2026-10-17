@@ -1,11 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/map_camera.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/models/offline_area.dart';
 import 'package:xcnav/services/offline_map_service.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/widgets/static_map.dart';
 
 class OfflineMaps extends StatelessWidget {
   const OfflineMaps({super.key});
@@ -82,20 +84,14 @@ class OfflineAreaCard extends StatelessWidget {
           SizedBox(
             height: 120,
             child: IgnorePointer(
-              child: FlutterMap(
-                  options: MapOptions(
-                    initialCameraFit:
-                        CameraFit.bounds(bounds: padLatLngBounds(LatLngBounds.fromPoints(area.outline), 0.2)),
-                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
-                  ),
-                  children: [
-                    getMapTileLayer(area.layers.firstOrNull ?? MapTileSrc.topo),
-                    PolygonLayer(polygons: [
-                      Polygon(
-                          points: area.outline,
-                          color: Colors.blue.withAlpha(40),
-                          borderColor: Colors.blue,
-                          borderStrokeWidth: 2),
+              child: StaticMap(
+                  tileSrc: area.layers.firstOrNull ?? MapTileSrc.topo,
+                  bounds: padLatLngBounds(LatLngBounds.fromPoints(area.outline), 0.2),
+                  padding: EdgeInsets.zero,
+                  shapes: [
+                    ShapeLayer("area", polygons: [
+                      MapPolygon(
+                          points: area.outline, fillColor: Colors.blue.withAlpha(40), borderColor: Colors.blue, borderWidth: 2),
                     ]),
                   ]),
             ),

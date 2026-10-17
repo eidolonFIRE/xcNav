@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:easy_localization/easy_localization.dart' as tr;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart' as intl;
@@ -21,8 +20,12 @@ import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_log.dart';
 import 'package:xcnav/models/fuel_report.dart';
 import 'package:xcnav/models/log_view.dart';
+import 'package:xcnav/models/map_camera.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/views/map/map_markers.dart';
+import 'package:xcnav/views/map/xc_map.dart';
 import 'package:xcnav/widgets/elevation_replay.dart';
 import 'package:xcnav/widgets/engine_replay.dart';
 import 'package:xcnav/widgets/g_force_pages.dart';
@@ -39,9 +42,7 @@ class LogReplay extends StatefulWidget {
 }
 
 class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMixin {
-  final mapKey = GlobalKey(debugLabel: "replayMap");
-  final mapController = MapController();
-  bool mapReady = false;
+  final mapController = XcMapController();
   MapTileSrc mapTileSrc = MapTileSrc.topo;
   bool hideWaypoints = false;
   double mapOpacity = 1.0;
@@ -147,14 +148,13 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
   }
 
   void fitMap() {
-    mapController.fitCamera(CameraFit.coordinates(
-        coordinates: log.samples
+    mapController.fitBounds(
+        LatLngBounds.fromPoints(log.samples
             .sublist(logView.sampleIndexRange.start, logView.sampleIndexRange.end)
-            .map((e) => e.latlng)
-            .toList(),
+            .map((e) => e.latlng)),
         padding: EdgeInsets.all(50),
-        minZoom: 4,
-        maxZoom: 14));
+        minZoom: 3,
+        maxZoom: 13);
   }
 
   void editFuelReport(BuildContext context, int reportIndex) {
@@ -322,149 +322,134 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                 child: (mainDividerPosition < 80)
                     ? Container()
                     : Stack(children: [
-                        FlutterMap(
-                            key: mapKey,
-                            mapController: mapController,
-                            options: MapOptions(
-                                initialCameraFit: CameraFit.bounds(
-                                    bounds: log.getBounds(), padding: EdgeInsets.all(50), minZoom: 4, maxZoom: 14),
-                                onMapReady: () {
-                                  setState(() {
-                                    mapReady = true;
-                                  });
-                                },
-                                interactionOptions:
-                                    const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
-                                onLongPress: (pos, latlng) {
-                                  // Copy latlng to clipboard
-                                  Clipboard.setData(ClipboardData(
-                                      text:
-                                          "${latlng.latitude.toStringAsFixed(6)},${latlng.longitude.toStringAsFixed(8)}"));
-                                  ScaffoldMessenger.of(context).showMaterialBanner(MaterialBanner(
-                                    padding: EdgeInsets.all(20),
-                                    content: Text("Lat,Long copied to clipboard"),
-                                    leading: Icon(Icons.copy),
-                                    backgroundColor: Colors.green,
-                                    actions: <Widget>[
-                                      TextButton(
-                                          onPressed: () => ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
-                                          child: Text('DISMISS')),
-                                    ],
-                                  ));
-                                }),
-                            children: [
-                              Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
-
-                              // Waypoints: paths
-                              if (!hideWaypoints)
-                                PolylineLayer(
-                                  polylines: log.waypoints
-                                      .where((value) => value.latlng.length > 1)
-                                      .map((e) => Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor()))
-                                      .toList(),
-                                ),
-
-                              // Log line - base
-                              PolylineLayer(polylines: [
-                                Polyline(
-                                    points: log.samples.map((e) => e.latlng).toList(),
-                                    strokeWidth: 3,
-                                    borderColor: Colors.black,
-                                    // borderStrokeWidth: 1,
-                                    color: Colors.amber,
-                                    pattern: StrokePattern.dotted()
-                                    // gradientColors: [Colors.amber, Colors.orange],
-                                    )
-                              ]),
-
-                              // Waypoint markers
-                              if (!hideWaypoints)
-                                MarkerLayer(
-                                    markers: log.waypoints
-                                        .where((e) => e.latlng.length == 1)
-                                        .map((e) => Marker(
-                                            point: e.latlng[0],
-                                            height: 60 * 0.8,
-                                            width: 40 * 0.8,
-                                            rotate: true,
-                                            alignment: Alignment.topCenter,
-                                            child: WaypointMarker(e, 60 * 0.8)))
-                                        .toList()),
-
-                              // --- Log Line
-                              ListenableBuilder(
-                                  listenable: logView,
-                                  builder: (context, _) {
-                                    return PolylineLayer(polylines: [
-                                      Polyline(
-                                          points: log.samples
-                                              .sublist(logView.sampleIndexRange.start,
-                                                  min(log.samples.length, logView.sampleIndexRange.end + 1))
-                                              .map((e) => e.latlng)
-                                              .toList(),
-                                          strokeWidth: 4,
-                                          borderColor: Colors.black,
-                                          borderStrokeWidth: 1,
-                                          color: Colors.amber
-                                          // gradientColors: [Colors.amber, Colors.orange],
-                                          )
-                                    ]);
-                                  }),
-
-                              // --- Fuel reports
-                              MarkerLayer(
-                                markers: log.fuelReportController.fuelReports
-                                    .mapIndexed((index, e) => Marker(
-                                        alignment: Alignment.topRight,
-                                        height: 40,
-                                        width: 60,
-                                        point: log.samples[log.timeToSampleIndex(e.time)].latlng,
-                                        child: GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                selectTime(e.time.millisecondsSinceEpoch.toDouble());
-                                              });
-                                            },
-                                            onLongPress: () {
-                                              editFuelReport(context, index);
-                                            },
-
-                                            // Fuel Report Marker
-                                            child: LabelFlag(
-                                                direction: TextDirection.ltr,
-                                                text: Text.rich(
-                                                  richValue(UnitType.fuel, e.amount, decimals: 1),
-                                                  style: const TextStyle(color: Colors.white),
-                                                ),
-                                                color: Colors.blue))))
-                                    .toList(),
-                              ),
-
-                              // --- "ME" marker if selected
-                              ValueListenableBuilder<DateTime?>(
-                                  valueListenable: selectedTime,
-                                  builder: (context, time, _) {
-                                    if (time != null) {
-                                      final geo = log.samples[log.timeToSampleIndex(time)];
-                                      return MarkerLayer(
-                                        markers: [
-                                          Marker(
-                                            width: 40.0,
-                                            height: 40.0,
-                                            point: geo.latlng,
-                                            child: Container(
-                                              transformAlignment: const Alignment(0, 0),
-                                              transform: Matrix4.rotationZ(geo.hdg),
-                                              child: Image.asset("assets/images/red_arrow.png"),
-                                            ),
-                                          ),
+                        ListenableBuilder(
+                            listenable: logView,
+                            builder: (context, _) => XcMap(
+                                    controller: mapController,
+                                    tileSrc: mapTileSrc,
+                                    opacity: mapOpacity,
+                                    initialBounds: log.getBounds(),
+                                    initialPadding: EdgeInsets.all(50),
+                                    initialMaxZoom: 13,
+                                    rotateGestures: false,
+                                    onLongPress: (latlng, _) {
+                                      // Copy latlng to clipboard
+                                      Clipboard.setData(ClipboardData(
+                                          text:
+                                              "${latlng.latitude.toStringAsFixed(6)},${latlng.longitude.toStringAsFixed(8)}"));
+                                      ScaffoldMessenger.of(context).showMaterialBanner(MaterialBanner(
+                                        padding: EdgeInsets.all(20),
+                                        content: Text("Lat,Long copied to clipboard"),
+                                        leading: Icon(Icons.copy),
+                                        backgroundColor: Colors.green,
+                                        actions: <Widget>[
+                                          TextButton(
+                                              onPressed: () => ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+                                              child: Text('DISMISS')),
                                         ],
-                                      );
-                                    } else {
-                                      return Container();
-                                    }
-                                  }),
-                            ]),
+                                      ));
+                                    },
+                                    shapes: [
+                                      // Waypoints: paths
+                                      if (!hideWaypoints)
+                                        ShapeLayer("waypointPaths",
+                                            lines: log.waypoints
+                                                .where((value) => value.latlng.length > 1)
+                                                .map((e) => MapPolyline(points: e.latlng, width: 6.0, color: e.getColor()))
+                                                .toList()),
+
+                                      // Log line - base
+                                      ShapeLayer("logBase", lines: [
+                                        MapPolyline(
+                                            points: log.samples.map((e) => e.latlng).toList(),
+                                            width: 3,
+                                            color: Colors.amber,
+                                            pattern: LinePattern.dotted)
+                                      ]),
+
+                                      // --- Log Line
+                                      ShapeLayer("logSelection", lines: [
+                                        MapPolyline(
+                                            points: log.samples
+                                                .sublist(logView.sampleIndexRange.start,
+                                                    min(log.samples.length, logView.sampleIndexRange.end + 1))
+                                                .map((e) => e.latlng)
+                                                .toList(),
+                                            width: 4,
+                                            borderColor: Colors.black,
+                                            borderWidth: 1,
+                                            color: Colors.amber)
+                                      ]),
+                                    ],
+                                    children: [
+                                      // Waypoint markers
+                                      if (!hideWaypoints)
+                                        MarkerLayer(
+                                            markers: log.waypoints
+                                                .where((e) => e.latlng.length == 1)
+                                                .map((e) => MapMarker(
+                                                    point: e.latlng[0],
+                                                    height: 60 * 0.8,
+                                                    width: 40 * 0.8,
+                                                    alignment: Alignment.topCenter,
+                                                    child: WaypointMarker(e, 60 * 0.8)))
+                                                .toList()),
+
+                                      // --- Fuel reports
+                                      MarkerLayer(
+                                        markers: log.fuelReportController.fuelReports
+                                            .mapIndexed((index, e) => MapMarker(
+                                                alignment: Alignment.topRight,
+                                                height: 40,
+                                                width: 60,
+                                                point: log.samples[log.timeToSampleIndex(e.time)].latlng,
+                                                child: GestureDetector(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        selectTime(e.time.millisecondsSinceEpoch.toDouble());
+                                                      });
+                                                    },
+                                                    onLongPress: () {
+                                                      editFuelReport(context, index);
+                                                    },
+
+                                                    // Fuel Report Marker
+                                                    child: LabelFlag(
+                                                        direction: TextDirection.ltr,
+                                                        text: Text.rich(
+                                                          richValue(UnitType.fuel, e.amount, decimals: 1),
+                                                          style: const TextStyle(color: Colors.white),
+                                                        ),
+                                                        color: Colors.blue))))
+                                            .toList(),
+                                      ),
+
+                                      // --- "ME" marker if selected
+                                      ValueListenableBuilder<DateTime?>(
+                                          valueListenable: selectedTime,
+                                          builder: (context, time, _) {
+                                            if (time != null) {
+                                              final geo = log.samples[log.timeToSampleIndex(time)];
+                                              return MarkerLayer(
+                                                markers: [
+                                                  MapMarker(
+                                                    width: 40.0,
+                                                    height: 40.0,
+                                                    point: geo.latlng,
+                                                    rotateWithMap: true,
+                                                    child: Container(
+                                                      transformAlignment: const Alignment(0, 0),
+                                                      transform: Matrix4.rotationZ(geo.hdg),
+                                                      child: Image.asset("assets/images/red_arrow.png"),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            } else {
+                                              return const SizedBox();
+                                            }
+                                          }),
+                                    ])),
 
                         // --- Instrument data for currently selected time
                         Align(

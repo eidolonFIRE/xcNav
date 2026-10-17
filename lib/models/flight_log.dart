@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:xcnav/models/map_camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:xcnav/gaussian_filter.dart';
 import 'package:xml/xml.dart';

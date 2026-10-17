@@ -1,4 +1,4 @@
-import 'package:flutter_map/flutter_map.dart';
+import 'package:xcnav/models/map_camera.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/util.dart';
 

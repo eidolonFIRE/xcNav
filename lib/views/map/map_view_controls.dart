@@ -1,17 +1,17 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/svg.dart';
 
+import 'package:xcnav/models/map_camera.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/views/map/focus_mode.dart';
+import 'package:xcnav/views/map/xc_map.dart';
 import 'package:xcnav/widgets/map_button.dart';
 
-/// Column of map view buttons: compass / north-lock, focus me / group, zoom, and measurement.
+/// Column of map view buttons: compass / north-lock, layers, 3D, focus me / group, zoom, and measurement.
 class MapViewControls extends StatelessWidget {
-  final MapController mapController;
-  final bool mapReady;
+  final XcMapController mapController;
   final FocusMode focusMode;
   final void Function(FocusMode mode) onSetFocusMode;
   final VoidCallback onToggleNorthLock;
@@ -26,7 +26,6 @@ class MapViewControls extends StatelessWidget {
   const MapViewControls({
     super.key,
     required this.mapController,
-    required this.mapReady,
     required this.focusMode,
     required this.onSetFocusMode,
     required this.onToggleNorthLock,
@@ -36,15 +35,23 @@ class MapViewControls extends StatelessWidget {
   });
 
   void zoomBy(double delta) {
-    mapController.move(mapController.camera.center, mapController.camera.zoom + delta);
-    debugPrint("Map Zoom: ${mapController.camera.zoom}");
+    mapController.zoomBy(delta);
     onZoom();
+  }
+
+  /// Tilt for a perspective ("3D") view
+  static const tilted = 55.0;
+
+  void toggleTilt() {
+    final tilt = mapController.camera.value?.tilt ?? 0;
+    mapController.moveTo(tilt: tilt > 5 ? 0 : tilted, duration: const Duration(milliseconds: 600));
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constaints) {
-      final buttonSize = max(30, min(60, constaints.maxHeight / 8)).toDouble();
+      // 8 buttons plus their connectors: about 9.2 button heights
+      final buttonSize = max(30, min(60, constaints.maxHeight / 9.2)).toDouble();
       final connector = SizedBox(
           width: 2,
           height: buttonSize / 4,
@@ -65,13 +72,11 @@ class MapViewControls extends StatelessWidget {
                   onPressed: onToggleNorthLock,
                   selected: false,
                   child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
-                    StreamBuilder(
-                        stream: mapController.mapEventStream,
-                        builder: (context, event) => Container(
+                    ValueListenableBuilder<double>(
+                        valueListenable: mapController.bearing,
+                        builder: (context, bearing, _) => Container(
                               transformAlignment: const Alignment(0, 0),
-                              transform: mapReady
-                                  ? Matrix4.rotationZ(mapController.camera.rotation * pi / 180)
-                                  : Matrix4.rotationZ(0),
+                              transform: Matrix4.rotationZ(-bearing * pi / 180),
                               child: settingsMgr.northlockMap.value
                                   ? Padding(
                                       padding: const EdgeInsets.all(4.0),
@@ -83,6 +88,23 @@ class MapViewControls extends StatelessWidget {
               connector,
               // --- Map layers
               layerSelectorBuilder(buttonSize),
+              connector,
+              // --- 3D (tilt)
+              ValueListenableBuilder<MapCamera?>(
+                  valueListenable: mapController.camera,
+                  builder: (context, camera, _) {
+                    final isTilted = (camera?.tilt ?? 0) > 5;
+                    return MapButton(
+                      key: const Key("viewMap_tilt"),
+                      size: buttonSize,
+                      selected: isTilted,
+                      onPressed: toggleTilt,
+                      child: Center(
+                          child: Text("3D",
+                              style: TextStyle(
+                                  color: Colors.black, fontWeight: FontWeight.bold, fontSize: buttonSize * 0.36))),
+                    );
+                  }),
             ]),
             Column(
               mainAxisSize: MainAxisSize.min,

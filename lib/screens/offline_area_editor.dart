@@ -2,19 +2,21 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
-import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/map_camera.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/models/offline_area.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/services/offline_map_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/views/map/map_markers.dart';
+import 'package:xcnav/views/map/poly_editor.dart';
+import 'package:xcnav/views/map/xc_map.dart';
 
 class OfflineAreaEditor extends StatefulWidget {
   const OfflineAreaEditor({super.key});
@@ -30,13 +32,12 @@ class _OfflineAreaEditorState extends State<OfflineAreaEditor> {
   /// Counting tiles is expensive. Wait for the user to stop moving things before re-estimating.
   static const estimateDelay = Duration(seconds: 2);
 
-  final mapController = MapController();
-  final mapKey = GlobalKey(debugLabel: "offlineAreaEditorMap");
+  final mapController = XcMapController();
   bool mapReady = false;
 
   bool polygonMode = false;
   final List<LatLng> polyPoints = [];
-  late final PolyEditor polyEditor;
+  late final MapPolyEditor polyEditor;
 
   final Set<MapTileSrc> layers = {};
 
@@ -54,13 +55,12 @@ class _OfflineAreaEditorState extends State<OfflineAreaEditor> {
     super.initState();
     previewLayer = settingsMgr.mainMapTileSrc.value;
     layers.add(previewLayer);
-    offlineMapService.resetAvgTileBytes();
-    polyEditor = PolyEditor(
-      addClosePathMarker: true,
+    polyEditor = MapPolyEditor(
+      closed: true,
       points: polyPoints,
       pointIcon: const Icon(Icons.crop_square, size: 22, color: Colors.black),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 12, color: Colors.black),
-      callbackRefresh: (_) {
+      onChanged: () {
         setState(() {});
         _scheduleEstimate();
       },
@@ -75,15 +75,16 @@ class _OfflineAreaEditorState extends State<OfflineAreaEditor> {
 
   /// Corners of the inset frame, NW, NE, SE, SW
   List<LatLng>? _frameOutline() {
-    final size = (mapKey.currentContext?.findRenderObject() as RenderBox?)?.size;
-    if (!mapReady || size == null) return null;
-    final camera = mapController.camera;
-    return [
-      camera.offsetToCrs(const Offset(frameMargin, frameMargin)),
-      camera.offsetToCrs(Offset(size.width - frameMargin, frameMargin)),
-      camera.offsetToCrs(Offset(size.width - frameMargin, size.height - frameMargin)),
-      camera.offsetToCrs(Offset(frameMargin, size.height - frameMargin)),
+    final camera = mapController.camera.value;
+    if (!mapReady || camera == null) return null;
+    final size = camera.size;
+    final corners = [
+      camera.screenToLatLng(const Offset(frameMargin, frameMargin)),
+      camera.screenToLatLng(Offset(size.width - frameMargin, frameMargin)),
+      camera.screenToLatLng(Offset(size.width - frameMargin, size.height - frameMargin)),
+      camera.screenToLatLng(Offset(frameMargin, size.height - frameMargin)),
     ];
+    return corners.contains(null) ? null : corners.nonNulls.toList();
   }
 
   OfflineArea? _buildArea() {
@@ -131,17 +132,12 @@ class _OfflineAreaEditorState extends State<OfflineAreaEditor> {
     });
   }
 
-  void _onMapTap(TapPosition tapPosition) {
+  void _onMapTap(LatLng latlng) {
     if (!polygonMode) return;
-    // WORKAROUND - calculate relative offset ourselves (same as plan editor)
-    final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
-    if (widgetBox != null) {
-      final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
-      setState(() {
-        polyEditor.add(polyPoints, mapController.camera.offsetToCrs(relativeTapPos));
-      });
-      _scheduleEstimate();
-    }
+    setState(() {
+      polyEditor.add(polyPoints, latlng);
+    });
+    _scheduleEstimate();
   }
 
   Widget _estimateText() {
@@ -222,37 +218,35 @@ class _OfflineAreaEditorState extends State<OfflineAreaEditor> {
           Expanded(
             child: Stack(
               children: [
-                FlutterMap(
-                    key: mapKey,
-                    mapController: mapController,
-                    options: MapOptions(
-                      initialCenter: center,
-                      initialZoom: 9,
-                      initialCameraFit: planPoints.length > 1
-                          ? CameraFit.bounds(bounds: padLatLngBounds(LatLngBounds.fromPoints(planPoints), 0.3))
-                          : null,
-                      interactionOptions:
-                          const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
-                      onMapReady: () {
-                        mapReady = true;
-                        _scheduleEstimate();
-                      },
-                      onPositionChanged: (camera, hasGesture) {
-                        if (!polygonMode && mapReady) _scheduleEstimate();
-                      },
-                      onTap: (tapPosition, _) => _onMapTap(tapPosition),
-                    ),
-                    children: [
-                      getMapTileLayer(previewLayer),
+                XcMap(
+                    controller: mapController,
+                    tileSrc: previewLayer,
+                    initialCenter: center,
+                    initialZoom: 8,
+                    initialBounds:
+                        planPoints.length > 1 ? padLatLngBounds(LatLngBounds.fromPoints(planPoints), 0.3) : null,
+                    rotateGestures: false,
+                    tiltGestures: false,
+                    onMapReady: () {
+                      mapReady = true;
+                      _scheduleEstimate();
+                    },
+                    onCameraChanged: (camera) {
+                      if (!polygonMode && mapReady) _scheduleEstimate();
+                    },
+                    onTap: (latlng, _) => _onMapTap(latlng),
+                    shapes: [
                       if (polygonMode && polyPoints.isNotEmpty)
-                        PolygonLayer(polygons: [
-                          Polygon(
-                              points: polyPoints,
-                              color: Colors.blue.withAlpha(40),
+                        ShapeLayer("area", polygons: [
+                          MapPolygon(
+                              points: polyPoints.toList(),
+                              fillColor: Colors.blue.withAlpha(40),
                               borderColor: Colors.blue,
-                              borderStrokeWidth: 3),
+                              borderWidth: 3),
                         ]),
-                      if (polygonMode) DragMarkers(markers: polyEditor.edit()),
+                    ],
+                    children: [
+                      if (polygonMode) MarkerLayer(markers: polyEditor.edit(mapController)),
                     ]),
 
                 // --- Visible area frame

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/views/map/map_markers.dart';
 
-List<Marker> buildMeasurementMarkers(List<LatLng> points) {
+List<MapMarker> buildMeasurementMarkers(List<LatLng> points) {
   const valueStyle = TextStyle(fontSize: 20);
   final unitStyle = TextStyle(color: Colors.grey.shade400, fontStyle: FontStyle.italic, fontSize: 12);
 
-  List<Marker> retList = [];
+  List<MapMarker> retList = [];
 
   LatLng? prev;
   List<double> sumDist = [];
@@ -17,11 +17,10 @@ List<Marker> buildMeasurementMarkers(List<LatLng> points) {
     final e = points[index];
     final dist = latlngCalc.distance(e, prev ?? e);
     sumDist.add((sumDist.lastOrNull ?? 0) + dist);
-    retList.add(Marker(
+    retList.add(MapMarker(
         point: e,
         width: 75,
         height: 54,
-        rotate: true,
         alignment: Alignment.topRight,
         child: Card(
           color: Colors.black.withAlpha(100),

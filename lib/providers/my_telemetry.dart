@@ -8,7 +8,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
@@ -852,12 +852,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
     return true;
   }
 
-  Polyline buildFlightTrace() {
-    return Polyline(
-        points: flightTrace,
-        strokeWidth: 4,
-        color: const Color.fromARGB(150, 255, 50, 50),
-        pattern: const StrokePattern.dotted());
+  MapPolyline buildFlightTrace() {
+    return MapPolyline(
+        points: flightTrace, width: 4, color: const Color.fromARGB(150, 255, 50, 50), pattern: LinePattern.dotted);
   }
 
   List<Geo> getHistory(DateTime oldest, {Duration? interval}) {

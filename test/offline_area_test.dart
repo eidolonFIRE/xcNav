@@ -1,10 +1,9 @@
 import 'dart:convert';
 
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/map_camera.dart';
 import 'package:xcnav/models/offline_area.dart';
 
 OfflineArea makeArea({
@@ -25,7 +24,8 @@ void main() {
       final area = makeArea(layers: [MapTileSrc.topo, MapTileSrc.sectional], isPolygon: true)
         ..vfrVersion = "20240711"
         ..status = OfflineAreaStatus.complete
-        ..completedJobs.add("topo@1-16")
+        ..completedJobs.add("topo@1-13")
+        ..regionIds["topo"] = 7
         ..tileCount = 42
         ..bytes = 4200;
 
@@ -37,14 +37,15 @@ void main() {
       expect(loaded.layers, [MapTileSrc.topo, MapTileSrc.sectional]);
       expect(loaded.vfrVersion, "20240711");
       expect(loaded.status, OfflineAreaStatus.complete);
-      expect(loaded.completedJobs, {"topo@1-16"});
+      expect(loaded.completedJobs, {"topo@1-13"});
+      expect(loaded.regionIds, {"topo": 7});
       expect(loaded.tileCount, 42);
       expect(loaded.bytes, 4200);
     });
 
-    test("region type", () {
-      expect(makeArea().toRegion(), isA<RectangleRegion>());
-      expect(makeArea(isPolygon: true).toRegion(), isA<CustomPolygonRegion>());
+    test("older areas without region ids load", () {
+      final json = makeArea().toJson()..remove("regionIds");
+      expect(OfflineArea.fromJson(json).regionIds, isEmpty);
     });
 
     test("unknown values are tolerated", () {
@@ -65,9 +66,9 @@ void main() {
         expect(job.minZoom, offlineMinZoom);
         expect(job.maxZoom, offlineMaxZoom(job.src!));
       }
-      expect(jobs.firstWhere((e) => e.src == MapTileSrc.topo).maxZoom, 14);
+      expect(jobs.firstWhere((e) => e.src == MapTileSrc.topo).maxZoom, 13);
       expect(jobs.firstWhere((e) => e.src == MapTileSrc.sectional).maxZoom, 10);
-      expect(jobs.firstWhere((e) => e.src == MapTileSrc.satellite).maxZoom, 15);
+      expect(jobs.firstWhere((e) => e.src == MapTileSrc.satellite).maxZoom, 14);
     });
 
     test("always includes elevation at z10 and z12", () {
@@ -80,27 +81,39 @@ void main() {
       expect(dem.every((e) => e.layerName == demLayerName), true);
     });
 
-    test("store names are per area and layer", () {
-      final area = makeArea(layers: [MapTileSrc.topo, MapTileSrc.satellite]);
-      expect(area.storeNames, ["offline_123_topo", "offline_123_satellite", "offline_123_dem"]);
+    test("MapTiler layers go through MapLibre, the rest tile by tile", () {
+      final jobs = makeArea(layers: MapTileSrc.values).planJobs();
+      for (final job in jobs) {
+        final viaMapLibre = job.src == MapTileSrc.topo || job.src == MapTileSrc.satellite;
+        expect(job.isMapLibreRegion, viaMapLibre, reason: job.key);
+        expect(job.tileSource == null, viaMapLibre, reason: job.key);
+      }
+      expect(jobs.firstWhere((e) => e.src == MapTileSrc.sectional).tileSource!.name, "sectional");
+      expect(jobs.firstWhere((e) => e.src == null).tileSource!.name, demLayerName);
+    });
+
+    test("job keys are unique", () {
+      final area = makeArea(layers: MapTileSrc.values);
       final keys = area.planJobs().map((e) => e.key).toSet();
       expect(keys.length, area.planJobs().length);
     });
   });
 
   group("estimate", () {
-    final topo = DownloadJob(src: MapTileSrc.topo, minZoom: 1, maxZoom: 10, storeName: "a");
-    final dem = DownloadJob(src: null, minZoom: 10, maxZoom: 10, storeName: "b");
+    final topo = DownloadJob(src: MapTileSrc.topo, minZoom: 1, maxZoom: 10);
+    final dem = DownloadJob(src: null, minZoom: 10, maxZoom: 10);
 
     test("size", () {
       final est = estimateDownload([(job: topo, tiles: 300), (job: dem, tiles: 100)], {"topo": 1000});
       expect(est.tiles, 400);
-      expect(est.bytes, 300 * 1000 + 100 * defaultAvgTileBytes[demLayerName]!);
+      expect(est.bytes,
+          300 * 1000 + offlineRegionOverheadBytes["topo"]! + 100 * defaultAvgTileBytes[demLayerName]!);
       expect(est.isLarge, false);
       expect(est.isTooLarge, false);
     });
 
     test("thresholds", () {
+      expect(estimateDownload([(job: dem, tiles: 10)], {}).isLarge, false);
       expect(estimateDownload([(job: topo, tiles: offlineWarnTiles + 1)], {"topo": 1}).isLarge, true);
       expect(estimateDownload([(job: topo, tiles: 10)], {"topo": offlineWarnBytes}).isLarge, true);
       final huge = estimateDownload([(job: topo, tiles: offlineMaxTiles + 1)], {});
@@ -121,9 +134,6 @@ void main() {
       LatLng(37.0, -122.5),
     ];
 
-    Future<int> fmtcCount(BaseRegion region, int z) => FMTCStore("test").download.countTiles(
-        region.toDownloadable(minZoom: z, maxZoom: z, options: TileLayer(urlTemplate: "x/{z}/{x}/{y}")));
-
     test("low zoom is a single tile", () {
       expect(countTilesAtZoom(square, false, 1), 1);
       expect(countTilesAtZoom(square, true, 1), 1);
@@ -131,21 +141,28 @@ void main() {
       expect(countTilesAtZoom([], true, 10), 0);
     });
 
-    test("rectangle matches FMTC", () async {
+    test("rectangle covers the corner tiles", () {
       for (final z in [5, 10, 14]) {
-        final region = RectangleRegion(LatLngBounds.fromPoints(square));
-        expect(countTilesAtZoom(square, false, z), await fmtcCount(region, z), reason: "z$z");
+        final nw = tileXY(LatLng(37.5, -122.5), z);
+        final se = tileXY(LatLng(37.0, -122.0), z);
+        final expected = (se.$1.floor() - nw.$1.floor() + 1) * (se.$2.floor() - nw.$2.floor() + 1);
+        expect(countTilesAtZoom(square, false, z), expected, reason: "z$z");
       }
     });
 
-    test("polygon close to FMTC", () async {
+    test("enumerated tiles match the count", () {
       for (final outline in [square, notched]) {
-        for (final z in [8, 12, 14]) {
-          final mine = countTilesAtZoom(outline, true, z);
-          final theirs = await fmtcCount(CustomPolygonRegion(outline), z);
-          expect((mine - theirs).abs() / theirs, lessThan(0.05), reason: "z$z mine=$mine fmtc=$theirs");
+        for (final z in [8, 12]) {
+          final tiles = tilesAtZoom(outline, true, z).toList();
+          expect(tiles.length, countTilesAtZoom(outline, true, z));
+          expect(tiles.toSet().length, tiles.length, reason: "no duplicates");
         }
       }
+    });
+
+    test("polygon tiles are inside the bounding box", () {
+      final box = tilesAtZoom(notched, false, 12).toSet();
+      expect(box.containsAll(tilesAtZoom(notched, true, 12)), true);
     });
 
     test("polygon square equals rectangle", () {
@@ -179,9 +196,11 @@ void main() {
       final area = makeArea(layers: [MapTileSrc.topo, MapTileSrc.sectional], isPolygon: true);
       final counts = area.countJobs(area.planJobs());
       for (final each in counts) {
+        // MapLibre regions are rectangles
+        final polygon = !each.job.isMapLibreRegion;
         int expected = 0;
         for (int z = each.job.minZoom; z <= each.job.maxZoom; z++) {
-          expected += countTilesAtZoom(area.outline, true, z);
+          expected += countTilesAtZoom(area.outline, polygon, z);
         }
         expect(each.tiles, expected, reason: each.job.key);
       }

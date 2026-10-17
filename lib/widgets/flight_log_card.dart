@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,10 +9,12 @@ import 'package:path/path.dart' as p;
 import 'package:xcnav/dialogs/rename_dialog.dart';
 
 import 'package:xcnav/log_store.dart';
-import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/views/map/map_markers.dart';
+import 'package:xcnav/widgets/static_map.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class FlightLogCard extends StatelessWidget {
@@ -184,14 +185,7 @@ class FlightLogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    MapController mapController = MapController();
-    LatLngBounds? mapBounds;
-
     final log = logStore.logs[logKey]!;
-
-    if (log.goodFile) {
-      mapBounds = log.getBounds(pad: 0.2);
-    }
 
     final prevLogKey = logStore.findAdjacentLog(logKey, next: false);
     final nextLogKey = logStore.findAdjacentLog(logKey, next: true);
@@ -204,56 +198,39 @@ class FlightLogCard extends StatelessWidget {
           height: log.goodFile ? 200 : null,
           child: Stack(children: [
             if (log.goodFile)
-              Builder(builder: (context) {
-                return FlutterMap(
-                    key: GlobalKey(debugLabel: "flight_log_card:${log.startTime?.millisecondsSinceEpoch.toString()}"),
-                    mapController: mapController,
-                    options: MapOptions(
-                      initialCameraFit: mapBounds != null ? CameraFit.bounds(bounds: mapBounds) : null,
-                      interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
-                      onTap: (_, __) {
-                        if (log.goodFile) {
-                          Navigator.pushNamed(context, "/logReplay", arguments: {"logKey": logKey});
-                        }
-                      },
-                    ),
-                    children: [
-                      getMapTileLayer(MapTileSrc.topo),
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, "/logReplay", arguments: {"logKey": logKey}),
+                child: StaticMap(bounds: log.getBounds(pad: 0.2), shapes: [
+                  ShapeLayer("waypointPaths",
+                      lines: log.waypoints
+                          .where((value) => value.latlng.length > 1)
+                          .map((e) => MapPolyline(points: e.latlng, width: 3.0, color: e.getColor()))
+                          .toList()),
 
-                      // --- Waypoints: paths
-                      PolylineLayer(
-                        polylines: log.waypoints
-                            .where((value) => value.latlng.length > 1)
-                            .map((e) => Polyline(points: e.latlng, strokeWidth: 3.0, color: e.getColor()))
-                            .toList(),
-                      ),
-
-                      // --- Waypoints: pin markers
-                      MarkerLayer(
-                        markers: log.waypoints
-                            .where((element) => element.latlng.length == 1)
-                            .map((e) => Marker(
-                                point: e.latlng[0],
-                                height: 60 * 0.5,
-                                width: 40 * 0.5,
-                                child: Container(
-                                    transformAlignment: const Alignment(0, 0),
-                                    transform: Matrix4.translationValues(0, -30 * 0.5, 0),
-                                    child: WaypointMarker(e, 60 * 0.5))))
-                            .toList(),
-                      ),
-
-                      // --- Log Line
-                      PolylineLayer(polylines: [
-                        Polyline(
-                          points: log.samples.map((e) => e.latlng).toList(),
-                          strokeWidth: 4,
-                          color: Colors.red,
-                          pattern: const StrokePattern.dotted(),
-                        )
-                      ]),
-                    ]);
-              }),
+                  // --- Log Line
+                  ShapeLayer("log", lines: [
+                    MapPolyline(
+                      points: log.samples.map((e) => e.latlng).toList(),
+                      width: 4,
+                      color: Colors.red,
+                      pattern: LinePattern.dotted,
+                    )
+                  ]),
+                ], children: [
+                  // --- Waypoints: pin markers
+                  MarkerLayer(
+                    markers: log.waypoints
+                        .where((element) => element.latlng.length == 1)
+                        .map((e) => MapMarker(
+                            point: e.latlng[0],
+                            height: 60 * 0.5,
+                            width: 40 * 0.5,
+                            alignment: Alignment.topCenter,
+                            child: WaypointMarker(e, 60 * 0.5)))
+                        .toList(),
+                  ),
+                ]),
+              ),
 
             // --- info overlay
             if (log.goodFile)

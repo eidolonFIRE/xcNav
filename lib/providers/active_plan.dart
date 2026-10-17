@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/map_service.dart';
@@ -164,7 +164,7 @@ class ActivePlan with ChangeNotifier {
   }
 
   /// Setting the `baseTiles` will change the style of the polylines to be best on that layer.
-  List<Polyline> buildNextWpIndicator(Geo geo, double interval, {MapTileSrc? baseTiles}) {
+  List<MapPolyline> buildNextWpIndicator(Geo geo, double interval, {MapTileSrc? baseTiles}) {
     final waypointETA = getSelectedWp()?.eta(geo, 1);
 
     if (waypointETA != null) {
@@ -172,18 +172,18 @@ class ActivePlan with ChangeNotifier {
       switch (baseTiles) {
         case MapTileSrc.sectional:
           return [
-            Polyline(points: points, color: const Color.fromARGB(180, 255, 0, 255), strokeWidth: 20),
-            Polyline(points: points, color: Colors.black, strokeWidth: 4, pattern: const StrokePattern.dotted()),
+            MapPolyline(points: points, color: const Color.fromARGB(180, 255, 0, 255), width: 20),
+            MapPolyline(points: points, color: Colors.black, width: 4, pattern: LinePattern.dotted),
           ];
         case MapTileSrc.satellite:
           return [
-            Polyline(points: points, color: Colors.white70, strokeWidth: 20),
-            Polyline(points: points, color: Colors.black, strokeWidth: 4, pattern: const StrokePattern.dotted()),
+            MapPolyline(points: points, color: Colors.white70, width: 20),
+            MapPolyline(points: points, color: Colors.black, width: 4, pattern: LinePattern.dotted),
           ];
         default:
           return [
-            Polyline(points: points, color: const Color.fromARGB(180, 255, 255, 0), strokeWidth: 20),
-            Polyline(points: points, color: Colors.black, strokeWidth: 4, pattern: const StrokePattern.dotted()),
+            MapPolyline(points: points, color: const Color.fromARGB(180, 255, 255, 0), width: 20),
+            MapPolyline(points: points, color: Colors.black, width: 4, pattern: LinePattern.dotted),
           ];
       }
     }

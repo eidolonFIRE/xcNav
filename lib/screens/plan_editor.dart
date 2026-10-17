@@ -1,8 +1,5 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
-import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:collection/collection.dart';
@@ -10,6 +7,8 @@ import 'package:provider/provider.dart';
 
 // --- Models
 import 'package:xcnav/models/flight_plan.dart';
+import 'package:xcnav/models/map_camera.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/models/waypoint.dart';
 
 // --- Providers
@@ -27,6 +26,9 @@ import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/views/map/focus_mode.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/views/map/map_markers.dart';
+import 'package:xcnav/views/map/poly_editor.dart';
+import 'package:xcnav/views/map/xc_map.dart';
 
 class PlanEditor extends StatefulWidget {
   const PlanEditor({super.key});
@@ -41,32 +43,30 @@ class _PlanEditorState extends State<PlanEditor> {
   ScrollController scrollController = ScrollController();
 
   WaypointID? editingWp;
-  late final PolyEditor polyEditor;
+  late final MapPolyEditor polyEditor;
 
-  final List<Polyline> polyLines = [];
+  /// Color of the path being edited
+  Color editingPathColor = Colors.amber;
   final List<LatLng> editablePoints = [];
 
   /// User is dragging something on the map layer (for less than 30 seconds)
   bool get isDragging => dragStart != null && dragStart!.isAfter(DateTime.now().subtract(const Duration(seconds: 30)));
   DateTime? dragStart;
   LatLng? draggingLatLng;
+  final _waypointDrag = MapDragTracker();
 
   FocusMode focusMode = FocusMode.unlocked;
 
   MapTileSrc mapTileSrc = MapTileSrc.topo;
   double mapOpacity = 1.0;
 
-  bool mapReady = false;
-  MapController mapController = MapController();
-
-  final mapKey = GlobalKey(debugLabel: "planEditorMap");
+  final mapController = XcMapController();
 
   @override
   void initState() {
     super.initState();
 
-    polyEditor = PolyEditor(
-      addClosePathMarker: false,
+    polyEditor = MapPolyEditor(
       points: editablePoints,
       pointIcon: const Icon(
         Icons.crop_square,
@@ -74,13 +74,12 @@ class _PlanEditorState extends State<PlanEditor> {
         color: Colors.black,
       ),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 12, color: Colors.black),
-      callbackRefresh: (_) => {setState(() {})},
+      onChanged: () => setState(() {}),
     );
   }
 
   void beginEditingLine(Waypoint waypoint) {
-    polyLines.clear();
-    polyLines.add(Polyline(color: waypoint.getColor(), points: editablePoints, strokeWidth: 5));
+    editingPathColor = waypoint.getColor();
     editablePoints.clear();
     editablePoints.addAll(waypoint.latlng.toList());
     editingWp = waypoint.id;
@@ -116,10 +115,24 @@ class _PlanEditorState extends State<PlanEditor> {
     }
   }
 
+  /// Path under [screenPoint], if any
+  WaypointID? pathAt(Offset screenPoint) {
+    final camera = mapController.camera.value;
+    if (camera == null) return null;
+    return buildPaths().hitTestLines(camera, screenPoint).firstOrNull;
+  }
+
+  ShapeLayer buildPaths() => ShapeLayer("paths",
+      lines: plan!.waypoints.values
+          .where((value) => value.isPath)
+          .whereNot((element) => element.id == editingWp)
+          .map((e) => MapPolyline(
+              hitValue: e.id, points: e.latlng, width: e.id == selectedWp ? 8.0 : 4.0, color: e.getColor()))
+          .toList());
+
   void onMapLongPress(BuildContext context, LatLng latlng) {
     // Prime the editor incase we decide to make a path
-    polyLines.clear();
-    polyLines.add(Polyline(color: Colors.amber, points: editablePoints, strokeWidth: 5));
+    editingPathColor = Colors.amber;
     editablePoints.clear();
     editablePoints.add(latlng);
     tapPointDialog(context, latlng, setFocusMode, (Waypoint newWaypoint) {
@@ -139,8 +152,6 @@ class _PlanEditorState extends State<PlanEditor> {
     final defaultMapBounds =
         padLatLngBounds(LatLngBounds.fromPoints([center.latlng, LatLng(center.lat, center.lng + 0.05)]), 2);
 
-    final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
-
     return PopScope(
       onPopInvokedWithResult: (_, __) {
         Provider.of<Plans>(context, listen: false).setPlan(plan!);
@@ -152,146 +163,119 @@ class _PlanEditorState extends State<PlanEditor> {
         body: Container(
           color: Colors.white,
           child: Stack(children: [
-            FlutterMap(
-                key: mapKey,
-                mapController: mapController,
-                options: MapOptions(
-                  onMapReady: () {
-                    setState(() {
-                      mapReady = true;
-                    });
-                  },
-                  initialCameraFit: CameraFit.bounds(bounds: plan?.getBounds() ?? defaultMapBounds),
-                  interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
-                  onTap: (tapPosition, point) {
-                    // WORKAROUND - calculate relative offset ourselves
-                    final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
-                    if (widgetBox != null) {
-                      final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
-                      final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
-                      // outgoing call...
-                      onMapTap(context, correctedLatLng);
-                    }
-                  },
-                  onLongPress: (tapPosition, point) {
-                    // WORKAROUND - calculate relative offset ourselves
-                    final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
-                    if (widgetBox != null) {
-                      final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
-                      final correctedLatLng = mapController.camera.offsetToCrs(relativeTapPos);
-                      // outgoing call...
-                      onMapLongPress(context, correctedLatLng);
-                    }
-                  },
+            XcMap(
+              controller: mapController,
+              tileSrc: mapTileSrc,
+              opacity: mapOpacity,
+              initialBounds: plan?.getBounds() ?? defaultMapBounds,
+              rotateGestures: false,
+              tiltGestures: false,
+              onTap: (latlng, screenPoint) {
+                setState(() {
+                  selectedWp = pathAt(screenPoint);
+                });
+                onMapTap(context, latlng);
+              },
+              onLongPress: (latlng, screenPoint) {
+                final pathId = pathAt(screenPoint);
+                if (pathId != null && plan!.waypoints.containsKey(pathId)) {
+                  beginEditingLine(plan!.waypoints[pathId]!);
+                } else {
+                  onMapLongPress(context, latlng);
+                }
+              },
+              shapes: [
+                // Flight plan paths
+                buildPaths(),
+
+                // Path being edited
+                if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                  ShapeLayer("editingPath",
+                      lines: [MapPolyline(points: editablePoints.toList(), color: editingPathColor, width: 5)]),
+              ],
+              children: [
+                // Waypoint markers
+                MarkerLayer(
+                  markers: plan!.waypoints.values
+                      .where((e) => e.latlng.length == 1 && e.id != editingWp)
+                      .map((e) => MapMarker(
+                          key: ValueKey("waypoint_${e.id}"),
+                          point: e.latlng[0],
+                          height: 60 * (e.id == selectedWp ? 0.8 : 0.6),
+                          width: 40 * (e.id == selectedWp ? 0.8 : 0.6),
+                          alignment: Alignment.topCenter,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedWp = e.id;
+                              });
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                editingWp = e.id;
+                                draggingLatLng = null;
+                                setFocusMode(FocusMode.editWaypoint);
+                              });
+                            },
+                            child: WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)),
+                          )))
+                      .toList(),
                 ),
-                children: [
-                  Opacity(opacity: mapOpacity, child: getMapTileLayer(mapTileSrc)),
 
-                  // Flight plan markers
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedWp = polylineHit.value?.hitValues.first;
-                      });
-                    },
-                    onLongPress: () {
-                      final key = polylineHit.value?.hitValues.first;
-                      if (plan!.waypoints.containsKey(key)) {
-                        beginEditingLine(plan!.waypoints[key]!);
-                      }
-                    },
-                    child: PolylineLayer(
-                      hitNotifier: polylineHit,
-                      polylines: plan!.waypoints.values
-                          .where((value) => value.isPath)
-                          .whereNot((element) => element.id == editingWp)
-                          .map((e) => Polyline(
-                              hitValue: e.id,
-                              points: e.latlng,
-                              strokeWidth: e.id == selectedWp ? 8.0 : 4.0,
-                              color: e.getColor()))
-                          .toList(),
-                    ),
-                  ),
+                // --- Draggable waypoints
+                if (editingWp != null &&
+                    plan!.waypoints.containsKey(editingWp) &&
+                    plan!.waypoints[editingWp]!.latlng.length == 1)
+                  Builder(builder: (context) {
+                    final point = draggingLatLng ?? plan!.waypoints[editingWp]!.latlng.first;
+                    return MarkerLayer(markers: [
+                      MapMarker(
+                          point: point,
+                          width: 60 * 0.8,
+                          height: 60 * 0.8,
+                          child: MapDragHandle(
+                            onTap: () => selectedWp = editingWp,
+                            onDragStart: (global) {
+                              _waypointDrag.start(mapController, global, point);
+                              setState(() {
+                                draggingLatLng = point;
+                                dragStart = DateTime.now();
+                              });
+                            },
+                            onDragUpdate: (global) {
+                              final latlng = _waypointDrag.update(mapController, global);
+                              if (latlng != null) setState(() => draggingLatLng = latlng);
+                            },
+                            onDragEnd: () {
+                              _waypointDrag.end();
+                              setState(() {
+                                dragStart = null;
+                              });
+                            },
+                            child: Stack(
+                              children: [
+                                Container(
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: Matrix4.translationValues(0, -30 * 0.8, 0),
+                                    child: WaypointMarker(plan!.waypoints[editingWp]!, 60 * 0.8)),
+                                Container(
+                                    transformAlignment: const Alignment(0, 0),
+                                    transform: Matrix4.translationValues(12, 25, 0),
+                                    child: const Icon(
+                                      Icons.open_with,
+                                      color: Colors.black,
+                                    )),
+                              ],
+                            ),
+                          ))
+                    ]);
+                  }),
 
-                  // Waypoint markers
-                  MarkerLayer(
-                    markers: plan!.waypoints.values
-                        .where((e) => e.latlng.length == 1 && e.id != editingWp)
-                        .map((e) => Marker(
-                            point: e.latlng[0],
-                            height: 60 * (e.id == selectedWp ? 0.8 : 0.6),
-                            width: 40 * (e.id == selectedWp ? 0.8 : 0.6),
-                            rotate: true,
-                            alignment: Alignment.topCenter,
-                            // anchorPos: AnchorPos.exactly(Anchor(20 * (e.id == selectedWp ? 0.8 : 0.6), 0)),
-                            // rotateOrigin: Offset(0, 30 * (e.id == selectedWp ? 0.8 : 0.6)),
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedWp = e.id;
-                                });
-                              },
-                              onLongPress: () {
-                                setState(() {
-                                  editingWp = e.id;
-                                  draggingLatLng = null;
-                                  setFocusMode(FocusMode.editWaypoint);
-                                });
-                              },
-                              child: WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)),
-                            )))
-                        .toList(),
-                  ),
-
-                  // --- Draggable waypoints
-                  if (editingWp != null &&
-                      plan!.waypoints.containsKey(editingWp) &&
-                      plan!.waypoints[editingWp]!.latlng.length == 1)
-                    DragMarkers(markers: [
-                      DragMarker(
-                          point: draggingLatLng ?? plan!.waypoints[editingWp]!.latlng.first,
-                          size: const Size(60 * 0.8, 60 * 0.8),
-                          // useLongPress: true,
-                          onTap: (_) => selectedWp = editingWp,
-                          onDragEnd: (p0, p1) {
-                            setState(() {
-                              dragStart = null;
-                            });
-                          },
-                          onDragUpdate: (_, p1) {
-                            draggingLatLng = p1;
-                          },
-                          onDragStart: (p0, p1) {
-                            setState(() {
-                              draggingLatLng = p1;
-                              dragStart = DateTime.now();
-                            });
-                          },
-                          rotateMarker: true,
-                          builder: (context, latlng, isDragging) => Stack(
-                                children: [
-                                  Container(
-                                      transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.translationValues(0, -30 * 0.8, 0),
-                                      child: WaypointMarker(plan!.waypoints[editingWp]!, 60 * 0.8)),
-                                  Container(
-                                      transformAlignment: const Alignment(0, 0),
-                                      transform: Matrix4.translationValues(12, 25, 0),
-                                      child: const Icon(
-                                        Icons.open_with,
-                                        color: Colors.black,
-                                      )),
-                                ],
-                              ))
-                    ]),
-
-                  // Draggable line editor
-                  if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                    PolylineLayer(polylines: polyLines),
-                  if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                    DragMarkers(markers: polyEditor.edit()),
-                ]),
+                // Draggable line editor
+                if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+                  MarkerLayer(markers: polyEditor.edit(mapController)),
+              ],
+            ),
 
             Align(
                 alignment: Alignment.topRight,
@@ -515,7 +499,7 @@ class _PlanEditorState extends State<PlanEditor> {
                                   editingWp = null;
                                   draggingLatLng = null;
 
-                                  mapController.move(items[i].latlng.first, mapController.camera.zoom);
+                                  mapController.moveTo(center: items[i].latlng.first);
                                   selectedWp = items[i].id;
                                   setFocusMode(FocusMode.unlocked);
                                 },

@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:flutter_map/flutter_map.dart';
+import 'package:xcnav/models/map_camera.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/weather_observation_service.dart';

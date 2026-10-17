@@ -1,51 +1,54 @@
 import 'dart:math';
 
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/map_service.dart';
-
-/// Prefix for FMTC stores holding offline map downloads. These are never purged by the browse cache.
-const offlineStorePrefix = "offline_";
+import 'package:xcnav/models/map_camera.dart';
+import 'package:xcnav/services/tile_cache.dart';
 
 /// Name used for the elevation layer (it's not a [MapTileSrc])
 const demLayerName = "dem";
 
-/// Max tiles per second requested from each tile server. Kept low so we don't get blocked.
+/// Max tiles per second requested from each tile server we download from ourselves. Kept low so we don't get blocked.
 const Map<String, int> offlineTilesPerSecond = {
-  "topo": 6,
   "sectional": 10,
-  "satellite": 16,
   demLayerName: 20,
 };
 
 const offlineParallelThreads = 4;
 
-/// Fallback average tile size (bytes) when the browse cache doesn't have enough tiles to measure.
-/// Measured from a browse cache sample (topo 130, sectional 91, satellite 198, dem 11 tiles).
+/// Rough average size (bytes) of one tile position, for estimates.
+/// MapTiler layers count everything MapLibre stores for that tile: vector data, contours, terrain, etc.
+/// (Measured on small Bay Area downloads, Oct 2026.)
 const Map<String, int> defaultAvgTileBytes = {
-  "topo": 40000,
+  "topo": 200000,
   "sectional": 32000,
-  "satellite": 17500,
+  "satellite": 150000,
   demLayerName: 85000,
 };
 
-/// Low zoom levels are only a handful of tiles, so every layer is downloaded from here up to its native max.
+/// What a MapLibre region downloads regardless of its size: fonts, icons, and the heavy low zoom tiles.
+const Map<String, int> offlineRegionOverheadBytes = {
+  "topo": 20 * 1024 * 1024,
+  "satellite": 12 * 1024 * 1024,
+};
+
+/// Low zoom levels are only a handful of tiles, so every layer is downloaded from here up to its max.
 const offlineMinZoom = 1;
 
-/// Deepest zoom downloaded for offline use. Some layers stop short of their native max because the deepest
-/// levels explode the download size for little benefit.
+/// Deepest zoom downloaded for offline use.
+///
+/// MapTiler layers are MapLibre zoom levels (512px tiles). The sectional is a raster tile zoom (256px tiles),
+/// so its 10 shows about as much detail as MapLibre zoom 9.
 int offlineMaxZoom(MapTileSrc src) {
-  final native = mapTileMaxNativeZoom(src);
   switch (src) {
     case MapTileSrc.satellite:
-      return native > 15 ? 15 : native;
+      return 14;
     case MapTileSrc.sectional:
-      return native > 10 ? 10 : native;
+      return 10;
     case MapTileSrc.topo:
-      return native > 14 ? 14 : native;
+      return 13;
   }
 }
 
@@ -60,21 +63,26 @@ class DownloadJob {
   final MapTileSrc? src;
   final int minZoom;
   final int maxZoom;
-  final String storeName;
 
-  DownloadJob({required this.src, required this.minZoom, required this.maxZoom, required this.storeName});
+  DownloadJob({required this.src, required this.minZoom, required this.maxZoom});
 
   String get layerName => src?.name ?? demLayerName;
 
   /// Unique within an area
   String get key => "$layerName@$minZoom-$maxZoom";
 
-  int get tilesPerSecond => offlineTilesPerSecond[layerName]!;
+  /// MapTiler layers are downloaded by MapLibre as an offline region (style, fonts, vector tiles and all).
+  /// Everything else we download ourselves, tile by tile.
+  bool get isMapLibreRegion => src == MapTileSrc.topo || src == MapTileSrc.satellite;
 
-  TileLayer get tileLayer => src != null ? mapTileDownloadLayer(src!) : demDownloadLayer();
+  int get tilesPerSecond => offlineTilesPerSecond[layerName] ?? 10;
 
-  DownloadableRegion toDownloadable(BaseRegion region) =>
-      region.toDownloadable(minZoom: minZoom, maxZoom: maxZoom, options: tileLayer);
+  /// Source for tile by tile downloads
+  RasterTileSource? get tileSource {
+    if (src == null) return demTileSource;
+    if (src == MapTileSrc.sectional) return sectionalTiles;
+    return null;
+  }
 }
 
 class OfflineArea {
@@ -91,6 +99,9 @@ class OfflineArea {
   /// Keys of [DownloadJob]s that finished without network failures
   final Set<String> completedJobs;
 
+  /// MapLibre offline region ids, by layer name
+  final Map<String, int> regionIds;
+
   /// Actual stored size, updated after downloading
   int tileCount;
   int bytes;
@@ -104,28 +115,27 @@ class OfflineArea {
     this.vfrVersion,
     this.status = OfflineAreaStatus.queued,
     Set<String>? completedJobs,
+    Map<String, int>? regionIds,
     this.tileCount = 0,
     this.bytes = 0,
-  }) : completedJobs = completedJobs ?? {};
+  })  : completedJobs = completedJobs ?? {},
+        regionIds = regionIds ?? {};
 
-  BaseRegion toRegion() => isPolygon ? CustomPolygonRegion(outline) : RectangleRegion(LatLngBounds.fromPoints(outline));
-
-  String storeName(String layerName) => "$offlineStorePrefix${id}_$layerName";
+  /// MapLibre regions are rectangles, so polygons download their bounding box for MapTiler layers.
+  LatLngBounds get bounds => LatLngBounds.fromPoints(outline);
 
   /// Tile count for each job. Each zoom level is only counted once, even when several layers share it.
   List<({DownloadJob job, int tiles})> countJobs(List<DownloadJob> jobs) {
-    final Map<int, int> perZoom = {};
-    int countZoom(int z) => perZoom[z] ??= countTilesAtZoom(outline, isPolygon, z);
+    final Map<(int, bool), int> perZoom = {};
+    int countZoom(int z, bool polygon) => perZoom[(z, polygon)] ??= countTilesAtZoom(outline, polygon, z);
     return jobs.map((job) {
       int tiles = 0;
       for (int z = job.minZoom; z <= job.maxZoom; z++) {
-        tiles += countZoom(z);
+        tiles += countZoom(z, isPolygon && !job.isMapLibreRegion);
       }
       return (job: job, tiles: tiles);
     }).toList();
   }
-
-  List<String> get storeNames => [...layers.map((e) => storeName(e.name)), storeName(demLayerName)];
 
   bool isSectionalOutdated(String? currentVfrVersion) =>
       layers.contains(MapTileSrc.sectional) &&
@@ -138,11 +148,10 @@ class OfflineArea {
   List<DownloadJob> planJobs() {
     final List<DownloadJob> jobs = [];
     for (final src in layers) {
-      jobs.add(
-          DownloadJob(src: src, minZoom: offlineMinZoom, maxZoom: offlineMaxZoom(src), storeName: storeName(src.name)));
+      jobs.add(DownloadJob(src: src, minZoom: offlineMinZoom, maxZoom: offlineMaxZoom(src)));
     }
     for (final z in demZoomLevels) {
-      jobs.add(DownloadJob(src: null, minZoom: z, maxZoom: z, storeName: storeName(demLayerName)));
+      jobs.add(DownloadJob(src: null, minZoom: z, maxZoom: z));
     }
     return jobs;
   }
@@ -156,6 +165,7 @@ class OfflineArea {
         "vfrVersion": vfrVersion,
         "status": status.name,
         "completedJobs": completedJobs.toList(),
+        "regionIds": regionIds,
         "tileCount": tileCount,
         "bytes": bytes,
       };
@@ -173,6 +183,7 @@ class OfflineArea {
         vfrVersion: json["vfrVersion"],
         status: OfflineAreaStatus.values.where((s) => s.name == json["status"]).firstOrNull ?? OfflineAreaStatus.paused,
         completedJobs: ((json["completedJobs"] as List?) ?? []).cast<String>().toSet(),
+        regionIds: ((json["regionIds"] as Map?) ?? {}).map((k, v) => MapEntry(k as String, (v as num).toInt())),
         tileCount: json["tileCount"] ?? 0,
         bytes: json["bytes"] ?? 0,
       );
@@ -188,32 +199,26 @@ class DownloadEstimate {
   bool get isTooLarge => tiles > offlineMaxTiles;
 }
 
-/// Fractional slippy-map tile coordinate (web mercator) of a point at zoom [z].
-(double, double) _tileXY(LatLng p, int z) {
-  final n = (1 << z).toDouble();
-  final lat = p.latitude.clamp(-85.05112878, 85.05112878) * pi / 180;
-  final x = (p.longitude + 180) / 360 * n;
-  final y = (1 - log(tan(lat) + 1 / cos(lat)) / pi) / 2 * n;
-  return (x.clamp(0, n - 1e-9), y.clamp(0, n - 1e-9));
-}
-
-/// Number of tiles at zoom [z] touched by the area. Rectangles use the bounding box of [outline].
+/// Tiles at zoom [z] touched by the area, one merged span of columns per row: (row, firstX, lastX).
+/// Rectangles use the bounding box of [outline].
 ///
 /// Polygons are scanned one tile row at a time: a tile is counted if an edge passes through it, or if it lies
 /// inside the polygon (even-odd rule). This works at tile resolution, so it stays fast at deep zoom levels.
-int countTilesAtZoom(List<LatLng> outline, bool isPolygon, int z) {
-  if (outline.isEmpty) return 0;
-  final pts = outline.map((e) => _tileXY(e, z)).toList();
+Iterable<(int, int, int)> tileSpansAtZoom(List<LatLng> outline, bool isPolygon, int z) sync* {
+  if (outline.isEmpty) return;
+  final pts = outline.map((e) => tileXY(e, z)).toList();
   final minX = pts.map((e) => e.$1).reduce(min).floor();
   final maxX = pts.map((e) => e.$1).reduce(max).floor();
   final minY = pts.map((e) => e.$2).reduce(min).floor();
   final maxY = pts.map((e) => e.$2).reduce(max).floor();
 
   if (!isPolygon || pts.length < 3) {
-    return (maxX - minX + 1) * (maxY - minY + 1);
+    for (int row = minY; row <= maxY; row++) {
+      yield (row, minX, maxX);
+    }
+    return;
   }
 
-  int total = 0;
   for (int row = minY; row <= maxY; row++) {
     final top = row.toDouble();
     final bottom = top + 1;
@@ -250,7 +255,7 @@ int countTilesAtZoom(List<LatLng> outline, bool isPolygon, int z) {
       spans.add((crossings[i].floor(), crossings[i + 1].floor()));
     }
 
-    // Merge overlapping spans and count tiles
+    // Merge overlapping spans
     spans.sort((a, b) => a.$1.compareTo(b.$1));
     int? curStart;
     int curEnd = 0;
@@ -258,14 +263,26 @@ int countTilesAtZoom(List<LatLng> outline, bool isPolygon, int z) {
       if (curStart != null && s.$1 <= curEnd + 1) {
         curEnd = max(curEnd, s.$2);
       } else {
-        if (curStart != null) total += curEnd - curStart + 1;
+        if (curStart != null) yield (row, curStart, curEnd);
         curStart = s.$1;
         curEnd = s.$2;
       }
     }
-    if (curStart != null) total += curEnd - curStart + 1;
+    if (curStart != null) yield (row, curStart, curEnd);
   }
-  return total;
+}
+
+/// Number of tiles at zoom [z] touched by the area. See [tileSpansAtZoom].
+int countTilesAtZoom(List<LatLng> outline, bool isPolygon, int z) =>
+    tileSpansAtZoom(outline, isPolygon, z).fold(0, (sum, e) => sum + e.$3 - e.$2 + 1);
+
+/// Every tile (x, y) at zoom [z] touched by the area
+Iterable<(int, int)> tilesAtZoom(List<LatLng> outline, bool isPolygon, int z) sync* {
+  for (final (row, x0, x1) in tileSpansAtZoom(outline, isPolygon, z)) {
+    for (int x = x0; x <= x1; x++) {
+      yield (x, row);
+    }
+  }
 }
 
 DownloadEstimate estimateDownload(Iterable<({DownloadJob job, int tiles})> counts, Map<String, int> avgTileBytes) {
@@ -274,6 +291,7 @@ DownloadEstimate estimateDownload(Iterable<({DownloadJob job, int tiles})> count
   for (final each in counts) {
     tiles += each.tiles;
     bytes += each.tiles * (avgTileBytes[each.job.layerName] ?? defaultAvgTileBytes[each.job.layerName]!);
+    if (each.job.isMapLibreRegion) bytes += offlineRegionOverheadBytes[each.job.layerName] ?? 0;
   }
   return DownloadEstimate(tiles: tiles, bytes: bytes);
 }

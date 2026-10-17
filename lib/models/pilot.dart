@@ -5,7 +5,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -146,11 +146,11 @@ class Pilot {
     });
   }
 
-  Polyline buildFlightTrace() {
-    return Polyline(
+  MapPolyline buildFlightTrace() {
+    return MapPolyline(
         points: flightTrace.map((e) => e.latlng).toList().sublist(max(0, flightTrace.length - 60)),
-        strokeWidth: 4,
+        width: 4,
         color: color.withAlpha(150),
-        pattern: const StrokePattern.dotted());
+        pattern: LinePattern.dotted);
   }
 }

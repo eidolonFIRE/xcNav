@@ -1,29 +1,38 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dart_numerics/dart_numerics.dart' as math;
-import 'package:xcnav/datadog.dart';
 
-TileLayer? _demTileLayer;
+import 'package:xcnav/services/tile_cache.dart';
 
 const demUrlTemplate = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+
+/// Elevation tiles (terrarium encoding)
+final demTileSource = RasterTileSource(
+  name: "dem",
+  urlBuilder: (z, x, y) => demUrlTemplate
+      .replaceFirst("{z}", z.toString())
+      .replaceFirst("{x}", x.toString())
+      .replaceFirst("{y}", y.toString()),
+  maxNativeZoom: 15,
+  ext: "png",
+  contentType: "image/png",
+  maxAge: const Duration(days: 90),
+);
 
 /// Zoom levels sampled by [sampleDem]
 const demZoomLevels = [10, 12];
 
-/// Tile layer used as options for bulk downloading DEM tiles
-TileLayer demDownloadLayer() => TileLayer(urlTemplate: demUrlTemplate);
+bool _demReady = false;
 
 /// Tile addresses to be fetched.
 final Queue<String> _fetchQueue = Queue();
 
 /// Only runs while [_fetchQueue] has work, so it doesn't keep the app awake.
-Timer? _fetchTimer;
+bool _fetching = false;
 
 final Queue<String> _tileCacheQueue = Queue();
 final Map<String, ByteData> _tileCacheData = {};
@@ -31,86 +40,64 @@ final Map<String, int> _tileCacheWidth = {};
 
 // Digital Elevation Map - service
 Future initDemCache() async {
-  // init elevation map (dem = digital elevation map)
-  const demStore = FMTCStore("dem");
-  await demStore.manage.create();
-  await demStore.metadata.set(key: 'sourceURL', value: demUrlTemplate);
-
-  // set the layer
-  demStore.manage.ready.then((ready) {
-    if (ready) {
-      _demTileLayer = TileLayer(
-          urlTemplate: demUrlTemplate,
-          tileProvider: FMTCTileProvider(
-              stores: {"dem": BrowseStoreStrategy.readUpdateCreate},
-              // Offline map downloads
-              otherStoresStrategy: BrowseStoreStrategy.read,
-              cachedValidDuration: const Duration(days: 90)));
-      _startFetchTimer();
-    } else {
-      error("DEM store not ready!");
-    }
-  });
+  tileCache.register(demTileSource);
+  _demReady = true;
+  _startFetching();
 }
 
-void _startFetchTimer() {
-  // Nothing to fetch with until the store is ready. It starts the timer once it is.
-  if (_demTileLayer == null || _fetchQueue.isEmpty) return;
+/// Decode a PNG tile to raw RGBA
+Future<(ByteData, int)?> _decodeTile(Uint8List bytes) async {
+  final codec = await ui.instantiateImageCodec(bytes);
+  try {
+    final frame = await codec.getNextFrame();
+    final data = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final width = frame.image.width;
+    frame.image.dispose();
+    return data == null ? null : (data, width);
+  } finally {
+    codec.dispose();
+  }
+}
 
-  _fetchTimer ??= Timer.periodic(Duration(milliseconds: 100), (timer) {
-    // Pop one off queue and fetch it
+void _startFetching() {
+  // Nothing to fetch with until the cache is ready. It starts fetching once it is.
+  if (!_demReady || _fetching || _fetchQueue.isEmpty) return;
+  _fetching = true;
+  _fetchLoop().whenComplete(() => _fetching = false);
+}
 
-    final pointAddress = _fetchQueue.firstOrNull;
-    if (pointAddress == null) {
-      timer.cancel();
-      _fetchTimer = null;
-      return;
-    }
-
-    if (!_tileCacheQueue.contains(pointAddress)) {
-      final point = pointAddress.split(",").map((e) => int.parse(e)).toList();
-      final pointTile = TileCoordinates(point[0], point[1], point[2]);
-      // Query the image
-
-      final img = _demTileLayer!.tileProvider.getImage(pointTile, _demTileLayer!);
-      final imgStream = img.resolve(ImageConfiguration.empty);
-      imgStream.addListener(ImageStreamListener((imgInfo, state) {
-        // (DEBUG) debugPrint("Got DEM tile: $state ${imgInfo.toString()}");
-        if (!state) {
-          imgInfo.image.toByteData().then((data) {
-            if (data != null) {
-              final w = imgInfo.image.width;
-
-              // store back to cache
-              if (!_tileCacheQueue.contains(pointAddress)) {
-                _tileCacheWidth[pointAddress] = w;
-                _tileCacheData[pointAddress] = data;
-                _tileCacheQueue.add(pointAddress);
-              }
-
-              // clean cache
-              if (_tileCacheQueue.length > 30) {
-                final oldest = _tileCacheQueue.first;
-                // (DEBUG) debugPrint("Popping one from DEM cache. $oldest");
-                _tileCacheQueue.removeFirst();
-                _tileCacheData.remove(oldest);
-                _tileCacheWidth.remove(oldest);
-              }
-
-              // Good fetch!
-              _fetchQueue.remove(pointAddress);
-            }
-          });
-        }
-      }, onError: (exception, stackTrace) {
-        // Failed fetch (e.g. offline). Drop it so the timer can stop. sampleDem queues it again on a later fix.
-        _fetchQueue.remove(pointAddress);
-      }));
-    } else {
-      // Already cached. Drop it so the queue can drain and the timer can stop.
+Future _fetchLoop() async {
+  while (_fetchQueue.isNotEmpty) {
+    final pointAddress = _fetchQueue.first;
+    if (_tileCacheQueue.contains(pointAddress)) {
+      // Already cached. Drop it so the queue can drain.
       _fetchQueue.removeFirst();
+      continue;
     }
-  });
+
+    final point = pointAddress.split(",").map((e) => int.parse(e)).toList();
+    try {
+      final bytes = await tileCache.getTile(demTileSource, point[2], point[0], point[1]);
+      final decoded = bytes == null ? null : await _decodeTile(bytes);
+      if (decoded != null && !_tileCacheQueue.contains(pointAddress)) {
+        // store back to cache
+        _tileCacheData[pointAddress] = decoded.$1;
+        _tileCacheWidth[pointAddress] = decoded.$2;
+        _tileCacheQueue.add(pointAddress);
+
+        // clean cache
+        if (_tileCacheQueue.length > 30) {
+          final oldest = _tileCacheQueue.removeFirst();
+          _tileCacheData.remove(oldest);
+          _tileCacheWidth.remove(oldest);
+        }
+      }
+    } catch (e) {
+      debugPrint("DEM tile $pointAddress failed: $e");
+    }
+    // Good or failed fetch (e.g. offline), drop it. sampleDem queues it again on a later fix.
+    _fetchQueue.remove(pointAddress);
+  }
 }
 
 class Point3 {
@@ -128,13 +115,10 @@ Point3 _unproject(LatLng latlng, int zoom) {
 }
 
 double _sampleByteData(ByteData data, int w, double x, double y) {
-  // debugPrint("offset: $x, $y ($s) ( ${(x + y * s) * 4} / ${imgInfo.sizeBytes} )");
   final bitPos = (((x % 1.0) * w).toInt() + (((y % 1.0) * w).toInt() * w).toInt()) * 4;
   final r = data.getUint8(bitPos + 0);
   final g = data.getUint8(bitPos + 1);
   final b = data.getUint8(bitPos + 2);
-  // final a = value.getUint8(bitPos + 3);
-  // debugPrint("rgba : $r $g $b $a");
   return ((r * 256 + g + b.toDouble() / 256) - 32768);
 }
 
@@ -145,8 +129,7 @@ bool isValidElevation(double elev) => elev > -500 && elev < 9000;
 /// Returns elevation in Meters
 double? sampleDem(LatLng latlng, bool highRes) {
   final point = _unproject(latlng, highRes ? demZoomLevels[1] : demZoomLevels[0]);
-  final pointTile = TileCoordinates(point.x.toInt(), point.y.toInt(), point.z.toInt());
-  final pointAddress = "${pointTile.x},${pointTile.y},${pointTile.z}";
+  final pointAddress = "${point.x.toInt()},${point.y.toInt()},${point.z.toInt()}";
 
   // Check cache first
   if (_tileCacheData.containsKey(pointAddress)) {
@@ -156,11 +139,8 @@ double? sampleDem(LatLng latlng, bool highRes) {
   } else {
     if (!_fetchQueue.contains(pointAddress)) {
       // Schedule this tile to be pulled
-      // (DEBUG) debugPrint("Queue fetch tile: $pointAddress");
       _fetchQueue.add(pointAddress);
-      _startFetchTimer();
-    } else {
-      // (DEBUG) debugPrint("Already queued for fetch: $pointAddress");
+      _startFetching();
     }
   }
 

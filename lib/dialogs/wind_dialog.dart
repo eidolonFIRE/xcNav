@@ -4,12 +4,13 @@ import 'package:clock/clock.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/map_camera.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -18,7 +19,10 @@ import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
+import 'package:xcnav/views/map/map_layers.dart';
+import 'package:xcnav/views/map/map_markers.dart';
 import 'package:xcnav/widgets/map_button.dart';
+import 'package:xcnav/widgets/static_map.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xcnav/widgets/wind_plot.dart';
 
@@ -45,11 +49,9 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
   ];
 
   late TabController _tabController;
-  late MapController mapController;
 
   ETA? routeETA;
   List<LatLng>? routePoints;
-  bool mapReady = false;
 
   double? _airspeed;
   double? _windspeed;
@@ -62,13 +64,9 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
 
   ChangeNotifier newRoute = ChangeNotifier();
 
-  final mapKey = GlobalKey(debugLabel: "windDialog_mapView");
-
   @override
   void initState() {
     super.initState();
-    mapReady = false;
-    mapController = MapController();
     _tabController = TabController(vsync: this, length: myTabs.length);
 
     startView("/home/wind_dialog");
@@ -142,13 +140,7 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
         routePoints = null;
       }
 
-      if (mapReady && (mapKey.currentState?.mounted ?? false)) {
-        mapController.fitCamera(CameraFit.bounds(
-            bounds: padLatLngBounds(LatLngBounds.fromPoints((routePoints ?? []) + (points ?? [])), 0.1)));
-      } else {
-        // Map was disposed and not ready yet
-        mapReady = false;
-      }
+      // (The route map fits itself to the new route when it rebuilds)
       // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
       newRoute.notifyListeners();
     }
@@ -332,6 +324,10 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
                 if (points?.isEmpty ?? true) {
                   return SizedBox(height: 200, child: Center(child: Text("make_a_measurement".tr())));
                 } else {
+                  // Work out the route for the current wind once this tab is up
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) refreshRoute(points);
+                  });
                   return Row(
                     mainAxisSize: MainAxisSize.max,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -515,131 +511,62 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
 
                                                     return Stack(
                                                       children: [
-                                                        FlutterMap(
-                                                          key: mapKey,
-                                                          mapController: mapController,
-                                                          options: MapOptions(
-                                                            onMapReady: () {
-                                                              mapReady = true;
-                                                              refreshRoute(points);
-                                                            },
-                                                            initialCameraFit: CameraFit.bounds(
-                                                                bounds: padLatLngBounds(
-                                                                    LatLngBounds.fromPoints(
-                                                                        (routePoints ?? []) + (points ?? [])),
-                                                                    0.1)),
-                                                            interactionOptions:
-                                                                const InteractionOptions(flags: InteractiveFlag.none),
-                                                          ),
+                                                        StaticMap(
+                                                          bounds: padLatLngBounds(
+                                                              LatLngBounds.fromPoints(
+                                                                  (routePoints ?? []) + (points ?? [])),
+                                                              0.1),
+                                                          padding: EdgeInsets.zero,
+                                                          shapes: [
+                                                            ShapeLayer("route", lines: [
+                                                              // Next waypoint: path
+                                                              if (selectedWp != null && selectedWp.isPath)
+                                                                MapPolyline(
+                                                                    points: selectedWp.latlng,
+                                                                    width: 6.0,
+                                                                    color: selectedWp.getColor()),
+                                                              if (activePlan.mapMeasurement != null &&
+                                                                  activePlan.mapMeasurement!.isNotEmpty)
+                                                                MapPolyline(
+                                                                    points: activePlan.mapMeasurement!,
+                                                                    width: 6.0,
+                                                                    color: Colors.orange),
+                                                              if (routePoints != null)
+                                                                MapPolyline(
+                                                                    points: routePoints!,
+                                                                    color: const Color.fromARGB(180, 255, 255, 0),
+                                                                    width: 12),
+                                                              if (routePoints != null)
+                                                                MapPolyline(
+                                                                    points: routePoints!,
+                                                                    color: Colors.black,
+                                                                    pattern: LinePattern.dotted,
+                                                                    width: 4),
+                                                            ]),
+                                                          ],
                                                           children: [
-                                                            getMapTileLayer(MapTileSrc.topo),
-
-                                                            // Next waypoint: path
-                                                            if (selectedWp != null &&
-                                                                !selectedWp.isPath) // Waypoint markers
+                                                            // Next waypoint: marker
+                                                            if (selectedWp != null && !selectedWp.isPath)
                                                               MarkerLayer(markers: [
-                                                                Marker(
+                                                                MapMarker(
                                                                     point: selectedWp.latlng[0],
                                                                     height: 60 * 0.8,
                                                                     width: 40 * 0.8,
-                                                                    rotate: true,
                                                                     alignment: Alignment.topCenter,
                                                                     child: WaypointMarker(selectedWp, 60 * 0.8))
                                                               ]),
-                                                            // Next waypoint: marker
-                                                            if (selectedWp != null &&
-                                                                selectedWp.isPath) // Waypoints: paths
-                                                              PolylineLayer(polylines: [
-                                                                Polyline(
-                                                                    points: selectedWp.latlng,
-                                                                    strokeWidth: 6.0,
-                                                                    color: selectedWp.getColor())
-                                                              ]),
-
-                                                            if (activePlan.mapMeasurement != null &&
-                                                                activePlan.mapMeasurement!.isNotEmpty)
-                                                              PolylineLayer(polylines: [
-                                                                Polyline(
-                                                                    points: activePlan.mapMeasurement!,
-                                                                    strokeWidth: 6.0,
-                                                                    color: Colors.orange)
-                                                              ]),
-
-                                                            if (routePoints != null)
-                                                              PolylineLayer(
-                                                                polylines: [
-                                                                  Polyline(
-                                                                      points: routePoints!,
-                                                                      color: const Color.fromARGB(180, 255, 255, 0),
-                                                                      strokeWidth: 12),
-                                                                  Polyline(
-                                                                      points: routePoints!,
-                                                                      color: Colors.black,
-                                                                      pattern: const StrokePattern.dotted(),
-                                                                      strokeWidth: 4),
-                                                                ],
-                                                              ),
 
                                                             // "ME" Live Location Marker
-
-                                                            ListenableBuilder(
-                                                                listenable: myTelemetry,
-                                                                builder: (context, _) {
-                                                                  if (myTelemetry.geo != null) {
-                                                                    return MarkerLayer(
-                                                                      markers: [
-                                                                        Marker(
-                                                                          width: 25.0,
-                                                                          height: 25.0,
-                                                                          point: myTelemetry.geo!.latlng,
-                                                                          child: Container(
-                                                                            transformAlignment: const Alignment(0, 0),
-                                                                            transform:
-                                                                                Matrix4.rotationZ(myTelemetry.geo!.hdg),
-                                                                            child: Image.asset(
-                                                                                "assets/images/red_arrow.png"),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    );
-                                                                  } else {
-                                                                    return Container();
-                                                                  }
-                                                                }),
+                                                            const MyLocationLayer(size: 25),
 
                                                             if (fuelIntercept != null)
                                                               MarkerLayer(
                                                                 markers: [
-                                                                  Marker(
+                                                                  MapMarker(
                                                                     width: 40,
                                                                     height: 40,
                                                                     point: fuelIntercept.latlng,
-                                                                    child: const Stack(
-                                                                      children: [
-                                                                        Center(
-                                                                          child: Icon(
-                                                                            Icons.circle,
-                                                                            size: 20,
-                                                                            color: Colors.black,
-                                                                          ),
-                                                                        ),
-                                                                        Icon(
-                                                                          Icons.warning_rounded,
-                                                                          size: 40,
-                                                                          color: Colors.black,
-                                                                        ),
-                                                                        Center(
-                                                                          child: Padding(
-                                                                            padding: EdgeInsets.only(top: 8, left: 2),
-                                                                            child: Icon(
-                                                                              Icons.local_gas_station,
-                                                                              size: 20,
-                                                                              color: Colors.red,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
+                                                                    child: const FuelWarningIcon(size: 40),
                                                                   )
                                                                 ],
                                                               )

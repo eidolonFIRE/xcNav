@@ -1,10 +1,6 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_dragmarker/flutter_map_dragmarker.dart';
-import 'package:flutter_map_line_editor/flutter_map_line_editor.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
@@ -25,13 +21,16 @@ import 'package:xcnav/widgets/measurement_markers.dart';
 // map view parts
 import 'package:xcnav/views/map/focus_mode.dart';
 import 'package:xcnav/views/map/map_layers.dart';
+import 'package:xcnav/views/map/map_markers.dart';
 import 'package:xcnav/views/map/offscreen_pilot_indicators.dart';
+import 'package:xcnav/views/map/poly_editor.dart';
 import 'package:xcnav/views/map/selected_waypoint_card.dart';
 import 'package:xcnav/views/map/map_status_column.dart';
 import 'package:xcnav/views/map/map_view_controls.dart';
 import 'package:xcnav/views/map/flight_timer.dart';
 import 'package:xcnav/views/map/link_status_icon.dart';
 import 'package:xcnav/views/map/edit_toolbar.dart';
+import 'package:xcnav/views/map/xc_map.dart';
 
 // dialogs
 import 'package:xcnav/dialogs/edit_waypoint.dart';
@@ -41,6 +40,8 @@ import 'package:xcnav/dialogs/airspace_info.dart';
 
 // models
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/map_camera.dart';
+import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/airport_info.dart';
 import 'package:xcnav/models/tfr.dart';
@@ -53,7 +54,6 @@ import 'package:xcnav/datadog.dart';
 import 'package:xcnav/tfr_service.dart';
 import 'package:xcnav/services/openaip_service.dart';
 import 'package:xcnav/settings_service.dart';
-import 'package:xcnav/util.dart';
 
 class ViewMap extends StatefulWidget {
   const ViewMap({super.key});
@@ -64,10 +64,8 @@ class ViewMap extends StatefulWidget {
 
 class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<ViewMap> {
   bool mapReady = false;
-  late MapController mapController;
+  final XcMapController mapController = XcMapController();
   DateTime? lastMapChange;
-  final mapKey = GlobalKey(debugLabel: "mainMap");
-  double? mapAspectRatio;
 
   FocusMode focusMode = FocusMode.me;
   FocusMode prevFocusMode = FocusMode.me;
@@ -76,17 +74,19 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   bool get isDragging => dragStart != null && dragStart!.isAfter(DateTime.now().subtract(const Duration(seconds: 30)));
   DateTime? dragStart;
   LatLng? draggingLatLng;
+  final _waypointDrag = MapDragTracker();
 
   WaypointID? editingWp;
-  late PolyEditor polyEditor;
+  late MapPolyEditor polyEditor;
 
-  final List<Polyline> polyLines = [];
+  /// Color of the path being edited
+  Color editingPathColor = Colors.amber;
   final List<LatLng> editablePoints = [];
 
   // ignore: annotate_overrides
   bool get wantKeepAlive => true;
 
-  late PolyEditor measurementEditor;
+  late MapPolyEditor measurementEditor;
   final List<LatLng> measurementPoints = [];
 
   bool hideWaypoints = false;
@@ -96,21 +96,16 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   DateTime? lastSavedLastKnownLatLng;
 
+  List<TFR>? tfrs;
+
+  /// GPS updates come about once a second. Glide between them.
+  static const followDuration = Duration(milliseconds: 900);
+
   @override
   void initState() {
     super.initState();
 
-    // intialize the controllers
-    mapController = MapController();
-
-    // zoomMainMapToLatLng.stream.listen((latlng) {
-    //   debugPrint("Map zoom to: $latlng");
-    //   mapController.move(latlng, mapController.camera.zoom);
-    //   setFocusMode(FocusMode.unlocked);
-    // });
-
-    polyEditor = PolyEditor(
-      addClosePathMarker: false,
+    polyEditor = MapPolyEditor(
       points: editablePoints,
       pointIcon: const Icon(
         Icons.crop_square,
@@ -118,11 +113,10 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         color: Colors.black,
       ),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
-      callbackRefresh: (_) => {setState(() {})},
+      onChanged: () => setState(() {}),
     );
 
-    measurementEditor = PolyEditor(
-      addClosePathMarker: false,
+    measurementEditor = MapPolyEditor(
       points: measurementPoints,
       pointIcon: const Icon(
         Icons.crop_square,
@@ -130,7 +124,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         color: Colors.black,
       ),
       intermediateIcon: const Icon(Icons.circle_outlined, size: 20, color: Colors.black),
-      callbackRefresh: (_) => {setState(() {})},
+      onChanged: () => setState(() {}),
     );
 
     addAttribute("view_map_focusMode", focusMode.name);
@@ -148,8 +142,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   void _onControlsSideChanged() => setState(() {});
 
   void beginEditingLine(Waypoint waypoint) {
-    polyLines.clear();
-    polyLines.add(Polyline(color: waypoint.getColor(), points: editablePoints, strokeWidth: 5));
+    editingPathColor = waypoint.getColor();
     editablePoints.clear();
     editablePoints.addAll(waypoint.latlng.toList());
     editingWp = waypoint.id;
@@ -172,88 +165,59 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   }
 
   void refreshMapView() {
-    Geo? geo = myTelemetry.geo;
+    final Geo? geo = myTelemetry.geo;
+    final camera = mapController.camera.value;
+    if (geo == null || camera == null) return;
 
-    if (geo != null) {
-      LatLng? center;
-      double zoom = mapController.camera.zoom;
+    // --- Orient to gps heading
+    double? bearing;
+    if (!settingsMgr.northlockMap.value && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
+      bearing = geo.hdg / pi * 180;
+    }
 
-      // --- Orient to gps heading
-      if (!settingsMgr.northlockMap.value && (focusMode == FocusMode.me || focusMode == FocusMode.group)) {
-        mapController.rotate(-geo.hdg / pi * 180);
+    // --- Move to center
+    if (focusMode == FocusMode.me) {
+      mapController.moveTo(center: geo.latlng, bearing: bearing, duration: followDuration, linear: true);
+    } else if (focusMode == FocusMode.group) {
+      List<LatLng> points =
+          Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
+      points.add(LatLng(geo.lat, geo.lng));
+      if (settingsMgr.groupViewWaypoint.value) {
+        // Add selected waypoint into view
+        points.addAll(Provider.of<ActivePlan>(context, listen: false).getSelectedWp()?.latlng ?? []);
       }
-      // --- Move to center
-      if (focusMode == FocusMode.me) {
-        center = geo.latlng;
-      } else if (focusMode == FocusMode.group) {
-        List<LatLng> points =
-            Provider.of<Group>(context, listen: false).activePilots.map((e) => e.geo!.latlng).toList();
-        points.add(LatLng(geo.lat, geo.lng));
-        if (settingsMgr.groupViewWaypoint.value) {
-          // Add selected waypoint into view
-          points.addAll(Provider.of<ActivePlan>(context, listen: false).getSelectedWp()?.latlng ?? []);
-        }
-        if (lastMapChange == null ||
-            (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
-          final camFit =
-              CameraFit.bounds(bounds: LatLngBounds.fromPoints(points), padding: const EdgeInsets.all(100), maxZoom: 13)
-                  .fit(mapController.camera);
-          center = camFit.center;
-          zoom = camFit.zoom;
-        } else {
-          // Preserve zoom if it has been recently overriden
-
-          center = LatLngBounds.fromPoints(points).center;
-        }
-      }
-      if (center != null) {
-        mapController.move(center, zoom);
-      }
-      if ((mapKey.currentContext?.mounted ?? false) && mapKey.currentContext?.size != null) {
-        mapAspectRatio = mapKey.currentContext!.size!.aspectRatio;
+      if (lastMapChange == null ||
+          (lastMapChange != null && lastMapChange!.add(const Duration(seconds: 15)).isBefore(DateTime.now()))) {
+        final camFit = MapCamera.fit(LatLngBounds.fromPoints(points), camera.size,
+            padding: const EdgeInsets.all(100), bearing: bearing ?? camera.bearing, tilt: camera.tilt, maxZoom: 12);
+        mapController.moveTo(
+            center: camFit.center, zoom: camFit.zoom, bearing: bearing, duration: followDuration, linear: true);
+      } else {
+        // Preserve zoom if it has been recently overriden
+        mapController.moveTo(
+            center: LatLngBounds.fromPoints(points).center, bearing: bearing, duration: followDuration, linear: true);
       }
     }
   }
 
-  bool markerIsInView(LatLng point) {
-    if (mapReady && mapAspectRatio != null) {
-      // transform point into north-up reference frame
-      final vectorHdg = latlngCalc.bearing(mapController.camera.center, point) + mapController.camera.rotation;
-      final vectorHypo = latlngCalc.distance(mapController.camera.center, point);
-      final transformedPoint =
-          latlngCalc.offset(mapController.camera.center, vectorHypo, ((vectorHdg + 180) % 360) - 180);
-      final center = mapController.camera.center;
-      final theta = (((mapController.camera.rotation.abs() % 180) - 90).abs() - 90).abs() * pi / 180;
+  bool markerIsInView(LatLng point) => mapController.camera.value?.isOnScreen(point) ?? false;
 
-      // super bounding box
-      final bw = (mapController.camera.visibleBounds.west - mapController.camera.visibleBounds.east).abs();
-      final bh = (mapController.camera.visibleBounds.north - mapController.camera.visibleBounds.south).abs();
+  /// Paths of multi-point waypoints. Tap to select (or flip direction), long press to edit.
+  ShapeLayer buildWaypointPaths(ActivePlan plan) => ShapeLayer("waypointPaths",
+      lines: plan.waypoints.values
+          .where((value) => value.latlng.length > 1)
+          .whereNot((element) => element.id == editingWp)
+          .map((e) => MapPolyline(points: e.latlng, width: 6.0, color: e.getColor(), hitValue: e.id))
+          .toList());
 
-      // solve for inscribed rectangle
-      final a = mapAspectRatio!;
-      final w = (a * bw) / (a * cos(theta) + sin(theta));
-      final h = bh / (a * sin(theta) + cos(theta));
-
-      // make bounding box and sample
-      final fakeBounds = LatLngBounds(clampLatLng(center.latitude - h / 2, center.longitude - w / 2),
-          clampLatLng(center.latitude + h / 2, center.longitude + w / 2));
-      return fakeBounds.contains(transformedPoint);
-    } else {
-      return false;
-    }
+  /// Waypoint path under [screenPoint], if any
+  WaypointID? pathAt(ActivePlan plan, Offset screenPoint) {
+    final camera = mapController.camera.value;
+    if (camera == null || hideWaypoints) return null;
+    return buildWaypointPaths(plan).hitTestLines(camera, screenPoint).firstOrNull;
   }
 
-  /// WORKAROUND - calculate relative offset ourselves
-  LatLng? tapToLatLng(TapPosition tapPosition) {
-    final widgetBox = mapKey.currentContext?.findRenderObject() as RenderBox?;
-    if (widgetBox != null) {
-      final relativeTapPos = tapPosition.global - widgetBox.localToGlobal(Offset.zero);
-      return mapController.camera.offsetToCrs(relativeTapPos);
-    }
-    return null;
-  }
-
-  void onMapTap(BuildContext context, LatLng latlng) {
+  void onMapTap(BuildContext context, LatLng latlng, Offset screenPoint) {
     debugPrint("onMapTap: $latlng");
     final plan = Provider.of<ActivePlan>(context, listen: false);
     if (editingWp != null && plan.waypoints.containsKey(editingWp) && plan.waypoints[editingWp]!.latlng.length == 1) {
@@ -268,6 +232,17 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       // Add point to measurement
       measurementEditor.add(measurementPoints, latlng);
     } else {
+      // check tap on waypoint path
+      final pathId = pathAt(plan, screenPoint);
+      final wp = plan.waypoints[pathId];
+      if (pathId != null && wp != null) {
+        // Select this path waypoint
+        if (plan.selectedWp == pathId) {
+          wp.toggleDirection();
+        }
+        plan.selectedWp = pathId;
+        return;
+      }
       // check tap on TFR
       for (final tfr in getLoadedTFRs() ?? <TFR>[]) {
         if (tfr.containsPoint(latlng)) {
@@ -284,10 +259,18 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     }
   }
 
-  void onMapLongPress(BuildContext context, LatLng latlng) {
+  void onMapLongPress(BuildContext context, LatLng latlng, Offset screenPoint) {
+    final plan = Provider.of<ActivePlan>(context, listen: false);
+
+    // Start editing path waypoint
+    final pathId = pathAt(plan, screenPoint);
+    if (pathId != null && focusMode != FocusMode.measurement && plan.waypoints.containsKey(pathId)) {
+      beginEditingLine(plan.waypoints[pathId]!);
+      return;
+    }
+
     // Prime the editor incase we decide to make a path
-    polyLines.clear();
-    polyLines.add(Polyline(color: Colors.amber, points: editablePoints, strokeWidth: 5));
+    editingPathColor = Colors.amber;
     editablePoints.clear();
     editablePoints.add(latlng);
     tapPointDialog(context, latlng, setFocusMode, (Waypoint newWaypoint) {
@@ -295,28 +278,30 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     });
   }
 
-  void onMapPositionChanged(MapCamera mapPosition, bool hasGesture) {
+  void onMapCameraChanged(MapCamera camera) {
     if (lastSavedLastKnownLatLng == null ||
         lastSavedLastKnownLatLng!.difference(DateTime.now()).abs() > const Duration(minutes: 2)) {
       lastSavedLastKnownLatLng = DateTime.now();
       SharedPreferences.getInstance().then((prefs) {
         prefs.setString(
-            "lastKnownLatLng", jsonEncode({"lat": mapPosition.center.latitude, "lng": mapPosition.center.longitude}));
+            "lastKnownLatLng", jsonEncode({"lat": camera.center.latitude, "lng": camera.center.longitude}));
       });
     }
+  }
 
-    if (hasGesture) {
-      if (focusMode == FocusMode.me || focusMode == FocusMode.group) {
-        // --- Unlock any focus lock
-        setFocusMode(FocusMode.unlocked);
-      }
+  void onUserGesture() {
+    if (focusMode == FocusMode.me || focusMode == FocusMode.group) {
+      // --- Unlock any focus lock
+      setFocusMode(FocusMode.unlocked);
     }
   }
 
   void toggleNorthLock() {
     setState(() {
       settingsMgr.northlockMap.value = !settingsMgr.northlockMap.value;
-      if (settingsMgr.northlockMap.value) mapController.rotate(0);
+      if (settingsMgr.northlockMap.value) {
+        mapController.moveTo(bearing: 0, duration: const Duration(milliseconds: 300));
+      }
 
       addAttribute("view_map_northLockMap", settingsMgr.northlockMap.value);
     });
@@ -386,54 +371,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   // --- Waypoint layers
 
-  /// Waypoint paths. Tap to select (or flip direction), long press to edit.
-  Widget buildWaypointPathsLayer(ActivePlan plan, LayerHitNotifier<String> polylineHit) {
-    return GestureDetector(
-      onTapDown: (details) {
-        if (focusMode == FocusMode.measurement) {
-          measurementEditor.add(measurementPoints, mapController.camera.offsetToCrs(details.localPosition));
-        }
-      },
-      onTap: () {
-        if (focusMode != FocusMode.measurement) {
-          final p0 = polylineHit.value?.hitValues.first;
-          if (p0 != null) {
-            final wp = plan.waypoints[p0];
-            if (wp != null) {
-              // Select this path waypoint
-              if (focusMode != FocusMode.measurement) {
-                if (plan.selectedWp == p0) {
-                  wp.toggleDirection();
-                }
-                plan.selectedWp = p0;
-              }
-            }
-          }
-        }
-      },
-      onLongPress: (() {
-        // Start editing path waypoint
-        final p0 = polylineHit.value?.hitValues.first;
-        if (p0 != null && focusMode != FocusMode.measurement) {
-          if (plan.waypoints.containsKey(p0)) {
-            beginEditingLine(plan.waypoints[p0]!);
-          }
-        }
-      }),
-      child: PolylineLayer(
-        hitNotifier: polylineHit,
-        minimumHitbox: 30,
-        polylines: plan.waypoints.values
-            .where((value) => value.latlng.length > 1)
-            .whereNot(
-              (element) => element.id == editingWp,
-            )
-            .map((e) => Polyline(points: e.latlng, strokeWidth: 6.0, color: e.getColor(), hitValue: e.id))
-            .toList(),
-      ),
-    );
-  }
-
   void onAirportTap(AirportInfo airport) {
     if (focusMode == FocusMode.measurement) {
       measurementEditor.add(measurementPoints, airport.latlng);
@@ -454,11 +391,11 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     return MarkerLayer(
       markers: plan.waypoints.values
           .where((e) => e.latlng.length == 1 && e.id != editingWp)
-          .map((e) => Marker(
+          .map((e) => MapMarker(
+              key: ValueKey("waypoint_${e.id}"),
               point: e.latlng[0],
               height: 60 * 0.8,
               width: 40 * 0.8,
-              rotate: true,
               alignment: Alignment.topCenter,
               child: GestureDetector(
                 onTap: () {
@@ -482,150 +419,123 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   /// The single point waypoint currently being edited.
   Widget buildDraggableWaypointLayer(ActivePlan plan) {
-    return DragMarkers(markers: [
-      DragMarker(
-          point: draggingLatLng ?? plan.waypoints[editingWp]!.latlng.first,
-          size: const Size(60 * 0.8, 60 * 0.8),
-          onTap: (_) => plan.selectedWp = editingWp,
-          onDragEnd: (p0, p1) {
-            dragStart = null;
-          },
-          onDragUpdate: (_, p1) {
-            draggingLatLng = p1;
-          },
-          onDragStart: (p0, p1) {
-            setState(() {
-              draggingLatLng = p1;
-              dragStart = DateTime.now();
-            });
-          },
-          rotateMarker: true,
-          builder: (context, latlng, isDragging) {
-            if (editingWp != null &&
-                plan.waypoints.containsKey(editingWp) &&
-                plan.waypoints[editingWp]!.latlng.length == 1) {
-              return Stack(
-                children: [
-                  Container(
-                      transformAlignment: const Alignment(0, 0),
-                      transform: Matrix4.translationValues(0, -30 * 0.8, 0),
-                      child: WaypointMarker(plan.waypoints[editingWp]!, 60 * 0.8)),
-                  Container(
-                      transformAlignment: const Alignment(0, 0),
-                      transform: Matrix4.translationValues(12, 25, 0),
-                      child: const Icon(
-                        Icons.open_with,
-                        color: Colors.black,
-                      )),
-                ],
-              );
-            } else {
-              // editingWp must've been removed while being drug.
+    final waypoint = plan.waypoints[editingWp]!;
+    final point = draggingLatLng ?? waypoint.latlng.first;
+    return MarkerLayer(markers: [
+      MapMarker(
+          point: point,
+          width: 60 * 0.8,
+          height: 60 * 0.8,
+          child: MapDragHandle(
+            onTap: () => plan.selectedWp = editingWp,
+            onDragStart: (global) {
+              _waypointDrag.start(mapController, global, point);
               setState(() {
-                editingWp = null;
+                draggingLatLng = point;
+                dragStart = DateTime.now();
               });
-              return Container();
-            }
-          })
+            },
+            onDragUpdate: (global) {
+              final latlng = _waypointDrag.update(mapController, global);
+              if (latlng != null) setState(() => draggingLatLng = latlng);
+            },
+            onDragEnd: () {
+              _waypointDrag.end();
+              dragStart = null;
+            },
+            child: Stack(
+              children: [
+                Container(
+                    transformAlignment: const Alignment(0, 0),
+                    transform: Matrix4.translationValues(0, -30 * 0.8, 0),
+                    child: WaypointMarker(waypoint, 60 * 0.8)),
+                Container(
+                    transformAlignment: const Alignment(0, 0),
+                    transform: Matrix4.translationValues(12, 25, 0),
+                    child: const Icon(
+                      Icons.open_with,
+                      color: Colors.black,
+                    )),
+              ],
+            ),
+          ))
     ]);
   }
 
-  Widget buildMap(BuildContext context, ActivePlan plan, LayerHitNotifier<String> polylineHit) {
-    final showWeatherObservations =
-        mapReady && !settingsMgr.hideWeatherObservations.value && mapController.camera.zoom > 7;
+  List<ShapeLayer> buildShapes(BuildContext context, ActivePlan plan) {
+    final geo = myTelemetry.geo;
+    final isEditingPath = focusMode == FocusMode.addPath || focusMode == FocusMode.editPath;
+    return [
+      // Sectional already shows airspace
+      if (showAirspace) airspaceShapes(openAipService.airspaces),
 
-    return FlutterMap(
-      key: mapKey,
-      mapController: mapController,
-      options: MapOptions(
-        onMapReady: () {
-          setState(() {
-            mapReady = true;
-          });
-        },
-        interactionOptions: InteractionOptions(
-            flags:
-                InteractiveFlag.all & (settingsMgr.northlockMap.value ? ~InteractiveFlag.rotate : InteractiveFlag.all)),
-        initialCenter: myTelemetry.geo?.latlng ?? lastKnownLatLng,
-        initialZoom: 12.0,
-        minZoom: 2,
-        onTap: (tapPosition, point) {
-          final latlng = tapToLatLng(tapPosition);
-          if (latlng != null) onMapTap(context, latlng);
-        },
-        onLongPress: (tapPosition, point) {
-          final latlng = tapToLatLng(tapPosition);
-          if (latlng != null) onMapLongPress(context, latlng);
-        },
-        onPositionChanged: onMapPositionChanged,
-      ),
+      if (tfrs != null) tfrShapes(tfrs!),
+
+      // Other Pilot path trace
+      groupTraceShapes(Provider.of<Group>(context).activePilots),
+
+      // Flight Log
+      ShapeLayer("myTrace", lines: [if (myTelemetry.flightTrace.isNotEmpty) myTelemetry.buildFlightTrace()]),
+
+      // ADSB Proximity
+      if (context.select((ADSB adsb) => adsb.enabled) && geo != null) adsbProximityShape(geo.latlng),
+
+      // Next waypoint: path
+      if (geo != null && plan.selectedWp != null)
+        ShapeLayer("nextWaypoint",
+            lines: plan.buildNextWpIndicator(
+                geo, (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
+                baseTiles: settingsMgr.mainMapTileSrc.value)),
+
+      // Waypoints: paths
+      if (!hideWaypoints) buildWaypointPaths(plan),
+
+      // Measurement: yellow line
+      if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
+        ShapeLayer("measurement",
+            lines: [MapPolyline(points: measurementPoints.toList(), color: Colors.orange, width: 8)]),
+
+      // Path being edited
+      if (isEditingPath)
+        ShapeLayer("editingPath",
+            lines: [MapPolyline(points: editablePoints.toList(), color: editingPathColor, width: 5)]),
+    ];
+  }
+
+  Widget buildMap(BuildContext context, ActivePlan plan) {
+    final center = myTelemetry.geo?.latlng ?? lastKnownLatLng;
+    getTFRs(center).then((value) {
+      if (mounted && !identical(value, tfrs)) setState(() => tfrs = value);
+    });
+
+    return XcMap(
+      controller: mapController,
+      tileSrc: settingsMgr.mainMapTileSrc.value,
+      opacity: settingsMgr.mainMapOpacity.value,
+      initialCenter: center,
+      initialZoom: 11,
+      minZoom: 1,
+      rotateGestures: !settingsMgr.northlockMap.value,
+      terrain: true,
+      onMapReady: () => setState(() => mapReady = true),
+      onTap: (latlng, screenPoint) => onMapTap(context, latlng, screenPoint),
+      onLongPress: (latlng, screenPoint) => onMapLongPress(context, latlng, screenPoint),
+      onCameraChanged: onMapCameraChanged,
+      onUserGesture: onUserGesture,
+      shapes: buildShapes(context, plan),
       children: [
-        Opacity(opacity: settingsMgr.mainMapOpacity.value, child: getMapTileLayer(settingsMgr.mainMapTileSrc.value)),
-
-        // Sectional already shows airspace
-        if (showAirspace) AirspaceLayer(center: myTelemetry.geo?.latlng ?? lastKnownLatLng),
-
-        TfrLayer(center: myTelemetry.geo?.latlng ?? lastKnownLatLng),
-
         // https://nowcoast.noaa.gov/help/#!section=map-service-list
-        // if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
-        //   Opacity(
-        //     opacity: min(1.0, max(0.2, (14.0 - (mapReady ? mapController.camera.zoom : 0)) / 10.0)),
-        //     child: TileLayer(
-        //         backgroundColor: Colors.transparent,
-        //         wmsOptions: WMSTileLayerOptions(
-        //           layers: ["1"],
-        //           baseUrl:
-        //               "https://nowcoast.noaa.gov/arcgis/services/nowcoast/radar_meteo_imagery_nexrad_time/MapServer/WMSServer?",
-        //         )),
-        //   ),
-
-        // Other Pilot path trace
-        const GroupPilotTracesLayer(),
-
-        // Flight Log
-        if (myTelemetry.flightTrace.isNotEmpty) PolylineLayer(polylines: [myTelemetry.buildFlightTrace()]),
-
-        // ADSB Proximity
-        if (Provider.of<ADSB>(context, listen: false).enabled && myTelemetry.geo != null) const AdsbProximityLayer(),
-
-        // Next waypoint: path
-        if (myTelemetry.geo != null && plan.selectedWp != null)
-          ListenableBuilder(
-            listenable: myTelemetry,
-            builder: (context, _) => PolylineLayer(
-                polylines: plan.buildNextWpIndicator(
-                    myTelemetry.geo!, (settingsMgr.displayUnitDist.value == DisplayUnitsDist.metric ? 1000 : 1609.344),
-                    baseTiles: settingsMgr.mainMapTileSrc.value)),
-          ),
-
-        // Waypoints: paths
-        if (!hideWaypoints) buildWaypointPathsLayer(plan, polylineHit),
+        // (NOAA radar overlay is disabled. If revived, MapLibre can show WMS as a raster source with a
+        // `{bbox-epsg-3857}` url.)
 
         // Next waypoint: barbs
         if (myTelemetry.geo != null) NextWaypointBarbsLayer(plan: plan),
 
-        // Measurement: yellow line
-        if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
-          PolylineLayer(polylines: [Polyline(points: measurementPoints, color: Colors.orange, strokeWidth: 8)]),
-
-        // (DEBUG): check the tiles being loaded
-        // if (mapReady)
-        //   PolygonLayer(
-        //       polygons: WeatherObservationService.iterTiles(mapController.camera.visibleBounds)
-        //           .map((e) => Polygon(
-        //               points: tileToLatLngs(e),
-        //               color: Color.fromARGB(
-        //                   100, (e.x * 30) % 255, (e.y * 30) % 255, (e.x * 30 + e.y * 20) % 255)))
-        //           .toList()),
-
         // WeatherObservations
-        if (showWeatherObservations) WeatherObservationLabelsLayer(bounds: mapController.camera.visibleBounds),
-        if (showWeatherObservations) WeatherObservationArrowsLayer(bounds: mapController.camera.visibleBounds),
+        if (!settingsMgr.hideWeatherObservations.value) const WeatherObservationsLayer(),
 
         // Airports (below waypoints)
-        if (settingsMgr.showAirports.value)
-          AirportsLayer(center: myTelemetry.geo?.latlng ?? lastKnownLatLng, onTap: onAirportTap),
+        if (settingsMgr.showAirports.value) AirportsLayer(center: center, onTap: onAirportTap),
 
         // Waypoint markers
         if (!hideWaypoints) buildWaypointMarkersLayer(plan),
@@ -635,24 +545,24 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           buildDraggableWaypointLayer(plan),
 
         // GA planes (ADSB IN)
-        if (context.select((ADSB adsb) => adsb.enabled)) AdsbPlanesLayer(mapController: mapController),
+        if (context.select((ADSB adsb) => adsb.enabled)) const AdsbPlanesLayer(),
 
         // Live locations other pilots
-        GroupPilotsLayer(mapController: mapController),
+        const GroupPilotsLayer(),
 
         const FuelWarningLayer(),
 
         const MyLocationLayer(),
 
-        // Measurement Polyline
+        // Measurement
         if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
-          DragMarkers(markers: measurementEditor.edit()),
+          MarkerLayer(markers: measurementEditor.edit(mapController)),
         if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
           MarkerLayer(markers: buildMeasurementMarkers(measurementPoints)),
 
         // Draggable line editor
-        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) PolylineLayer(polylines: polyLines),
-        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath) DragMarkers(markers: polyEditor.edit()),
+        if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
+          MarkerLayer(markers: polyEditor.edit(mapController)),
       ],
     );
   }
@@ -666,8 +576,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     // Hookup the measurement points to the active plan provider.
     Provider.of<ActivePlan>(context, listen: false).mapMeasurement = measurementPoints;
 
-    final LayerHitNotifier<String> polylineHit = ValueNotifier(null);
-
     final controlsRightSide = settingsMgr.mapControlsRightSide.value;
     final isEditing =
         focusMode == FocusMode.addPath || focusMode == FocusMode.editPath || focusMode == FocusMode.editWaypoint;
@@ -675,11 +583,14 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
     return Container(
       color: Colors.white,
       child: Stack(alignment: Alignment.center, children: [
-        // NOTE: MyTelemetry is not part of this consumer because refreshMapView is already called elsewhere on MyTelemetry changes
-        Consumer<ActivePlan>(builder: (context, plan, child) => buildMap(context, plan, polylineHit)),
+        // Shapes follow my position (traces, next waypoint), so rebuild with telemetry too
+        ListenableBuilder(
+            listenable: Listenable.merge([myTelemetry, openAipService]),
+            builder: (context, _) =>
+                Consumer<ActivePlan>(builder: (context, plan, child) => buildMap(context, plan))),
 
         // --- Pilot Direction Markers (for when pilots are out of view)
-        OffscreenPilotIndicators(mapController: mapController, isInView: markerIsInView),
+        OffscreenPilotIndicators(mapController: mapController),
 
         // --- Current waypoint info
         if (!isEditing) const SelectedWaypointCard(),
@@ -701,7 +612,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           bottom: 10,
           child: MapViewControls(
             mapController: mapController,
-            mapReady: mapReady,
             focusMode: focusMode,
             onSetFocusMode: setFocusMode,
             onToggleNorthLock: toggleNorthLock,
