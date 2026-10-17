@@ -28,23 +28,26 @@ class _ScanScreenState extends State<ScanScreen> {
       appBar: AppBar(
         title: Text('Bluetooth Devices'.tr()),
         actions: [
-          StreamBuilder<bool>(
-              stream: FlutterBluePlus.isScanning,
-              builder: (context, isScanning) {
-                if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.off) {
-                  return Icon(Icons.bluetooth_disabled);
-                } else {
-                  return IconButton(
-                    icon: (isScanning.data ?? false)
-                        ? SizedBox(width: 26, height: 26, child: CircularProgressIndicator.adaptive())
-                        : Icon(Icons.refresh),
-                    onPressed: () {
-                      if (!(isScanning.data ?? false)) {
-                        ble_service.scan();
-                      }
-                    },
-                  );
+          StreamBuilder<BluetoothAdapterState>(
+              stream: FlutterBluePlus.adapterState,
+              builder: (context, adapterState) {
+                if (adapterState.data == BluetoothAdapterState.off) {
+                  return Padding(padding: const EdgeInsets.all(8), child: Icon(Icons.bluetooth_disabled));
                 }
+                return StreamBuilder<bool>(
+                    stream: FlutterBluePlus.isScanning,
+                    builder: (context, isScanning) {
+                      return IconButton(
+                        icon: (isScanning.data ?? false)
+                            ? SizedBox(width: 26, height: 26, child: CircularProgressIndicator.adaptive())
+                            : Icon(Icons.refresh),
+                        onPressed: () {
+                          if (!(isScanning.data ?? false)) {
+                            ble_service.scan();
+                          }
+                        },
+                      );
+                    });
               }),
         ],
       ),
