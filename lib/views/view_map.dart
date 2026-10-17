@@ -586,9 +586,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
         // Flight Log
         if (myTelemetry.flightTrace.isNotEmpty) PolylineLayer(polylines: [myTelemetry.buildFlightTrace()]),
 
-        // ADSB Proximity
-        if (Provider.of<ADSB>(context, listen: false).enabled && myTelemetry.geo != null) const AdsbProximityLayer(),
-
         // Next waypoint: path
         if (myTelemetry.geo != null && plan.selectedWp != null)
           ListenableBuilder(

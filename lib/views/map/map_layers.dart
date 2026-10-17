@@ -147,28 +147,6 @@ class AirportsLayer extends StatelessWidget {
   }
 }
 
-/// Circle around me showing the ADSB proximity warning radius.
-class AdsbProximityLayer extends StatelessWidget {
-  const AdsbProximityLayer({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-        listenable: myTelemetry,
-        builder: (context, _) {
-          return CircleLayer(circles: [
-            CircleMarker(
-                point: myTelemetry.geo!.latlng,
-                color: Colors.transparent,
-                borderStrokeWidth: 1,
-                borderColor: Colors.black54,
-                radius: proximityProfileOptions[settingsMgr.adsbProximitySize.value]!.horizontalDist,
-                useRadiusInMeter: true)
-          ]);
-        });
-  }
-}
-
 /// Chevrons along the path to the selected waypoint.
 class NextWaypointBarbsLayer extends StatelessWidget {
   final ActivePlan plan;
