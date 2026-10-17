@@ -19,6 +19,7 @@
 		<string>en</string>
 		<string>ru</string>
 		<string>hu</string>
+		<string>th</string>
 	</array>
 	<key>CFBundleName</key>
 	<string>xcnav</string>

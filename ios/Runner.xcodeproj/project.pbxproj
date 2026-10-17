@@ -42,6 +42,8 @@
 		643E13B52E218C10008B0094 /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hu; path = hu.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		643E13B62E218C1A008B0094 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Main.strings; sourceTree = "<group>"; };
 		643E13B72E218C1A008B0094 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		643E13B82E218C20008B0094 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/Main.strings; sourceTree = "<group>"; };
+		643E13B92E218C20008B0094 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
@@ -187,6 +189,7 @@
 				Base,
 				hu,
 				ru,
+				th,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
@@ -307,6 +310,7 @@
 				97C146FB1CF9000F007C117D /* Base */,
 				643E13B42E218C10008B0094 /* hu */,
 				643E13B62E218C1A008B0094 /* ru */,
+				643E13B82E218C20008B0094 /* th */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -317,6 +321,7 @@
 				97C147001CF9000F007C117D /* Base */,
 				643E13B52E218C10008B0094 /* hu */,
 				643E13B72E218C1A008B0094 /* ru */,
+				643E13B92E218C20008B0094 /* th */,
 			);
 			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
