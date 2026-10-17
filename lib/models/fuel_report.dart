@@ -104,6 +104,8 @@ class FuelReportController with ChangeNotifier {
 
   FuelReportController({Iterable<FuelReport> fuelReports = const []}) {
     _fuelReports.addAll(fuelReports);
+    // Older logs may have reports out of order. Everything here assumes sorted.
+    _fuelReports.sort((a, b) => a.time.compareTo(b.time));
   }
 
   FuelStat? _sumFuelStat;
@@ -126,15 +128,21 @@ class FuelReportController with ChangeNotifier {
 
       debugPrint("Building fuelStats");
 
+      if (recordGeo.isEmpty) return _fuelStats!;
+      final times = recordGeo.map((e) => e.time).toList();
+
       // Rebuild the stats
       for (int index = 0; index < _fuelReports.length - 1; index++) {
         final a = _fuelReports[index];
         final b = _fuelReports[index + 1];
-        final newStat = FuelStat.fromSamples(
-            a,
-            b,
-            recordGeo.sublist(nearestIndex(recordGeo.map((e) => e.time).toList(), a.time.millisecondsSinceEpoch),
-                nearestIndex(recordGeo.map((e) => e.time).toList(), b.time.millisecondsSinceEpoch) + 1));
+        final startIndex = nearestIndex(times, a.time.millisecondsSinceEpoch);
+        final endIndex = nearestIndex(times, b.time.millisecondsSinceEpoch);
+        if (endIndex < startIndex) {
+          dd.warn("FuelReportController.getFuelStats: sample range out of order",
+              attributes: {"startIndex": startIndex, "endIndex": endIndex});
+          continue;
+        }
+        final newStat = FuelStat.fromSamples(a, b, recordGeo.sublist(startIndex, endIndex + 1));
         // this will even include stats that are invalid.
         _fuelStats!.add(newStat);
       }
