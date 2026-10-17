@@ -376,7 +376,7 @@ class BleDeviceSp140 extends BleDeviceHandler {
 
   @override
   Widget configDialog() {
-    return Container();
+    return Sp140ConfigDialog(sp140: this);
   }
 
   @override
@@ -426,7 +426,7 @@ class Sp140ConfigDialog extends StatelessWidget {
                   value: value.toDouble(),
                   min: 1,
                   max: 10,
-                  divisions: 10,
+                  divisions: 9,
                   label: "$value min",
                   onChanged: (newValue) {
                     settingsMgr.sp140FuelSaveIntervalMin.value = newValue.round();

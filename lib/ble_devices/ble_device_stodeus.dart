@@ -35,14 +35,9 @@ class BleDeviceStodeus extends BleDeviceHandler {
   /// User has a vario selected (connected, or reconnecting after dropping out of BLE range).
   final ValueNotifier<bool> attached = ValueNotifier(false);
 
-  BluetoothDevice? _device;
-
-  @override
-  BluetoothDevice? get device => _device;
-
   @override
   set device(BluetoothDevice? value) {
-    _device = value;
+    super.device = value;
     attached.value = value != null;
     if (value == null) _setStatus(VarioStatus.disconnected);
   }

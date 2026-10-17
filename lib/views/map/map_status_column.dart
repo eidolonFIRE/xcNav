@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 
+import 'package:xcnav/ble_devices/ble_device.dart';
 import 'package:xcnav/ble_devices/ble_device_big_battery.dart';
 import 'package:xcnav/ble_devices/ble_device_runleader.dart';
 import 'package:xcnav/ble_devices/ble_device_sp140.dart';
@@ -29,6 +30,13 @@ class MapStatusColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Rebuild when BLE devices attach/detach and on telemetry changes (e.g. inFlight gates the endurance rows).
+    return ListenableBuilder(
+        listenable: Listenable.merge([BleDeviceHandler.devicesChanged, myTelemetry]),
+        builder: (context, _) => _buildColumn());
+  }
+
+  Widget _buildColumn() {
     return LayoutBuilder(builder: (context, constaints) {
       final buttonSize = max(30, min(60, constaints.maxHeight / 8)).toDouble();
       return Align(

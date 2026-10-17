@@ -8,7 +8,18 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 abstract class BleDeviceHandler {
   // ignore: non_constant_identifier_names
   final String SERVICE_UUID = "00000000-0000-0000-0000-000000000000";
-  BluetoothDevice? device;
+
+  /// Bumped whenever any handler's device is assigned or cleared, so UI can show/hide device cards.
+  static final ValueNotifier<int> devicesChanged = ValueNotifier(0);
+
+  BluetoothDevice? _device;
+  BluetoothDevice? get device => _device;
+  set device(BluetoothDevice? value) {
+    if (_device == value) return;
+    _device = value;
+    devicesChanged.value++;
+  }
+
   Map<String, Map<String, BluetoothCharacteristic>> characteristics = {};
 
   Timer? reconnector;

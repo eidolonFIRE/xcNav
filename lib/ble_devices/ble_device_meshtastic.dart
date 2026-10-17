@@ -49,14 +49,9 @@ class BleDeviceMeshtastic extends BleDeviceHandler {
   /// User has a radio selected (connected, or reconnecting after dropping out of BLE range).
   final ValueNotifier<bool> attached = ValueNotifier(false);
 
-  BluetoothDevice? _device;
-
-  @override
-  BluetoothDevice? get device => _device;
-
   @override
   set device(BluetoothDevice? value) {
-    _device = value;
+    super.device = value;
     attached.value = value != null;
   }
 
