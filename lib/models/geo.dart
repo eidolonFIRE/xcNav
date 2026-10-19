@@ -75,7 +75,8 @@ class Geo {
       }
     } else {
       spd = prev?.spd ?? location.speed;
-      hdg = prev?.hdg ?? location.heading;
+      // location.heading is in degrees, hdg is in radians
+      hdg = prev?.hdg ?? location.heading * pi / 180;
     }
 
     if (forceGpsAltitude || baro == null) {
