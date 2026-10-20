@@ -495,9 +495,6 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       // Flight Log
       ShapeLayer("myTrace", lines: [if (myTelemetry.flightTrace.isNotEmpty) myTelemetry.buildFlightTrace()]),
 
-      // ADSB Proximity
-      if (context.select((ADSB adsb) => adsb.enabled) && geo != null) adsbProximityShape(geo.latlng),
-
       // Next waypoint: path
       if (geo != null && plan.selectedWp != null)
         ShapeLayer("nextWaypoint",

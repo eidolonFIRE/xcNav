@@ -183,6 +183,32 @@ void main() {
     expect(controller.findFuelReportIndex(DateTime(2000, 0, 0, 3, 0, 0, 0), tolerance: tol), null);
   });
 
+  test("FuelReport - out of order reports are sorted", () {
+    final recordGeo = <Geo>[
+      Geo(lat: 34, lng: 120, alt: 1, timestamp: const Duration().inMilliseconds),
+      Geo(lat: 34, lng: 120.1, alt: 200, spd: 15.3974637, timestamp: const Duration(minutes: 10).inMilliseconds),
+      Geo(lat: 34.1, lng: 120.2, alt: 240, spd: 24.0537096, timestamp: const Duration(minutes: 20).inMilliseconds),
+    ];
+    final controller = FuelReportController(fuelReports: [
+      FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 20).inMilliseconds), 10),
+      FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 0).inMilliseconds), 12),
+    ]);
+
+    expect(controller.fuelReports.map((e) => e.amount), [12, 10]);
+    expect(controller.getFuelStats(recordGeo).length, 1);
+    expect(controller.getSumFuelStat(recordGeo)?.amount, 2);
+  });
+
+  test("FuelReport - no samples", () {
+    final controller = FuelReportController(fuelReports: [
+      FuelReport(DateTime.fromMillisecondsSinceEpoch(0), 12),
+      FuelReport(DateTime.fromMillisecondsSinceEpoch(const Duration(minutes: 10).inMilliseconds), 10),
+    ]);
+
+    expect(controller.getFuelStats([]), isEmpty);
+    expect(controller.getSumFuelStat([]), null);
+  });
+
   group("FuelReport - cropReportsToTimeRange", () {
     DateTime t(int minutes) => DateTime(2000, 1, 1).add(Duration(minutes: minutes));
     FuelReportController make() => FuelReportController(fuelReports: [

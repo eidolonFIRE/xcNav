@@ -14,7 +14,6 @@ import 'package:xcnav/models/pilot.dart';
 import 'package:xcnav/models/tfr.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/providers/active_plan.dart';
-import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
@@ -61,12 +60,6 @@ ShapeLayer airspaceShapes(List<Airspace> airspaces) {
             .toList());
   }
   return _airspaceCachedLayer;
-}
-
-/// Circle around me showing the ADSB proximity warning radius.
-ShapeLayer adsbProximityShape(LatLng center) {
-  final ring = circlePoints(center, proximityProfileOptions[settingsMgr.adsbProximitySize.value]!.horizontalDist);
-  return ShapeLayer("adsbProximity", lines: [MapPolyline(points: ring..add(ring.first), color: Colors.black54, width: 1)]);
 }
 
 /// Flight traces of other pilots in the group.

@@ -69,11 +69,24 @@ BleDeviceHandler? getHandler({String? name, List<Guid>? serviceUuids, DeviceIden
   return null;
 }
 
-void scan() async {
-  if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.off) {
-    return;
+/// Wait for the adapter to report a real state. On iOS it's `unknown` until CoreBluetooth initializes.
+Future<BluetoothAdapterState> _resolvedAdapterState() async {
+  final now = FlutterBluePlus.adapterStateNow;
+  if (now != BluetoothAdapterState.unknown && now != BluetoothAdapterState.turningOn) {
+    return now;
   }
-  if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.unauthorized) {
+  try {
+    return await FlutterBluePlus.adapterState
+        .firstWhere((state) => state != BluetoothAdapterState.unknown && state != BluetoothAdapterState.turningOn)
+        .timeout(const Duration(seconds: 3));
+  } on TimeoutException {
+    return FlutterBluePlus.adapterStateNow;
+  }
+}
+
+void scan() async {
+  final adapterState = await _resolvedAdapterState();
+  if (adapterState == BluetoothAdapterState.unauthorized) {
     if (!alreadyRequestedPermission) {
       alreadyRequestedPermission = true;
       debugPrint("Requesting Bluetooth permission...");
@@ -81,6 +94,10 @@ void scan() async {
     } else {
       debugPrint("Bluetooth permission already requested.");
     }
+    return;
+  }
+  if (adapterState != BluetoothAdapterState.on) {
+    debugPrint("BLE scan skipped, adapter is ${adapterState.name}");
     return;
   }
   debugPrint("BLE Scanning...");
@@ -125,7 +142,12 @@ void scan() async {
 
   // NOTE: No scan filter. On Android `withKeywords` can't be combined with `withServices`, and some
   //       devices (e.g. Meshtastic) are only recognizable by service. Results are filtered with `isSupported`.
-  await FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
+  try {
+    await FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
+  } on Exception catch (e) {
+    // Adapter can still turn off between the state check and the scan.
+    debugPrint("BLE scan failed: $e");
+  }
 }
 
 Future connect(BluetoothDevice device) async {
