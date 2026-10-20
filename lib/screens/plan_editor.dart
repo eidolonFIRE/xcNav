@@ -26,7 +26,9 @@ import 'package:xcnav/dialogs/edit_waypoint.dart';
 import 'package:xcnav/views/map/focus_mode.dart';
 import 'package:xcnav/dialogs/tap_point.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/views/map/map_layers.dart';
 import 'package:xcnav/views/map/map_markers.dart';
+import 'package:xcnav/views/map/map_symbols.dart';
 import 'package:xcnav/views/map/poly_editor.dart';
 import 'package:xcnav/views/map/xc_map.dart';
 
@@ -116,11 +118,7 @@ class _PlanEditorState extends State<PlanEditor> {
   }
 
   /// Path under [screenPoint], if any
-  WaypointID? pathAt(Offset screenPoint) {
-    final camera = mapController.camera.value;
-    if (camera == null) return null;
-    return buildPaths().hitTestLines(camera, screenPoint).firstOrNull;
-  }
+  WaypointID? pathAt(Offset screenPoint) => mapController.hitTestLines(buildPaths(), screenPoint).firstOrNull;
 
   ShapeLayer buildPaths() => ShapeLayer("paths",
       lines: plan!.waypoints.values
@@ -193,35 +191,25 @@ class _PlanEditorState extends State<PlanEditor> {
                   ShapeLayer("editingPath",
                       lines: [MapPolyline(points: editablePoints.toList(), color: editingPathColor, width: 5)]),
               ],
-              children: [
+              symbols: [
                 // Waypoint markers
-                MarkerLayer(
-                  markers: plan!.waypoints.values
-                      .where((e) => e.latlng.length == 1 && e.id != editingWp)
-                      .map((e) => MapMarker(
-                          key: ValueKey("waypoint_${e.id}"),
-                          point: e.latlng[0],
-                          height: 60 * (e.id == selectedWp ? 0.8 : 0.6),
-                          width: 40 * (e.id == selectedWp ? 0.8 : 0.6),
-                          alignment: Alignment.topCenter,
-                          child: GestureDetector(
-                            onTap: () {
+                SymbolLayer("waypoints",
+                    symbols: plan!.waypoints.values
+                        .where((e) => e.latlng.length == 1 && e.id != editingWp)
+                        .map((e) => waypointSymbol(e, height: 60 * (e.id == selectedWp ? 0.8 : 0.6), onTap: () {
                               setState(() {
                                 selectedWp = e.id;
                               });
-                            },
-                            onLongPress: () {
+                            }, onLongPress: () {
                               setState(() {
                                 editingWp = e.id;
                                 draggingLatLng = null;
                                 setFocusMode(FocusMode.editWaypoint);
                               });
-                            },
-                            child: WaypointMarker(e, 60 * (e.id == selectedWp ? 0.8 : 0.6)),
-                          )))
-                      .toList(),
-                ),
-
+                            }))
+                        .toList()),
+              ],
+              children: [
                 // --- Draggable waypoints
                 if (editingWp != null &&
                     plan!.waypoints.containsKey(editingWp) &&

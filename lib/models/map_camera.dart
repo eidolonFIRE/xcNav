@@ -60,7 +60,7 @@ class LatLngBounds {
   String toString() => "LatLngBounds(n: $north, s: $south, e: $east, w: $west)";
 }
 
-/// MapLibre zoom levels are based on 512px tiles: the world is `512 * 2^zoom` logical pixels wide.
+/// Map zoom levels are based on 512px tiles: the world is `512 * 2^zoom` logical pixels wide.
 /// (One zoom level less than the old 256px raster convention for the same scale.)
 const double mapWorldTileSize = 512;
 
@@ -82,8 +82,8 @@ LatLng unprojectMercator(Offset world, {double worldSize = mapWorldTileSize}) {
 
 /// Snapshot of the map view: where it looks, and how big it is on screen.
 ///
-/// Matches MapLibre's camera model so Flutter overlays (markers, editors) line up with the native map,
-/// including rotation ([bearing]) and perspective ([tilt]).
+/// Matches the map engine's camera model so Flutter overlays (markers, editors) line up with the native map,
+/// including rotation ([bearing]), perspective ([tilt]), and 3D terrain ([centerElevation]).
 class MapCamera {
   final LatLng center;
   final double zoom;
@@ -97,17 +97,43 @@ class MapCamera {
   /// Logical size of the map widget
   final Size size;
 
-  /// MapLibre's vertical field of view (radians)
+  /// Ground elevation (meters) at [center] when the map shows 3D terrain. Null on a flat map.
+  /// Points are then projected at their own ground height, relative to this.
+  final double? centerElevation;
+
+  /// How much taller the 3D terrain is drawn than it really is
+  final double terrainExaggeration;
+
+  /// The map engine's vertical field of view (radians)
   static const fov = 0.6435011087932844;
 
-  const MapCamera({required this.center, required this.zoom, this.bearing = 0, this.tilt = 0, required this.size});
+  const MapCamera(
+      {required this.center,
+      required this.zoom,
+      this.bearing = 0,
+      this.tilt = 0,
+      required this.size,
+      this.centerElevation,
+      this.terrainExaggeration = 1});
 
-  MapCamera copyWith({LatLng? center, double? zoom, double? bearing, double? tilt, Size? size}) => MapCamera(
-      center: center ?? this.center,
-      zoom: zoom ?? this.zoom,
-      bearing: bearing ?? this.bearing,
-      tilt: tilt ?? this.tilt,
-      size: size ?? this.size);
+  /// [centerElevation] is kept unless [flat] is set
+  MapCamera copyWith(
+          {LatLng? center,
+          double? zoom,
+          double? bearing,
+          double? tilt,
+          Size? size,
+          double? centerElevation,
+          double? terrainExaggeration,
+          bool flat = false}) =>
+      MapCamera(
+          center: center ?? this.center,
+          zoom: zoom ?? this.zoom,
+          bearing: bearing ?? this.bearing,
+          tilt: tilt ?? this.tilt,
+          size: size ?? this.size,
+          centerElevation: flat ? null : centerElevation ?? this.centerElevation,
+          terrainExaggeration: terrainExaggeration ?? this.terrainExaggeration);
 
   double get worldSize => mapWorldTileSize * pow(2, zoom);
 
@@ -118,9 +144,18 @@ class MapCamera {
 
   Offset get _centerWorld => projectMercator(center, worldSize: worldSize);
 
+  /// World pixels per meter of height, at the center of the view
+  double get pixelsPerMeter => worldSize / (40075016.686 * cos(center.latitude * pi / 180));
+
+  /// Height (world pixels) of ground at [elevation] meters above the ground at the center of the view
+  double _height(double? elevation) => (centerElevation == null || elevation == null)
+      ? 0
+      : (elevation - centerElevation!) * terrainExaggeration * pixelsPerMeter;
+
   /// Screen position (logical pixels, relative to the map widget) of [point].
+  /// On 3D terrain, pass the ground [elevation] (meters) at the point.
   /// Null when the point is behind the camera.
-  Offset? latLngToScreen(LatLng point) {
+  Offset? latLngToScreen(LatLng point, {double? elevation}) {
     final ws = worldSize;
     final c = _centerWorld;
     final p = projectMercator(point, worldSize: ws);
@@ -136,20 +171,39 @@ class MapCamera {
 
     final t = tilt * pi / 180;
     final d = _cameraToCenterDistance;
-    final depth = d - y * sin(t);
+    final h = _height(elevation);
+    final depth = d - y * sin(t) - h * cos(t);
     if (depth <= 1e-6) return null;
-    return Offset(size.width / 2 + d * x / depth, size.height / 2 + d * y * cos(t) / depth);
+    return Offset(size.width / 2 + d * x / depth, size.height / 2 + d * (y * cos(t) - h * sin(t)) / depth);
   }
 
   /// Inverse of [latLngToScreen]. Null when [screen] is above the horizon.
-  LatLng? screenToLatLng(Offset screen) {
+  /// On 3D terrain, [elevationAt] gives the ground height so the point lands on the surface.
+  LatLng? screenToLatLng(Offset screen, {double? Function(LatLng point)? elevationAt}) {
+    LatLng? result = _screenToHeight(screen, 0);
+    if (result == null || centerElevation == null || elevationAt == null) return result;
+    // Walk down the ray to the ground: a few rounds converge for any real terrain
+    for (int i = 0; i < 4; i++) {
+      final elevation = elevationAt(result!);
+      if (elevation == null) break;
+      final next = _screenToHeight(screen, _height(elevation));
+      if (next == null) break;
+      result = next;
+    }
+    return result;
+  }
+
+  /// Where the ray through [screen] crosses [height] (world pixels above the ground at the center)
+  LatLng? _screenToHeight(Offset screen, double height) {
     final t = tilt * pi / 180;
     final d = _cameraToCenterDistance;
     final a = (screen.dy - size.height / 2) / d;
     final denom = cos(t) + a * sin(t);
     if (denom <= 1e-6) return null;
-    final y = a * d / denom;
-    final x = (screen.dx - size.width / 2) * (d - y * sin(t)) / d;
+    final along = (d * cos(t) - height) / denom;
+    if (along <= 0) return null;
+    final x = (screen.dx - size.width / 2) / d * along;
+    final y = d * sin(t) + along * (a * cos(t) - sin(t));
 
     final b = bearingRad;
     final dx = x * cos(b) - y * sin(b);
@@ -157,10 +211,21 @@ class MapCamera {
     return unprojectMercator(_centerWorld + Offset(dx, dy), worldSize: worldSize);
   }
 
-  bool isOnScreen(LatLng point, {double margin = 0}) {
-    final p = latLngToScreen(point);
+  bool isOnScreen(LatLng point, {double margin = 0, double? elevation}) {
+    final p = latLngToScreen(point, elevation: elevation);
     if (p == null) return false;
     return p.dx >= -margin && p.dy >= -margin && p.dx <= size.width + margin && p.dy <= size.height + margin;
+  }
+
+  /// [point] is on screen (give or take [margin]) and, when tilted, not out toward the horizon:
+  /// within [maxDistance] times the camera's distance from the center.
+  bool isNearView(LatLng point, {double margin = 0, double maxDistance = 3}) {
+    if (!isOnScreen(point, margin: margin)) return false;
+    final ws = worldSize;
+    final offset = projectMercator(point, worldSize: ws) - _centerWorld;
+    // Take the short way around the antimeridian
+    final dx = offset.dx.abs() > ws / 2 ? ws - offset.dx.abs() : offset.dx;
+    return sqrt(dx * dx + offset.dy * offset.dy) <= maxDistance * _cameraToCenterDistance;
   }
 
   /// Box around everything visible. With tilt, only down to the horizon.
@@ -239,13 +304,16 @@ class MapCamera {
       other.zoom == zoom &&
       other.bearing == bearing &&
       other.tilt == tilt &&
-      other.size == size;
+      other.size == size &&
+      other.centerElevation == centerElevation &&
+      other.terrainExaggeration == terrainExaggeration;
 
   @override
-  int get hashCode => Object.hash(center, zoom, bearing, tilt, size);
+  int get hashCode => Object.hash(center, zoom, bearing, tilt, size, centerElevation, terrainExaggeration);
 
   @override
-  String toString() => "MapCamera($center, z$zoom, bearing $bearing, tilt $tilt, $size)";
+  String toString() =>
+      "MapCamera($center, z$zoom, bearing $bearing, tilt $tilt, $size, elev $centerElevation x$terrainExaggeration)";
 }
 
 /// Fractional slippy-map tile coordinate of [p] at tile zoom [z] (256px or 512px tiles alike).

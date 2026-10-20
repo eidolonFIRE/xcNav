@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:xcnav/datadog.dart';
 
-/// A raster tile service we fetch and cache ourselves (not through MapLibre).
+/// A raster tile service we fetch and cache ourselves (not through the map engine).
 /// Coordinates are always XYZ (slippy map). [urlBuilder] handles any scheme quirks (eg. TMS).
 class RasterTileSource {
   /// Also the cache folder name and the path segment on the local tile server

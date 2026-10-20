@@ -34,6 +34,9 @@ final Queue<String> _fetchQueue = Queue();
 /// Only runs while [_fetchQueue] has work, so it doesn't keep the app awake.
 bool _fetching = false;
 
+/// Bumped whenever a tile is loaded, so anything waiting on [sampleDem] can try again.
+final ValueNotifier<int> demTilesLoaded = ValueNotifier(0);
+
 final Queue<String> _tileCacheQueue = Queue();
 final Map<String, ByteData> _tileCacheData = {};
 final Map<String, int> _tileCacheWidth = {};
@@ -80,17 +83,7 @@ Future _fetchLoop() async {
       final bytes = await tileCache.getTile(demTileSource, point[2], point[0], point[1]);
       final decoded = bytes == null ? null : await _decodeTile(bytes);
       if (decoded != null && !_tileCacheQueue.contains(pointAddress)) {
-        // store back to cache
-        _tileCacheData[pointAddress] = decoded.$1;
-        _tileCacheWidth[pointAddress] = decoded.$2;
-        _tileCacheQueue.add(pointAddress);
-
-        // clean cache
-        if (_tileCacheQueue.length > 30) {
-          final oldest = _tileCacheQueue.removeFirst();
-          _tileCacheData.remove(oldest);
-          _tileCacheWidth.remove(oldest);
-        }
+        _storeTile(pointAddress, decoded.$1, decoded.$2);
       }
     } catch (e) {
       debugPrint("DEM tile $pointAddress failed: $e");
@@ -99,6 +92,25 @@ Future _fetchLoop() async {
     _fetchQueue.remove(pointAddress);
   }
 }
+
+void _storeTile(String pointAddress, ByteData data, int width) {
+  _tileCacheQueue.remove(pointAddress);
+  _tileCacheData[pointAddress] = data;
+  _tileCacheWidth[pointAddress] = width;
+  _tileCacheQueue.add(pointAddress);
+
+  // clean cache: least recently used goes first
+  if (_tileCacheQueue.length > 30) {
+    final oldest = _tileCacheQueue.removeFirst();
+    _tileCacheData.remove(oldest);
+    _tileCacheWidth.remove(oldest);
+  }
+  demTilesLoaded.value++;
+}
+
+/// Put a decoded tile (raw RGBA, [width] pixels square) straight into memory
+@visibleForTesting
+void debugAddDemTile(int x, int y, int z, ByteData data, int width) => _storeTile("$x,$y,$z", data, width);
 
 class Point3 {
   final double x;
@@ -125,22 +137,48 @@ double _sampleByteData(ByteData data, int w, double x, double y) {
 /// Physically plausible ground elevation (meters). Lowest land is ~-430m (Dead Sea), highest ~8849m (Everest).
 bool isValidElevation(double elev) => elev > -500 && elev < 9000;
 
+String _address(Point3 point) => "${point.x.toInt()},${point.y.toInt()},${point.z.toInt()}";
+
+double? _sampleTile(String pointAddress, Point3 point) {
+  final elev = _sampleByteData(_tileCacheData[pointAddress]!, _tileCacheWidth[pointAddress]!, point.x, point.y);
+  // Reject no-data / corrupt pixels (e.g. rgb 0,0,0 decodes to -32768m) and deep bathymetry.
+  return isValidElevation(elev) ? elev : null;
+}
+
 /// Sample the DEM layer. (digital elevation map)
 /// Returns elevation in Meters
-double? sampleDem(LatLng latlng, bool highRes) {
-  final point = _unproject(latlng, highRes ? demZoomLevels[1] : demZoomLevels[0]);
-  final pointAddress = "${point.x.toInt()},${point.y.toInt()},${point.z.toInt()}";
+double? sampleDem(LatLng latlng, bool highRes) => sampleDemAt(latlng, highRes ? demZoomLevels[1] : demZoomLevels[0]);
+
+/// Sample the DEM layer from tiles at [zoom]. Returns elevation in Meters
+///
+/// While that tile loads, a loaded tile up to [fallbackLevels] zoom levels finer or coarser stands in.
+double? sampleDemAt(LatLng latlng, int zoom, {int fallbackLevels = 0}) {
+  final point = _unproject(latlng, zoom);
+  final pointAddress = _address(point);
 
   // Check cache first
   if (_tileCacheData.containsKey(pointAddress)) {
-    final elev = _sampleByteData(_tileCacheData[pointAddress]!, _tileCacheWidth[pointAddress]!, point.x, point.y);
-    // Reject no-data / corrupt pixels (e.g. rgb 0,0,0 decodes to -32768m) and deep bathymetry.
-    return isValidElevation(elev) ? elev : null;
+    // Tiles in use stay in memory
+    if (_tileCacheQueue.last != pointAddress) {
+      _tileCacheQueue.remove(pointAddress);
+      _tileCacheQueue.add(pointAddress);
+    }
+    return _sampleTile(pointAddress, point);
   } else {
     if (!_fetchQueue.contains(pointAddress)) {
       // Schedule this tile to be pulled
       _fetchQueue.add(pointAddress);
       _startFetching();
+    }
+  }
+
+  for (int level = 1; level <= fallbackLevels; level++) {
+    // Finer first: it's what's left over after zooming out
+    for (final z in [zoom + level, zoom - level]) {
+      if (z < 0) continue;
+      final other = _unproject(latlng, z);
+      final otherAddress = _address(other);
+      if (_tileCacheData.containsKey(otherAddress)) return _sampleTile(otherAddress, other);
     }
   }
 

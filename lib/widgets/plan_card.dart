@@ -19,9 +19,9 @@ import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/flight_plan.dart';
 import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/main.dart';
-import 'package:xcnav/views/map/map_markers.dart';
+import 'package:xcnav/views/map/map_layers.dart';
+import 'package:xcnav/views/map/map_symbols.dart';
 import 'package:xcnav/views/map/xc_map.dart';
-import 'package:xcnav/widgets/waypoint_marker.dart';
 import 'package:xcnav/widgets/waypoint_card.dart';
 
 class PlanCard extends StatefulWidget {
@@ -326,8 +326,7 @@ class _PlanCardState extends State<PlanCard> {
                       rotateGestures: false,
                       tiltGestures: false,
                       onTap: (latlng, screenPoint) {
-                        final camera = mapController.camera.value;
-                        final p0 = camera == null ? null : buildPaths().hitTestLines(camera, screenPoint).firstOrNull;
+                        final p0 = mapController.hitTestLines(buildPaths(), screenPoint).firstOrNull;
                         if (p0 != null) {
                           setState(
                             () {
@@ -340,24 +339,15 @@ class _PlanCardState extends State<PlanCard> {
                         // Flight plan paths
                         buildPaths(),
                       ],
-                      children: [
+                      symbols: [
                         // Waypoint Markers
-                        MarkerLayer(
-                          markers: widget.plan.waypoints.values
-                              .where((e) => e.latlng.length == 1)
-                              .map((e) {
-                                final bool isChecked = checkedElements.contains(e.id);
-                                return MapMarker(
-                                    point: e.latlng[0],
-                                    height: isChecked ? 40 : 30,
-                                    width: (isChecked ? 40 : 30) * 2 / 3,
-                                    alignment: Alignment.topCenter,
-                                    child: GestureDetector(
-                                        onTap: () => setState(() => toggleItem(e.id)),
-                                        child: WaypointMarker(e, isChecked ? 40 : 30)));
-                              })
-                              .toList(),
-                        ),
+                        SymbolLayer("waypoints",
+                            symbols: widget.plan.waypoints.values
+                                .where((e) => e.latlng.length == 1)
+                                .map((e) => waypointSymbol(e,
+                                    height: checkedElements.contains(e.id) ? 40 : 30,
+                                    onTap: () => setState(() => toggleItem(e.id))))
+                                .toList()),
                       ]),
                   Padding(
                     padding: const EdgeInsets.all(8),

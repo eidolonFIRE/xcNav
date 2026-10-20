@@ -117,6 +117,30 @@ void main() {
       expect(cam.isOnScreen(const Distance().offset(center, 100000, 0)), false);
     });
 
+    test("terrain exaggeration scales heights", () {
+      const plain = MapCamera(center: center, zoom: 12, tilt: 60, size: size, centerElevation: 100);
+      final tall = plain.copyWith(terrainExaggeration: 1.5);
+      final point = const Distance().offset(center, 2000, 0);
+      // 300m above the center, drawn 1.5 times as tall, looks like 450m above it
+      final screen = tall.latLngToScreen(point, elevation: 400)!;
+      expect((screen - plain.latLngToScreen(point, elevation: 550)!).distance, lessThan(1e-9));
+      expect(tall.screenToLatLng(screen, elevationAt: (_) => 400), closeToLatLng(point, tolerance: 1e-6));
+    });
+
+    test("isNearView leaves out the distance toward the horizon", () {
+      const cam = MapCamera(center: center, zoom: 12, tilt: 75, size: size);
+      final ws = cam.worldSize;
+      LatLng offset(Offset world) =>
+          unprojectMercator(projectMercator(center, worldSize: ws) + world, worldSize: ws);
+      // The camera is 1.5 screen heights (1200px) from the center
+      expect(cam.isNearView(offset(const Offset(0, -2400))), true);
+      expect(cam.isOnScreen(offset(const Offset(0, -4800))), true);
+      expect(cam.isNearView(offset(const Offset(0, -4800))), false);
+      // Off screen, unless within the margin
+      expect(cam.isNearView(offset(const Offset(250, 0))), false);
+      expect(cam.isNearView(offset(const Offset(250, 0)), margin: 100), true);
+    });
+
     test("visibleBounds holds the screen corners", () {
       const cam = MapCamera(center: center, zoom: 10, bearing: 30, size: size);
       final bounds = cam.visibleBounds;

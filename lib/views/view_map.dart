@@ -23,6 +23,7 @@ import 'package:xcnav/views/map/focus_mode.dart';
 import 'package:xcnav/views/map/map_layers.dart';
 import 'package:xcnav/views/map/map_markers.dart';
 import 'package:xcnav/views/map/offscreen_pilot_indicators.dart';
+import 'package:xcnav/views/map/map_symbols.dart';
 import 'package:xcnav/views/map/poly_editor.dart';
 import 'package:xcnav/views/map/selected_waypoint_card.dart';
 import 'package:xcnav/views/map/map_status_column.dart';
@@ -211,11 +212,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
           .toList());
 
   /// Waypoint path under [screenPoint], if any
-  WaypointID? pathAt(ActivePlan plan, Offset screenPoint) {
-    final camera = mapController.camera.value;
-    if (camera == null || hideWaypoints) return null;
-    return buildWaypointPaths(plan).hitTestLines(camera, screenPoint).firstOrNull;
-  }
+  WaypointID? pathAt(ActivePlan plan, Offset screenPoint) =>
+      hideWaypoints ? null : mapController.hitTestLines(buildWaypointPaths(plan), screenPoint).firstOrNull;
 
   void onMapTap(BuildContext context, LatLng latlng, Offset screenPoint) {
     debugPrint("onMapTap: $latlng");
@@ -387,34 +385,54 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
   }
 
   /// Single point waypoints. Tap to select, long press to edit.
-  Widget buildWaypointMarkersLayer(ActivePlan plan) {
-    return MarkerLayer(
-      markers: plan.waypoints.values
+  SymbolLayer buildWaypointSymbols(ActivePlan plan) => SymbolLayer("waypoints",
+      symbols: plan.waypoints.values
           .where((e) => e.latlng.length == 1 && e.id != editingWp)
-          .map((e) => MapMarker(
-              key: ValueKey("waypoint_${e.id}"),
-              point: e.latlng[0],
-              height: 60 * 0.8,
-              width: 40 * 0.8,
-              alignment: Alignment.topCenter,
-              child: GestureDetector(
-                onTap: () {
-                  if (focusMode == FocusMode.measurement) {
-                    measurementEditor.add(measurementPoints, e.latlng.first);
-                  } else {
-                    plan.selectedWp = e.id;
-                  }
-                },
-                onLongPress: () {
-                  if (!e.ephemeral) {
-                    editingWp = e.id;
-                    setFocusMode(FocusMode.editWaypoint);
-                  }
-                },
-                child: WaypointMarker(e, 60 * 0.8),
-              )))
-          .toList(),
-    );
+          .map((e) => waypointSymbol(e, onTap: () {
+                if (focusMode == FocusMode.measurement) {
+                  measurementEditor.add(measurementPoints, e.latlng.first);
+                } else {
+                  plan.selectedWp = e.id;
+                }
+              }, onLongPress: () {
+                if (!e.ephemeral) {
+                  editingWp = e.id;
+                  setFocusMode(FocusMode.editWaypoint);
+                }
+              }))
+          .toList());
+
+  /// Markers drawn by the map, bottom to top
+  List<SymbolLayer> buildSymbols(BuildContext context, ActivePlan plan) {
+    final geo = myTelemetry.geo;
+    final camera = mapController.camera.value;
+    final adsb = Provider.of<ADSB>(context);
+    return [
+      // Next waypoint: barbs
+      if (geo != null) nextWaypointBarbSymbols(plan, geo),
+
+      // Weather stations in view
+      if (!settingsMgr.hideWeatherObservations.value && camera != null && camera.zoom >= weatherMinZoom)
+        ...weatherSymbols(getWeatherObservations(camera.visibleBounds)),
+
+      // Airports (below waypoints)
+      if (settingsMgr.showAirports.value) ...airportSymbols(openAipService.airports, onAirportTap),
+
+      if (!hideWaypoints) buildWaypointSymbols(plan),
+
+      // GA planes (ADSB IN)
+      if (adsb.enabled) ...adsbSymbols(adsb.planes.values, geo),
+
+      // Live locations other pilots
+      ...groupPilotSymbols(context, Provider.of<Group>(context).activePilots, geo),
+
+      fuelWarningSymbols(plan),
+
+      myLocationSymbols(geo),
+
+      // Measurement
+      if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty) measurementSymbols(measurementPoints),
+    ];
   }
 
   /// The single point waypoint currently being edited.
@@ -504,6 +522,7 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
   Widget buildMap(BuildContext context, ActivePlan plan) {
     final center = myTelemetry.geo?.latlng ?? lastKnownLatLng;
+    if (settingsMgr.showAirports.value) openAipService.refresh(center);
     getTFRs(center).then((value) {
       if (mounted && !identical(value, tfrs)) setState(() => tfrs = value);
     });
@@ -516,49 +535,30 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
       initialZoom: 11,
       minZoom: 1,
       rotateGestures: !settingsMgr.northlockMap.value,
+      // Always 3D, starting with a tilted view
       terrain: true,
+      initialTilt: 60,
+      // Keep the Mapbox logo clear of the map buttons
+      ornamentMargin: const EdgeInsets.only(left: 80, bottom: 4),
       onMapReady: () => setState(() => mapReady = true),
       onTap: (latlng, screenPoint) => onMapTap(context, latlng, screenPoint),
       onLongPress: (latlng, screenPoint) => onMapLongPress(context, latlng, screenPoint),
       onCameraChanged: onMapCameraChanged,
       onUserGesture: onUserGesture,
       shapes: buildShapes(context, plan),
+      // https://nowcoast.noaa.gov/help/#!section=map-service-list
+      // (NOAA radar overlay is disabled. If revived, Mapbox can show WMS as a raster source with a
+      // `{bbox-epsg-3857}` url.)
+      symbols: buildSymbols(context, plan),
+      // Things that can be dragged stay Flutter widgets
       children: [
-        // https://nowcoast.noaa.gov/help/#!section=map-service-list
-        // (NOAA radar overlay is disabled. If revived, MapLibre can show WMS as a raster source with a
-        // `{bbox-epsg-3857}` url.)
-
-        // Next waypoint: barbs
-        if (myTelemetry.geo != null) NextWaypointBarbsLayer(plan: plan),
-
-        // WeatherObservations
-        if (!settingsMgr.hideWeatherObservations.value) const WeatherObservationsLayer(),
-
-        // Airports (below waypoints)
-        if (settingsMgr.showAirports.value) AirportsLayer(center: center, onTap: onAirportTap),
-
-        // Waypoint markers
-        if (!hideWaypoints) buildWaypointMarkersLayer(plan),
-
         // --- Draggable waypoints
         if (editingWp != null && plan.waypoints.containsKey(editingWp) && plan.waypoints[editingWp]!.latlng.length == 1)
           buildDraggableWaypointLayer(plan),
 
-        // GA planes (ADSB IN)
-        if (context.select((ADSB adsb) => adsb.enabled)) const AdsbPlanesLayer(),
-
-        // Live locations other pilots
-        const GroupPilotsLayer(),
-
-        const FuelWarningLayer(),
-
-        const MyLocationLayer(),
-
         // Measurement
         if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
           MarkerLayer(markers: measurementEditor.edit(mapController)),
-        if (focusMode == FocusMode.measurement && measurementPoints.isNotEmpty)
-          MarkerLayer(markers: buildMeasurementMarkers(measurementPoints)),
 
         // Draggable line editor
         if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)

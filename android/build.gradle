@@ -20,6 +20,15 @@ subprojects {
     }
 }
 subprojects {
+    // mapbox_maps_flutter only applies kotlin-android on AGP < 9 (it expects AGP's built-in Kotlin after that),
+    // but this app runs AGP 9 with android.builtInKotlin=false.
+    if (project.name == "mapbox_maps_flutter_mobile") {
+        project.plugins.withId("com.android.library") {
+            project.apply plugin: "org.jetbrains.kotlin.android"
+        }
+    }
+}
+subprojects {
     project.evaluationDependsOn(':app')
 }
 

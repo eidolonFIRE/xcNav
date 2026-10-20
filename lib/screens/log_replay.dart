@@ -24,7 +24,8 @@ import 'package:xcnav/models/map_camera.dart';
 import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
-import 'package:xcnav/views/map/map_markers.dart';
+import 'package:xcnav/views/map/map_layers.dart';
+import 'package:xcnav/views/map/map_symbols.dart';
 import 'package:xcnav/views/map/xc_map.dart';
 import 'package:xcnav/widgets/elevation_replay.dart';
 import 'package:xcnav/widgets/engine_replay.dart';
@@ -32,7 +33,6 @@ import 'package:xcnav/widgets/g_force_pages.dart';
 import 'package:xcnav/widgets/log_summary.dart';
 import 'package:xcnav/widgets/map_selector.dart';
 import 'package:xcnav/widgets/speed_histogram.dart';
-import 'package:xcnav/widgets/waypoint_marker.dart';
 
 class LogReplay extends StatefulWidget {
   const LogReplay({super.key});
@@ -323,7 +323,8 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                     ? Container()
                     : Stack(children: [
                         ListenableBuilder(
-                            listenable: logView,
+                            // The "ME" marker follows the selected time
+                            listenable: Listenable.merge([logView, selectedTime]),
                             builder: (context, _) => XcMap(
                                     controller: mapController,
                                     tileSrc: mapTileSrc,
@@ -381,74 +382,51 @@ class _LogReplayState extends State<LogReplay> with SingleTickerProviderStateMix
                                             color: Colors.amber)
                                       ]),
                                     ],
-                                    children: [
+                                    symbols: [
                                       // Waypoint markers
                                       if (!hideWaypoints)
-                                        MarkerLayer(
-                                            markers: log.waypoints
+                                        SymbolLayer("waypoints",
+                                            symbols: log.waypoints
                                                 .where((e) => e.latlng.length == 1)
-                                                .map((e) => MapMarker(
-                                                    point: e.latlng[0],
-                                                    height: 60 * 0.8,
-                                                    width: 40 * 0.8,
-                                                    alignment: Alignment.topCenter,
-                                                    child: WaypointMarker(e, 60 * 0.8)))
+                                                .map((e) => waypointSymbol(e))
                                                 .toList()),
 
                                       // --- Fuel reports
-                                      MarkerLayer(
-                                        markers: log.fuelReportController.fuelReports
-                                            .mapIndexed((index, e) => MapMarker(
+                                      SymbolLayer("fuelReports",
+                                          symbols: log.fuelReportController.fuelReports.mapIndexed((index, e) {
+                                            final amount = richValue(UnitType.fuel, e.amount, decimals: 1);
+                                            return MapSymbol(
+                                                id: "$index",
                                                 alignment: Alignment.topRight,
                                                 height: 40,
                                                 width: 60,
                                                 point: log.samples[log.timeToSampleIndex(e.time)].latlng,
-                                                child: GestureDetector(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        selectTime(e.time.millisecondsSinceEpoch.toDouble());
-                                                      });
-                                                    },
-                                                    onLongPress: () {
-                                                      editFuelReport(context, index);
-                                                    },
+                                                imageKey: "fuelReport_${amount.toPlainText()}",
+                                                onTap: () {
+                                                  setState(() {
+                                                    selectTime(e.time.millisecondsSinceEpoch.toDouble());
+                                                  });
+                                                },
+                                                onLongPress: () {
+                                                  editFuelReport(context, index);
+                                                },
 
-                                                    // Fuel Report Marker
-                                                    child: LabelFlag(
-                                                        direction: TextDirection.ltr,
-                                                        text: Text.rich(
-                                                          richValue(UnitType.fuel, e.amount, decimals: 1),
-                                                          style: const TextStyle(color: Colors.white),
-                                                        ),
-                                                        color: Colors.blue))))
-                                            .toList(),
-                                      ),
+                                                // Fuel Report Marker
+                                                child: LabelFlag(
+                                                    direction: TextDirection.ltr,
+                                                    text: Text.rich(
+                                                      amount,
+                                                      style: const TextStyle(color: Colors.white),
+                                                    ),
+                                                    color: Colors.blue));
+                                          }).toList()),
 
                                       // --- "ME" marker if selected
-                                      ValueListenableBuilder<DateTime?>(
-                                          valueListenable: selectedTime,
-                                          builder: (context, time, _) {
-                                            if (time != null) {
-                                              final geo = log.samples[log.timeToSampleIndex(time)];
-                                              return MarkerLayer(
-                                                markers: [
-                                                  MapMarker(
-                                                    width: 40.0,
-                                                    height: 40.0,
-                                                    point: geo.latlng,
-                                                    rotateWithMap: true,
-                                                    child: Container(
-                                                      transformAlignment: const Alignment(0, 0),
-                                                      transform: Matrix4.rotationZ(geo.hdg),
-                                                      child: Image.asset("assets/images/red_arrow.png"),
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            } else {
-                                              return const SizedBox();
-                                            }
-                                          }),
+                                      myLocationSymbols(
+                                          selectedTime.value == null
+                                              ? null
+                                              : log.samples[log.timeToSampleIndex(selectedTime.value!)],
+                                          size: 40),
                                     ])),
 
                         // --- Instrument data for currently selected time

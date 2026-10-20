@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:xcnav/dem_service.dart';
 import 'package:xcnav/models/map_camera.dart';
 import 'package:xcnav/models/map_shapes.dart';
 import 'package:xcnav/views/map/map_markers.dart';
+import 'package:xcnav/views/map/map_symbols.dart';
 import 'package:xcnav/views/map/xc_map.dart';
 import 'package:xcnav/widgets/static_map.dart';
+
+import 'dem_service_test.dart' show demTile;
 
 void main() {
   const center = LatLng(37.5, -122.3);
@@ -180,5 +184,63 @@ void main() {
     await tester.pump();
     // Wider than tall, so it spans the width
     expect(tester.getCenter(find.byKey(const Key("ne"))).dx, closeTo(400, 0.5));
+  });
+
+  testWidgets("symbols are drawn by Flutter in tests, and taps reach them", (tester) async {
+    final controller = XcMapController();
+    int taps = 0;
+    int longPresses = 0;
+    final List<LatLng> mapTaps = [];
+    await tester.pumpWidget(host(XcMap(
+      controller: controller,
+      initialCenter: center,
+      initialZoom: 12,
+      onTap: (latlng, _) => mapTaps.add(latlng),
+      symbols: [
+        SymbolLayer("test", symbols: [
+          MapSymbol(
+              id: "a",
+              point: markerPoint,
+              width: 20,
+              height: 20,
+              imageKey: "a",
+              onTap: () => taps++,
+              onLongPress: () => longPresses++,
+              child: Container(key: const Key("symbol"), color: Colors.red)),
+        ]),
+      ],
+    )));
+    await tester.pump();
+
+    final at = tester.getCenter(find.byKey(const Key("symbol")));
+    expect(at, offsetMoreOrLessEquals(controller.camera.value!.latLngToScreen(markerPoint)!, epsilon: 0.01));
+    await tester.tapAt(at);
+    expect(taps, 1);
+    await tester.longPressAt(at);
+    expect(longPresses, 1);
+    expect(mapTaps, isEmpty);
+  });
+
+  test("on 3D terrain, points in view sit on the ground", () {
+    const camera = MapCamera(center: center, zoom: 12, tilt: 60, size: Size(400, 600), centerElevation: 0);
+    final controller = XcMapController.fixed(camera);
+    final z = terrainDemZoom(camera.zoom);
+    final (x, y) = tileXY(markerPoint, z);
+    for (int dx = -1; dx <= 1; dx++) {
+      for (int dy = -1; dy <= 1; dy++) {
+        debugAddDemTile(x.floor() + dx, y.floor() + dy, z, demTile(1000), 4);
+      }
+    }
+
+    expect(controller.elevationAt(markerPoint), 1000);
+    final screen = controller.latLngToScreen(markerPoint)!;
+    expect(screen, camera.latLngToScreen(markerPoint, elevation: 1000));
+    expect((screen - camera.latLngToScreen(markerPoint)!).distance, greaterThan(10), reason: "raised off the flat map");
+    expect(const Distance().distance(controller.screenToLatLng(screen)!, markerPoint), lessThan(1));
+
+    // Far out of view: not worth loading
+    expect(controller.elevationAt(const LatLng(38.5, -122.3)), isNull);
+    // Flat map
+    expect(XcMapController.fixed(camera.copyWith(flat: true)).elevationAt(markerPoint), isNull);
   });
 }

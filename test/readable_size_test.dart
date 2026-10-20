@@ -31,5 +31,9 @@ void main() {
 
     expect(asReadableSize(1000000000), "0.9 GB");
     expect(asReadableSize(8000000000), "7.5 GB");
+
+    // Too small to show in the bigger unit
+    expect(asReadableSize(40 * 1024 * 1024), "40 MB");
+    expect(asReadableSize(40 * 1024), "40 kB");
   });
 }

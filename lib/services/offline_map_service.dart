@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:maplibre_gl/maplibre_gl.dart' as ml;
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mb;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/datadog.dart';
@@ -20,23 +20,53 @@ class OfflineProgress {
   double? get fraction => tilesTotal > 0 ? (tilesDone / tilesTotal).clamp(0, 1) : null;
 }
 
-/// A MapLibre offline region download we're following
-class _RegionDownload {
-  int? regionId;
-  Completer<bool> done = Completer();
-  void Function(double fraction)? onProgress;
+/// Mapbox tile region id for [layer] of an area
+String offlineRegionId(String areaId, String layer) => "${areaId}_$layer";
 
-  void finish(bool success) {
-    if (!done.isCompleted) done.complete(success);
-  }
+/// GeoJSON outline of [area], for Mapbox
+Map<String?, Object?> offlineAreaGeometry(OfflineArea area) {
+  final b = area.bounds;
+  final ring = area.isPolygon ? area.outline : [b.northWest, b.northEast, b.southEast, b.southWest];
+  return {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        for (final p in [...ring, ring.first]) [p.longitude, p.latitude]
+      ]
+    ],
+  };
 }
+
+/// What Mapbox downloads for a topo / satellite / terrain [job]
+mb.TileRegionLoadOptions offlineRegionOptions(OfflineArea area, DownloadJob job) => mb.TileRegionLoadOptions(
+      geometry: offlineAreaGeometry(area),
+      descriptorsOptions: [
+        mb.TilesetDescriptorOptions(
+          // Terrain is just the elevation tiles. Map layers come with their style, fonts and icons (a style pack).
+          styleURI: job.isTerrain ? "" : mapStyleUri(job.src!),
+          minZoom: job.minZoom,
+          maxZoom: job.maxZoom,
+          tilesets: job.isTerrain ? [terrainTilesetUrl] : null,
+          stylePackOptions: job.isTerrain
+              ? null
+              : mb.StylePackLoadOptions(
+                  glyphsRasterizationMode: mb.GlyphsRasterizationMode.IDEOGRAPHS_RASTERIZED_LOCALLY,
+                  metadata: {"layer": job.layerName},
+                  acceptExpired: false),
+        ),
+      ],
+      metadata: {"areaId": area.id, "layer": job.layerName},
+      acceptExpired: false,
+      networkRestriction: mb.NetworkRestriction.NONE,
+    );
 
 /// Downloads map areas for offline use, one area and one layer at a time.
 ///
-/// - MapTiler layers (topo, satellite) are MapLibre offline regions: MapLibre fetches the style, fonts, and tiles.
+/// - Topo, satellite, and 3D terrain are Mapbox tile regions (with the style, fonts, and icons to draw them) in
+///   Mapbox's tile store. The map uses them by itself when there's no network.
 /// - Sectional and elevation tiles go in our own [tileCache], throttled per tile server.
 class OfflineMapService with ChangeNotifier {
-  /// Areas downloaded before MapLibre (flutter_map_tile_caching, "offlineMaps.areas") are left alone:
+  /// Areas downloaded before the map engine change (flutter_map_tile_caching, "offlineMaps.areas") are left alone:
   /// their tiles are in a store this version can't read, and older versions still can.
   static const _prefsKey = "offlineMaps.v2.areas";
 
@@ -49,10 +79,11 @@ class OfflineMapService with ChangeNotifier {
   String? _activeAreaId;
   bool _stopRequested = false;
 
-  /// MapLibre downloads started this session, by `areaId/layer`. Only these can be paused and resumed;
-  /// after a restart MapLibre makes us start a region over.
-  final Map<String, _RegionDownload> _regionDownloads = {};
-  _RegionDownload? _activeRegion;
+  /// Mapbox tile region being downloaded
+  String? _activeRegion;
+
+  Future<mb.TileStore>? _tileStore;
+  Future<mb.TileStore> get _store => _tileStore ??= mb.TileStore.createDefault();
 
   OfflineArea? byId(String id) => areas.where((e) => e.id == id).firstOrNull;
 
@@ -77,11 +108,44 @@ class OfflineMapService with ChangeNotifier {
       _registerTileStores(area);
     }
     notifyListeners();
+    _cleanUp();
+  }
+
+  /// Mapbox tile regions and style packs no area needs, eg. left by an older version
+  Future _cleanUp() async {
+    try {
+      final regions = {
+        for (final area in areas)
+          for (final job in area.planJobs().where((e) => e.isMapEngineRegion)) offlineRegionId(area.id, job.layerName)
+      };
+      final store = await _store;
+      bool removed = false;
+      for (final region in await store.allTileRegions()) {
+        if (!regions.contains(region.id)) {
+          await store.removeRegion(region.id);
+          removed = true;
+        }
+      }
+      final styles = {
+        for (final area in areas)
+          for (final layer in area.layers.where((e) => e != MapTileSrc.sectional)) mapStyleUri(layer)
+      };
+      final offline = await mb.OfflineManager.create();
+      for (final pack in await offline.allStylePacks()) {
+        if (!styles.contains(pack.styleURI)) {
+          await offline.removeStylePack(pack.styleURI);
+          removed = true;
+        }
+      }
+      if (removed) await _reclaimSpace(store);
+    } catch (e) {
+      debugPrint("Offline maps: clean up failed: $e");
+    }
   }
 
   /// Let the tile cache read this area's tiles while browsing
   void _registerTileStores(OfflineArea area) {
-    for (final job in area.planJobs().where((e) => !e.isMapLibreRegion)) {
+    for (final job in area.planJobs().where((e) => !e.isMapEngineRegion)) {
       tileCache.offlineAreas.putIfAbsent(job.layerName, () => {}).add(area.id);
     }
   }
@@ -101,7 +165,35 @@ class OfflineMapService with ChangeNotifier {
       compute((args) => args.area.countJobs(args.jobs), (area: area, jobs: jobs));
 
   Future<DownloadEstimate> estimate(OfflineArea area) async {
-    return estimateDownload(await _countJobs(area, area.planJobs()), defaultAvgTileBytes);
+    final counts = await _countJobs(area, area.planJobs());
+    int tiles = 0;
+    int bytes = 0;
+    for (final each in counts) {
+      tiles += each.tiles;
+      // Mapbox downloads tiles in packs, much coarser than tile by tile. Ask it.
+      final mapbox = each.job.isMapEngineRegion ? await _estimateRegion(area, each.job) : null;
+      bytes += mapbox ?? estimateDownload([each], defaultAvgTileBytes).bytes;
+    }
+    return DownloadEstimate(tiles: tiles, bytes: bytes);
+  }
+
+  /// Mapbox's estimate of the space [job] takes. Null when it can't tell (eg. no network), or only guesses.
+  Future<int?> _estimateRegion(OfflineArea area, DownloadJob job) async {
+    try {
+      final store = await _store;
+      final result = await store.estimateTileRegion(
+          "estimate_${job.layerName}",
+          offlineRegionOptions(area, job),
+          mb.TileRegionEstimateOptions(errorMargin: 0.1, preciseEstimationTimeout: 5, timeout: 20),
+          null);
+      debugPrint("Offline maps: estimate ${job.layerName} ${result.storageSize} bytes, margin ${result.errorMargin}");
+      // Big areas only get a rough guess: an infinite or NaN margin, sometimes 0 bytes. Ours is as good then.
+      if (!result.errorMargin.isFinite || result.storageSize <= 0) return null;
+      return result.storageSize;
+    } catch (e) {
+      debugPrint("Offline maps: no estimate for ${job.layerName}: $e");
+      return null;
+    }
   }
 
   void enqueue(OfflineArea area) {
@@ -113,18 +205,22 @@ class OfflineMapService with ChangeNotifier {
     _run();
   }
 
+  /// Stop [area]'s download, if it's the one running
   Future _stopActive(OfflineArea area) async {
     if (!isActive(area.id)) return;
     _stopRequested = true;
     final region = _activeRegion;
-    if (region?.regionId != null) {
-      try {
-        await ml.pauseOfflineRegionDownload(region!.regionId!);
-      } catch (e) {
-        debugPrint("Offline maps: pause failed: $e");
-      }
+    if (region != null) {
+      // Mapbox has no cancel. Loading the region again cancels the load in progress, and this one stops right away
+      // since it may not use the network.
+      _store
+          .then((store) => store.loadTileRegion(
+              region,
+              mb.TileRegionLoadOptions(acceptExpired: true, networkRestriction: mb.NetworkRestriction.DISALLOW_ALL),
+              null))
+          // Ends in an error when there's more to download, as expected
+          .then<void>((_) {}, onError: (_) => debugPrint("Offline maps: paused $region"));
     }
-    region?.finish(false);
   }
 
   Future pause(String id) async {
@@ -160,19 +256,47 @@ class OfflineMapService with ChangeNotifier {
     areas.remove(area);
     _changed();
     await _stopActive(area);
-    for (final regionId in area.regionIds.values) {
-      try {
-        await ml.deleteOfflineRegion(regionId);
-      } catch (e) {
-        debugPrint("Offline maps: couldn't delete region $regionId: $e");
-      }
-    }
-    _regionDownloads.removeWhere((key, _) => key.startsWith("${area.id}/"));
+    await _deleteRegions(area);
     try {
       await tileCache.deleteArea(area.id);
     } catch (e, trace) {
       error("Offline maps: failed to delete tiles", errorMessage: e.toString(), errorStackTrace: trace);
     }
+  }
+
+  /// [area]'s Mapbox tile regions, and the style packs no other area needs
+  Future _deleteRegions(OfflineArea area) async {
+    final jobs = area.planJobs().where((e) => e.isMapEngineRegion);
+    if (jobs.isEmpty) return;
+    try {
+      final store = await _store;
+      for (final job in jobs) {
+        try {
+          await store.removeRegion(offlineRegionId(area.id, job.layerName));
+        } catch (e) {
+          // Never got as far as downloading
+          debugPrint("Offline maps: couldn't remove region ${job.layerName}: $e");
+        }
+      }
+      final unused = area.layers.where((layer) =>
+          (layer == MapTileSrc.topo || layer == MapTileSrc.satellite) && !areas.any((e) => e.layers.contains(layer)));
+      if (unused.isNotEmpty) {
+        final offline = await mb.OfflineManager.create();
+        for (final layer in unused) {
+          await offline.removeStylePack(mapStyleUri(layer)).then<void>((_) {}, onError: (e) => debugPrint("$e"));
+        }
+      }
+      await _reclaimSpace(store);
+    } catch (e, trace) {
+      error("Offline maps: failed to delete regions", errorMessage: e.toString(), errorStackTrace: trace);
+    }
+  }
+
+  /// Mapbox frees the space of removed regions only once it needs it. Make it do so now.
+  /// (The disk quota doesn't touch tiles that regions still use.)
+  Future _reclaimSpace(mb.TileStore store) async {
+    await store.setDiskQuota(0);
+    await store.setDiskQuota(null);
   }
 
   Future _run() async {
@@ -211,7 +335,7 @@ class OfflineMapService with ChangeNotifier {
         void report(int jobDone) =>
             progress.value = OfflineProgress(areaId: area.id, tilesDone: done + jobDone, tilesTotal: total);
 
-        final complete = job.isMapLibreRegion
+        final complete = job.isMapEngineRegion
             ? await _downloadRegion(area, job, (fraction) => report((fraction * each.tiles).round()))
             : await _downloadTiles(area, job, report);
         if (_stopRequested) break;
@@ -227,7 +351,6 @@ class OfflineMapService with ChangeNotifier {
       error("Offline maps: download failed", errorMessage: e.toString(), errorStackTrace: trace);
       if (area.status == OfflineAreaStatus.downloading) area.status = OfflineAreaStatus.failed;
     }
-    _activeRegion = null;
 
     // Deleted while downloading
     if (!areas.contains(area)) return;
@@ -274,69 +397,42 @@ class OfflineMapService with ChangeNotifier {
     return failures == 0 && !_stopRequested;
   }
 
-  /// MapTiler layer as a MapLibre offline region. Resolves when it finishes (true), fails, or is paused.
+  /// Topo / satellite / terrain as a Mapbox tile region. Resolves when it finishes (true when it's all there), fails,
+  /// or is paused. Loading the region again picks up where it left off, after a restart too.
   Future<bool> _downloadRegion(OfflineArea area, DownloadJob job, void Function(double fraction) report) async {
-    final key = "${area.id}/${job.layerName}";
-    final existing = _regionDownloads[key];
-    final region = existing ?? _RegionDownload();
-    region.done = Completer();
-    region.onProgress = report;
-    _activeRegion = region;
-
-    if (existing?.regionId != null) {
-      // Paused earlier this session: pick up where it left off
-      try {
-        await ml.resumeOfflineRegionDownload(existing!.regionId!);
-        return await region.done.future;
-      } catch (e) {
-        debugPrint("Offline maps: resume failed, starting over: $e");
-      }
-    }
-
-    _regionDownloads[key] = region;
-    final bounds = area.bounds;
-    final created = await ml.downloadOfflineRegion(
-      ml.OfflineRegionDefinition(
-        bounds: ml.LatLngBounds(
-            southwest: ml.LatLng(bounds.south, bounds.west), northeast: ml.LatLng(bounds.north, bounds.east)),
-        mapStyleUrl: maptilerStyleUrl(job.src!)!,
-        minZoom: job.minZoom.toDouble(),
-        maxZoom: job.maxZoom.toDouble(),
-      ),
-      metadata: {"areaId": area.id, "layer": job.layerName},
-      onEvent: (status) {
-        if (status is ml.InProgress) {
-          region.onProgress?.call(status.progress / 100);
-        } else if (status is ml.Success) {
-          region.finish(true);
-        } else if (status is ml.Error) {
-          debugPrint("Offline maps: region $key failed: ${status.cause}");
-          region.finish(false);
+    final id = offlineRegionId(area.id, job.layerName);
+    _activeRegion = id;
+    try {
+      final store = await _store;
+      final region = await store.loadTileRegion(id, offlineRegionOptions(area, job), (progress) {
+        if (progress.requiredResourceCount > 0) {
+          report(progress.completedResourceCount / progress.requiredResourceCount);
         }
-      },
-    );
-    region.regionId = created.id;
-    area.regionIds[job.layerName] = created.id;
-    await _save();
-    if (_stopRequested) {
-      // Paused while MapLibre was still setting up the region
-      await ml.pauseOfflineRegionDownload(created.id);
-      region.finish(false);
+      });
+      debugPrint("Offline maps: region $id ${region.completedResourceCount}/${region.requiredResourceCount}, "
+          "${region.completedResourceSize} bytes");
+      // Nothing to load means Mapbox couldn't resolve the layer (eg. MapTiler's styles): not done
+      return region.requiredResourceCount > 0 && region.completedResourceCount >= region.requiredResourceCount;
+    } catch (e) {
+      // Pausing cancels the load
+      if (!_stopRequested) debugPrint("Offline maps: region $id failed: $e");
+      return false;
+    } finally {
+      _activeRegion = null;
     }
-    return region.done.future;
   }
 
   Future _updateStats(OfflineArea area) async {
     final stats = await tileCache.areaStats(area.id);
     int tiles = stats.files;
     int bytes = stats.bytes;
-    for (final regionId in area.regionIds.values) {
+    for (final job in area.planJobs().where((e) => e.isMapEngineRegion)) {
       try {
-        final status = await ml.getOfflineRegionStatus(regionId);
-        tiles += status.completedResourceCount;
-        bytes += status.completedResourceSize;
+        final region = await (await _store).tileRegion(offlineRegionId(area.id, job.layerName));
+        tiles += region.completedResourceCount;
+        bytes += region.completedResourceSize;
       } catch (e) {
-        debugPrint("Offline maps: couldn't read stats for region $regionId: $e");
+        debugPrint("Offline maps: couldn't read stats for ${job.layerName}: $e");
       }
     }
     area.tileCount = tiles;

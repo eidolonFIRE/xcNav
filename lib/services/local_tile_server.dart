@@ -6,16 +6,19 @@ import 'package:flutter/foundation.dart';
 import 'package:xcnav/datadog.dart';
 import 'package:xcnav/services/tile_cache.dart';
 
-/// Serves [tileCache] tiles to MapLibre over loopback HTTP.
+/// Serves [tileCache] tiles (and styles we build ourselves) to the map engine over loopback HTTP.
 ///
-/// MapLibre can only download offline regions described by a hosted style, and our sectional charts have none.
-/// Routing those tiles through here lets one Dart cache handle browsing, offline areas, and chart cycle changes.
+/// Routing the sectional chart tiles through here lets one Dart cache handle browsing, offline areas, and
+/// chart cycle changes. The map SDK also wants a style URL, so the sectional style is served from here too.
 class LocalTileServer {
-  /// A fixed port keeps tile URLs (and MapLibre's own cache of them) stable between launches.
+  /// A fixed port keeps tile URLs (and the map's own cache of them) stable between launches.
   static const preferredPort = 47621;
 
   HttpServer? _server;
   Future? _starting;
+
+  /// Style JSON served at `/styles/<name>.json`
+  final Map<String, String Function()> styles = {};
 
   int? get port => _server?.port;
 
@@ -44,21 +47,34 @@ class LocalTileServer {
     }
   }
 
-  /// URL template for MapLibre (`{z}/{x}/{y}`, XYZ scheme)
+  /// URL template for the map engine (`{z}/{x}/{y}`, XYZ scheme)
   String tileUrl(String sourceName) =>
       "http://127.0.0.1:${port ?? preferredPort}/tiles/$sourceName/{z}/{x}/{y}";
+
+  String styleUrl(String styleName) => "http://127.0.0.1:${port ?? preferredPort}/styles/$styleName.json";
 
   Future _handle(HttpRequest req) async {
     final response = req.response;
     try {
       final seg = req.uri.pathSegments;
+      if (seg.length == 2 && seg[0] == "styles" && seg[1].endsWith(".json")) {
+        final style = styles[seg[1].substring(0, seg[1].length - 5)]?.call();
+        response.statusCode = style == null ? HttpStatus.notFound : HttpStatus.ok;
+        if (style != null) {
+          response.headers.set(HttpHeaders.cacheControlHeader, "no-cache");
+          response.headers.contentType = ContentType.json;
+          response.write(style);
+        }
+        await response.close();
+        return;
+      }
       final src = seg.length == 5 && seg[0] == "tiles" ? tileCache.sources[seg[1]] : null;
       final z = seg.length == 5 ? int.tryParse(seg[2]) : null;
       final x = seg.length == 5 ? int.tryParse(seg[3]) : null;
       final y = seg.length == 5 ? int.tryParse(seg[4]) : null;
       final bytes = (src != null && z != null && x != null && y != null) ? await tileCache.getTile(src, z, x, y) : null;
 
-      // Our cache is the source of truth. Have MapLibre ask again rather than keep its own copy.
+      // Our cache is the source of truth. Have the map ask again rather than keep its own copy.
       response.headers.set(HttpHeaders.cacheControlHeader, "no-cache");
       if (bytes == null) {
         response.statusCode = HttpStatus.notFound;

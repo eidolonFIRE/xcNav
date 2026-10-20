@@ -25,7 +25,6 @@ void main() {
         ..vfrVersion = "20240711"
         ..status = OfflineAreaStatus.complete
         ..completedJobs.add("topo@1-13")
-        ..regionIds["topo"] = 7
         ..tileCount = 42
         ..bytes = 4200;
 
@@ -38,14 +37,13 @@ void main() {
       expect(loaded.vfrVersion, "20240711");
       expect(loaded.status, OfflineAreaStatus.complete);
       expect(loaded.completedJobs, {"topo@1-13"});
-      expect(loaded.regionIds, {"topo": 7});
       expect(loaded.tileCount, 42);
       expect(loaded.bytes, 4200);
     });
 
-    test("older areas without region ids load", () {
-      final json = makeArea().toJson()..remove("regionIds");
-      expect(OfflineArea.fromJson(json).regionIds, isEmpty);
+    test("areas saved with MapLibre region ids still load", () {
+      final json = makeArea().toJson()..["regionIds"] = {"topo": 7};
+      expect(OfflineArea.fromJson(json).layers, [MapTileSrc.topo]);
     });
 
     test("unknown values are tolerated", () {
@@ -72,7 +70,7 @@ void main() {
     });
 
     test("always includes elevation at z10 and z12", () {
-      final dem = makeArea().planJobs().where((e) => e.src == null).toList();
+      final dem = makeArea().planJobs().where((e) => e.src == null && !e.isTerrain).toList();
       expect(dem.length, 2);
       expect(dem.map((e) => [e.minZoom, e.maxZoom]), [
         [10, 10],
@@ -81,15 +79,27 @@ void main() {
       expect(dem.every((e) => e.layerName == demLayerName), true);
     });
 
-    test("MapTiler layers go through MapLibre, the rest tile by tile", () {
+    test("always includes the map's 3D terrain", () {
+      for (final layers in [
+        [MapTileSrc.sectional],
+        MapTileSrc.values
+      ]) {
+        final terrain = makeArea(layers: layers).planJobs().where((e) => e.isTerrain).toList();
+        expect(terrain.length, 1);
+        expect(terrain.first.layerName, terrainLayerName);
+        expect(terrain.first.maxZoom, offlineTerrainMaxZoom);
+      }
+    });
+
+    test("topo / satellite / terrain go through the map engine, the rest tile by tile", () {
       final jobs = makeArea(layers: MapTileSrc.values).planJobs();
       for (final job in jobs) {
-        final viaMapLibre = job.src == MapTileSrc.topo || job.src == MapTileSrc.satellite;
-        expect(job.isMapLibreRegion, viaMapLibre, reason: job.key);
-        expect(job.tileSource == null, viaMapLibre, reason: job.key);
+        final viaEngine = job.isTerrain || job.src == MapTileSrc.topo || job.src == MapTileSrc.satellite;
+        expect(job.isMapEngineRegion, viaEngine, reason: job.key);
+        expect(job.tileSource == null, viaEngine, reason: job.key);
       }
       expect(jobs.firstWhere((e) => e.src == MapTileSrc.sectional).tileSource!.name, "sectional");
-      expect(jobs.firstWhere((e) => e.src == null).tileSource!.name, demLayerName);
+      expect(jobs.firstWhere((e) => e.src == null && !e.isTerrain).tileSource!.name, demLayerName);
     });
 
     test("job keys are unique", () {
@@ -110,6 +120,12 @@ void main() {
           300 * 1000 + offlineRegionOverheadBytes["topo"]! + 100 * defaultAvgTileBytes[demLayerName]!);
       expect(est.isLarge, false);
       expect(est.isTooLarge, false);
+    });
+
+    test("terrain is a map engine region too, with its own overhead", () {
+      final terrain = DownloadJob.terrain(minZoom: 1, maxZoom: 12);
+      final est = estimateDownload([(job: terrain, tiles: 10)], {terrainLayerName: 1000});
+      expect(est.bytes, 10 * 1000 + offlineRegionOverheadBytes[terrainLayerName]!);
     });
 
     test("thresholds", () {
@@ -196,11 +212,10 @@ void main() {
       final area = makeArea(layers: [MapTileSrc.topo, MapTileSrc.sectional], isPolygon: true);
       final counts = area.countJobs(area.planJobs());
       for (final each in counts) {
-        // MapLibre regions are rectangles
-        final polygon = !each.job.isMapLibreRegion;
+        // Mapbox regions take the polygon too
         int expected = 0;
         for (int z = each.job.minZoom; z <= each.job.maxZoom; z++) {
-          expected += countTilesAtZoom(area.outline, polygon, z);
+          expected += countTilesAtZoom(area.outline, true, z);
         }
         expect(each.tiles, expected, reason: each.job.key);
       }

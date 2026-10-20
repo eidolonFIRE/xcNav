@@ -1,10 +1,8 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'package:xcnav/models/map_camera.dart';
 import 'package:xcnav/views/map/xc_map.dart';
 
 /// A Flutter widget pinned to a spot on the map.
@@ -50,7 +48,7 @@ class MarkerLayer extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = XcMapScope.of(context);
     return Flow(
-      delegate: _MarkerFlowDelegate(controller.camera, markers),
+      delegate: _MarkerFlowDelegate(controller, markers),
       children: markers
           .map((m) => SizedBox(key: m.key, width: m.width, height: m.height, child: m.child))
           .toList(),
@@ -59,10 +57,10 @@ class MarkerLayer extends StatelessWidget {
 }
 
 class _MarkerFlowDelegate extends FlowDelegate {
-  final ValueListenable<MapCamera?> camera;
+  final XcMapController controller;
   final List<MapMarker> markers;
 
-  _MarkerFlowDelegate(this.camera, this.markers) : super(repaint: camera);
+  _MarkerFlowDelegate(this.controller, this.markers) : super(repaint: controller.repaint);
 
   @override
   BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) =>
@@ -70,11 +68,11 @@ class _MarkerFlowDelegate extends FlowDelegate {
 
   @override
   void paintChildren(FlowPaintingContext context) {
-    final cam = camera.value;
+    final cam = controller.camera.value;
     if (cam == null) return;
     for (int i = 0; i < context.childCount && i < markers.length; i++) {
       final m = markers[i];
-      final p = cam.latLngToScreen(m.point);
+      final p = controller.latLngToScreen(m.point);
       if (p == null) continue;
       // Skip what's off screen
       final reach = max(m.width, m.height);
@@ -93,7 +91,7 @@ class _MarkerFlowDelegate extends FlowDelegate {
 
   @override
   bool shouldRepaint(_MarkerFlowDelegate oldDelegate) =>
-      !identical(oldDelegate.markers, markers) || oldDelegate.camera != camera;
+      !identical(oldDelegate.markers, markers) || oldDelegate.controller != controller;
 }
 
 /// Turns pointer positions during a drag into map positions, keeping the spot where the marker was grabbed.
@@ -103,14 +101,14 @@ class MapDragTracker {
   /// [anchor] is where the dragged marker is pinned to the map
   void start(XcMapController controller, Offset globalPosition, LatLng anchor) {
     final local = controller.globalToLocal(globalPosition);
-    final anchorScreen = controller.camera.value?.latLngToScreen(anchor);
+    final anchorScreen = controller.latLngToScreen(anchor);
     _grab = (local != null && anchorScreen != null) ? local - anchorScreen : Offset.zero;
   }
 
   LatLng? update(XcMapController controller, Offset globalPosition) {
     final local = controller.globalToLocal(globalPosition);
     if (local == null) return null;
-    return controller.camera.value?.screenToLatLng(local - (_grab ?? Offset.zero));
+    return controller.screenToLatLng(local - (_grab ?? Offset.zero));
   }
 
   void end() => _grab = null;

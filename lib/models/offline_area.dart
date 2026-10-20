@@ -10,6 +10,12 @@ import 'package:xcnav/services/tile_cache.dart';
 /// Name used for the elevation layer (it's not a [MapTileSrc])
 const demLayerName = "dem";
 
+/// Name used for the elevation tiles the map draws 3D terrain with (also not a [MapTileSrc])
+const terrainLayerName = "terrain";
+
+/// 3D terrain is downloaded down to this zoom. The map draws terrain from tiles a few zoom levels up anyway.
+const offlineTerrainMaxZoom = 12;
+
 /// Max tiles per second requested from each tile server we download from ourselves. Kept low so we don't get blocked.
 const Map<String, int> offlineTilesPerSecond = {
   "sectional": 10,
@@ -19,19 +25,21 @@ const Map<String, int> offlineTilesPerSecond = {
 const offlineParallelThreads = 4;
 
 /// Rough average size (bytes) of one tile position, for estimates.
-/// MapTiler layers count everything MapLibre stores for that tile: vector data, contours, terrain, etc.
-/// (Measured on small Bay Area downloads, Oct 2026.)
+/// Topo / satellite count everything the map engine stores for that tile: vector data, contours, etc.
 const Map<String, int> defaultAvgTileBytes = {
-  "topo": 200000,
+  "topo": 160000,
   "sectional": 32000,
   "satellite": 150000,
   demLayerName: 85000,
+  terrainLayerName: 50000,
 };
 
-/// What a MapLibre region downloads regardless of its size: fonts, icons, and the heavy low zoom tiles.
+/// What a map engine region downloads regardless of its size: its style (fonts, icons) and the low zoom tile packs.
+/// (Small Bay Area areas, Oct 2026, came to about 65MB topo, 170MB satellite, and 65MB terrain in all.)
 const Map<String, int> offlineRegionOverheadBytes = {
-  "topo": 20 * 1024 * 1024,
-  "satellite": 12 * 1024 * 1024,
+  "topo": 60 * 1024 * 1024,
+  "satellite": 150 * 1024 * 1024,
+  terrainLayerName: 60 * 1024 * 1024,
 };
 
 /// Low zoom levels are only a handful of tiles, so every layer is downloaded from here up to its max.
@@ -39,8 +47,8 @@ const offlineMinZoom = 1;
 
 /// Deepest zoom downloaded for offline use.
 ///
-/// MapTiler layers are MapLibre zoom levels (512px tiles). The sectional is a raster tile zoom (256px tiles),
-/// so its 10 shows about as much detail as MapLibre zoom 9.
+/// Topo / satellite are map zoom levels (512px tiles). The sectional is a raster tile zoom (256px tiles),
+/// so its 10 shows about as much detail as map zoom 9.
 int offlineMaxZoom(MapTileSrc src) {
   switch (src) {
     case MapTileSrc.satellite:
@@ -59,26 +67,33 @@ const offlineMaxTiles = 1000000;
 enum OfflineAreaStatus { queued, downloading, paused, complete, failed }
 
 class DownloadJob {
-  /// null = elevation (DEM)
+  /// null = elevation: [sampleDem]'s, or the map's 3D terrain when [isTerrain]
   final MapTileSrc? src;
+  final bool isTerrain;
   final int minZoom;
   final int maxZoom;
 
-  DownloadJob({required this.src, required this.minZoom, required this.maxZoom});
+  DownloadJob({required this.src, required this.minZoom, required this.maxZoom}) : isTerrain = false;
 
-  String get layerName => src?.name ?? demLayerName;
+  /// Elevation tiles the map draws 3D terrain with
+  DownloadJob.terrain({required this.minZoom, required this.maxZoom})
+      : src = null,
+        isTerrain = true;
+
+  String get layerName => isTerrain ? terrainLayerName : src?.name ?? demLayerName;
 
   /// Unique within an area
   String get key => "$layerName@$minZoom-$maxZoom";
 
-  /// MapTiler layers are downloaded by MapLibre as an offline region (style, fonts, vector tiles and all).
+  /// Topo / satellite / 3D terrain go through the map engine's offline API (style, fonts, vector tiles and all).
   /// Everything else we download ourselves, tile by tile.
-  bool get isMapLibreRegion => src == MapTileSrc.topo || src == MapTileSrc.satellite;
+  bool get isMapEngineRegion => isTerrain || src == MapTileSrc.topo || src == MapTileSrc.satellite;
 
   int get tilesPerSecond => offlineTilesPerSecond[layerName] ?? 10;
 
   /// Source for tile by tile downloads
   RasterTileSource? get tileSource {
+    if (isTerrain) return null;
     if (src == null) return demTileSource;
     if (src == MapTileSrc.sectional) return sectionalTiles;
     return null;
@@ -99,9 +114,6 @@ class OfflineArea {
   /// Keys of [DownloadJob]s that finished without network failures
   final Set<String> completedJobs;
 
-  /// MapLibre offline region ids, by layer name
-  final Map<String, int> regionIds;
-
   /// Actual stored size, updated after downloading
   int tileCount;
   int bytes;
@@ -115,13 +127,10 @@ class OfflineArea {
     this.vfrVersion,
     this.status = OfflineAreaStatus.queued,
     Set<String>? completedJobs,
-    Map<String, int>? regionIds,
     this.tileCount = 0,
     this.bytes = 0,
-  })  : completedJobs = completedJobs ?? {},
-        regionIds = regionIds ?? {};
+  }) : completedJobs = completedJobs ?? {};
 
-  /// MapLibre regions are rectangles, so polygons download their bounding box for MapTiler layers.
   LatLngBounds get bounds => LatLngBounds.fromPoints(outline);
 
   /// Tile count for each job. Each zoom level is only counted once, even when several layers share it.
@@ -131,7 +140,7 @@ class OfflineArea {
     return jobs.map((job) {
       int tiles = 0;
       for (int z = job.minZoom; z <= job.maxZoom; z++) {
-        tiles += countZoom(z, isPolygon && !job.isMapLibreRegion);
+        tiles += countZoom(z, isPolygon);
       }
       return (job: job, tiles: tiles);
     }).toList();
@@ -144,12 +153,13 @@ class OfflineArea {
       vfrVersion != currentVfrVersion;
 
   /// All the downloads needed for this area. Each layer gets every zoom level up to [offlineMaxZoom].
-  /// Elevation is always included at the zoom levels [sampleDem] uses.
+  /// Always included: elevation at the zoom levels [sampleDem] uses, and the map's 3D terrain.
   List<DownloadJob> planJobs() {
     final List<DownloadJob> jobs = [];
     for (final src in layers) {
       jobs.add(DownloadJob(src: src, minZoom: offlineMinZoom, maxZoom: offlineMaxZoom(src)));
     }
+    jobs.add(DownloadJob.terrain(minZoom: offlineMinZoom, maxZoom: offlineTerrainMaxZoom));
     for (final z in demZoomLevels) {
       jobs.add(DownloadJob(src: null, minZoom: z, maxZoom: z));
     }
@@ -165,7 +175,6 @@ class OfflineArea {
         "vfrVersion": vfrVersion,
         "status": status.name,
         "completedJobs": completedJobs.toList(),
-        "regionIds": regionIds,
         "tileCount": tileCount,
         "bytes": bytes,
       };
@@ -183,7 +192,6 @@ class OfflineArea {
         vfrVersion: json["vfrVersion"],
         status: OfflineAreaStatus.values.where((s) => s.name == json["status"]).firstOrNull ?? OfflineAreaStatus.paused,
         completedJobs: ((json["completedJobs"] as List?) ?? []).cast<String>().toSet(),
-        regionIds: ((json["regionIds"] as Map?) ?? {}).map((k, v) => MapEntry(k as String, (v as num).toInt())),
         tileCount: json["tileCount"] ?? 0,
         bytes: json["bytes"] ?? 0,
       );
@@ -291,7 +299,7 @@ DownloadEstimate estimateDownload(Iterable<({DownloadJob job, int tiles})> count
   for (final each in counts) {
     tiles += each.tiles;
     bytes += each.tiles * (avgTileBytes[each.job.layerName] ?? defaultAvgTileBytes[each.job.layerName]!);
-    if (each.job.isMapLibreRegion) bytes += offlineRegionOverheadBytes[each.job.layerName] ?? 0;
+    if (each.job.isMapEngineRegion) bytes += offlineRegionOverheadBytes[each.job.layerName] ?? 0;
   }
   return DownloadEstimate(tiles: tiles, bytes: bytes);
 }

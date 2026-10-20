@@ -3,13 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
-import 'package:xcnav/models/map_camera.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/views/map/focus_mode.dart';
 import 'package:xcnav/views/map/xc_map.dart';
 import 'package:xcnav/widgets/map_button.dart';
 
-/// Column of map view buttons: compass / north-lock, layers, 3D, focus me / group, zoom, and measurement.
+/// Column of map view buttons: compass / north-lock, layers, focus me / group, zoom, and measurement.
 class MapViewControls extends StatelessWidget {
   final XcMapController mapController;
   final FocusMode focusMode;
@@ -39,19 +38,10 @@ class MapViewControls extends StatelessWidget {
     onZoom();
   }
 
-  /// Tilt for a perspective ("3D") view
-  static const tilted = 55.0;
-
-  void toggleTilt() {
-    final tilt = mapController.camera.value?.tilt ?? 0;
-    mapController.moveTo(tilt: tilt > 5 ? 0 : tilted, duration: const Duration(milliseconds: 600));
-  }
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constaints) {
-      // 8 buttons plus their connectors: about 9.2 button heights
-      final buttonSize = max(30, min(60, constaints.maxHeight / 9.2)).toDouble();
+      final buttonSize = max(30, min(60, constaints.maxHeight / 8)).toDouble();
       final connector = SizedBox(
           width: 2,
           height: buttonSize / 4,
@@ -88,23 +78,6 @@ class MapViewControls extends StatelessWidget {
               connector,
               // --- Map layers
               layerSelectorBuilder(buttonSize),
-              connector,
-              // --- 3D (tilt)
-              ValueListenableBuilder<MapCamera?>(
-                  valueListenable: mapController.camera,
-                  builder: (context, camera, _) {
-                    final isTilted = (camera?.tilt ?? 0) > 5;
-                    return MapButton(
-                      key: const Key("viewMap_tilt"),
-                      size: buttonSize,
-                      selected: isTilted,
-                      onPressed: toggleTilt,
-                      child: Center(
-                          child: Text("3D",
-                              style: TextStyle(
-                                  color: Colors.black, fontWeight: FontWeight.bold, fontSize: buttonSize * 0.36))),
-                    );
-                  }),
             ]),
             Column(
               mainAxisSize: MainAxisSize.min,

@@ -6,7 +6,7 @@ import 'package:xcnav/models/map_camera.dart';
 
 enum LinePattern { solid, dotted, dashed }
 
-/// A line drawn on the map. Rendered natively by MapLibre (or painted on static previews).
+/// A line drawn on the map. Rendered natively by the map engine (or painted on static previews).
 class MapPolyline {
   final List<LatLng> points;
   final Color color;
@@ -58,7 +58,7 @@ List<LatLng> circlePoints(LatLng center, double radius, {int segments = 72}) {
   return List.generate(segments, (i) => calc.offset(center, radius, 360 * i / segments));
 }
 
-/// CSS color string MapLibre understands
+/// CSS color string the map engine understands
 String cssColor(Color color) {
   int c(double v) => (v * 255).round().clamp(0, 255);
   return "rgba(${c(color.r)},${c(color.g)},${c(color.b)},${color.a.toStringAsFixed(3)})";
@@ -128,11 +128,13 @@ class ShapeLayer {
   }
 
   /// Hit values of the lines within [tolerance] logical pixels of [screenPoint], top-most first.
-  List<String> hitTestLines(MapCamera camera, Offset screenPoint, {double tolerance = 15}) {
+  /// On 3D terrain, [elevationAt] gives the ground height under the line.
+  List<String> hitTestLines(MapCamera camera, Offset screenPoint,
+      {double tolerance = 15, double? Function(LatLng point)? elevationAt}) {
     final List<String> hits = [];
     for (final line in lines.reversed) {
       if (line.hitValue == null || line.points.length < 2) continue;
-      final pts = line.points.map(camera.latLngToScreen).toList();
+      final pts = line.points.map((p) => camera.latLngToScreen(p, elevation: elevationAt?.call(p))).toList();
       for (int i = 0; i + 1 < pts.length; i++) {
         final a = pts[i];
         final b = pts[i + 1];
@@ -159,7 +161,7 @@ double distanceToSegment(Offset p, Offset a, Offset b) {
 /// Native style layer suffixes for a [ShapeLayer], bottom to top.
 const shapeStyleLayers = ["fill", "casing", "solid", "dotted", "dashed"];
 
-/// MapLibre `line-dasharray` (in line widths) for each pattern
+/// Style `line-dasharray` (in line widths) for each pattern
 const Map<LinePattern, List<double>> lineDashArrays = {
   LinePattern.dotted: [0, 2],
   LinePattern.dashed: [3, 2],
