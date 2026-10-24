@@ -63,48 +63,50 @@ class _LinkStatusIconState extends State<LinkStatusIcon> {
     final meshtastic = ble_service.bleDeviceMeshtastic;
     final vario = ble_service.bleDeviceStodeus;
 
-    final icons = <Widget>[
-      ValueListenableBuilder<bool>(
-        valueListenable: vario.attached,
-        builder: (context, attached, _) => attached
-            ? ValueListenableBuilder<VarioStatus>(
-                valueListenable: vario.status,
-                builder: (context, status, _) => Icon(
-                  Icons.swap_vert,
-                  key: const Key("linkStatus_vario"),
-                  size: 24,
-                  color: varioStatusColor(status),
-                ),
-              )
-            : const SizedBox.shrink(),
-      ),
-      if (meshtastic.isActive)
-        Icon(
-          Icons.cell_tower,
-          key: const Key("linkStatus_mesh"),
-          size: 24,
-          color: client.meshEnabled ? meshtasticStatusColor(meshtastic.status.value) : Colors.grey.shade600,
-        ),
-      ValueListenableBuilder<GpsFixQuality?>(
-        valueListenable: myTelemetry.gpsFix,
-        builder: (context, fix, _) {
-          final strength = fix?.strength ?? GpsStrength.none;
-          return Icon(
-            gpsStrengthIcon(strength),
-            key: const Key("linkStatus_gps"),
-            size: 24,
-            color: gpsStrengthColor(strength),
-          );
-        },
-      ),
-      Icon(
-        cellularStatusIcon(client),
-        key: const Key("linkStatus_cellular"),
-        size: 24,
-        color: cellularStatusColor(client),
-      ),
-    ];
+    return ListenableBuilder(
+      listenable: Listenable.merge([vario.attached, vario.status, myTelemetry.gpsFix]),
+      builder: (context, _) {
+        final gpsStrength = myTelemetry.gpsFix.value?.strength ?? GpsStrength.none;
 
+        // GPS and cellular only show when something is wrong, to declutter the map.
+        final icons = <Widget>[
+          if (vario.attached.value)
+            Icon(
+              Icons.swap_vert,
+              key: const Key("linkStatus_vario"),
+              size: 24,
+              color: varioStatusColor(vario.status.value),
+            ),
+          if (meshtastic.isActive)
+            Icon(
+              Icons.cell_tower,
+              key: const Key("linkStatus_mesh"),
+              size: 24,
+              color: client.meshEnabled ? meshtasticStatusColor(meshtastic.status.value) : Colors.grey.shade600,
+            ),
+          if (!gpsStrengthIsGood(gpsStrength))
+            Icon(
+              gpsStrengthIcon(gpsStrength),
+              key: const Key("linkStatus_gps"),
+              size: 24,
+              color: gpsStrengthColor(gpsStrength),
+            ),
+          if (!cellularStatusIsGood(client))
+            Icon(
+              cellularStatusIcon(client),
+              key: const Key("linkStatus_cellular"),
+              size: 24,
+              color: cellularStatusColor(client),
+            ),
+        ];
+
+        if (icons.isEmpty) return const SizedBox.shrink();
+        return _buildBadge(context, meshtastic, icons);
+      },
+    );
+  }
+
+  Widget _buildBadge(BuildContext context, BleDeviceMeshtastic meshtastic, List<Widget> icons) {
     return GestureDetector(
       onTap: meshtastic.isActive
           ? () => showDialog(context: context, builder: (context) => MeshtasticConfigDialog(meshtastic: meshtastic))
@@ -128,6 +130,10 @@ class _LinkStatusIconState extends State<LinkStatusIcon> {
     );
   }
 }
+
+bool gpsStrengthIsGood(GpsStrength strength) => strength == GpsStrength.good;
+
+bool cellularStatusIsGood(Client client) => client.cellularEnabled && client.state == ClientState.authenticated;
 
 IconData gpsStrengthIcon(GpsStrength strength) {
   switch (strength) {

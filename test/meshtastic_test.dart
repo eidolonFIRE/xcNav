@@ -15,6 +15,7 @@ import 'package:xcnav/providers/active_plan.dart';
 import 'package:xcnav/providers/chat_messages.dart';
 import 'package:xcnav/providers/client.dart';
 import 'package:xcnav/providers/group.dart';
+import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/settings_service.dart';
@@ -484,7 +485,15 @@ void main() {
       client.state = ClientState.disconnected;
       expect(cellularStatusIcon(client), Icons.signal_cellular_nodata);
       expect(cellularStatusColor(client), Colors.red);
+      expect(cellularStatusIsGood(client), false);
       await tester.pump(const Duration(seconds: Client.connectingAttempts + 2));
+    });
+
+    test("only good GPS hides the status icon", () {
+      expect(gpsStrengthIsGood(GpsStrength.good), true);
+      expect(gpsStrengthIsGood(GpsStrength.fair), false);
+      expect(gpsStrengthIsGood(GpsStrength.poor), false);
+      expect(gpsStrengthIsGood(GpsStrength.none), false);
     });
   });
 }
