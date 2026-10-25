@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:clock/clock.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:xcnav/ble_devices/ble_device_value.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
+import 'package:xcnav/ble_devices/sp140_alerts.dart';
 import 'package:xcnav/tts_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -245,9 +247,28 @@ class Sp140TelemetryCharacteristic {
   ValueNotifier<int> diffVolt = ValueNotifier<int>(0);
   ValueNotifier<int> state = ValueNotifier<int>(0);
 
+  /// Active hand controller alerts, critical first.
+  ValueNotifier<List<Sp140Alert>> alerts = ValueNotifier<List<Sp140Alert>>(const []);
+
   Sp140TelemetryCharacteristic({required this.uuid});
 
-  DateTime? _audioDiffAlerted;
+  var _alertMonitor = Sp140AlertMonitor();
+  var _alertAnnouncer = Sp140AlertAnnouncer();
+
+  /// Evaluate alerts for a telemetry packet and speak any that are due.
+  void updateAlerts(BleFastLinkTelemetry telemetry, DateTime now) {
+    final active = _alertMonitor.update(telemetry);
+    if (!listEquals(active, alerts.value)) alerts.value = active;
+    for (final message in Sp140AlertAnnouncer.messages(_alertAnnouncer.due(active, now))) {
+      ttsService.speak(message);
+    }
+  }
+
+  void resetAlerts() {
+    _alertMonitor = Sp140AlertMonitor();
+    _alertAnnouncer = Sp140AlertAnnouncer();
+    alerts.value = const [];
+  }
 
   void stopRefresh() {
     _listener?.cancel();
@@ -268,16 +289,7 @@ class Sp140TelemetryCharacteristic {
         diffVolt.value = telemetry.bmsVoltageDiffMV;
         charge.addValue(telemetry.bmsSoc, now);
         state.value = telemetry.deviceState;
-
-        // Audio alert for battery voltage difference
-        if ((_audioDiffAlerted?.isBefore(clock.now().subtract(Duration(minutes: 2))) ?? true) && diffVolt.value > 200) {
-          _audioDiffAlerted = now;
-          if (diffVolt.value > 400) {
-            ttsService.speak(AudioMessage("Critical battery balance!", priority: 1, volume: 1.0));
-          } else {
-            ttsService.speak(AudioMessage("Check battery balance!", priority: 2, volume: 1.0));
-          }
-        }
+        updateAlerts(telemetry, now);
 
         // Update myTelemetry fuel reports
         if (myTelemetry.inFlight) {
@@ -397,6 +409,7 @@ class BleDeviceSp140 extends BleDeviceHandler {
   void onDisconnected() {
     super.onDisconnected();
     telemetry.stopRefresh();
+    telemetry.resetAlerts();
   }
 
   void trimToRange(DateTimeRange range) {
@@ -405,6 +418,64 @@ class BleDeviceSp140 extends BleDeviceHandler {
 }
 
 //-------------------------------------------------
+
+/// Hand controller alert codes, colored like the SP140 display (yellow warning, red critical).
+class Sp140AlertChips extends StatelessWidget {
+  final List<Sp140Alert> alerts;
+  final double fontSize;
+
+  /// When set, chips fill columns of this many rows instead of wrapping horizontally.
+  final int? maxRows;
+
+  const Sp140AlertChips({super.key, required this.alerts, this.fontSize = 14, this.maxRows});
+
+  static Color colorOf(Sp140Alert alert) => alert.isCritical ? Colors.red : Colors.amber;
+
+  Widget _chip(Sp140Alert alert) => Container(
+        key: Key("sp140Alert_${alert.code}"),
+        padding: EdgeInsets.symmetric(horizontal: fontSize / 3, vertical: fontSize / 8),
+        decoration:
+            BoxDecoration(color: colorOf(alert), borderRadius: BorderRadius.all(Radius.circular(fontSize / 3))),
+        child: Text(alert.code,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                fontSize: fontSize, fontWeight: FontWeight.bold, color: alert.isCritical ? Colors.white : Colors.black)),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final gap = fontSize / 3;
+    if (maxRows != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < alerts.length; i += maxRows!)
+            Padding(
+              padding: EdgeInsets.only(left: i == 0 ? 0 : gap),
+              // Chips in a column share the widest chip's width.
+              child: IntrinsicWidth(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final (j, alert) in alerts.skip(i).take(maxRows!).indexed)
+                      Padding(padding: EdgeInsets.only(top: j == 0 ? 0 : gap), child: _chip(alert)),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+    return Wrap(
+      alignment: WrapAlignment.end,
+      spacing: gap,
+      runSpacing: gap,
+      children: alerts.map(_chip).toList(),
+    );
+  }
+}
 
 class Sp140ConfigDialog extends StatelessWidget {
   final BleDeviceSp140 sp140;
@@ -418,6 +489,23 @@ class Sp140ConfigDialog extends StatelessWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          ValueListenableBuilder<List<Sp140Alert>>(
+              valueListenable: sp140.telemetry.alerts,
+              builder: (context, alerts, _) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: alerts
+                      .map((alert) => ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            leading: Icon(alert.isCritical ? Icons.error : Icons.warning,
+                                color: Sp140AlertChips.colorOf(alert)),
+                            title: Text(alert.name),
+                            trailing: Text(alert.code),
+                          ))
+                      .toList(),
+                );
+              }),
           Text("Fuel Save Interval (minutes)"),
           ValueListenableBuilder<int>(
               valueListenable: settingsMgr.sp140FuelSaveIntervalMin.listenable,
@@ -552,6 +640,15 @@ class Sp140StatusCard extends StatelessWidget {
                                           } else {
                                             return Container();
                                           }
+                                        }),
+                                    ValueListenableBuilder<List<Sp140Alert>>(
+                                        valueListenable: sp140.telemetry.alerts,
+                                        builder: (context, alerts, _) {
+                                          if (alerts.isEmpty) return Container();
+                                          return Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Sp140AlertChips(alerts: alerts),
+                                          );
                                         }),
                                   ],
                                 ),

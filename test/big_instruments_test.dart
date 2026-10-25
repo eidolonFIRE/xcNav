@@ -8,6 +8,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xcnav/ble_devices/sp140_alerts.dart';
 import 'package:xcnav/dialogs/wind_dialog.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
@@ -176,6 +177,29 @@ void main() {
             .isNotEmpty;
     expect(hasText("12.3kW"), isTrue);
     expect(hasText("87%"), isTrue);
+    expect(find.byKey(const Key("sp140Alert_BC-SOC")), findsNothing);
+
+    // Alerts show once the next packet rebuilds the panel.
+    bleDeviceSp140.telemetry.alerts.value = [
+      const Sp140Alert("MC-RE-0", "ESC over current", Sp140AlertLevel.critical),
+      const Sp140Alert("MC-SE-13", "ESC firmware mismatch", Sp140AlertLevel.critical),
+      const Sp140Alert("BC-DSG", "Battery discharge disabled", Sp140AlertLevel.critical),
+      const Sp140Alert("BC-SOC", "Battery charge low", Sp140AlertLevel.warning),
+    ];
+    addTearDown(() => bleDeviceSp140.telemetry.alerts.value = const []);
+    bleDeviceSp140.telemetry.power.addValue(12.4, null);
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: panel, matching: find.byKey(const Key("sp140Alert_MC-RE-0"))), findsOneWidget);
+    expect(find.descendant(of: panel, matching: find.byKey(const Key("sp140Alert_BC-SOC"))), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    // Chips stack 3 high, then start a new column.
+    Offset chipAt(String code) => tester.getTopLeft(find.byKey(Key("sp140Alert_$code")));
+    expect(chipAt("MC-SE-13").dx, chipAt("MC-RE-0").dx);
+    expect(chipAt("BC-DSG").dx, chipAt("MC-RE-0").dx);
+    expect(chipAt("MC-SE-13").dy, greaterThan(chipAt("MC-RE-0").dy));
+    expect(chipAt("BC-DSG").dy, greaterThan(chipAt("MC-SE-13").dy));
+    expect(chipAt("BC-SOC").dy, chipAt("MC-RE-0").dy);
+    expect(chipAt("BC-SOC").dx, greaterThan(chipAt("MC-RE-0").dx));
 
     bleDeviceSp140.device = null;
     await tester.pumpAndSettle();

@@ -70,4 +70,11 @@ void main() {
     expect(find.byType(Sp140StatusCard), findsNothing);
     expect(find.byIcon(Icons.local_gas_station), findsOneWidget);
   });
+
+  testWidgets("Sp140StatusCard pinned to top of column", (tester) async {
+    ble_service.bleDeviceSp140.device = BluetoothDevice.fromId("C7:7F:28:14:A0:1D");
+    await pumpColumn(tester);
+
+    expect(tester.getTopLeft(find.byType(Sp140StatusCard)).dy, 0);
+  });
 }

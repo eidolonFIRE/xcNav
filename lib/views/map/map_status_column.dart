@@ -25,6 +25,7 @@ import 'package:xcnav/widgets/map_button.dart';
 
 /// Secondary column of map overlays (fuel, chat bubbles, BLE device cards).
 /// Stacks from the bottom up on the opposite side from the map view buttons.
+/// The SP140 card is pinned to the top.
 class MapStatusColumn extends StatelessWidget {
   const MapStatusColumn({super.key});
 
@@ -39,53 +40,57 @@ class MapStatusColumn extends StatelessWidget {
   Widget _buildColumn() {
     return LayoutBuilder(builder: (context, constaints) {
       final buttonSize = max(30, min(60, constaints.maxHeight / 8)).toDouble();
-      return Align(
-        alignment: Alignment.bottomRight,
-        child: Column(
-          verticalDirection: VerticalDirection.up,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment:
-              settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-          children: [
-            // --- fuel button
-            if (ble_service.bleDeviceSp140.device == null && ble_service.bleDeviceXc170.device == null)
-              Align(
-                  alignment: Alignment.bottomRight,
-                  child: Column(mainAxisSize: MainAxisSize.min, verticalDirection: VerticalDirection.up, children: [
-                    MapButton(
-                      size: buttonSize,
-                      selected: false,
-                      child: const Icon(Icons.local_gas_station, color: Colors.black, size: 30),
-                      onPressed: () => {editLiveFuelReport(context)},
-                    ),
-                    SizedBox(
-                        width: 2,
-                        height: buttonSize / 6,
-                        child: Container(
-                          color: Colors.black,
-                        )),
-                    const FuelRemainingBadge(),
-                  ])),
+      final crossAxisAlignment =
+          settingsMgr.mapControlsRightSide.value ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+      return Column(crossAxisAlignment: crossAxisAlignment, children: [
+        // --- Sp140 (pinned to top)
+        if (ble_service.bleDeviceSp140.device != null) Sp140StatusCard(sp140: ble_service.bleDeviceSp140),
 
-            // --- Chat bubbles
-            const MapChatBubbles(),
+        Expanded(
+            child: Align(
+          alignment: Alignment.bottomRight,
+          child: Column(
+            verticalDirection: VerticalDirection.up,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: crossAxisAlignment,
+            children: [
+              // --- fuel button
+              if (ble_service.bleDeviceSp140.device == null && ble_service.bleDeviceXc170.device == null)
+                Align(
+                    alignment: Alignment.bottomRight,
+                    child: Column(mainAxisSize: MainAxisSize.min, verticalDirection: VerticalDirection.up, children: [
+                      MapButton(
+                        size: buttonSize,
+                        selected: false,
+                        child: const Icon(Icons.local_gas_station, color: Colors.black, size: 30),
+                        onPressed: () => {editLiveFuelReport(context)},
+                      ),
+                      SizedBox(
+                          width: 2,
+                          height: buttonSize / 6,
+                          child: Container(
+                            color: Colors.black,
+                          )),
+                      const FuelRemainingBadge(),
+                    ])),
 
-            // --- BLE xc170
-            if (ble_service.bleDeviceXc170.device != null) Xc170StatusCard(xc170: ble_service.bleDeviceXc170),
+              // --- Chat bubbles
+              const MapChatBubbles(),
 
-            // --- Big Battery
-            if (ble_service.bleDeviceBigBattery.device != null)
-              BigBatteryStatusCard(bigBattery: ble_service.bleDeviceBigBattery),
+              // --- BLE xc170
+              if (ble_service.bleDeviceXc170.device != null) Xc170StatusCard(xc170: ble_service.bleDeviceXc170),
 
-            // --- Runleader
-            if (ble_service.bleDeviceRunleader.device != null)
-              RunleaderStatusCard(runleader: ble_service.bleDeviceRunleader),
+              // --- Big Battery
+              if (ble_service.bleDeviceBigBattery.device != null)
+                BigBatteryStatusCard(bigBattery: ble_service.bleDeviceBigBattery),
 
-            // --- Sp140
-            if (ble_service.bleDeviceSp140.device != null) Sp140StatusCard(sp140: ble_service.bleDeviceSp140),
-          ],
-        ),
-      );
+              // --- Runleader
+              if (ble_service.bleDeviceRunleader.device != null)
+                RunleaderStatusCard(runleader: ble_service.bleDeviceRunleader),
+            ],
+          ),
+        )),
+      ]);
     });
   }
 }

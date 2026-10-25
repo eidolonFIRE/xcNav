@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
 import 'package:xcnav/ble_devices/ble_device.dart';
+import 'package:xcnav/ble_devices/ble_device_sp140.dart';
 import 'package:xcnav/dialogs/wind_dialog.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/services/ble_service.dart';
@@ -214,7 +215,7 @@ class _BigInstrumentsState extends State<BigInstruments> {
     );
   }
 
-  // --- SP140 (power, charge, endurance, cell balance)
+  // --- SP140 (power, charge, endurance, cell balance, alerts)
   Widget _sp140Panel(Color unitColor) {
     final telemetry = bleDeviceSp140.telemetry;
     return _panel(
@@ -226,6 +227,7 @@ class _BigInstrumentsState extends State<BigInstruments> {
         builder: (context, power) {
           final charge = telemetry.charge.log.lastOrNull?.value;
           final diffVolt = telemetry.diffVolt.value;
+          final alerts = telemetry.alerts.value;
           final valueStyle = const TextStyle(fontSize: 120, fontFeatures: _tabular, height: 1);
           final unitStyle = TextStyle(fontSize: 50, color: unitColor);
 
@@ -268,6 +270,10 @@ class _BigInstrumentsState extends State<BigInstruments> {
                   TextSpan(text: "mV", style: unitStyle),
                 ])),
                 Icon(Icons.battery_alert, size: 120, color: diffVolt > 200 ? Colors.red : unitColor),
+              ],
+              if (alerts.isNotEmpty) ...[
+                const SizedBox(width: 48),
+                Sp140AlertChips(alerts: alerts, fontSize: 60, maxRows: 3),
               ],
             ],
           );
