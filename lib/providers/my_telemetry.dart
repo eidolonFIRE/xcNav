@@ -490,7 +490,7 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
       } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
         locationSettings = AppleSettings(
           accuracy: LocationAccuracy.best,
-          // activityType: ActivityType.fitness,
+          activityType: ActivityType.airborne,
           distanceFilter: 0,
           pauseLocationUpdatesAutomatically: false,
           allowBackgroundLocationUpdates: true,
