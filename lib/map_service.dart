@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:xcnav/datadog.dart';
@@ -22,13 +24,19 @@ enum MapTileSrc {
 
 bool mapServiceIsInit = false;
 
+/// Shared client for map tile providers. Tile layers are cached and reused across map widgets, and FMTC closes
+/// its auto-created client when any widget using the layer disposes. Passing our own client keeps it open.
+final _tileHttpClient = IOClient(HttpClient()..userAgent = null);
+
 TileProvider? _makeTileProvider(String instanceName) {
   debugPrint("------ make tile provider \"$instanceName\" ----");
   if (!mapServiceIsInit) return null;
   try {
     // Other stores (offline map downloads) are read-only fallbacks. Tiles are matched by URL, so there's no cross-talk.
     return FMTCTileProvider(
-        stores: {instanceName: BrowseStoreStrategy.readUpdateCreate}, otherStoresStrategy: BrowseStoreStrategy.read);
+        stores: {instanceName: BrowseStoreStrategy.readUpdateCreate},
+        otherStoresStrategy: BrowseStoreStrategy.read,
+        httpClient: _tileHttpClient);
   } catch (e, trace) {
     error("FMTC: Error making tile provider",
         errorMessage: e.toString(), errorStackTrace: trace, attributes: {"layerName": instanceName});
