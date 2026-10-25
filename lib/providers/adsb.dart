@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_serial_communication/flutter_serial_communication.dart';
 import 'package:flutter_serial_communication/models/device_info.dart';
@@ -52,9 +53,64 @@ class ProximityConfig {
   }
 }
 
+/// Paces audio warnings per plane, so one lingering nearby doesn't nag the pilot nonstop.
+///
+/// The first few warnings come at the base rate, then each one waits a bit longer, up to a cap.
+/// Once a plane hasn't been a threat for a while, its next warning starts fresh.
+class WarningThrottle {
+  /// Warnings at the base rate before backing off.
+  static const warningsBeforeBackoff = 3;
+  static const baseInterval = Duration(seconds: 5);
+  static const backoffStep = Duration(seconds: 5);
+  static const maxInterval = Duration(seconds: 20);
+
+  /// How long a plane must stay clear before warnings start fresh.
+  static const resetAfter = Duration(seconds: 60);
+
+  final Map<String, _WarningState> _states = {};
+
+  /// Time to wait after the `count`th warning before the next one.
+  static Duration intervalAfter(int count) {
+    if (count < warningsBeforeBackoff) return baseInterval;
+    final backoff = baseInterval + backoffStep * (count - warningsBeforeBackoff + 1);
+    return backoff < maxInterval ? backoff : maxInterval;
+  }
+
+  /// Call each time `id` is a threat. Returns true if a warning should be spoken now.
+  bool shouldWarn(String id, DateTime now) {
+    final state = _states[id];
+    if (state == null || now.difference(state.lastThreat) > resetAfter) {
+      _states[id] = _WarningState(now);
+      return true;
+    }
+    state.lastThreat = now;
+    if (now.difference(state.lastWarned) < intervalAfter(state.count)) return false;
+    state.count++;
+    state.lastWarned = now;
+    return true;
+  }
+
+  /// Forget planes that haven't been a threat recently.
+  void cleanup(DateTime now) {
+    _states.removeWhere((_, state) => now.difference(state.lastThreat) > resetAfter);
+  }
+}
+
+class _WarningState {
+  int count = 1;
+  DateTime lastWarned;
+  DateTime lastThreat;
+
+  _WarningState(DateTime now)
+      : lastWarned = now,
+        lastThreat = now;
+}
+
 class ADSB with ChangeNotifier {
   RawDatagramSocket? sock;
   Map<String, GA> planes = {};
+
+  final WarningThrottle _warningThrottle = WarningThrottle();
 
   late final BuildContext context;
 
@@ -308,6 +364,8 @@ class ADSB with ChangeNotifier {
 
   void checkProximity(Geo observer) {
     ProximityConfig config = proximityProfileOptions[settingsMgr.adsbProximitySize.value]!;
+    final now = clock.now();
+    _warningThrottle.cleanup(now);
 
     for (GA each in planes.values) {
       final double dist = latlngCalc.distance(each.latlng, observer.latlng);
@@ -326,7 +384,7 @@ class ADSB with ChangeNotifier {
 
       planes[each.id]!.warning = warning;
 
-      if (warning) {
+      if (warning && _warningThrottle.shouldWarn(each.id, now)) {
         speakWarning(each, observer, eta);
       }
     }

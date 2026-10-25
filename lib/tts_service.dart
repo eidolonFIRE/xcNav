@@ -92,39 +92,42 @@ AudioSessionConfiguration ttsAudioSessionConfig({required bool pauseMusic}) => A
           pauseMusic ? AndroidAudioFocusGainType.gainTransient : AndroidAudioFocusGainType.gainTransientMayDuck,
     );
 
-enum TtsState {
-  stopped,
-  playing,
-}
-
 /// Global Singleton
 late TtsService ttsService;
 
 /// Singleton for queueing up messages to speak to users
 class TtsService {
   FlutterTts? instance;
-  TtsState _state = TtsState.stopped;
+  Future? _initFuture;
   int currentPriority = 10;
 
   QueueList<AudioMessage> msgQueue = QueueList();
+
+  /// Most messages kept in the queue. The lowest priority ones are dropped first.
+  static const maxQueueLength = 20;
+
+  /// Pause between messages.
+  static const messageGap = Duration(seconds: 1);
+
+  /// Longest a message may take before the engine is considered stuck and gets reset.
+  static Duration speakTimeout(String text) => Duration(milliseconds: 10000 + 200 * text.length);
 
   /// Audio session used to duck or pause other audio while speaking. Null until `init()`.
   AudioSession? _session;
   bool? _sessionPausesMusic;
   bool _sessionActive = false;
 
-  /// Id of the most recent utterance, and whether it is still speaking.
-  /// Interrupted utterances may never complete (iOS), so only the latest one counts.
-  int _utteranceId = 0;
-  bool _speaking = false;
+  /// True while `_runQueue` is working through `msgQueue`. Only one runner may exist at a time.
+  bool _running = false;
 
-  void _waitAndTryNext() {
-    if (msgQueue.isNotEmpty) {
-      Timer(const Duration(seconds: 1), speakNextInQueue);
-    } else {
-      _state = TtsState.stopped;
-      _releaseSessionIfIdle();
-    }
+  /// Completed to end the current message (or the gap after it) early.
+  /// The native speak future doesn't always complete (stop on iOS, engine errors on Android),
+  /// so the runner never waits on it alone.
+  Completer<void>? _wake;
+
+  void _wakeUp() {
+    final wake = _wake;
+    if (wake != null && !wake.isCompleted) wake.complete();
   }
 
   /// Take audio focus before speaking. Other audio is ducked or paused depending on settings.
@@ -146,7 +149,7 @@ class TtsService {
   /// Give audio focus back once nothing is speaking or queued, so other audio resumes.
   void _releaseSessionIfIdle() {
     final session = _session;
-    if (session == null || !_sessionActive || _speaking || msgQueue.isNotEmpty) return;
+    if (session == null || !_sessionActive || _running || msgQueue.isNotEmpty) return;
     _sessionActive = false;
     session.setActive(false).catchError((e) {
       debugPrint("Failed to deactivate audio session: $e");
@@ -155,14 +158,14 @@ class TtsService {
   }
 
   Future init() async {
-    instance = FlutterTts();
+    final tts = FlutterTts();
 
     if (Platform.isIOS) {
       // The audio session is managed in `_activateSession` so it stays active across queued messages.
-      await instance!.autoStopSharedSession(false);
+      await tts.autoStopSharedSession(false);
     } else if (Platform.isAndroid) {
       // Route speech as navigation guidance so it plays like turn-by-turn prompts.
-      await instance!.setAudioAttributesForNavigation();
+      await tts.setAudioAttributesForNavigation();
     }
 
     try {
@@ -171,11 +174,11 @@ class TtsService {
       debugPrint("Failed to get audio session: $e");
     }
 
-    await _selectBestVoice();
+    await _selectBestVoice(tts);
 
     // instance.getDefaultEngine.then((value) => instance.setEngine(value));
     // instance.getEngines.then((value) => debugPrint("Engines: $value"));
-    await instance!.awaitSpeakCompletion(true);
+    await tts.awaitSpeakCompletion(true);
     // instance.setStartHandler(() {
     //   _state = TtsState.playing;
     // });
@@ -183,22 +186,48 @@ class TtsService {
     // Any time the messages stop, try playing the next one.
     // instance.setCompletionHandler(waitAndTryNext);
     // instance.setCancelHandler(waitAndTryNext);
-    instance!.setErrorHandler((_) {
-      _speaking = false;
-      _waitAndTryNext();
+    // Android doesn't complete the speak future on errors, so move on from here.
+    tts.setErrorHandler((msg) {
+      debugPrint("TTS error: $msg");
+      _wakeUp();
     });
+
+    // Only publish once fully set up, so nothing speaks on a half initialized engine.
+    instance = tts;
+  }
+
+  /// Initialize once, even if many messages arrive while it's in progress. Returns false if it failed.
+  Future<bool> _ensureInit() async {
+    if (instance != null) return true;
+    debugPrint("Initializing TTS engine...");
+    try {
+      await (_initFuture ??= init());
+    } catch (e) {
+      debugPrint("Failed to initialize TTS engine: $e");
+      // Allow a retry on the next message.
+      _initFuture = null;
+    }
+    return instance != null;
+  }
+
+  Future<void> _stopEngine() async {
+    try {
+      await instance?.stop().timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint("Failed to stop TTS: $e");
+    }
   }
 
   /// Switch to the best offline voice for the device locale, if it beats the system default.
-  Future _selectBestVoice() async {
+  Future _selectBestVoice(FlutterTts tts) async {
     try {
-      final voices = ((await instance!.getVoices) as List? ?? [])
+      final voices = ((await tts.getVoices) as List? ?? [])
           .map((v) => Map<String, String>.from((v as Map).map((k, v) => MapEntry(k.toString(), v.toString()))))
           .toList();
 
       Map<String, String>? defaultVoice;
       if (Platform.isAndroid) {
-        final value = await instance!.getDefaultVoice;
+        final value = await tts.getDefaultVoice;
         if (value is Map && value.isNotEmpty) {
           defaultVoice = value.map((k, v) => MapEntry(k.toString(), v.toString()));
         }
@@ -207,56 +236,80 @@ class TtsService {
       final best = pickBestVoice(voices, Platform.localeName, defaultVoice: defaultVoice);
       if (best != null) {
         debugPrint("TTS voice: ${best["name"]} (${best["locale"]}, ${best["quality"]})");
-        await instance!.setVoice(best);
+        await tts.setVoice(best);
       }
     } catch (e) {
       debugPrint("Failed to select TTS voice: $e");
     }
   }
 
-  Future<void> speakNextInQueue() async {
-    // _state = TtsState.playing;
-    // debugPrint("Speak next in queue");
-
-    if (instance != null) {
-      if (msgQueue.isNotEmpty) {
-        final msg = msgQueue.removeFirst();
-
-        if (msg.expires == null || msg.expires!.isAfter(DateTime.now())) {
-          instance!.setVolume(msg.volume ?? 1.0);
-          debugPrint("Speak: \"${msg.text}\"");
-          _state = TtsState.playing;
-          currentPriority = msg.priority;
-          final id = ++_utteranceId;
-          _speaking = true;
-          if (_session != null) await _activateSession();
-          instance!.speak(msg.text).whenComplete(() {
-            if (id == _utteranceId) _speaking = false;
-          }).then((_) => _waitAndTryNext());
-        } else {
-          // Msg was expired, try again
-          speakNextInQueue();
-        }
-      } else {
-        // debugPrint("Speak queue is empty");
-        _state = TtsState.stopped;
-        _releaseSessionIfIdle();
-      }
+  /// Next message that hasn't expired, or null if there are none left.
+  AudioMessage? _nextMessage() {
+    final now = DateTime.now();
+    while (msgQueue.isNotEmpty) {
+      final msg = msgQueue.removeFirst();
+      if (msg.expires == null || msg.expires!.isAfter(now)) return msg;
     }
+    return null;
+  }
+
+  /// Speak queued messages one at a time until the queue is empty.
+  Future<void> _runQueue() async {
+    if (_running || instance == null) return;
+    _running = true;
+    try {
+      AudioMessage? msg;
+      while ((msg = _nextMessage()) != null) {
+        final interrupted = await _speakOne(msg!);
+        if (!interrupted && msgQueue.isNotEmpty) await _pause(messageGap);
+      }
+    } catch (e) {
+      debugPrint("TTS queue failed: $e");
+    } finally {
+      _running = false;
+      currentPriority = 10;
+      _releaseSessionIfIdle();
+    }
+  }
+
+  /// Speak one message. Returns true if it was cut short by `_wakeUp`.
+  Future<bool> _speakOne(AudioMessage msg) async {
+    final tts = instance!;
+    final wake = _wake = Completer<void>();
+    currentPriority = msg.priority;
+    debugPrint("Speak: \"${msg.text}\"");
+
+    Future<void> speakIt() async {
+      await tts.setVolume(msg.volume ?? 1.0);
+      await _activateSession();
+      // Interrupted while getting ready
+      if (wake.isCompleted) return;
+      await tts.speak(msg.text);
+    }
+
+    try {
+      await Future.any([speakIt(), wake.future]).timeout(speakTimeout(msg.text));
+    } on TimeoutException {
+      debugPrint("TTS timed out: \"${msg.text}\"");
+      // Android ignores new messages while it still thinks it's speaking, so reset it.
+      await _stopEngine();
+    } catch (e) {
+      debugPrint("TTS failed: $e");
+    }
+    return wake.isCompleted;
+  }
+
+  /// Wait `duration`, or less if `_wakeUp` is called.
+  Future<void> _pause(Duration duration) {
+    final wake = _wake = Completer<void>();
+    final timer = Timer(duration, _wakeUp);
+    return wake.future.whenComplete(timer.cancel);
   }
 
   /// Queue up a message to be spoken
   void speak(AudioMessage msg) async {
-    if (instance == null) {
-      debugPrint("Initializing TTS engine...");
-      await init();
-    }
-
     if (msg.priority == 0) {
       msgQueue.addFirst(msg);
-      if (currentPriority != 0) {
-        instance!.stop().then((value) => speakNextInQueue());
-      }
     } else {
       // insertion
       for (int index = 0; index <= msgQueue.length; index++) {
@@ -266,18 +319,26 @@ class TtsService {
           break;
         }
       }
+    }
 
-      if (msgQueue.length > 20) {
-        // Too many messages, drop the last one
-        msgQueue.removeLast();
-      }
+    if (msgQueue.length > maxQueueLength) {
+      // Too many messages, drop the last one
+      msgQueue.removeLast();
     }
 
     // debugPrint("Speak queue length: ${msgQueue.length}");
 
-    // if nothing is playing... start it
-    if (_state != TtsState.playing) {
-      speakNextInQueue();
+    if (!await _ensureInit()) return;
+
+    if (_running) {
+      // Cut the current message short
+      if (msg.priority == 0 && currentPriority != 0) {
+        _wakeUp();
+        _stopEngine();
+      }
+    } else {
+      // if nothing is playing... start it
+      _runQueue();
     }
   }
 }
