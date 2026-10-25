@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +13,7 @@ import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/screens/big_instruments.dart';
+import 'package:xcnav/services/ble_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/altimeter.dart';
@@ -147,6 +149,37 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(WindDialog), findsNothing);
     expect(find.descendant(of: big, matching: find.byType(Windicator)), findsOneWidget);
+  });
+
+  testWidgets("shows SP140 panel only while connected", (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    addTearDown(() => bleDeviceSp140.device = null);
+
+    await pumpApp(tester);
+    Navigator.of(tester.element(find.byType(TopInstruments))).pushNamed("/bigInstruments");
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key("bigInstruments_sp140")), findsNothing);
+
+    bleDeviceSp140.telemetry.power.addValue(12.3, null);
+    bleDeviceSp140.telemetry.charge.addValue(87, null);
+    bleDeviceSp140.device = BluetoothDevice.fromId("AA:BB:CC:DD:EE:FF");
+    await tester.pumpAndSettle();
+
+    final panel = find.byKey(const Key("bigInstruments_sp140"));
+    expect(panel, findsOneWidget);
+    expect(tester.takeException(), isNull);
+    bool hasText(String s) =>
+        find.descendant(of: panel, matching: find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText() == s))
+            .evaluate()
+            .isNotEmpty;
+    expect(hasText("12.3kW"), isTrue);
+    expect(hasText("87%"), isTrue);
+
+    bleDeviceSp140.device = null;
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key("bigInstruments_sp140")), findsNothing);
   });
 
   testWidgets("lays out in landscape without overflow", (tester) async {

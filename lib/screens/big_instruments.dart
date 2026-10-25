@@ -1,12 +1,17 @@
 import 'dart:math';
 
+import 'package:clock/clock.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
+import 'package:xcnav/ble_devices/ble_device.dart';
 import 'package:xcnav/dialogs/wind_dialog.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
+import 'package:xcnav/services/ble_service.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
+import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/widgets/windicator.dart';
 
@@ -34,7 +39,7 @@ class _BigInstrumentsState extends State<BigInstruments> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: ListenableBuilder(
-          listenable: myTelemetry,
+          listenable: Listenable.merge([myTelemetry, BleDeviceHandler.devicesChanged]),
           builder: (context, _) => OrientationBuilder(builder: (context, orientation) {
             final portrait = orientation == Orientation.portrait;
             final panels = [
@@ -44,6 +49,7 @@ class _BigInstrumentsState extends State<BigInstruments> {
                   flex: showWindDetails ? (portrait ? 4 : 6) : 3,
                   child: showWindDetails ? _windDetailsPanel() : _windPanel()),
               Expanded(flex: showWindDetails ? 2 : 3, child: _speedPanel(context, unitColor)),
+              if (bleDeviceSp140.device != null) Expanded(flex: 2, child: _sp140Panel(unitColor)),
             ];
             return Stack(
               children: [
@@ -67,8 +73,9 @@ class _BigInstrumentsState extends State<BigInstruments> {
     );
   }
 
-  Widget _panel({required Widget child}) {
+  Widget _panel({Key? key, required Widget child}) {
     return Container(
+      key: key,
       margin: const EdgeInsets.all(6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -204,6 +211,68 @@ class _BigInstrumentsState extends State<BigInstruments> {
           ),
         );
       },
+    );
+  }
+
+  // --- SP140 (power, charge, endurance, cell balance)
+  Widget _sp140Panel(Color unitColor) {
+    final telemetry = bleDeviceSp140.telemetry;
+    return _panel(
+      key: const Key("bigInstruments_sp140"),
+      // Every telemetry packet updates power, so it drives the rebuild for all values.
+      child: StreamBuilder<double>(
+        stream: telemetry.power.valueRawStream,
+        initialData: telemetry.power.log.lastOrNull?.value,
+        builder: (context, power) {
+          final charge = telemetry.charge.log.lastOrNull?.value;
+          final diffVolt = telemetry.diffVolt.value;
+          final valueStyle = const TextStyle(fontSize: 120, fontFeatures: _tabular, height: 1);
+          final unitStyle = TextStyle(fontSize: 50, color: unitColor);
+
+          final fuelStat = myTelemetry.inFlight && myTelemetry.fuelReportController.fuelReports.isNotEmpty
+              ? myTelemetry.fuelReportController.getSumFuelStat(myTelemetry.recordGeo)
+              : null;
+          final etaEmpty = fuelStat?.extrapolateEndurance(myTelemetry.fuelReportController.fuelReports.last,
+              from: clock.now());
+          final etaWarn = etaEmpty != null && etaEmpty < const Duration(minutes: 15);
+          final etaStyle =
+              valueStyle.copyWith(color: etaWarn ? Colors.red : null, fontWeight: etaWarn ? FontWeight.bold : null);
+
+          final battery = batteryIcon(charge?.toDouble() ?? 0, 120);
+
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text.rich(TextSpan(children: [
+                TextSpan(text: power.data?.toStringAsFixed(1) ?? "--", style: valueStyle),
+                TextSpan(text: "kW", style: unitStyle),
+              ])),
+              const Icon(Icons.electric_bolt, size: 120, color: Colors.amber),
+              const SizedBox(width: 48),
+              Text.rich(TextSpan(children: [
+                TextSpan(text: charge?.toString() ?? "--", style: valueStyle),
+                TextSpan(text: "%", style: unitStyle),
+              ])),
+              // batteryIcon is styled for light backgrounds.
+              Icon(battery.icon, size: 120, color: battery.color == Colors.black ? Colors.white : battery.color),
+              if (etaEmpty != null) ...[
+                const SizedBox(width: 48),
+                Text.rich(richHrMin(duration: etaEmpty, valueStyle: etaStyle, unitStyle: unitStyle)),
+                Icon(Icons.timer_outlined, size: 120, color: unitColor),
+              ],
+              if (diffVolt > 20) ...[
+                const SizedBox(width: 48),
+                Text.rich(TextSpan(children: [
+                  TextSpan(text: "$diffVolt", style: valueStyle),
+                  TextSpan(text: "mV", style: unitStyle),
+                ])),
+                Icon(Icons.battery_alert, size: 120, color: diffVolt > 200 ? Colors.red : unitColor),
+              ],
+            ],
+          );
+        },
+      ),
     );
   }
 
