@@ -7,6 +7,7 @@ BleFastLinkTelemetry healthy({int uptimeMs = 10000}) {
   final t = BleFastLinkTelemetry()
     ..uptimeMs = uptimeMs
     ..baroPressureDHPa = 10132
+    ..baroTempDC = 200
     ..mcuTempDC = 400
     ..escStatus = sp140TelemetryConnected
     ..escTempMosDC = 300
@@ -23,6 +24,9 @@ BleFastLinkTelemetry healthy({int uptimeMs = 10000}) {
   t.bmsTempSensorsC.fillRange(0, 6, 25);
   return t;
 }
+
+/// Monitor past the BMS grace period.
+Sp140AlertMonitor armed() => Sp140AlertMonitor()..update(healthy(uptimeMs: 0));
 
 List<String> codes(List<Sp140Alert> alerts) => alerts.map((e) => e.code).toList();
 
@@ -67,7 +71,7 @@ void main() {
     });
 
     test("BMS voltage and charge alerts", () {
-      final monitor = Sp140AlertMonitor();
+      final monitor = armed();
       expect(monitor.update(healthy()..bmsSoc = 15).single,
           const Sp140Alert("BC-SOC", "Battery charge low", Sp140AlertLevel.warning));
       expect(monitor.update(healthy()..bmsSoc = 5).single.level, Sp140AlertLevel.critical);
@@ -89,13 +93,13 @@ void main() {
       final t = healthy();
       t.bmsTempSensorsC[1] = 50;
       t.bmsTempSensorsC[5] = 56;
-      final alerts = Sp140AlertMonitor().update(t);
+      final alerts = armed().update(t);
       expect(codes(alerts), ["BC-T4", "BC-B"]);
       expect(alerts.first.isCritical, isTrue);
     });
 
     test("discharge MOSFET off", () {
-      expect(codes(Sp140AlertMonitor().update(healthy()..bmsIsDischargeMos = 0)), ["BC-DSG"]);
+      expect(codes(armed().update(healthy()..bmsIsDischargeMos = 0)), ["BC-DSG"]);
     });
 
     test("BMS without data yet is ignored", () {
@@ -104,11 +108,38 @@ void main() {
         ..bmsSoc = 0
         ..bmsIsDischargeMos = 0
         ..bmsCellMinMV = 0;
-      expect(Sp140AlertMonitor().update(t), isEmpty);
+      expect(armed().update(t), isEmpty);
     });
 
-    test("CAN alerts need sustained link loss", () {
+    test("disconnected NaN BMS temp probes are ignored", () {
+      final t = healthy();
+      t.bmsTempSensorsC[2] = 127;
+      t.bmsTempSensorsC[3] = -128;
+      expect(armed().update(t), isEmpty);
+      // Too many disconnected probes: the controller sends -40C on purpose.
+      t.bmsTempSensorsC[4] = -40;
+      expect(codes(armed().update(t)), ["BC-T3"]);
+    });
+
+    test("BMS grace period after first connect", () {
       final monitor = Sp140AlertMonitor();
+      BleFastLinkTelemetry low(int uptimeMs) => healthy(uptimeMs: uptimeMs)..bmsSoc = 3;
+      expect(monitor.update(healthy(uptimeMs: 500)..bmsStatus = 0), isEmpty);
+      expect(monitor.update(low(1000)), isEmpty);
+      expect(monitor.update(low(2999)), isEmpty);
+      expect(codes(monitor.update(low(3000))), ["BC-SOC"]);
+
+      // A link drop clears alerts but doesn't restart the grace period.
+      expect(monitor.update(low(4000)..bmsStatus = 0), isEmpty);
+      expect(codes(monitor.update(low(4100))), ["BC-SOC"]);
+
+      // A controller reboot does.
+      expect(monitor.update(low(500)), isEmpty);
+      expect(codes(monitor.update(low(2500))), ["BC-SOC"]);
+    });
+
+    test("lost ESC or BMS link is silent", () {
+      final monitor = armed();
       BleFastLinkTelemetry lost(int uptimeMs) => healthy(uptimeMs: uptimeMs)
         ..escStatus = 0
         ..bmsStatus = 0
@@ -116,26 +147,50 @@ void main() {
         ..escTempMosDC = 2000
         ..bmsSoc = 0;
       expect(monitor.update(lost(1000)), isEmpty);
-      expect(monitor.update(lost(5999)), isEmpty);
-      expect(codes(monitor.update(lost(6000))), ["MC-CAN", "BC-CAN"]);
-
-      // Reconnect clears, and the delay restarts on the next loss.
-      expect(monitor.update(healthy(uptimeMs: 7000)), isEmpty);
-      expect(monitor.update(lost(8000)), isEmpty);
-
-      // Controller reboot restarts the delay too.
-      expect(monitor.update(lost(500)), isEmpty);
-      expect(codes(monitor.update(lost(5500))), ["MC-CAN", "BC-CAN"]);
+      expect(monitor.update(lost(60000)), isEmpty);
     });
 
-    test("internal alerts", () {
+    test("CPU temp", () {
       final monitor = Sp140AlertMonitor();
       expect(codes(monitor.update(healthy()..mcuTempDC = 600)), ["CPU-T"]);
-      expect(codes(Sp140AlertMonitor().update(healthy()..baroPressureDHPa = 0)), ["Baro-I"]);
+      // Unread sensor holds the last level.
+      expect(codes(monitor.update(healthy()..mcuTempDC = 0)), ["CPU-T"]);
+      expect(monitor.update(healthy()), isEmpty);
+      expect(monitor.update(healthy()..mcuTempDC = 0), isEmpty);
+      expect(monitor.update(healthy()..mcuTempDC = 32767), isEmpty);
+    });
+
+    test("barometer temp", () {
+      final monitor = Sp140AlertMonitor();
+      expect(monitor.update(healthy()..baroTempDC = 0), isEmpty);
+      expect(monitor.update(healthy()..baroTempDC = -5).single,
+          const Sp140Alert("BARO-T", "Barometer temp low", Sp140AlertLevel.warning));
+      // Failed read holds the last level.
+      expect(codes(monitor.update(healthy()..baroTempDC = 0)), ["BARO-T"]);
+      expect(monitor.update(healthy()..baroTempDC = 800).single.level, Sp140AlertLevel.critical);
+    });
+
+    test("barometer failure needs zero pressure since boot", () {
+      final monitor = Sp140AlertMonitor();
+      BleFastLinkTelemetry noBaro(int uptimeMs) => healthy(uptimeMs: uptimeMs)
+        ..baroPressureDHPa = 0
+        ..baroTempDC = 0;
+      expect(monitor.update(noBaro(100)), isEmpty);
+      expect(monitor.update(noBaro(1099)), isEmpty);
+      expect(codes(monitor.update(noBaro(1100))), ["BARO-I"]);
+
+      // Once the barometer worked, a zero read is a busy bus.
+      final working = Sp140AlertMonitor()..update(healthy(uptimeMs: 100));
+      expect(working.update(noBaro(200)), isEmpty);
+      expect(working.update(noBaro(5000)), isEmpty);
+
+      // Until the controller reboots.
+      expect(working.update(noBaro(100)), isEmpty);
+      expect(codes(working.update(noBaro(1100))), ["BARO-I"]);
     });
 
     test("critical alerts sort first", () {
-      final alerts = Sp140AlertMonitor().update(healthy()
+      final alerts = armed().update(healthy()
         ..bmsSoc = 10
         ..escError = 1 << 1);
       expect(codes(alerts), ["MC-RE-1", "BC-SOC"]);
