@@ -17,6 +17,35 @@ class MapValue<T extends num> {
 
   MapValue(this._sensorLUT);
 
+  /// Copy of the [input, output] points, sorted by input.
+  List<List<T>> get points => _sensorLUT.map((e) => List<T>.from(e)).toList();
+
+  /// Parse from a list of [input, output] pairs. Returns null if the data isn't a valid curve.
+  static MapValue<double>? fromJson(dynamic data) {
+    if (data is! List) return null;
+    final List<List<double>> points = [];
+    for (final each in data) {
+      if (each is! List || each.length < 2) return null;
+      final x = parseAsDouble(each[0]);
+      final y = parseAsDouble(each[1]);
+      if (x == null || y == null) return null;
+      points.add([x, y]);
+    }
+    return MapValue.validate(points);
+  }
+
+  /// Sort points by input. Returns null if there are fewer than 2 points or duplicate inputs.
+  static MapValue<double>? validate(List<List<double>> points) {
+    if (points.length < 2) return null;
+    final sorted = points.map((e) => List<double>.from(e)).toList()..sort((a, b) => a[0].compareTo(b[0]));
+    for (int i = 1; i < sorted.length; i++) {
+      if (sorted[i][0] == sorted[i - 1][0]) return null;
+    }
+    return MapValue<double>(sorted);
+  }
+
+  List<List<T>> toJson() => points;
+
   T mapValue(T rawValue) {
     // Check bounds
     if (rawValue <= _sensorLUT.first[0]) {
@@ -49,11 +78,15 @@ class BleLoggedValue<T extends num> {
 
   final List<TimestampValue<T>> log = [];
 
-  final MapValue<T>? calibration;
+  MapValue<T>? calibration;
+
+  /// Last value received, before calibration is applied.
+  T? lastRawValue;
 
   BleLoggedValue({this.calibration});
 
   void addValue(T value, DateTime? timestamp) {
+    lastRawValue = value;
     T calibratedValue = calibration == null ? value : calibration!.mapValue(value);
     _valueRawStream.sink.add(calibratedValue);
     log.add(TimestampValue<T>((timestamp ?? clock.now()).millisecondsSinceEpoch, calibratedValue));

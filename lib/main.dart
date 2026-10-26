@@ -77,6 +77,7 @@ void main() async {
     final prefs = await SharedPreferences.getInstance();
     settingsMgr = SettingsMgr(prefs);
     initCarbNeedles(prefs);
+    ble_service.bleDeviceXc170.telemetry.loadCalibration(prefs);
 
     final configuration = DatadogConfiguration(
       clientToken: datadogToken,

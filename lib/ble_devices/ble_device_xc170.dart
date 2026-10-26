@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:xcnav/ble_devices/ble_device_value.dart';
 import 'package:xcnav/datadog.dart' as dd;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xcnav/ble_devices/ble_device.dart';
+import 'package:xcnav/dialogs/edit_calibration.dart';
 import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
@@ -58,7 +61,47 @@ class Xc170TelemetryCharacteristic {
   ]));
   final fanCtrl = BleLoggedValue<int>();
 
+  static const chtCalibrationKey = "xc170.chtCalibration";
+  static const egtCalibrationKey = "xc170.egtCalibration";
+  SharedPreferences? _prefs;
+
   Xc170TelemetryCharacteristic({required this.uuid});
+
+  /// Load CHT / EGT calibration curves saved in prefs.
+  void loadCalibration(SharedPreferences prefs) {
+    _prefs = prefs;
+    cht.calibration = _loadCalibration(chtCalibrationKey);
+    egt.calibration = _loadCalibration(egtCalibrationKey);
+  }
+
+  MapValue<double>? _loadCalibration(String key) {
+    final data = _prefs?.getString(key);
+    if (data == null) return null;
+    try {
+      return MapValue.fromJson(jsonDecode(data));
+    } catch (error) {
+      dd.error("Loading Xc170 calibration", errorMessage: error.toString(), attributes: {"key": key});
+      return null;
+    }
+  }
+
+  void setChtCalibration(MapValue<double>? calibration) {
+    cht.calibration = calibration;
+    _saveCalibration(chtCalibrationKey, calibration);
+  }
+
+  void setEgtCalibration(MapValue<double>? calibration) {
+    egt.calibration = calibration;
+    _saveCalibration(egtCalibrationKey, calibration);
+  }
+
+  void _saveCalibration(String key, MapValue<double>? calibration) {
+    if (calibration == null) {
+      _prefs?.remove(key);
+    } else {
+      _prefs?.setString(key, jsonEncode(calibration));
+    }
+  }
 
   void stopRefresh() {
     _refreshTimer?.cancel();
@@ -374,10 +417,32 @@ class Xc170ConfigDialog extends StatelessWidget {
                   },
                 );
               })),
+          StatefulBuilder(
+              builder: (context, setState) => Column(mainAxisSize: MainAxisSize.min, children: [
+                    calibrationTile(context, "CHT Calibration", xc170.telemetry.cht, (calibration) {
+                      setState(() => xc170.telemetry.setChtCalibration(calibration));
+                    }),
+                    calibrationTile(context, "EGT Calibration", xc170.telemetry.egt, (calibration) {
+                      setState(() => xc170.telemetry.setEgtCalibration(calibration));
+                    }),
+                  ])),
         ],
       ),
     );
   }
+}
+
+Widget calibrationTile(BuildContext context, String title, BleLoggedValue<double> value,
+    void Function(MapValue<double>? calibration) onSave) {
+  final points = value.calibration?.points.length;
+  return ListTile(
+    dense: true,
+    title: Text(title),
+    subtitle: Text(points == null ? "None" : "$points points"),
+    trailing: const Icon(Icons.edit),
+    onTap: () => showDialog(
+        context: context, builder: (context) => EditCalibrationDialog(title: title, value: value, onSave: onSave)),
+  );
 }
 
 class Xc170StatusCard extends StatelessWidget {
