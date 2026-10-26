@@ -163,22 +163,20 @@ class _ScanScreenState extends State<ScanScreen> {
                                         value: settingsMgr.bleAutoDevices.value.contains(device.remoteId.str),
                                         onChanged: (value) {
                                           setState(() {
-                                            if (value && device.isDisconnected) {
-                                              ble_service.connect(device);
+                                            final id = device.remoteId.str;
+                                            if (value) {
                                               // Add to list
-                                              if (!settingsMgr.bleAutoDevices.value.contains(device.remoteId.str)) {
+                                              if (!settingsMgr.bleAutoDevices.value.contains(id)) {
                                                 settingsMgr.bleAutoDevices.value =
-                                                    settingsMgr.bleAutoDevices.value + [device.remoteId.str];
+                                                    settingsMgr.bleAutoDevices.value + [id];
                                               }
-                                            }
-                                            if (!value) {
+                                              if (device.isDisconnected) {
+                                                ble_service.connect(device);
+                                              }
+                                            } else {
                                               // Remove from list
-                                              final wasRemoved =
-                                                  settingsMgr.bleAutoDevices.value.remove(device.remoteId.str);
-                                              if (wasRemoved) {
-                                                // Trigger save by setting value
-                                                settingsMgr.bleAutoDevices.value = settingsMgr.bleAutoDevices.value;
-                                              }
+                                              settingsMgr.bleAutoDevices.value =
+                                                  settingsMgr.bleAutoDevices.value.where((e) => e != id).toList();
                                             }
                                           });
                                         }),

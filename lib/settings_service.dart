@@ -390,7 +390,7 @@ class SettingsMgr {
 
     // --- Experimental
     showServoCarbMenu = SettingConfig(this, prefs, "Experimental", "showServoCarbMenu", false,
-        title: "show_servocarb", icon: const Icon(Icons.settings_applications_sharp));
+        title: "show_servocarb", icon: const Icon(Icons.settings_applications_sharp), hidden: true);
     forceGpsAltitude = SettingConfig(this, prefs, "Experimental", "forceGpsAltitude", false,
         title: "force_gps_altitude",
         icon: const Icon(Icons.satellite_alt),
@@ -419,8 +419,7 @@ class SettingsMgr {
         title: "Launch Use Vario", hidden: true);
     launchMinVario = SettingConfig(this, prefs, "Flight Detection", "launchMinVario", launchDefaults.minVario,
         title: "Launch Min Vario", hidden: true, setter: (value) => value < 0 ? 0.0 : value);
-    launchHoldTime = SettingConfig(
-        this, prefs, "Flight Detection", "launchHoldTime", launchDefaults.holdTime.inSeconds,
+    launchHoldTime = SettingConfig(this, prefs, "Flight Detection", "launchHoldTime", launchDefaults.holdTime.inSeconds,
         title: "Launch Hold Time", hidden: true, setter: (value) => value < 1 ? 1 : value);
     launchUseSp140Armed = SettingConfig(
         this, prefs, "Flight Detection", "launchUseSp140Armed", launchDefaults.useSp140Armed,
@@ -489,8 +488,8 @@ class SettingsMgr {
     bleAutoDevices =
         SettingConfig(this, prefs, "ble", "bleAutoConnectDevices", [], title: "Auto Connect Devices", hidden: true);
 
-    clientUseCellular = SettingConfig(this, prefs, "meshtastic", "clientUseCellular", true,
-        title: "Group over cellular", hidden: true);
+    clientUseCellular =
+        SettingConfig(this, prefs, "meshtastic", "clientUseCellular", true, title: "Group over cellular", hidden: true);
     clientUseMesh =
         SettingConfig(this, prefs, "meshtastic", "clientUseMesh", true, title: "Group over Meshtastic", hidden: true);
     // `Config.LoRaConfig.ModemPreset` value (default LONG_FAST)
