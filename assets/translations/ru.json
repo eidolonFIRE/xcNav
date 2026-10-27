@@ -108,6 +108,7 @@
   "settings": {
     "group": {
       "General": "Общее",
+      "Glide Range": "Дальность планирования",
       "UI": "Интерфейс",
       "Display Units": "Единицы измерения",
       "Misc": "Прочее",
@@ -118,8 +119,8 @@
       "Language Override": "Предпочитаемый язык",
       "ground_support_mode": "Режим наземной поддержки",
       "auto_record_flight": "Авто-запись полёта",
-      "glide_range_default_ratio": "Дальность планирования: качество по умолчанию",
-      "glide_range_margin": "Дальность планирования: запас высоты (м)",
+      "glide_range_default_ratio": "Качество по умолчанию",
+      "glide_range_margin": "Запас высоты (м)",
       "primary_altimeter": "Основной альтиметр",
       "altimeter_vsi_thresh": "Порог стрелки альтиметра (м/с)",
       "right_hand_ui": "Интерфейс для правшей",

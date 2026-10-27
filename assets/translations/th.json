@@ -108,6 +108,7 @@
     "settings": {
         "group": {
             "General": "ทั่วไป",
+            "Glide Range": "ระยะร่อน",
             "UI": "หน้าจอ",
             "Display Units": "หน่วยที่แสดง",
             "Misc": "อื่นๆ",
@@ -118,8 +119,8 @@
             "Language Override": "เลือกภาษา",
             "ground_support_mode": "โหมดทีมภาคพื้น",
             "auto_record_flight": "บันทึกเที่ยวบินอัตโนมัติ",
-            "glide_range_default_ratio": "ระยะร่อน: อัตราร่อนเริ่มต้น",
-            "glide_range_margin": "ระยะร่อน: ความสูงเผื่อเมื่อถึง (m)",
+            "glide_range_default_ratio": "อัตราร่อนเริ่มต้น",
+            "glide_range_margin": "ความสูงเผื่อปลอดภัย (m)",
             "primary_altimeter": "เครื่องวัดความสูงหลัก",
             "altimeter_vsi_thresh": "เกณฑ์ลูกศรเครื่องวัดความสูง (m/s)",
             "right_hand_ui": "หน้าจอสำหรับคนถนัดขวา",

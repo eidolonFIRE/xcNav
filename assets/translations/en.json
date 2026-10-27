@@ -108,6 +108,7 @@
     "settings": {
         "group": {
             "General": "General",
+            "Glide Range": "Glide Range",
             "UI": "UI",
             "Display Units": "Display Units",
             "Misc": "Misc",
@@ -118,8 +119,8 @@
             "Language Override": "Language Override",
             "ground_support_mode": "Ground Support Mode",
             "auto_record_flight": "Auto Record Flight",
-            "glide_range_default_ratio": "Glide Range: Default Glide Ratio",
-            "glide_range_margin": "Glide Range: Arrival Margin (m)",
+            "glide_range_default_ratio": "Default Glide Ratio",
+            "glide_range_margin": "Safety Margin (m)",
             "primary_altimeter": "Primary Altimeter",
             "altimeter_vsi_thresh": "Altimeter Arrow Threshold (m/s)",
             "right_hand_ui": "Right-handed UI",

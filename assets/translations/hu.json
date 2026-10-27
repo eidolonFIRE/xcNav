@@ -108,6 +108,7 @@
     "settings": {
         "group": {
             "General": "Általános",
+            "Glide Range": "Siklási tartomány",
             "UI": "Felhasználói felület",
             "Display Units": "Megjelenítési egységek",
             "Misc": "Egyéb",
@@ -118,8 +119,8 @@
             "Language Override": "Nyelv felülírása",
             "ground_support_mode": "Földi támogatási mód",
             "auto_record_flight": "Repülés automatikus rögzítése",
-            "glide_range_default_ratio": "Siklási tartomány: alapértelmezett siklószám",
-            "glide_range_margin": "Siklási tartomány: érkezési tartalék (m)",
+            "glide_range_default_ratio": "Alapértelmezett siklószám",
+            "glide_range_margin": "Biztonsági tartalék (m)",
             "primary_altimeter": "Elsődleges magasságmérő",
             "altimeter_vsi_thresh": "Magasságmérő nyíl küszöbértéke (m/s)",
             "right_hand_ui": "Jobbkezes felhasználói felület",
