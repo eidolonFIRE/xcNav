@@ -13,8 +13,12 @@ TileLayer? _demTileLayer;
 
 const demUrlTemplate = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
 
-/// Zoom levels sampled by [sampleDem]
-const demZoomLevels = [10, 12];
+/// Zoom levels sampled from the DEM, coarsest first. Offline areas download all of them.
+/// [sampleDem] uses 10 and 12, the glide range any of them.
+const demZoomLevels = [9, 10, 11, 12];
+
+/// Decoded tiles kept in memory
+const _maxCachedTiles = 60;
 
 /// Tile layer used as options for bulk downloading DEM tiles
 TileLayer demDownloadLayer() => TileLayer(urlTemplate: demUrlTemplate);
@@ -28,6 +32,12 @@ Timer? _fetchTimer;
 final Queue<String> _tileCacheQueue = Queue();
 final Map<String, ByteData> _tileCacheData = {};
 final Map<String, int> _tileCacheWidth = {};
+
+/// Count of tiles loaded into the cache so far. Changes when ground that wasn't loaded may now be.
+int demTilesLoaded = 0;
+
+/// Tile [sampleDemAtZoom] last read from. Tile data never changes, so it stays valid even once evicted.
+({int x, int y, int z, ByteData data, int width})? _lastTile;
 
 // Digital Elevation Map - service
 Future initDemCache() async {
@@ -86,10 +96,11 @@ void _startFetchTimer() {
                 _tileCacheWidth[pointAddress] = w;
                 _tileCacheData[pointAddress] = data;
                 _tileCacheQueue.add(pointAddress);
+                demTilesLoaded++;
               }
 
               // clean cache
-              if (_tileCacheQueue.length > 30) {
+              if (_tileCacheQueue.length > _maxCachedTiles) {
                 final oldest = _tileCacheQueue.first;
                 // (DEBUG) debugPrint("Popping one from DEM cache. $oldest");
                 _tileCacheQueue.removeFirst();
@@ -143,14 +154,30 @@ bool isValidElevation(double elev) => elev > -500 && elev < 9000;
 
 /// Sample the DEM layer. (digital elevation map)
 /// Returns elevation in Meters
-double? sampleDem(LatLng latlng, bool highRes) {
-  final point = _unproject(latlng, highRes ? demZoomLevels[1] : demZoomLevels[0]);
-  final pointTile = TileCoordinates(point.x.toInt(), point.y.toInt(), point.z.toInt());
-  final pointAddress = "${pointTile.x},${pointTile.y},${pointTile.z}";
+double? sampleDem(LatLng latlng, bool highRes) => sampleDemAtZoom(latlng, highRes ? 12 : 10);
+
+/// Sample the DEM layer at a specific tile [zoom]. Missing tiles are queued to fetch.
+/// Returns elevation in Meters
+double? sampleDemAtZoom(LatLng latlng, int zoom) {
+  final point = _unproject(latlng, zoom);
+  final tileX = point.x.toInt();
+  final tileY = point.y.toInt();
+
+  // Same tile as last time. (Grids sample many points in a row from one tile.)
+  final last = _lastTile;
+  if (last != null && last.x == tileX && last.y == tileY && last.z == zoom) {
+    final elev = _sampleByteData(last.data, last.width, point.x, point.y);
+    return isValidElevation(elev) ? elev : null;
+  }
+
+  final pointAddress = "$tileX,$tileY,$zoom";
 
   // Check cache first
-  if (_tileCacheData.containsKey(pointAddress)) {
-    final elev = _sampleByteData(_tileCacheData[pointAddress]!, _tileCacheWidth[pointAddress]!, point.x, point.y);
+  final data = _tileCacheData[pointAddress];
+  if (data != null) {
+    final width = _tileCacheWidth[pointAddress]!;
+    _lastTile = (x: tileX, y: tileY, z: zoom, data: data, width: width);
+    final elev = _sampleByteData(data, width, point.x, point.y);
     // Reject no-data / corrupt pixels (e.g. rgb 0,0,0 decodes to -32768m) and deep bathymetry.
     return isValidElevation(elev) ? elev : null;
   } else {

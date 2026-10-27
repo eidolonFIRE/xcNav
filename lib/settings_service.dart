@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:xcnav/locale.dart';
 import 'package:xcnav/map_service.dart';
 import 'package:xcnav/models/flight_detector.dart';
+import 'package:xcnav/models/glide_range.dart';
 
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/units.dart';
@@ -111,6 +112,9 @@ class SettingConfig<T> {
             case "LanguageOverride":
               _value = ValueNotifier<T>(LanguageOverride.values[loadedInt] as T);
               break;
+            case "GlideRangeMode":
+              _value = ValueNotifier<T>(GlideRangeMode.values[loadedInt] as T);
+              break;
             default:
               throw "Unrecognized enum class ${T.toString()}";
           }
@@ -203,6 +207,8 @@ class SettingsMgr {
   late final SettingConfig<LanguageOverride> languageOverride;
   late final SettingConfig<bool> groundMode;
   late final SettingConfig<bool> autoRecordFlight;
+  late final SettingConfig<double> glideRangeDefaultRatio;
+  late final SettingConfig<double> glideRangeMargin;
 
   // --- UI
   late final SettingConfig<AltimeterMode> primaryAltimeter;
@@ -213,6 +219,7 @@ class SettingsMgr {
   // late final SettingConfig<bool> showWeatherOverlay;
   late final SettingConfig<bool> showAirspaceOverlay;
   late final SettingConfig<bool> showAirports;
+  late final SettingConfig<GlideRangeMode> glideRangeMode;
   late final SettingConfig<bool> groupViewWaypoint;
 
   // --- Display Units
@@ -294,6 +301,16 @@ class SettingsMgr {
         title: "auto_record_flight",
         icon: const Icon(Icons.play_arrow),
         description: "Flight recorder automatically starts and stops.");
+    glideRangeDefaultRatio = SettingConfig(this, prefs, "General", "glideRangeDefaultRatio", 5.0,
+        title: "glide_range_default_ratio",
+        icon: const Icon(Icons.paragliding),
+        description: "Glide ratio the map's glide range uses in \"Always\" mode when not on a 1:1 to 12:1 glide.",
+        setter: (value) => value.clamp(1.0, maxGlideRatio));
+    glideRangeMargin = SettingConfig(this, prefs, "General", "glideRangeMargin", 50.0,
+        title: "glide_range_margin",
+        icon: const Icon(Icons.height),
+        description: "Height above the ground to still have when arriving at the edge of the glide range.",
+        setter: (value) => value.clamp(0.0, 1000.0));
 
     // --- UI
     primaryAltimeter = SettingConfig(this, prefs, "UI", "primaryAltimeter", AltimeterMode.msl,
@@ -323,6 +340,8 @@ class SettingsMgr {
     showAirspaceOverlay =
         SettingConfig(this, prefs, "UI", "showAirspaceOverlay", true, title: "Show airspace overlay", hidden: true);
     showAirports = SettingConfig(this, prefs, "UI", "showAirports", true, title: "Show airports", hidden: true);
+    glideRangeMode = SettingConfig(this, prefs, "UI", "glideRangeMode", GlideRangeMode.auto,
+        title: "Glide range mode", hidden: true);
     groupViewWaypoint = SettingConfig(this, prefs, "UI", "groupViewWaypoint", false,
         title: "group_view_includes_waypoints", icon: const Icon(Icons.pin_drop));
 

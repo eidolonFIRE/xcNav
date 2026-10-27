@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 
 class FakeGeo {
@@ -71,7 +72,34 @@ class FakeFlight {
     debugPrint("Fake Wind: $windSpd, $windHdg");
   }
 
-  Position genFakeLocationFlight(LatLng? target, Geo prevGeo) {
+  /// Parse a target altitude (MSL meters) from a waypoint name such as "name 1000ft" or "ridge 300m".
+  /// The last match in the name wins.
+  static double? parseTargetAlt(String name) {
+    final matches = RegExp(r'(\d+(?:\.\d+)?)\s*(ft|m)\b', caseSensitive: false).allMatches(name);
+    if (matches.isEmpty) return null;
+    final match = matches.last;
+    final value = double.parse(match.group(1)!);
+    return match.group(2)!.toLowerCase() == "ft" ? value / meters2Feet : value;
+  }
+
+  /// Seconds between fake samples
+  static const double stepSeconds = 3;
+
+  /// Max climb rate: 800 ft/min
+  static const double maxClimb = 800 / meters2Feet / 60;
+
+  /// Glide ratio used when descending to a target altitude
+  static const double glideRatio = 7;
+
+  /// Vario (m/s) to fly toward [targetAlt], limited to [maxClimb] climb and a 7:1 glide.
+  double varioToTargetAlt(double targetAlt) {
+    final delta = targetAlt - alt;
+    final maxSink = spd / glideRatio;
+    // Ease in over the final step(s) so we don't oscillate around the target
+    return min(maxClimb, max(-maxSink, delta / (stepSeconds * 2)));
+  }
+
+  Position genFakeLocationFlight(LatLng? target, Geo prevGeo, {double? targetAlt}) {
     // debugPrint("Gen fake path...");
     if (target != null) {
       final delta = ((latlngCalc.bearing(latlng, target)) - hdg + 180) % (360) - 180;
@@ -84,11 +112,16 @@ class FakeFlight {
     latlng = latlngCalc.offset(latlng, (spd + randomCentered()) * 3, hdg + randomCentered());
     latlng = latlngCalc.offset(latlng, windSpd * 3 + randomCentered(), windHdg + randomCentered());
 
-    vario = min(6, max(-7, vario + randomCentered() / 2)) * 0.99;
-    if (alt < 1) vario = randomCentered() + 1;
-    if (alt - (prevGeo.ground ?? 0) < 100) vario += 0.1;
-    if (alt - (prevGeo.ground ?? 0) > 500) vario -= 0.1;
-    alt = max(prevGeo.ground ?? 0, alt * 0.99999 + vario) + randomCentered() * 2;
+    if (targetAlt != null) {
+      vario = varioToTargetAlt(targetAlt);
+      alt = max(prevGeo.ground ?? 0, alt + vario * stepSeconds) + randomCentered() * 0.5;
+    } else {
+      vario = min(6, max(-7, vario + randomCentered() / 2)) * 0.99;
+      if (alt < 1) vario = randomCentered() + 1;
+      if (alt - (prevGeo.ground ?? 0) < 100) vario += 0.1;
+      if (alt - (prevGeo.ground ?? 0) > 500) vario -= 0.1;
+      alt = max(prevGeo.ground ?? 0, alt * 0.99999 + vario) + randomCentered() * 2;
+    }
 
     return fakeGeoToLoc(FakeGeo(latlng.longitude, latlng.latitude, alt));
   }

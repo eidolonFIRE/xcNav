@@ -134,7 +134,7 @@ class OfflineArea {
       vfrVersion != currentVfrVersion;
 
   /// All the downloads needed for this area. Each layer gets every zoom level up to [offlineMaxZoom].
-  /// Elevation is always included at the zoom levels [sampleDem] uses.
+  /// Elevation is always included at every DEM zoom level the app samples.
   List<DownloadJob> planJobs() {
     final List<DownloadJob> jobs = [];
     for (final src in layers) {

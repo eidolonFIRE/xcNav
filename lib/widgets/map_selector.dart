@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/glide_range.dart';
 import 'package:xcnav/providers/adsb.dart';
 import 'package:xcnav/widgets/map_button.dart';
 
@@ -19,6 +20,8 @@ class MapSelector extends StatelessWidget {
   final Function(bool show)? onChangedAirspace;
   final bool showAirports;
   final Function(bool show)? onChangedAirports;
+  final GlideRangeMode glideRangeMode;
+  final Function(GlideRangeMode mode)? onChangedGlideRange;
   final bool showAdsb;
   final double size;
 
@@ -35,6 +38,8 @@ class MapSelector extends StatelessWidget {
       this.onChangedAirspace,
       this.showAirports = false,
       this.onChangedAirports,
+      this.glideRangeMode = GlideRangeMode.off,
+      this.onChangedGlideRange,
       this.showAdsb = false,
       this.size = 40});
 
@@ -63,6 +68,7 @@ class _MapSelectorDialogState extends State<_MapSelectorDialog> {
   late bool hideWeatherObservations = widget.selector.hideWeatherObservations;
   late bool showAirspace = widget.selector.showAirspace;
   late bool showAirports = widget.selector.showAirports;
+  late GlideRangeMode glideRangeMode = widget.selector.glideRangeMode;
 
   Widget buildTileRow(MapTileSrc tileSrc) {
     final s = widget.selector;
@@ -160,6 +166,29 @@ class _MapSelectorDialogState extends State<_MapSelectorDialog> {
                   setState(() => showAirports = value);
                   s.onChangedAirports?.call(value);
                 }),
+          if (s.onChangedGlideRange != null)
+            ListTile(
+                visualDensity: VisualDensity.compact,
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.paragliding),
+                title: Text("Glide Range".tr()),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SegmentedButton<GlideRangeMode>(
+                      key: const Key("mapSelector_glideRange"),
+                      showSelectedIcon: false,
+                      segments: GlideRangeMode.values
+                          .map((mode) => ButtonSegment(
+                              value: mode,
+                              label: Text("glide_range_mode.${mode.name}".tr()),
+                              tooltip: "glide_range_mode.${mode.name}_hint".tr()))
+                          .toList(),
+                      selected: {glideRangeMode},
+                      onSelectionChanged: (selected) {
+                        setState(() => glideRangeMode = selected.first);
+                        s.onChangedGlideRange?.call(selected.first);
+                      }),
+                )),
           if (s.onChangedWaypoints != null)
             SwitchListTile.adaptive(
                 key: const Key("mapSelector_waypoints"),

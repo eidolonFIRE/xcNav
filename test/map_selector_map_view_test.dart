@@ -22,6 +22,8 @@ import 'package:xcnav/providers/plans.dart';
 import 'package:xcnav/providers/profile.dart';
 import 'package:xcnav/providers/wind.dart';
 import 'package:xcnav/map_service.dart';
+import 'package:xcnav/models/glide_range.dart';
+import 'package:xcnav/views/map/glide_range_layer.dart';
 import 'package:xcnav/settings_service.dart';
 
 import 'mock_providers.dart';
@@ -166,6 +168,58 @@ void main() {
       // --- New map layer
       expect(settingsMgr.mainMapTileSrc.value, MapTileSrc.satellite);
       expect(settingsMgr.mainMapOpacity.value, 0.6);
+    },
+  );
+
+  patrolWidgetTest(
+    'Change glide range mode in main view',
+    ($) async {
+      // --- Setup stubs and initial configs
+      GeolocatorPlatform.instance = MockGeolocatorPlatform();
+      perm_handler_plat.PermissionHandlerPlatform.instance = MockPermissionHandlerPlatform();
+      when(GeolocatorPlatform.instance.getServiceStatusStream()).thenAnswer((_) => Stream.value(ServiceStatus.enabled));
+      when(GeolocatorPlatform.instance.getPositionStream(
+          locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.best,
+        timeLimit: null,
+      ))).thenAnswer((_) => Stream.value(mockPosition));
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+      SharedPreferences.setMockInitialValues({
+        "profile.name": "Mr Test",
+        "profile.id": "1234",
+        "profile.secretID": "1234abcd",
+      });
+      settingsMgr.hideWeatherObservations.value = true;
+
+      final activePlan = ActivePlan();
+      final plans = MockPlans();
+
+      // --- Build App
+      await mockNetworkImages(() async => $.pumpWidget(makeApp(activePlan, plans)));
+      await $.waitUntilExists($(Scaffold));
+      await $.pump(const Duration(seconds: 2));
+
+      expect(settingsMgr.glideRangeMode.value, GlideRangeMode.auto);
+      expect(find.byType(GlideRangeLayer), findsOneWidget);
+
+      // --- Turn it off
+      await $(#viewMap_mapSelector).tap(settlePolicy: SettlePolicy.noSettle);
+      await $.waitUntilVisible($(AlertDialog));
+      final segments =
+          find.descendant(of: find.byKey(const Key("mapSelector_glideRange")), matching: find.byType(TextButton));
+      expect(segments, findsNWidgets(GlideRangeMode.values.length));
+      await $.tester.ensureVisible(segments.first);
+      await $.tester.tap(segments.at(GlideRangeMode.off.index));
+      await $.pump(const Duration(seconds: 1));
+
+      expect(settingsMgr.glideRangeMode.value, GlideRangeMode.off);
+      expect(find.byType(GlideRangeLayer), findsNothing);
+
+      // --- Back on
+      await $.tester.tap(segments.at(GlideRangeMode.always.index));
+      await $.pump(const Duration(seconds: 1));
+      expect(settingsMgr.glideRangeMode.value, GlideRangeMode.always);
+      expect(find.byType(GlideRangeLayer), findsOneWidget);
     },
   );
 }

@@ -295,7 +295,9 @@ class MyTelemetry with ChangeNotifier, WidgetsBindingObserver {
                         )
                         .latlng
                     : targetWp.latlng[0];
-            handleGeoUpdate(globalContext!, fakeFlight.genFakeLocationFlight(target, geoPrev ?? geo ?? defaultGeo),
+            final targetAlt = targetWp == null ? null : FakeFlight.parseTargetAlt(targetWp.name);
+            handleGeoUpdate(globalContext!,
+                fakeFlight.genFakeLocationFlight(target, geoPrev ?? geo ?? defaultGeo, targetAlt: targetAlt),
                 bypassRecording: true);
           });
         }

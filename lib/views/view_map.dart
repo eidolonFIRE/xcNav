@@ -24,6 +24,7 @@ import 'package:xcnav/widgets/measurement_markers.dart';
 
 // map view parts
 import 'package:xcnav/views/map/focus_mode.dart';
+import 'package:xcnav/views/map/glide_range_layer.dart';
 import 'package:xcnav/views/map/map_layers.dart';
 import 'package:xcnav/views/map/offscreen_pilot_indicators.dart';
 import 'package:xcnav/views/map/selected_waypoint_card.dart';
@@ -41,6 +42,7 @@ import 'package:xcnav/dialogs/airspace_info.dart';
 
 // models
 import 'package:xcnav/models/geo.dart';
+import 'package:xcnav/models/glide_range.dart';
 import 'package:xcnav/models/waypoint.dart';
 import 'package:xcnav/models/airport_info.dart';
 import 'package:xcnav/models/tfr.dart';
@@ -567,6 +569,9 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
 
         TfrLayer(center: myTelemetry.geo?.latlng ?? lastKnownLatLng),
 
+        // Where the pilot can glide to
+        if (settingsMgr.glideRangeMode.value != GlideRangeMode.off) const GlideRangeLayer(),
+
         // https://nowcoast.noaa.gov/help/#!section=map-service-list
         // if (localeZone == "NA" && settingsMgr.showWeatherOverlay.value)
         //   Opacity(
@@ -716,6 +721,8 @@ class ViewMapState extends State<ViewMap> with AutomaticKeepAliveClientMixin<Vie
                 onChangedAirspace: (show) => setState(() => settingsMgr.showAirspaceOverlay.value = show),
                 showAirports: settingsMgr.showAirports.value,
                 onChangedAirports: (show) => setState(() => settingsMgr.showAirports.value = show),
+                glideRangeMode: settingsMgr.glideRangeMode.value,
+                onChangedGlideRange: (mode) => setState(() => settingsMgr.glideRangeMode.value = mode),
                 onChangedWaypoints: (hidden) {
                   setState(() {
                     hideWaypoints = hidden;

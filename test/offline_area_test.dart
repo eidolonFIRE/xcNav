@@ -70,11 +70,13 @@ void main() {
       expect(jobs.firstWhere((e) => e.src == MapTileSrc.satellite).maxZoom, 15);
     });
 
-    test("always includes elevation at z10 and z12", () {
+    test("always includes elevation at z9 to z12", () {
       final dem = makeArea().planJobs().where((e) => e.src == null).toList();
-      expect(dem.length, 2);
+      expect(dem.length, 4);
       expect(dem.map((e) => [e.minZoom, e.maxZoom]), [
+        [9, 9],
         [10, 10],
+        [11, 11],
         [12, 12]
       ]);
       expect(dem.every((e) => e.layerName == demLayerName), true);
