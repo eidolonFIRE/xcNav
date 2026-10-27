@@ -259,7 +259,8 @@ class Sp140TelemetryCharacteristic {
   void updateAlerts(BleFastLinkTelemetry telemetry, DateTime now) {
     final active = _alertMonitor.update(telemetry);
     if (!listEquals(active, alerts.value)) alerts.value = active;
-    for (final message in Sp140AlertAnnouncer.messages(_alertAnnouncer.due(active, now))) {
+    for (final message in Sp140AlertAnnouncer.messages(_alertAnnouncer.due(active, now),
+        warnings: settingsMgr.sp140AudioWarnings.value, critical: settingsMgr.sp140AudioCritical.value)) {
       ttsService.speak(message);
     }
   }
@@ -521,6 +522,18 @@ class Sp140ConfigDialog extends StatelessWidget {
                   },
                 );
               }),
+          for (final setting in [settingsMgr.sp140AudioCritical, settingsMgr.sp140AudioWarnings])
+            ValueListenableBuilder<bool>(
+                valueListenable: setting.listenable,
+                builder: (context, value, _) {
+                  return SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    secondary: setting.icon,
+                    title: Text(setting.title.replaceFirst("SP140 ", "")),
+                    value: value,
+                    onChanged: (newValue) => setting.value = newValue,
+                  );
+                }),
         ],
       ),
     );

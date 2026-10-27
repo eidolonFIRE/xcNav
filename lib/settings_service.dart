@@ -279,6 +279,8 @@ class SettingsMgr {
   late final SettingConfig<int> meshtasticPreset;
 
   late final SettingConfig<int> sp140FuelSaveIntervalMin;
+  late final SettingConfig<bool> sp140AudioWarnings;
+  late final SettingConfig<bool> sp140AudioCritical;
 
   SettingsMgr(SharedPreferences prefs) {
     // --- General
@@ -517,6 +519,10 @@ class SettingsMgr {
 
     sp140FuelSaveIntervalMin = SettingConfig(this, prefs, "sp140", "sp140FuelSaveIntervalMin", 5,
         title: "SP140 Fuel Save Interval (minutes)", icon: const Icon(Icons.timer), hidden: true);
+    sp140AudioWarnings = SettingConfig(this, prefs, "sp140", "sp140AudioWarnings", true,
+        title: "SP140 Warning Alert Audio", icon: const Icon(Icons.warning), hidden: true);
+    sp140AudioCritical = SettingConfig(this, prefs, "sp140", "sp140AudioCritical", true,
+        title: "SP140 Critical Alert Audio", icon: const Icon(Icons.error), hidden: true);
   }
 
   LaunchDetectorConfig get launchDetectorConfig => LaunchDetectorConfig(

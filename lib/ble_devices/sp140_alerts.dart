@@ -345,13 +345,13 @@ class Sp140AlertAnnouncer {
     return result;
   }
 
-  /// Spoken messages for [alerts], critical first.
-  static List<AudioMessage> messages(List<Sp140Alert> alerts) {
-    final critical = alerts.where((e) => e.isCritical).map((e) => e.name);
-    final warnings = alerts.where((e) => !e.isCritical).map((e) => e.name);
+  /// Spoken messages for [alerts], critical first. Levels that are turned off stay silent.
+  static List<AudioMessage> messages(List<Sp140Alert> alerts, {bool warnings = true, bool critical = true}) {
+    final criticalNames = alerts.where((e) => critical && e.isCritical).map((e) => e.name);
+    final warningNames = alerts.where((e) => warnings && !e.isCritical).map((e) => e.name);
     return [
-      if (critical.isNotEmpty) AudioMessage("Critical! ${critical.join(", ")}!", priority: 1, volume: 1.0),
-      if (warnings.isNotEmpty) AudioMessage("Check ${warnings.join(", ")}!", priority: 2, volume: 1.0),
+      if (criticalNames.isNotEmpty) AudioMessage("Critical! ${criticalNames.join(", ")}!", priority: 1, volume: 1.0),
+      if (warningNames.isNotEmpty) AudioMessage("Check ${warningNames.join(", ")}!", priority: 2, volume: 1.0),
     ];
   }
 }

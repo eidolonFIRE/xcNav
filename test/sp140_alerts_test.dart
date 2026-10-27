@@ -223,5 +223,13 @@ void main() {
       expect(messages.map((e) => e.priority), [1, 2]);
       expect(Sp140AlertAnnouncer.messages([]), isEmpty);
     });
+
+    test("messages muted by level", () {
+      expect(Sp140AlertAnnouncer.messages([crit, warn], warnings: false).map((e) => e.text),
+          ["Critical! Battery imbalance high!"]);
+      expect(Sp140AlertAnnouncer.messages([crit, warn], critical: false).map((e) => e.text),
+          ["Check Battery imbalance high!"]);
+      expect(Sp140AlertAnnouncer.messages([crit, warn], warnings: false, critical: false), isEmpty);
+    });
   });
 }
