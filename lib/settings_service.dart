@@ -25,6 +25,9 @@ class SettingConfig<T> {
   final Widget? icon;
   final Widget? subtitle;
 
+  /// Shown after the value in the settings editor's text field (e.g. ":1")
+  final String? suffix;
+
   late ValueNotifier<T> _value;
   T defaultValue;
 
@@ -72,7 +75,13 @@ class SettingConfig<T> {
   }
 
   SettingConfig(SettingsMgr mgr, this._prefsInstance, this.catagory, this.id, this.defaultValue,
-      {required this.title, this.description, this.icon, bool hidden = false, this.subtitle, this.setter}) {
+      {required this.title,
+      this.description,
+      this.icon,
+      bool hidden = false,
+      this.subtitle,
+      this.suffix,
+      this.setter}) {
     if (id.startsWith("settings.")) {
       throw "Setting ID automatically starts with \"settings.\"";
     }
@@ -313,6 +322,7 @@ class SettingsMgr {
         title: "glide_range_default_ratio",
         icon: const Icon(Icons.paragliding),
         description: "Glide ratio the map's glide range uses in \"Always\" mode when not on a 1:1 to 12:1 glide.",
+        suffix: ": 1 ",
         setter: (value) => value.clamp(1.0, maxGlideRatio));
     glideRangeMargin = SettingConfig(this, prefs, "Glide Range", "glideRangeMargin", 50.0,
         title: "glide_range_margin",

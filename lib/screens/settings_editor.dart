@@ -210,6 +210,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                 child: TextFormField(
                                                     textAlign: TextAlign.center,
                                                     keyboardType: TextInputType.number,
+                                                    decoration: InputDecoration(suffixText: e.config!.suffix),
                                                     initialValue: (value as int).toString(),
                                                     onChanged: (value) => e.config!.value = int.tryParse(value) ?? 0),
                                               );
@@ -220,6 +221,7 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                 child: TextFormField(
                                                     textAlign: TextAlign.center,
                                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                                    decoration: InputDecoration(suffixText: e.config!.suffix),
                                                     initialValue: printDoubleSimple(value as double, decimals: 2),
                                                     onChanged: (value) => e.config!.value = parseAsDouble(value) ?? 0),
                                               );
