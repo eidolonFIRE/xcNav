@@ -45,8 +45,8 @@ void main() {
   group("grid sizing", () {
     test("cells grow with radius", () {
       expect(glideCellSizeFor(1000), glideMinCellSize);
-      expect(glideCellSizeFor(8000), 200);
-      expect(glideCellSizeFor(40000), 1000);
+      expect(glideCellSizeFor(10000), 200);
+      expect(glideCellSizeFor(50000), 1000);
     });
 
     test("coarser DEM for bigger cells", () {
@@ -56,7 +56,7 @@ void main() {
       expect(glideDemZoomFor(500, 40), 9);
     });
 
-    test("grid never exceeds 40 cells from the pilot", () {
+    test("grid never exceeds glideCellsPerRadius cells from the pilot", () {
       for (final radius in [200.0, 3000.0, 10000.0, 50000.0]) {
         final grid = GlideGrid.sample(origin, radius, flat);
         expect(grid.halfSize, lessThanOrEqualTo(glideCellsPerRadius));
@@ -125,9 +125,9 @@ void main() {
       for (final (e, n) in [(5400.0, 0.0), (0.0, -5400.0), (3820.0, 3820.0)]) {
         expect(excessAt(range, e, n), isNull, reason: "($e, $n)");
       }
-      // Excess shrinks with distance
+      // Excess shrinks with distance (2520m is 21 cells of 120m)
       expect(excessAt(range, 0, 0), closeTo(1000, 1));
-      expect(excessAt(range, 2550, 0), closeTo(490, 1));
+      expect(excessAt(range, 2520, 0), closeTo(496, 1));
     });
 
     test("goes through a gap in a wall", () {
@@ -157,7 +157,7 @@ void main() {
     test("ridge doesn't sneak through knight moves", () {
       // Ridge one cell thick
       final sampler = terrain((e, n) => (e > 1020 && e < 1080) ? 2000 : 0);
-      final range = solve(sampler, radius: 3000);
+      final range = solve(sampler, radius: 2500);
       expect(range.grid.cellSize, glideMinCellSize);
       expect(excessAt(range, 1500, 0), isNull);
       expect(excessAt(range, 1500, 700), isNull);
