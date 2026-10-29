@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xcnav/ble_devices/ble_device_sp140.dart';
 import 'package:xcnav/ble_devices/sp140_alerts.dart';
@@ -31,6 +33,32 @@ Sp140AlertMonitor armed() => Sp140AlertMonitor()..update(healthy(uptimeMs: 0));
 List<String> codes(List<Sp140Alert> alerts) => alerts.map((e) => e.code).toList();
 
 void main() {
+  group("BleFastLinkTelemetry", () {
+    test("fields after the battery ID line up with the firmware struct", () {
+      final data = ByteData(BleFastLinkTelemetry.packetSize);
+      // Short ID: the rest of the 33 byte field is padding.
+      const id = "ANT1";
+      for (var i = 0; i < id.length; i++) {
+        data.setUint8(108 + i, id.codeUnitAt(i));
+      }
+      data.setUint8(141, 2);
+      for (var i = 0; i < BleFastLinkTelemetry.bmsCellsNum; i++) {
+        data.setUint16(142 + i * 2, 3950 + i, Endian.little);
+      }
+      const temps = [31, 32, 25, 26, 27, -40, 0, 0];
+      for (var i = 0; i < temps.length; i++) {
+        data.setInt8(190 + i, temps[i]);
+      }
+
+      final t = BleFastLinkTelemetry.fromListInt(data.buffer.asUint8List());
+      expect(t.bmsBatteryId, id);
+      expect(t.bmsType, 2);
+      expect(t.bmsCellVoltagesMV.first, 3950);
+      expect(t.bmsCellVoltagesMV.last, 3973);
+      expect(t.bmsTempSensorsC, temps);
+    });
+  });
+
   group("Sp140AlertMonitor", () {
     test("healthy telemetry has no alerts", () {
       expect(Sp140AlertMonitor().update(healthy()), isEmpty);

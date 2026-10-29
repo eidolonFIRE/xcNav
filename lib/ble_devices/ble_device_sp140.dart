@@ -17,6 +17,8 @@ import 'package:xcnav/util.dart';
 class BleFastLinkTelemetry {
   static const int bmsCellsNum = 24;
   static const int tempSensorCount = 8;
+  static const int batteryIdLength = 33;
+  static const int packetSize = 198;
 
   // Protocol version (3)
   int version = 0;
@@ -218,12 +220,11 @@ class BleFastLinkTelemetry {
     bmsVoltageDiffMV = byteData.getUint16(offset, Endian.little);
     offset += 2;
 
-    final idBytes = <int>[];
-    while (offset < byteData.lengthInBytes && byteData.getUint8(offset) != 0) {
-      idBytes.add(byteData.getUint8(offset++));
-    }
-    offset++;
-    bmsBatteryId = String.fromCharCodes(idBytes);
+    // Fixed size field, null-terminated within it
+    final idBytes = bytes.sublist(offset, offset + batteryIdLength);
+    final idEnd = idBytes.indexOf(0);
+    bmsBatteryId = String.fromCharCodes(idEnd < 0 ? idBytes : idBytes.sublist(0, idEnd));
+    offset += batteryIdLength;
     bmsType = byteData.getUint8(offset++);
 
     for (var i = 0; i < bmsCellVoltagesMV.length; i++) {
