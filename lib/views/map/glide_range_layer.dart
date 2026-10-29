@@ -15,8 +15,6 @@ import 'package:xcnav/settings_service.dart';
 /// Cells from the edge of the reachable area to where the fill has faded to fully transparent.
 const double _fadeCells = 6;
 
-const _lowColor = Colors.pink;
-const _highColor = Colors.yellow;
 const _unknownColor = Color(0xff9e9e9e);
 const int _fillAlpha = 200;
 const int _edgeAlpha = 220;
@@ -68,11 +66,11 @@ Float32List glideEdgeDistance(GlideRange range) {
 
 /// RGBA pixels, one per grid cell. Row 0 is north.
 ///
-/// Reachable cells shade from [_lowColor] at the edge of the reachable area toward [_highColor], fading out to fully
+/// Reachable cells shade from [edgeColor] at the edge of the reachable area toward [innerColor], fading out to fully
 /// transparent [_fadeCells] in from the edge so the map shows through the middle. The fade goes by cell count only,
 /// so it's the same width all the way around. Cells on the edge are drawn darker so the boundary reads clearly.
 /// Cells the glide couldn't check yet are grey.
-Uint8List glideRangePixels(GlideRange range) {
+Uint8List glideRangePixels(GlideRange range, {required Color edgeColor, required Color innerColor}) {
   final n = range.grid.size;
   final dist = glideEdgeDistance(range);
   final pixels = Uint8List(n * n * 4);
@@ -82,7 +80,7 @@ Uint8List glideRangePixels(GlideRange range) {
     int alpha = 0;
     if (d > 0) {
       final t = min(1.0, (d - 1) / _fadeCells);
-      color = Color.lerp(_lowColor, _highColor, t);
+      color = Color.lerp(edgeColor, innerColor, t);
       alpha = d <= 1 ? _edgeAlpha : (_fillAlpha * (1 - t)).round();
     } else if (range.unknown[i] == 1) {
       color = _unknownColor;
@@ -116,6 +114,8 @@ class _GlideRangeLayerState extends State<GlideRangeLayer> {
     super.initState();
     myTelemetry.addListener(onTelemetry);
     glideRangeService.range.addListener(onRange);
+    settingsMgr.glideRangeEdgeColor.listenable.addListener(onRange);
+    settingsMgr.glideRangeInnerColor.listenable.addListener(onRange);
     onTelemetry();
     if (glideRangeService.range.value != null) onRange();
   }
@@ -124,6 +124,8 @@ class _GlideRangeLayerState extends State<GlideRangeLayer> {
   void dispose() {
     myTelemetry.removeListener(onTelemetry);
     glideRangeService.range.removeListener(onRange);
+    settingsMgr.glideRangeEdgeColor.listenable.removeListener(onRange);
+    settingsMgr.glideRangeInnerColor.listenable.removeListener(onRange);
     glideRangeService.clear();
     image?.dispose();
     super.dispose();
@@ -146,7 +148,9 @@ class _GlideRangeLayerState extends State<GlideRangeLayer> {
       return;
     }
     final n = range.grid.size;
-    ui.decodeImageFromPixels(glideRangePixels(range), n, n, ui.PixelFormat.rgba8888, (decoded) {
+    final pixels = glideRangePixels(range,
+        edgeColor: settingsMgr.glideRangeEdgeColor.value, innerColor: settingsMgr.glideRangeInnerColor.value);
+    ui.decodeImageFromPixels(pixels, n, n, ui.PixelFormat.rgba8888, (decoded) {
       // Range may have changed while decoding
       if (!mounted || glideRangeService.range.value != range) {
         decoded.dispose();

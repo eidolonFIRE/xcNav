@@ -70,6 +70,9 @@ class SettingConfig<T> {
         case "int":
           _prefsInstance.setInt("settings.$id", newValue as int);
           break;
+        case "Color":
+          _prefsInstance.setInt("settings.$id", (newValue as Color).toARGB32());
+          break;
       }
     }
   }
@@ -146,6 +149,10 @@ class SettingConfig<T> {
           case "int":
             _value = ValueNotifier<T>((_prefsInstance.getInt("settings.$id") ?? defaultValue as int) as T);
             break;
+          case "Color":
+            final loaded = _prefsInstance.getInt("settings.$id");
+            _value = ValueNotifier<T>((loaded == null ? defaultValue : Color(loaded)) as T);
+            break;
           default:
             throw "Unsupported Settings Type($T) !";
         }
@@ -221,6 +228,8 @@ class SettingsMgr {
   late final SettingConfig<GlideRangeMode> glideRangeMode;
   late final SettingConfig<double> glideRangeDefaultRatio;
   late final SettingConfig<double> glideRangeMargin;
+  late final SettingConfig<Color> glideRangeEdgeColor;
+  late final SettingConfig<Color> glideRangeInnerColor;
 
   // --- UI
   late final SettingConfig<AltimeterMode> primaryAltimeter;
@@ -329,6 +338,14 @@ class SettingsMgr {
         icon: const Icon(Icons.height),
         description: "Height to keep in reserve. The glide range ends where you'd be this high above the ground.",
         setter: (value) => value.clamp(0.0, 1000.0));
+    glideRangeEdgeColor = SettingConfig(this, prefs, "Glide Range", "glideRangeEdgeColor", const Color(0xffe91e63),
+        title: "glide_range_edge_color",
+        icon: const Icon(Icons.gradient),
+        description: "Color at the edge of the glide range.");
+    glideRangeInnerColor = SettingConfig(this, prefs, "Glide Range", "glideRangeInnerColor", const Color(0xffffeb3b),
+        title: "glide_range_inner_color",
+        icon: const Icon(Icons.gradient),
+        description: "Color the glide range shades toward as it fades out.");
 
     // --- UI
     primaryAltimeter = SettingConfig(this, prefs, "UI", "primaryAltimeter", AltimeterMode.msl,

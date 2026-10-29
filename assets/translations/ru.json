@@ -121,6 +121,8 @@
       "auto_record_flight": "Авто-запись полёта",
       "glide_range_default_ratio": "Качество по умолчанию",
       "glide_range_margin": "Запас высоты (м)",
+      "glide_range_edge_color": "Цвет края",
+      "glide_range_inner_color": "Внутренний цвет",
       "primary_altimeter": "Основной альтиметр",
       "altimeter_vsi_thresh": "Порог стрелки альтиметра (м/с)",
       "right_hand_ui": "Интерфейс для правшей",

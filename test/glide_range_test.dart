@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:clock/clock.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:xcnav/models/geo.dart';
@@ -362,7 +362,7 @@ void main() {
   group("glideRangePixels", () {
     test("edge dark, center clear, unreachable clear, unknown grey", () {
       final range = solve(terrain((e, n) => e > 1000 ? null : 0));
-      final pixels = glideRangePixels(range);
+      final pixels = glideRangePixels(range, edgeColor: Colors.pink, innerColor: Colors.yellow);
       final grid = range.grid;
       int alphaAt(double east, double north) {
         final row = grid.halfSize - (north / grid.cellSize).round();
@@ -385,11 +385,34 @@ void main() {
         }
       }
     });
+
+    test("shades from edge color toward inner color", () {
+      const edge = Color(0xff0000ff);
+      const inner = Color(0xffff0000);
+      final range = solve(flat);
+      final pixels = glideRangePixels(range, edgeColor: edge, innerColor: inner);
+      final dist = glideEdgeDistance(range);
+      final grid = range.grid;
+      final row = grid.halfSize;
+      // Walk in from the west edge
+      int col = 0;
+      while (dist[row * grid.size + col] != 1) {
+        col++;
+      }
+      final i = (row * grid.size + col) * 4;
+      expect(pixels[i], 0);
+      expect(pixels[i + 2], pixels[i + 3]);
+
+      final j = (row * grid.size + col + 3) * 4;
+      expect(pixels[j + 3], greaterThan(0));
+      expect(pixels[j], greaterThan(0));
+      expect(pixels[j + 2], lessThan(pixels[j + 3]));
+    });
   });
 
   test("fade is the same number of cells wide at any cell size", () {
     int fadingCells(GlideRange range) {
-      final pixels = glideRangePixels(range);
+      final pixels = glideRangePixels(range, edgeColor: Colors.pink, innerColor: Colors.yellow);
       final grid = range.grid;
       int count = 0;
       for (int col = 0; col < grid.size; col++) {
@@ -409,7 +432,7 @@ void main() {
   test("fade is the same width upwind and downwind", () {
     // Wind blowing east stretches the range east
     final range = solve(flat, wind: const GlideWind(airspeed: 10, windSpd: 4, windHdg: pi / 2), radius: 10000);
-    final pixels = glideRangePixels(range);
+    final pixels = glideRangePixels(range, edgeColor: Colors.pink, innerColor: Colors.yellow);
     final grid = range.grid;
     final row = grid.halfSize;
     int fadingCells(Iterable<int> cols) =>

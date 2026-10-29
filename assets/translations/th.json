@@ -121,6 +121,8 @@
             "auto_record_flight": "บันทึกเที่ยวบินอัตโนมัติ",
             "glide_range_default_ratio": "อัตราร่อนเริ่มต้น",
             "glide_range_margin": "ความสูงเผื่อปลอดภัย (m)",
+            "glide_range_edge_color": "สีขอบ",
+            "glide_range_inner_color": "สีด้านใน",
             "primary_altimeter": "เครื่องวัดความสูงหลัก",
             "altimeter_vsi_thresh": "เกณฑ์ลูกศรเครื่องวัดความสูง (m/s)",
             "right_hand_ui": "หน้าจอสำหรับคนถนัดขวา",

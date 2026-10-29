@@ -121,6 +121,8 @@
             "auto_record_flight": "Auto Record Flight",
             "glide_range_default_ratio": "Default Glide Ratio",
             "glide_range_margin": "Safety Margin (m)",
+            "glide_range_edge_color": "Edge Color",
+            "glide_range_inner_color": "Inner Color",
             "primary_altimeter": "Primary Altimeter",
             "altimeter_vsi_thresh": "Altimeter Arrow Threshold (m/s)",
             "right_hand_ui": "Right-handed UI",

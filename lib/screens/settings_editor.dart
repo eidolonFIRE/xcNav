@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -19,6 +20,41 @@ import 'package:xcnav/units.dart';
 import 'package:xcnav/util.dart';
 import 'package:xcnav/widgets/altimeter.dart';
 import 'package:xcnav/map_service.dart';
+
+/// Hue ring picker. Keeps the saturation and brightness of [initial].
+Future<Color?> pickColor(BuildContext context, Color initial) {
+  return showDialog<Color>(
+      context: context,
+      builder: (context) {
+        HSVColor color = HSVColor.fromColor(initial);
+        final size = MediaQuery.of(context).size.width / 2;
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+              content: SizedBox(
+                width: size + 20,
+                height: size + 20,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Center(
+                      child: SizedBox(width: 80, height: 80, child: Card(color: color.toColor())),
+                    ),
+                    SizedBox(
+                        width: size,
+                        height: size,
+                        child: ColorPickerHueRing(color, (newColor) => setState(() => color = newColor), strokeWidth: 40)),
+                  ],
+                ),
+              ),
+              actions: [
+                ElevatedButton.icon(
+                    icon: const Icon(Icons.check, color: Colors.lightGreen),
+                    onPressed: () => Navigator.pop(context, color.toColor()),
+                    label: Text("btn.Select".tr()))
+              ]);
+        });
+      });
+}
 
 class SettingsEditor extends StatefulWidget {
   const SettingsEditor({super.key});
@@ -366,6 +402,13 @@ class _SettingsEditorState extends State<SettingsEditor> {
                                                             value: lang, child: Text(languageNames[lang] ?? "None")))
                                                         .toList()),
                                               );
+                                              break;
+                                            case "Color":
+                                              trailing = IconButton(
+                                                  icon: Icon(Icons.circle, color: value as Color, size: 32),
+                                                  onPressed: () => pickColor(context, value).then((newColor) {
+                                                        if (newColor != null) e.config!.value = newColor;
+                                                      }));
                                               break;
                                             default:
                                               trailing = Text(

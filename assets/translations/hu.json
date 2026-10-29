@@ -121,6 +121,8 @@
             "auto_record_flight": "Repülés automatikus rögzítése",
             "glide_range_default_ratio": "Alapértelmezett siklószám",
             "glide_range_margin": "Biztonsági tartalék (m)",
+            "glide_range_edge_color": "Szél színe",
+            "glide_range_inner_color": "Belső szín",
             "primary_altimeter": "Elsődleges magasságmérő",
             "altimeter_vsi_thresh": "Magasságmérő nyíl küszöbértéke (m/s)",
             "right_hand_ui": "Jobbkezes felhasználói felület",
