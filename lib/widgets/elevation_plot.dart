@@ -7,7 +7,6 @@ import 'package:xcnav/models/airspace.dart';
 import 'package:xcnav/models/eta.dart';
 import 'package:xcnav/models/geo.dart';
 import 'package:xcnav/models/waypoint.dart';
-import 'package:xcnav/providers/my_telemetry.dart';
 import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 import 'package:xcnav/widgets/waypoint_marker.dart';
@@ -152,7 +151,6 @@ class ElevationPlot extends StatelessWidget {
         }
       }
 
-      final glideSlope = myTelemetry.glideSlope;
       final arrowSize = width / 10;
 
       return Stack(clipBehavior: Clip.hardEdge, children: [
@@ -270,23 +268,6 @@ class ElevationPlot extends StatelessWidget {
                   angle: trendAngle + pi / 2,
                   child: Image.asset("assets/images/red_arrow.png",
                       width: arrowSize, height: arrowSize, fit: BoxFit.fill))),
-
-        // --- Vario
-        if (showPilotIcon)
-          Positioned(
-              left: pilot.dx - 20,
-              top: pilot.dy + 20,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 60),
-                child: Text.rich(
-                    TextSpan(children: [
-                      richValue(UnitType.vario, liveVario,
-                          valueStyle: const TextStyle(fontSize: 30),
-                          unitStyle: const TextStyle(fontSize: 14, color: Colors.grey)),
-                      if (glideSlope != null) TextSpan(text: "    ${glideSlope.round()}:1")
-                    ]),
-                    textAlign: TextAlign.right),
-              )),
       ]);
     });
   }

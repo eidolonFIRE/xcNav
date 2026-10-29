@@ -36,6 +36,9 @@ void main() {
     expect(chart.data.minX, lessThanOrEqualTo(geoData.first.time));
     expect(chart.data.maxX, greaterThanOrEqualTo(geoData.last.time + groundData.last.dist));
     expect(find.byType(Image), findsOneWidget);
+    // vario and glide slope live in the elevation view's instrument row, not next to the pilot
+    expect(find.byType(RichText).evaluate().where((e) => (e.widget as RichText).text.toPlainText().contains("/s")),
+        isEmpty);
   });
 
   testWidgets("no trendline when stationary", (tester) async {

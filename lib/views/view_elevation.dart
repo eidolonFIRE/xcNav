@@ -77,6 +77,29 @@ class ViewElevationState extends State<ViewElevation> {
     return rejectSpikes(values, (ElevSample e) => e.elev, max(300, sampleInterval).toDouble());
   }
 
+  Widget _instruments() {
+    const valueStyle = TextStyle(fontSize: 30, fontFeatures: [FontFeature.tabularFigures()]);
+    final unitStyle = TextStyle(fontSize: 14, color: Colors.grey.shade400);
+    final glideSlope = myTelemetry.glideSlope;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          // --- Vario
+          Text.rich(
+              richValue(UnitType.vario, myTelemetry.varioSmooth.value, valueStyle: valueStyle, unitStyle: unitStyle)),
+
+          // --- Glide Slope
+          Text.rich(TextSpan(children: [
+            TextSpan(text: glideSlope != null ? "${glideSlope.round()}" : "--", style: valueStyle),
+            TextSpan(text: " :1", style: unitStyle),
+          ])),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // super.build(context);
@@ -99,6 +122,9 @@ class ViewElevationState extends State<ViewElevation> {
             return Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
+                // --- Instruments
+                if (myTelemetry.recordGeo.length > 1) _instruments(),
+
                 // --- Elevation Plot
                 if (myTelemetry.recordGeo.length > 1)
                   Expanded(
