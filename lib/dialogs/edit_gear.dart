@@ -14,6 +14,7 @@ Future<Gear?> editGear(BuildContext context, {Gear? gear}) {
 
   return showDialog<Gear>(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/edit_gear"),
       builder: (context) {
         final formKey = GlobalKey<FormState>();
 

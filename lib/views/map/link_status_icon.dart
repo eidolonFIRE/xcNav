@@ -109,7 +109,10 @@ class _LinkStatusIconState extends State<LinkStatusIcon> {
   Widget _buildBadge(BuildContext context, BleDeviceMeshtastic meshtastic, List<Widget> icons) {
     return GestureDetector(
       onTap: meshtastic.isActive
-          ? () => showDialog(context: context, builder: (context) => MeshtasticConfigDialog(meshtastic: meshtastic))
+          ? () => showDialog(
+              context: context,
+              routeSettings: const RouteSettings(name: "/dialog/meshtastic_config"),
+              builder: (context) => MeshtasticConfigDialog(meshtastic: meshtastic))
           : null,
       child: Container(
         foregroundDecoration: BoxDecoration(

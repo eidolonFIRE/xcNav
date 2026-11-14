@@ -25,6 +25,7 @@ void showPilotInfo(BuildContext context, String pilotId) {
 
   showDialog(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/pilot_info"),
       barrierLabel: "pilot_info_dialog",
       barrierDismissible: true,
       builder: (context) => ListenableBuilder(

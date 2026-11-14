@@ -48,7 +48,10 @@ class MapSelector extends StatelessWidget {
     return MapButton(
       size: size,
       selected: false,
-      onPressed: () => showDialog(context: context, builder: (context) => _MapSelectorDialog(selector: this)),
+      onPressed: () => showDialog(
+          context: context,
+          routeSettings: const RouteSettings(name: "/dialog/map_selector"),
+          builder: (context) => _MapSelectorDialog(selector: this)),
       child: Center(child: Icon(Icons.layers_outlined, size: size * 4 / 7, color: Colors.black)),
     );
   }

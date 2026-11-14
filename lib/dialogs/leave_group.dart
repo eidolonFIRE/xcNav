@@ -9,6 +9,7 @@ final TextEditingController newWaypointName = TextEditingController();
 void promptLeaveGroup(BuildContext context) {
   showDialog(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/leave_group"),
       builder: (context) {
         return AlertDialog(
           title: Text(

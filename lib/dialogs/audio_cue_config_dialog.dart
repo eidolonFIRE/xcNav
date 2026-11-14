@@ -8,6 +8,7 @@ import 'package:xcnav/widgets/altimeter.dart';
 void showAudioCueConfigDialog(BuildContext context) {
   showDialog<Map<String, bool>>(
     context: context,
+    routeSettings: const RouteSettings(name: "/dialog/audio_cue_config"),
     builder: (context) => StatefulBuilder(
         builder: ((context, setState) => SimpleDialog(
             children:

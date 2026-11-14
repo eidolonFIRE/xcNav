@@ -15,6 +15,7 @@ Future editLiveFuelReport(BuildContext context) {
 
   return showDialog(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/edit_live_fuel_report"),
       builder: (context) {
         return AlertDialog(
           title: Text("Report Fuel in Tank".tr()),

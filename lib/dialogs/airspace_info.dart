@@ -8,6 +8,7 @@ void showAirspaceInfoDialog(BuildContext context, List<Airspace> airspaces) {
   final sorted = airspaces.toList()..sort((a, b) => a.lower.meters.compareTo(b.lower.meters));
   showDialog(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/airspace_info"),
       builder: (context) => AlertDialog(
             title: Text("Airspace".tr()),
             content: SizedBox(

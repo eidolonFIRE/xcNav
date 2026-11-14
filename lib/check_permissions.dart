@@ -26,7 +26,10 @@ Future<bool?> checkPermissions(BuildContext context) async {
       if (await Permission.locationAlways.isPermanentlyDenied || !locAlwaysStatus.isGranted) {
         debugPrint("Location was permanently denied, opening app settings.");
         if (context.mounted) {
-          await showDialog(context: context, builder: (context) => const RequestLocationDialog());
+          await showDialog(
+              context: context,
+              routeSettings: const RouteSettings(name: "/dialog/request_location"),
+              builder: (context) => const RequestLocationDialog());
         }
       }
     } else {
@@ -35,7 +38,10 @@ Future<bool?> checkPermissions(BuildContext context) async {
       if (whenInUse.isPermanentlyDenied) {
         debugPrint("Location was fully denied!");
         if (context.mounted) {
-          await showDialog(context: context, builder: (context) => const RequestLocationDialog());
+          await showDialog(
+              context: context,
+              routeSettings: const RouteSettings(name: "/dialog/request_location"),
+              builder: (context) => const RequestLocationDialog());
         }
         currentlyCheckingPermissions = false;
         return true;

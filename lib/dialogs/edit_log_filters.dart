@@ -12,6 +12,7 @@ String? logFilterGearSearch;
 Future<List<LogFilter>?> editLogFilters(BuildContext context) async {
   return showDialog<List<LogFilter>>(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/edit_log_filters"),
       builder: (context) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(

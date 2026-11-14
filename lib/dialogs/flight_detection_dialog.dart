@@ -4,7 +4,10 @@ import 'package:xcnav/settings_service.dart';
 import 'package:xcnav/units.dart';
 
 void showFlightDetectionDialog(BuildContext context) {
-  showDialog(context: context, builder: (context) => const FlightDetectionDialog());
+  showDialog(
+      context: context,
+      routeSettings: const RouteSettings(name: "/dialog/flight_detection"),
+      builder: (context) => const FlightDetectionDialog());
 }
 
 /// Edit the thresholds used to automatically start / stop flight recording.

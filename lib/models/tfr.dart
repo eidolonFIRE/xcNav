@@ -86,6 +86,7 @@ class TFR {
   void showInfoDialog(BuildContext context) {
     showDialog(
         context: context,
+        routeSettings: const RouteSettings(name: "/dialog/tfr_info"),
         builder: (context) => AlertDialog(
               title: const Text("TFR info"),
               content: Scrollbar(

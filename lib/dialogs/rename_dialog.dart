@@ -5,6 +5,7 @@ Future<String?> showRenameDialog(BuildContext context, {String? text}) {
   final TextEditingController name = TextEditingController(text: text);
   return showDialog<String?>(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/rename"),
       builder: (context) {
         return AlertDialog(
           title: Text(

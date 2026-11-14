@@ -47,9 +47,20 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  /// Report the selected tab as the RUM view for this route.
+  void updateRumView() {
+    final name = "/home/${pageIndexNames[viewPageIndex]}";
+    if (name == homeViewName) return;
+    homeViewName = name;
+    final route = ModalRoute.of(context);
+    if (route != null) rumObserver?.refreshView(route);
+  }
+
   @override
   void initState() {
     super.initState();
+
+    homeViewName = "/home/${pageIndexNames[viewPageIndex]}";
 
     myTelemetry.addListener(() {
       if (viewMapKey.currentState?.mapReady ?? false) {
@@ -155,8 +166,6 @@ class _MyHomePageState extends State<MyHomePage> {
       Provider.of<ChatMessages>(context, listen: false).markAllRead(false);
     }
 
-    startView("/home/${pageIndexNames[viewPageIndex]}");
-
     return PopScope(
         canPop: false,
         child: Scaffold(
@@ -200,11 +209,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     addTapAction("Main Menu");
                   } else {
                     setState(() {
-                      stopView("/home/${pageIndexNames[viewPageIndex]}");
-
                       viewPageIndex = value;
                       viewController.jumpToPage(value - 1);
                     });
+                    updateRumView();
                   }
                   if (value != 4) {
                     FocusScopeNode currentFocus = FocusScope.of(context);

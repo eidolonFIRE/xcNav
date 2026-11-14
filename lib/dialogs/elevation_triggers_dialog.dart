@@ -190,6 +190,7 @@ Future<ElevationTrigger?> editElevationTriggerDialog(BuildContext context, {Elev
 void showElevationTriggersDialog(BuildContext context) {
   showDialog(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/elevation_triggers"),
       builder: (context) => StatefulBuilder(builder: (context, setState) {
             return AlertDialog(
               content: SizedBox(

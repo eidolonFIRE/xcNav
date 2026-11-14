@@ -32,6 +32,7 @@ Future<bool?> savePlan(BuildContext context, {bool isSavingFirst = false}) {
 
   return showDialog<bool?>(
     context: context,
+    routeSettings: const RouteSettings(name: "/dialog/save_plan"),
     builder: (context) => AlertDialog(
       title: Text("dialog.confirm.save_waypoints".tr()),
       content: Form(

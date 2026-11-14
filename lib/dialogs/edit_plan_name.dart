@@ -17,6 +17,7 @@ Future<String?> editPlanName(BuildContext context, String? prevName) {
 
   return showDialog<String>(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/edit_plan_name"),
       builder: (context) {
         return AlertDialog(
             title: Text(

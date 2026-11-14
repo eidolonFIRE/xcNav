@@ -71,7 +71,6 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
     mapController = MapController();
     _tabController = TabController(vsync: this, length: myTabs.length);
 
-    startView("/home/wind_dialog");
     addAttribute("view_map_northLockWind", settingsMgr.northlockWind.value);
   }
 
@@ -79,8 +78,6 @@ class _WindDialogState extends State<WindDialog> with SingleTickerProviderStateM
   void dispose() {
     _tabController.dispose();
     super.dispose();
-
-    stopView("/home/wind_dialog");
   }
 
   @override

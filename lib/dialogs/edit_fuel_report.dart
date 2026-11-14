@@ -21,6 +21,7 @@ Future<FuelReport?> dialogEditFuelReport(
   }
   return showDialog<FuelReport?>(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/edit_fuel_report"),
       builder: (context) {
         final amountFormKey = GlobalKey<FormState>(debugLabel: "FuelReportFormKey");
         final fuelAmountController =

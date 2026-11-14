@@ -115,6 +115,10 @@ void main() async {
     }
     ddsdk.setUserInfo(id: settingsMgr.datadogSdkId.value);
 
+    if (!settingsMgr.rumOptOut.value) {
+      rumObserver = RumNavigationObserver(datadogSdk: ddsdk);
+    }
+
     FlutterError.onError = (FlutterErrorDetails details) {
       error(details.toString(), errorStackTrace: details.stack);
       ddsdk.rum?.handleFlutterError(details);
@@ -251,8 +255,7 @@ class XCNav extends StatelessWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      navigatorObservers:
-          settingsMgr.rumOptOut.value ? [] : [DatadogNavigationObserver(datadogSdk: DatadogSdk.instance)],
+      navigatorObservers: [if (rumObserver != null) rumObserver!],
       title: 'xcNav',
       debugShowCheckedModeBanner: false,
       darkTheme: ThemeData(

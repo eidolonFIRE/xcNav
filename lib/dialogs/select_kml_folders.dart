@@ -9,6 +9,7 @@ class SelectedFoldersOptions {
 Future<SelectedFoldersOptions?> selectKmlFolders(BuildContext context, List<XmlElement> folders) {
   return showDialog<SelectedFoldersOptions>(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/select_kml_folders"),
       builder: (context) {
         Set<int> checkedElements = {};
         return StatefulBuilder(builder: (context, setState) {

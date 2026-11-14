@@ -8,6 +8,7 @@ import 'package:xcnav/units.dart';
 void showAirportInfoDialog(BuildContext context, AirportInfo airport, {required void Function() onAddWaypoint}) {
   showDialog(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/airport_info"),
       builder: (context) => AlertDialog(
             title: Text.rich(TextSpan(children: [
               TextSpan(text: airport.name),

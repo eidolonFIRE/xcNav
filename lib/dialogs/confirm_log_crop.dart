@@ -5,6 +5,7 @@ import 'package:xcnav/units.dart';
 Future<bool?> confirmLogCrop(BuildContext context, {required Duration trimStart, required Duration trimEnd}) async {
   return showDialog<bool>(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/confirm_log_crop"),
       builder: (context) => AlertDialog(
             title: Text.rich(TextSpan(children: [
               TextSpan(

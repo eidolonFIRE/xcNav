@@ -11,6 +11,7 @@ void selectPastGroup(BuildContext context) {
     ..sort((a, b) => a.timestamp.difference(b.timestamp).inMilliseconds);
   showDialog(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/select_past_group"),
       builder: (context) => AlertDialog(
           title: Text("Recent Groups".tr()),
           content: pastGroupsSorted.isEmpty

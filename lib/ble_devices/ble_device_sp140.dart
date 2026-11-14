@@ -554,6 +554,7 @@ class Sp140StatusCard extends StatelessWidget {
       onTap: () {
         showDialog(
             context: context,
+            routeSettings: const RouteSettings(name: "/dialog/sp140"),
             builder: (context) {
               return Sp140ConfigDialog(sp140: sp140);
             });

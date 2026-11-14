@@ -10,6 +10,7 @@ void tapPointDialog(
   List<LatLng> latlngs = [tapPoint];
   showDialog(
     context: context,
+    routeSettings: const RouteSettings(name: "/dialog/tap_point"),
     builder: (context) {
       return AlertDialog(
         content:

@@ -20,6 +20,7 @@ Future<Waypoint?>? editWaypoint(BuildContext context, final Waypoint waypoint,
   List<LatLng> tempLatlngs = waypoint.latlng.toList();
   return showDialog<Waypoint?>(
       context: context,
+      routeSettings: const RouteSettings(name: "/dialog/edit_waypoint"),
       builder: (context) {
         Color selectedColor = waypoint.getColor();
         String? selectedIcon = waypoint.icon;

@@ -30,7 +30,10 @@ class Windicator extends StatelessWidget {
               return GestureDetector(
                   onTap: onTap ??
                       () {
-                        showDialog(context: context, builder: (context) => const WindDialog());
+                        showDialog(
+                            context: context,
+                            routeSettings: const RouteSettings(name: "/dialog/wind"),
+                            builder: (context) => const WindDialog());
                       },
                   child: SizedBox(
                     width: size,

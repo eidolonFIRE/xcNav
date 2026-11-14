@@ -255,7 +255,10 @@ class BigBatteryStatusCard extends StatelessWidget {
             bigBattery.life.pull();
           });
         });
-        showDialog(context: context, builder: (context) => BigBatteryConfigDialog(bigBattery: bigBattery));
+        showDialog(
+            context: context,
+            routeSettings: const RouteSettings(name: "/dialog/big_battery_config"),
+            builder: (context) => BigBatteryConfigDialog(bigBattery: bigBattery));
       },
       child: Container(
           foregroundDecoration: BoxDecoration(
