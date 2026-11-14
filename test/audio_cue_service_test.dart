@@ -164,6 +164,19 @@ void main() {
         ["Altitude: 400", "Speed: 0", "Altitude: 1400", "Speed: 22", "Altitude: 1600", "Speed: 45"]);
   });
 
+  test("myTelemetry - expiry uses device clock, not GPS fix time", () {
+    final now = DateTime(2026, 6, 1, 12);
+    // GPS fix time lags the device clock (clock skew or late delivery)
+    final fixTime = now.subtract(const Duration(seconds: 30)).millisecondsSinceEpoch;
+    withClock(Clock.fixed(now), () => cueService.cueMyTelemetry(Geo(lat: -37, lng: 122.5, alt: 100, timestamp: fixTime)));
+
+    final telemetry = ttsService.msgQueue.where((m) => m.text.startsWith("Altitude") || m.text.startsWith("Speed"));
+    expect(telemetry.length, 2);
+    for (final msg in telemetry) {
+      expect(msg.expires!.isAfter(now), isTrue);
+    }
+  });
+
   test("fuel - not reported yet - start", () {
     // no fuel reported yet
     withClock(Clock.fixed(a.time), () => cueService.cueFuel(null, null));

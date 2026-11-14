@@ -254,7 +254,7 @@ class AudioCueService {
 
         final text = "Altitude: ${lastAlt!.value.round()}";
         ttsService.speak(AudioMessage(text,
-            volume: 1.0, expires: DateTime.fromMillisecondsSinceEpoch(myGeo.time).add(const Duration(seconds: 4))));
+            volume: 1.0, expires: clock.now().add(const Duration(seconds: 4))));
       }
 
       // --- Speed
@@ -268,7 +268,7 @@ class AudioCueService {
 
         final text = "Speed: ${lastSpd!.value.round()}";
         ttsService.speak(AudioMessage(text,
-            volume: 1.0, expires: DateTime.fromMillisecondsSinceEpoch(myGeo.time).add(const Duration(seconds: 4))));
+            volume: 1.0, expires: clock.now().add(const Duration(seconds: 4))));
       }
     }
   }

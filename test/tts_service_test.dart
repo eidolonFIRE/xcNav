@@ -131,6 +131,32 @@ void main() {
     });
   });
 
+  group("audio session interruptions", () {
+    test("interruption forces re-activation before next message", () {
+      final tts = TtsService()..sessionActive = true;
+      tts.onInterruption(AudioInterruptionEvent(true, AudioInterruptionType.unknown));
+      expect(tts.sessionActive, isFalse);
+    });
+
+    test("transient pause interruption also forces re-activation", () {
+      final tts = TtsService()..sessionActive = true;
+      tts.onInterruption(AudioInterruptionEvent(true, AudioInterruptionType.pause));
+      expect(tts.sessionActive, isFalse);
+    });
+
+    test("ducking keeps the session", () {
+      final tts = TtsService()..sessionActive = true;
+      tts.onInterruption(AudioInterruptionEvent(true, AudioInterruptionType.duck));
+      expect(tts.sessionActive, isTrue);
+    });
+
+    test("interruption end leaves state alone", () {
+      final tts = TtsService()..sessionActive = true;
+      tts.onInterruption(AudioInterruptionEvent(false, AudioInterruptionType.pause));
+      expect(tts.sessionActive, isTrue);
+    });
+  });
+
   group("queue", () {
     late TtsService tts;
     late FakeTts engine;

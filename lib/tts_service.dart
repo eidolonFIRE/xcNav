@@ -115,7 +115,21 @@ class TtsService {
   /// Audio session used to duck or pause other audio while speaking. Null until `init()`.
   AudioSession? _session;
   bool? _sessionPausesMusic;
-  bool _sessionActive = false;
+
+  /// True while we hold audio focus. Cleared when the OS takes it away so the next message re-activates.
+  @visibleForTesting
+  bool sessionActive = false;
+
+  /// The OS took audio focus (phone call, Siri, another audio app, ...).
+  /// The session is no longer active, so it must be re-activated before speaking again,
+  /// even if the queue never empties. Otherwise speech plays into a dead session and is silent.
+  @visibleForTesting
+  void onInterruption(AudioInterruptionEvent event) {
+    if (event.begin && event.type != AudioInterruptionType.duck) {
+      debugPrint("TTS audio session interrupted");
+      sessionActive = false;
+    }
+  }
 
   /// True while `_runQueue` is working through `msgQueue`. Only one runner may exist at a time.
   bool _running = false;
@@ -133,14 +147,14 @@ class TtsService {
   /// Take audio focus before speaking. Other audio is ducked or paused depending on settings.
   Future _activateSession() async {
     final session = _session;
-    if (session == null || _sessionActive) return;
+    if (session == null || sessionActive) return;
     try {
       final pauseMusic = settingsMgr.pauseMusicForSpeech.value;
       if (_sessionPausesMusic != pauseMusic) {
         await session.configure(ttsAudioSessionConfig(pauseMusic: pauseMusic));
         _sessionPausesMusic = pauseMusic;
       }
-      _sessionActive = await session.setActive(true);
+      sessionActive = await session.setActive(true);
     } catch (e) {
       debugPrint("Failed to activate audio session: $e");
     }
@@ -149,8 +163,8 @@ class TtsService {
   /// Give audio focus back once nothing is speaking or queued, so other audio resumes.
   void _releaseSessionIfIdle() {
     final session = _session;
-    if (session == null || !_sessionActive || _running || msgQueue.isNotEmpty) return;
-    _sessionActive = false;
+    if (session == null || !sessionActive || _running || msgQueue.isNotEmpty) return;
+    sessionActive = false;
     session.setActive(false).catchError((e) {
       debugPrint("Failed to deactivate audio session: $e");
       return false;
@@ -169,7 +183,10 @@ class TtsService {
     }
 
     try {
-      _session = await AudioSession.instance;
+      final session = await AudioSession.instance;
+      // Only subscribe once, even if init is retried.
+      if (_session == null) session.interruptionEventStream.listen(onInterruption);
+      _session = session;
     } catch (e) {
       debugPrint("Failed to get audio session: $e");
     }
