@@ -158,25 +158,6 @@ class _MainMenuState extends State<MainMenu> {
           ]),
         ),
 
-        // EXPERIMENTAL SERVO CARB
-        if (settingsMgr.showServoCarbMenu.value)
-          ListTile(
-            iconColor: Colors.amber,
-            textColor: Colors.amber,
-            minVerticalPadding: 10,
-            onTap: () => {Navigator.popAndPushNamed(context, "/servoCarb")},
-            leading: const Icon(
-              Icons.settings_applications_sharp,
-              size: 30,
-            ),
-            title: Text(
-              "ServoCarb",
-              style: Theme.of(context).textTheme.headlineSmall!.merge(const TextStyle(color: Colors.amber)),
-            ),
-          ),
-
-        Divider(height: 20, thickness: 1, color: Colors.grey.shade700),
-
         // Group
         ListTile(
           minVerticalPadding: 10,

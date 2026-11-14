@@ -256,7 +256,6 @@ class SettingsMgr {
   late final SettingConfig<bool> rumOptOut;
 
   // --- Experimental
-  late final SettingConfig<bool> showServoCarbMenu;
   late final SettingConfig<bool> forceGpsAltitude;
   late final SettingConfig<int> gpsUpdateInterval;
   late final SettingAction flightDetection;
@@ -441,8 +440,6 @@ class SettingsMgr {
         ])));
 
     // --- Experimental
-    showServoCarbMenu = SettingConfig(this, prefs, "Experimental", "showServoCarbMenu", false,
-        title: "show_servocarb", icon: const Icon(Icons.settings_applications_sharp), hidden: true);
     forceGpsAltitude = SettingConfig(this, prefs, "Experimental", "forceGpsAltitude", false,
         title: "force_gps_altitude",
         icon: const Icon(Icons.satellite_alt),
