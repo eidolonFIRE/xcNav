@@ -43,7 +43,9 @@ class _PlanEditorState extends State<PlanEditor> {
   WaypointID? editingWp;
   late final PolyEditor polyEditor;
 
-  final List<Polyline> polyLines = [];
+  /// Color of the path being edited. The Polyline itself is rebuilt every build because
+  /// flutter_map caches its bounding box (used for culling) and editablePoints mutates in place.
+  Color editLineColor = Colors.amber;
   final List<LatLng> editablePoints = [];
 
   /// User is dragging something on the map layer (for less than 30 seconds)
@@ -79,8 +81,7 @@ class _PlanEditorState extends State<PlanEditor> {
   }
 
   void beginEditingLine(Waypoint waypoint) {
-    polyLines.clear();
-    polyLines.add(Polyline(color: waypoint.getColor(), points: editablePoints, strokeWidth: 5));
+    editLineColor = waypoint.getColor();
     editablePoints.clear();
     editablePoints.addAll(waypoint.latlng.toList());
     editingWp = waypoint.id;
@@ -118,8 +119,7 @@ class _PlanEditorState extends State<PlanEditor> {
 
   void onMapLongPress(BuildContext context, LatLng latlng) {
     // Prime the editor incase we decide to make a path
-    polyLines.clear();
-    polyLines.add(Polyline(color: Colors.amber, points: editablePoints, strokeWidth: 5));
+    editLineColor = Colors.amber;
     editablePoints.clear();
     editablePoints.add(latlng);
     tapPointDialog(context, latlng, setFocusMode, (Waypoint newWaypoint) {
@@ -288,7 +288,8 @@ class _PlanEditorState extends State<PlanEditor> {
 
                   // Draggable line editor
                   if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
-                    PolylineLayer(polylines: polyLines),
+                    PolylineLayer(
+                        polylines: [Polyline(color: editLineColor, points: editablePoints.toList(), strokeWidth: 5)]),
                   if (focusMode == FocusMode.addPath || focusMode == FocusMode.editPath)
                     DragMarkers(markers: polyEditor.edit()),
                 ]),
